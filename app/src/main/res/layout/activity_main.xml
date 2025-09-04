@@ -24,7 +24,7 @@
         android:id="@+id/header_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Explore the app"
+        android:text="Plantracker"
         android:textColor="@color/black"
         android:textSize="25dp"
         android:textStyle="bold"
@@ -37,7 +37,8 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Now your plans are in one place and\n always under control"
+        android:text="Now your plans are in one place and
+ always under control"
         android:textColor="@color/black"
         android:gravity="center"
         android:textSize="15dp"
@@ -72,11 +73,43 @@
         android:text="Sign Up"
         />
 
+    <LinearLayout
+        android:id="@+id/separator"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/btn_signup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="center_vertical">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="or"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@android:color/darker_gray" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/btn_google"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/btn_signup"
+        app:layout_constraintTop_toBottomOf="@id/separator"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:cornerRadius="30dp"
