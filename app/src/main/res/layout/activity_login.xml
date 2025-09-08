@@ -10,11 +10,25 @@
         android:id="@+id/imageViewBeginStar"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:layout_marginTop="32dp"
-        app:srcCompat="@drawable/begin_star_svg"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="36dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.778"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/star_black" />
+
+    <TextView
+        android:id="@+id/hello"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hi, Welcome!!"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewBeginStar"
+        app:layout_constraintStart_toStartOf="@+id/editTextEmail"
+        android:textColor="@color/black"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        android:layout_marginTop="80dp"
+        />
 
     <EditText
         android:id="@+id/editTextEmail"
@@ -27,7 +41,7 @@
         android:inputType="textEmailAddress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageViewBeginStar" />
+        app:layout_constraintTop_toBottomOf="@+id/hello" />
 
     <EditText
         android:id="@+id/editTextPassword"
