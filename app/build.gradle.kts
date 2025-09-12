@@ -18,7 +18,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE-URL", "\"http://10.0.2.2:3000/api/\"")
+        }
         release {
+//            TODO: change endpoint when release
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -33,6 +38,9 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.1.0")
     implementation(platform(libs.firebase.bom))
     implementation(libs.appcompat)
     implementation(libs.material)
