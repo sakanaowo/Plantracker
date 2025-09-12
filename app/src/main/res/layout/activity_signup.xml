@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SignupActivity">
+    tools:context=".feature.auth.ui.signup.SignupActivity">
 
     <ImageView
         android:id="@+id/imageViewBeginStar"
@@ -77,6 +77,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="44dp"
         android:text="Already have an account? Login"
+        android:textColor="@color/link_text_color"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonSignUp" />
