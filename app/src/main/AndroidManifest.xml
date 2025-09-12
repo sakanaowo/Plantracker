@@ -24,6 +24,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".feature.auth.ui.login.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.auth.ui.signup.SignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.auth.ui.forgot.ForgotPasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.HomeActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
