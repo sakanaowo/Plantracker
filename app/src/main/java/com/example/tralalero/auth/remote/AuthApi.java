@@ -8,6 +8,12 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface AuthApi {
-    @POST("auth/login")
+    @POST("users/local/signin")
     Call<LoginResponse> login(@Body LoginRequest request);
+
+    @POST("users/local/signup")
+    Call<LoginResponse> register(@Body LoginRequest request);
+
+    @POST("user/firebase/sync")
+    Call<Void> syncFirebaseToken(@Body SyncFirebaseTokenRequest request);
 }
