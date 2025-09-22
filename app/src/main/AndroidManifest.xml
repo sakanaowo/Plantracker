@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
+        android:name=".App"
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:allowBackup="true"
@@ -36,6 +37,10 @@
         <activity
             android:name=".feature.home.ui.HomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.AccountActivity"
+            android:exported="false"
+        />
     </application>
 
 </manifest>
