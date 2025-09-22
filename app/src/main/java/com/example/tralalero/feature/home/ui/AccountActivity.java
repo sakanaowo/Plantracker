@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -13,30 +14,29 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.tralalero.R;
-import com.example.tralalero.App.App;
 import com.example.tralalero.MainActivity;
-
-public class HomeActivity extends AppCompatActivity {
+import com.example.tralalero.App;
+public class AccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_home);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+//        EdgeToEdge.enable(this);
+        setContentView(R.layout.account);
+//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
+//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+//            return insets;
+//        });
 
-        String name = getIntent().getStringExtra("user_name");
-        String email = getIntent().getStringExtra("user_email");
+//        String name = getIntent().getStringExtra("user_name");
+//        String email = getIntent().getStringExtra("user_email");
 
-        TextView tvTitle = findViewById(R.id.tv_home_title);
-        if (tvTitle != null) {
-            String who = (name != null && !name.isEmpty()) ? name : (email != null ? email : "");
-            String text = who.isEmpty() ? "Welcome to Plantracker" : "Welcome, " + who;
-            tvTitle.setText(text);
-        }
+//        TextView tvTitle = findViewById(R.id.tv_home_title);
+//        if (tvTitle != null) {
+//            String who = (name != null && !name.isEmpty()) ? name : (email != null ? email : "");
+//            String text = who.isEmpty() ? "Welcome to Plantracker" : "Welcome, " + who;
+//            tvTitle.setText(text);
+//        }
 
         Button btnLogout = findViewById(R.id.btn_logout);
         if (btnLogout != null) {
@@ -47,6 +47,7 @@ public class HomeActivity extends AppCompatActivity {
                 }
             });
         }
+
     }
 
     private void handleLogout() {
@@ -58,5 +59,5 @@ public class HomeActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-}
 
+}

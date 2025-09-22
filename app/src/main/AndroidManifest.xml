@@ -37,6 +37,10 @@
         <activity
             android:name=".feature.home.ui.HomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.AccountActivity"
+            android:exported="false"
+        />
     </application>
 
 </manifest>
