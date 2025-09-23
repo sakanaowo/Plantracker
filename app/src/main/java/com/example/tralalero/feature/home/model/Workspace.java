@@ -15,10 +15,10 @@ public class Workspace {
     @SerializedName("type")
     private String type;
     
-    @SerializedName("createdAt")
+    @SerializedName("created_at")
     private String createdAt;
-    
-    @SerializedName("updatedAt")
+
+    @SerializedName("updated_at")
     private String updatedAt;
 
     // Default constructor

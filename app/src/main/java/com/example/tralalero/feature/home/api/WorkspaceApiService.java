@@ -8,6 +8,6 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 
 public interface WorkspaceApiService {
-    @GET("api/workspaces")
+    @GET("workspaces")
     Call<List<Workspace>> getWorkspaces();
 }
