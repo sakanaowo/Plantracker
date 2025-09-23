@@ -11,7 +11,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        app:title="Inbox"
+        app:title="Quick Access"
         app:titleTextColor="@android:color/black"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,8 +44,8 @@
 
             <ImageButton
                 android:id="@+id/btnCloseNotification"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_alignParentEnd="true"
                 android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_menu_close_clear_cancel" />
@@ -217,7 +217,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:gravity="center"
-            android:text="Inbox"/>
+            android:text="Quick access"/>
 
         <TextView
             android:layout_width="0dp"

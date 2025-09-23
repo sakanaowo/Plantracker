@@ -60,8 +60,7 @@
         android:layout_height="0dp"
         android:padding="8dp"
         app:layout_constraintTop_toBottomOf="@id/tabLayout"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="72dp"
+        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -148,7 +147,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:gravity="center"
-            android:text="Inbox"/>
+            android:text="Quick access"/>
 
         <TextView
             android:layout_width="0dp"

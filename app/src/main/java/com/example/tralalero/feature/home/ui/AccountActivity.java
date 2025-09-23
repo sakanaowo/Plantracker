@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
@@ -15,18 +16,18 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.tralalero.R;
 import com.example.tralalero.MainActivity;
-import com.example.tralalero.App;
+import com.example.tralalero.App.App;
 public class AccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        EdgeToEdge.enable(this);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.account);
-//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
-//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-//            return insets;
-//        });
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
 //        String name = getIntent().getStringExtra("user_name");
 //        String email = getIntent().getStringExtra("user_email");
@@ -37,6 +38,31 @@ public class AccountActivity extends AppCompatActivity {
 //            String text = who.isEmpty() ? "Welcome to Plantracker" : "Welcome, " + who;
 //            tvTitle.setText(text);
 //        }
+
+        ImageButton btnBoard = findViewById(R.id.btn1);
+        btnBoard.setOnClickListener(v -> {
+            Intent intent = new Intent(AccountActivity.this, MainActivity.class);
+            startActivity(intent);
+        });
+
+        ImageButton btnInbox = findViewById(R.id.btn2);
+        btnInbox.setOnClickListener(v -> {
+            Intent intent = new Intent(AccountActivity.this, InboxActivity.class);
+            startActivity(intent);
+        });
+
+        ImageButton btnActivity = findViewById(R.id.btn3);
+        btnActivity.setOnClickListener(v -> {
+            Intent intent = new Intent(AccountActivity.this, ActivityActivity.class);
+            startActivity(intent);
+        });
+
+        ImageButton btnAccount = findViewById(R.id.btn4);
+
+        btnAccount.setOnClickListener(v -> {
+            Intent intent = new Intent(AccountActivity.this, AccountActivity.class);
+            startActivity(intent);
+        });
 
         Button btnLogout = findViewById(R.id.btn_logout);
         if (btnLogout != null) {

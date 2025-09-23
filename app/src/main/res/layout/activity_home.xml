@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    >
+    xmlns:tools="http://schemas.android.com/tools">
 
     <TextView
         android:id="@+id/tvTitle"
@@ -101,7 +101,7 @@
                     android:textStyle="bold"
                     android:textSize="18sp" />
 
-                <EditText
+                <TextView
                     android:id="@+id/inboxCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -130,10 +130,10 @@
                 >
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etagainPassword"
+                    android:id="@+id/cardNew"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword" />
+                    android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
             <!-- EXPANDABLE FORM -->
             <LinearLayout
@@ -176,8 +176,36 @@
         </LinearLayout>
     </LinearLayout>
 
+
     <!--    Create a new board-->
+
+
+    <TextView
+        android:id="@+id/workspaceTittle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="YOUR WORKSPACE"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/inboxContainer"
+        />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerActivity"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/workspaceTittle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        tools:listitem="@layout/your_workspace_item"
+        tools:listitemHeader="@layout/your_workspace_header"/>
     <LinearLayout
+        android:id="@+id/btn_create_board"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -289,7 +317,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:gravity="center"
-            android:text="Inbox"/>
+            android:text="Quick access"/>
 
         <TextView
             android:layout_width="0dp"
@@ -310,15 +338,6 @@
     </LinearLayout>
 
 
-    <Button
-        android:id="@+id/btn_logout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        app:layout_constraintTop_toBottomOf="@id/tv_home_hint"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 
