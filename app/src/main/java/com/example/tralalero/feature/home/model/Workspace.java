@@ -9,15 +9,15 @@ public class Workspace {
     @SerializedName("name")
     private String name;
     
-    @SerializedName("owner_id")
-    private String ownerId;
+    @SerializedName("description")
+    private String description;
     
     @SerializedName("type")
     private String type;
     
     @SerializedName("created_at")
     private String createdAt;
-    
+
     @SerializedName("updated_at")
     private String updatedAt;
 
@@ -26,10 +26,10 @@ public class Workspace {
     }
 
     // Constructor
-    public Workspace(String id, String name, String ownerId, String type) {
+    public Workspace(String id, String name, String description, String type) {
         this.id = id;
         this.name = name;
-        this.ownerId = ownerId;
+        this.description = description;
         this.type = type;
     }
 
@@ -42,8 +42,8 @@ public class Workspace {
         return name;
     }
 
-    public String getOwnerId() {
-        return ownerId;
+    public String getDescription() {
+        return description;
     }
 
     public String getType() {
@@ -67,8 +67,8 @@ public class Workspace {
         this.name = name;
     }
 
-    public void setOwnerId(String ownerId) {
-        this.ownerId = ownerId;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public void setType(String type) {

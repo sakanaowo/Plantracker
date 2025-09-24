@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -62,32 +61,6 @@ public class HomeActivity extends AppCompatActivity {
         setupRecyclerView();
         loadWorkspaces();
 
-        EditText cardNew = findViewById(R.id.cardNew);
-        LinearLayout inboxForm = findViewById(R.id.inboxForm);
-
-        cardNew.setOnClickListener(v -> inboxForm.setVisibility(View.VISIBLE));
-
-        Button btnCancel = findViewById(R.id.btnCancel);
-        btnCancel.setOnClickListener(v -> inboxForm.setVisibility(View.GONE));
-
-        Button btnAdd = findViewById(R.id.btnAdd);
-        btnAdd.setOnClickListener(v -> {
-            String text = cardNew.getText().toString().trim();
-
-            if (!text.isEmpty()) {
-                // 👉 gọi hàm lưu vào database
-//                TODO: lưu vào database
-//                saveToDatabase(text);
-
-                Toast.makeText(this, "Đã thêm: " + text, Toast.LENGTH_SHORT).show();
-
-                inboxForm.setVisibility(View.GONE);
-                cardNew.setText(""); // clear sau khi lưu
-            } else {
-                Toast.makeText(this, "Vui lòng nhập dữ liệu!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
         btnCreateBoard.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, NewBoard.class);
@@ -139,6 +112,11 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadWorkspaces() {
+        if (App.authManager == null || !App.authManager.isSignedIn()) {
+            Toast.makeText(this, "Please sign in to view workspaces", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         WorkspaceApiService apiService = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
         Call<List<Workspace>> call = apiService.getWorkspaces();
         
