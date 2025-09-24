@@ -138,7 +138,8 @@
             android:layout_height="wrap_content"
             android:drawablePadding="12dp"
             android:padding="12dp"
-            android:text="Cài đặt"
+            android:drawableEnd="@drawable/right_arrow_icon"
+            android:text="Setting"
             android:textSize="14sp" />
 
         <View
@@ -151,7 +152,8 @@
             android:layout_height="wrap_content"
             android:drawablePadding="12dp"
             android:padding="12dp"
-            android:text="Tài khoản"
+            android:drawableEnd="@drawable/right_arrow_icon"
+            android:text="Account"
             android:textSize="14sp" />
     </LinearLayout>
 
