@@ -19,11 +19,10 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
         }
         release {
-//            TODO: change endpoint when release
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
