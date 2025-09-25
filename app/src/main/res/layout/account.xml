@@ -250,7 +250,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:gravity="center"
-            android:text="Inbox"/>
+            android:text="Quick access"/>
 
         <TextView
             android:layout_width="0dp"

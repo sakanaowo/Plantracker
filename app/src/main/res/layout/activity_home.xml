@@ -101,7 +101,7 @@
                     android:textStyle="bold"
                     android:textSize="18sp" />
 
-                <EditText
+                <TextView
                     android:id="@+id/inboxCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -130,10 +130,10 @@
                 >
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etagainPassword"
+                    android:id="@+id/cardNew"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword" />
+                    android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
             <!-- EXPANDABLE FORM -->
             <LinearLayout
@@ -317,7 +317,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:gravity="center"
-            android:text="Inbox"/>
+            android:text="Quick access"/>
 
         <TextView
             android:layout_width="0dp"
