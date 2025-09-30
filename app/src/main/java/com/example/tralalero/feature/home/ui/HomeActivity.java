@@ -62,18 +62,6 @@ public class HomeActivity extends AppCompatActivity {
         setupRecyclerView();
         loadWorkspaces();
 
-        EditText cardNew = findViewById(R.id.cardNew);
-        LinearLayout inboxForm = findViewById(R.id.inboxForm);
-
-        cardNew.setOnClickListener(v -> inboxForm.setVisibility(View.VISIBLE));
-
-        Button btnCancel = findViewById(R.id.btnCancel);
-        btnCancel.setOnClickListener(v -> {
-                    inboxForm.setVisibility(View.GONE);
-                    cardNew.setText("");
-                }
-        );
-
         Button btnAdd = findViewById(R.id.btnAdd);
         btnAdd.setOnClickListener(v -> {
             String text = cardNew.getText().toString().trim();
@@ -166,7 +154,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
-
 //    private void handleAccount() {
 //        Intent intent = new Intent(this, AccountActivity.class);
 //        startActivity(intent);
