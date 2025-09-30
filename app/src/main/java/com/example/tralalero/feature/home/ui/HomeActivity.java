@@ -35,6 +35,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
+    private WorkspaceAdapter workspaceAdapter;
+    private RecyclerView recyclerView;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +49,18 @@ public class HomeActivity extends AppCompatActivity {
             return insets;
         });
 
-        EditText cardNew = findViewById(R.id.cardNew);
-        LinearLayout inboxForm = findViewById(R.id.inboxForm);
+        String name = getIntent().getStringExtra("user_name");
+        String email = getIntent().getStringExtra("user_email");
 
-        cardNew.setOnClickListener(v -> inboxForm.setVisibility(View.VISIBLE));
+//        TextView tvTitle = findViewById(R.id.tv_home_title);
+//        if (tvTitle != null) {
+//            String who = (name != null && !name.isEmpty()) ? name : (email != null ? email : "");
+//            String text = who.isEmpty() ? "Welcome to Plantracker" : "Welcome, " + who;
+//            tvTitle.setText(text);
+//        }
 
-        Button btnCancel = findViewById(R.id.btnCancel);
-        btnCancel.setOnClickListener(v -> {
-                    inboxForm.setVisibility(View.GONE);
-                    cardNew.setText("");
-                }
-        );
+        setupRecyclerView();
+        loadWorkspaces();
 
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
@@ -95,25 +98,12 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-                inboxForm.setVisibility(View.GONE);
-                cardNew.setText(""); // clear sau khi lưu
-            } else {
-                Toast.makeText(this, "Vui lòng nhập dữ liệu!", Toast.LENGTH_SHORT).show();
-            }
-        });
 
-        LinearLayout btnDefault = findViewById(R.id.default_button);
-        btnDefault.setOnClickListener(v -> {
-            Intent intent = new Intent(this, WorkspaceActivity.class);
+        ImageButton btnBoard = findViewById(R.id.btn1);
+        btnBoard.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
             startActivity(intent);
         });
-
-
-//        ImageButton btnBoard = findViewById(R.id.btn1);
-//        btnBoard.setOnClickListener(v -> {
-//            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
-//            startActivity(intent);
-//        });
 
         ImageButton btnInbox = findViewById(R.id.btn2);
         btnInbox.setOnClickListener(v -> {
@@ -134,7 +124,6 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
-
 
     private void setupRecyclerView() {
         recyclerView = findViewById(R.id.recyclerActivity);

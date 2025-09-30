@@ -50,8 +50,6 @@
             android:name=".feature.home.ui.NewBoard"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.WorkspaceActivity"
-            android:exported="false" />
             android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
             android:exported="true" />
     </application>

@@ -40,13 +40,6 @@ public class WorkspaceAdapter extends RecyclerView.Adapter<WorkspaceAdapter.Work
         notifyDataSetChanged();
     }
 
-    public void addWorkspace(Workspace workspace) {
-        if (workspace != null) {
-            workspaceList.add(workspace);
-            notifyItemInserted(workspaceList.size() - 1);
-        }
-    }
-
     @NonNull
     @Override
     public WorkspaceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
