@@ -52,7 +52,8 @@
         <activity
             android:name=".feature.home.ui.WorkspaceActivity"
             android:exported="false" />
-
+            android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
+            android:exported="true" />
     </application>
 
 </manifest>

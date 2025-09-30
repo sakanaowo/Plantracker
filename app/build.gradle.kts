@@ -19,11 +19,10 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
         }
         release {
-//            TODO: change endpoint when release
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -41,6 +40,7 @@ android {
 }
 
 dependencies {
+    implementation("com.tbuonomo:dotsindicator:4.3")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
