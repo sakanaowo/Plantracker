@@ -59,18 +59,6 @@ public class HomeActivity extends AppCompatActivity {
                 }
         );
 
-        EditText cardNew = findViewById(R.id.cardNew);
-        LinearLayout inboxForm = findViewById(R.id.inboxForm);
-
-        cardNew.setOnClickListener(v -> inboxForm.setVisibility(View.VISIBLE));
-
-        Button btnCancel = findViewById(R.id.btnCancel);
-        btnCancel.setOnClickListener(v -> {
-                    inboxForm.setVisibility(View.GONE);
-                    cardNew.setText("");
-                }
-        );
-
         Button btnAdd = findViewById(R.id.btnAdd);
         btnAdd.setOnClickListener(v -> {
             String text = cardNew.getText().toString().trim();
@@ -81,19 +69,6 @@ public class HomeActivity extends AppCompatActivity {
 //                saveToDatabase(text);
 
                 Toast.makeText(this, "Đã thêm: " + text, Toast.LENGTH_SHORT).show();
-
-                inboxForm.setVisibility(View.GONE);
-                cardNew.setText(""); // clear sau khi lưu
-            } else {
-                Toast.makeText(this, "Vui lòng nhập dữ liệu!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
-        btnCreateBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, NewBoard.class);
-            startActivity(intent);
-        });
 
                 inboxForm.setVisibility(View.GONE);
                 cardNew.setText(""); // clear sau khi lưu
@@ -132,49 +107,6 @@ public class HomeActivity extends AppCompatActivity {
         btnAccount.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, AccountActivity.class);
             startActivity(intent);
-        });
-    }
-
-
-    private void setupRecyclerView() {
-        recyclerView = findViewById(R.id.recyclerActivity);
-        workspaceAdapter = new WorkspaceAdapter(this);
-        
-        // Set up the RecyclerView with GridLayoutManager
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 1);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(workspaceAdapter);
-        
-        // Set click listener for workspace items
-        workspaceAdapter.setOnWorkspaceClickListener(workspace -> {
-            // Handle workspace click - you can navigate to workspace details
-            Toast.makeText(this, "Clicked on workspace: " + workspace.getName(), Toast.LENGTH_SHORT).show();
-            Log.d("HomeActivity", "Workspace clicked: " + workspace.getName() + " (ID: " + workspace.getId() + ")");
-        });
-    }
-
-    private void loadWorkspaces() {
-        WorkspaceApiService apiService = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
-        Call<List<Workspace>> call = apiService.getWorkspaces();
-        
-        call.enqueue(new Callback<List<Workspace>>() {
-            @Override
-            public void onResponse(Call<List<Workspace>> call, Response<List<Workspace>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Workspace> workspaces = response.body();
-                    workspaceAdapter.setWorkspaceList(workspaces);
-                    Log.d("HomeActivity", "Loaded " + workspaces.size() + " workspaces");
-                } else {
-                    Log.e("HomeActivity", "Failed to load workspaces: " + response.code());
-                    Toast.makeText(HomeActivity.this, "Failed to load workspaces", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Workspace>> call, Throwable t) {
-                Log.e("HomeActivity", "Error loading workspaces", t);
-                Toast.makeText(HomeActivity.this, "Error loading workspaces: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
         });
     }
 
