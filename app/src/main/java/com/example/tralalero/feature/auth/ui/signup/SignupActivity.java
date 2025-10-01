@@ -1,9 +1,13 @@
 package com.example.tralalero.feature.auth.ui.signup;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -38,6 +42,7 @@ public class SignupActivity extends AppCompatActivity {
     private EditText etConfirmPassword;
     private Button btnSignUp;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +59,67 @@ public class SignupActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.editTextPasswordSignup);
         etConfirmPassword = findViewById(R.id.editTextConfirmPasswordSignup);
         btnSignUp = findViewById(R.id.buttonSignUp);
+
+        final boolean[] isPasswordVisible = {false};
+        // Set icon mặc định ban đầu
+        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+        etConfirmPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+
+        etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_END = 2; // index: 0=start, 1=top, 2=end, 3=bottom
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                // Kiểm tra click vào khu vực icon bên phải
+                if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {
+
+                    if (isPasswordVisible[0]) {
+                        // Ẩn mật khẩu
+                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+                        isPasswordVisible[0] = false;
+                    } else {
+                        // Hiện mật khẩu
+                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eye, 0);
+                        isPasswordVisible[0] = true;
+                    }
+
+                    // Giữ font và con trỏ
+                    etPassword.setTypeface(Typeface.DEFAULT);
+                    etPassword.setSelection(etPassword.length());
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        etConfirmPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_END = 2; // index: 0=start, 1=top, 2=end, 3=bottom
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                // Kiểm tra click vào khu vực icon bên phải
+                if (event.getX() >= (etConfirmPassword.getWidth() - etConfirmPassword.getTotalPaddingRight())) {
+
+                    if (isPasswordVisible[0]) {
+                        // Ẩn mật khẩu
+                        etConfirmPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        etConfirmPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+                        isPasswordVisible[0] = false;
+                    } else {
+                        // Hiện mật khẩu
+                        etConfirmPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        etConfirmPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eye, 0);
+                        isPasswordVisible[0] = true;
+                    }
+
+                    // Giữ font và con trỏ
+                    etPassword.setTypeface(Typeface.DEFAULT);
+                    etPassword.setSelection(etPassword.length());
+                    return true;
+                }
+            }
+            return false;
+        });
 
         // Set up Sign Up button click listener
         if (btnSignUp != null) {

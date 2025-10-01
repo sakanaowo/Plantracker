@@ -35,8 +35,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
-    private WorkspaceAdapter workspaceAdapter;
-    private RecyclerView recyclerView;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,19 +46,6 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        String name = getIntent().getStringExtra("user_name");
-        String email = getIntent().getStringExtra("user_email");
-
-//        TextView tvTitle = findViewById(R.id.tv_home_title);
-//        if (tvTitle != null) {
-//            String who = (name != null && !name.isEmpty()) ? name : (email != null ? email : "");
-//            String text = who.isEmpty() ? "Welcome to Plantracker" : "Welcome, " + who;
-//            tvTitle.setText(text);
-//        }
-
-        setupRecyclerView();
-        loadWorkspaces();
 
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
@@ -92,18 +77,18 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
-        btnCreateBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, NewBoard.class);
+        LinearLayout btnDefault = findViewById(R.id.default_button);
+        btnDefault.setOnClickListener(v -> {
+            Intent intent = new Intent(this, WorkspaceActivity.class);
             startActivity(intent);
         });
 
 
-        ImageButton btnBoard = findViewById(R.id.btn1);
-        btnBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+//        ImageButton btnBoard = findViewById(R.id.btn1);
+//        btnBoard.setOnClickListener(v -> {
+//            Intent intent = new Intent(HomeActivity.this, MainActivity.class);
+//            startActivity(intent);
+//        });
 
         ImageButton btnInbox = findViewById(R.id.btn2);
         btnInbox.setOnClickListener(v -> {
@@ -125,47 +110,6 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void setupRecyclerView() {
-        recyclerView = findViewById(R.id.recyclerActivity);
-        workspaceAdapter = new WorkspaceAdapter(this);
-        
-        // Set up the RecyclerView with GridLayoutManager
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 1);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(workspaceAdapter);
-        
-        // Set click listener for workspace items
-        workspaceAdapter.setOnWorkspaceClickListener(workspace -> {
-            // Handle workspace click - you can navigate to workspace details
-            Toast.makeText(this, "Clicked on workspace: " + workspace.getName(), Toast.LENGTH_SHORT).show();
-            Log.d("HomeActivity", "Workspace clicked: " + workspace.getName() + " (ID: " + workspace.getId() + ")");
-        });
-    }
-
-    private void loadWorkspaces() {
-        WorkspaceApiService apiService = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
-        Call<List<Workspace>> call = apiService.getWorkspaces();
-        
-        call.enqueue(new Callback<List<Workspace>>() {
-            @Override
-            public void onResponse(Call<List<Workspace>> call, Response<List<Workspace>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Workspace> workspaces = response.body();
-                    workspaceAdapter.setWorkspaceList(workspaces);
-                    Log.d("HomeActivity", "Loaded " + workspaces.size() + " workspaces");
-                } else {
-                    Log.e("HomeActivity", "Failed to load workspaces: " + response.code());
-                    Toast.makeText(HomeActivity.this, "Failed to load workspaces", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Workspace>> call, Throwable t) {
-                Log.e("HomeActivity", "Error loading workspaces", t);
-                Toast.makeText(HomeActivity.this, "Error loading workspaces: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
 //    private void handleAccount() {
 //        Intent intent = new Intent(this, AccountActivity.class);

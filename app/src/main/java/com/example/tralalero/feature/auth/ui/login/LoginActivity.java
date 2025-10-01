@@ -1,12 +1,17 @@
 package com.example.tralalero.feature.auth.ui.login;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -20,6 +25,7 @@ import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.LoginRequest;
 import com.example.tralalero.auth.remote.dto.LoginResponse;
 import com.example.tralalero.network.ApiClient;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -32,6 +38,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etPassword;
     private Button btnLogin;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +53,39 @@ public class LoginActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.editTextEmail);
         etPassword = findViewById(R.id.editTextPassword);
         btnLogin = findViewById(R.id.buttonLogin);
+
+        final boolean[] isPasswordVisible = {false};
+
+        // Set icon mặc định ban đầu
+        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+
+        etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_END = 2; // index: 0=start, 1=top, 2=end, 3=bottom
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                // Kiểm tra click vào khu vực icon bên phải
+                if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {
+
+                    if (isPasswordVisible[0]) {
+                        // Ẩn mật khẩu
+                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
+                        isPasswordVisible[0] = false;
+                    } else {
+                        // Hiện mật khẩu
+                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eye, 0);
+                        isPasswordVisible[0] = true;
+                    }
+
+                    // Giữ font và con trỏ
+                    etPassword.setTypeface(Typeface.DEFAULT);
+                    etPassword.setSelection(etPassword.length());
+                    return true;
+                }
+            }
+            return false;
+        });
 
         if (btnLogin != null) {
             btnLogin.setOnClickListener(new View.OnClickListener() {
