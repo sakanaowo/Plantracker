@@ -49,6 +49,8 @@
         <activity
             android:name=".feature.home.ui.NewBoard"
             android:exported="false" />
+        <activity android:name=".feature.auth.ui.login.ContinueWithGoogle"
+            android:exported="false" />
         <activity
             android:name=".feature.home.ui.WorkspaceActivity"
             android:exported="false" />
