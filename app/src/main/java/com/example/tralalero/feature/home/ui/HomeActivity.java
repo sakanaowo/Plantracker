@@ -110,6 +110,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+
 //    private void handleAccount() {
 //        Intent intent = new Intent(this, AccountActivity.class);
 //        startActivity(intent);
