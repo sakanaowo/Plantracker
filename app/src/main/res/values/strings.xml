@@ -9,4 +9,5 @@
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
+    <string name="client_id">710677395196-0f5krq4gdk0hht5ahn2lsk3c1pr0oa25.apps.googleusercontent.com</string>
 </resources>
