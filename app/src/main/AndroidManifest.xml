@@ -39,8 +39,22 @@
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.AccountActivity"
-            android:exported="false"
-        />
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.InboxActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.ActivityActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.NewBoard"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.WorkspaceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
+            android:exported="false" />
     </application>
 
 </manifest>
