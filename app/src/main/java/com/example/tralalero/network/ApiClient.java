@@ -3,8 +3,9 @@ package com.example.tralalero.network;
 import android.util.Log;
 
 import com.example.tralalero.BuildConfig;
-import com.example.tralalero.auth.remote.AuthInterceptor;
 import com.example.tralalero.auth.remote.AuthManager;
+import com.example.tralalero.auth.remote.FirebaseAuthenticator;
+import com.example.tralalero.auth.remote.FirebaseInterceptor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +55,11 @@ public class ApiClient {
                 .writeTimeout(30, TimeUnit.SECONDS);
 
         if (authManager != null) {
-            clientBuilder.addInterceptor(new AuthInterceptor(authManager));
+            // Add Firebase Interceptor to automatically add token to requests
+            clientBuilder.addInterceptor(new FirebaseInterceptor(authManager));
+
+            // Add Firebase Authenticator to handle token refresh on 401/404 errors
+            clientBuilder.authenticator(new FirebaseAuthenticator(authManager));
         }
 
         OkHttpClient client = clientBuilder

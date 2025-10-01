@@ -18,7 +18,7 @@ public interface AuthApi {
     @POST("users/local/signup")
     Call<LoginResponse> register(@Body LoginRequest request);
 
-    @POST("firebase/auth")
+    @POST("users/firebase/auth")
     Call<FirebaseAuthResponse> firebaseAuth(@Body FirebaseAuthDto request);
 
     @GET("users/me")

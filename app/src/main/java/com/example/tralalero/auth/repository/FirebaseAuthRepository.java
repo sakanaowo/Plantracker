@@ -3,6 +3,8 @@ package com.example.tralalero.auth.repository;
 import android.util.Log;
 
 import com.example.tralalero.auth.remote.AuthApi;
+import com.example.tralalero.auth.remote.AuthManager;
+import com.example.tralalero.auth.remote.PublicAuthApi;
 import com.example.tralalero.auth.remote.dto.FirebaseAuthDto;
 import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
 import com.example.tralalero.network.ApiClient;
@@ -13,34 +15,41 @@ import retrofit2.Response;
 
 /**
  * Repository class to handle Firebase Authentication with backend
- * Since backend only uses Firebase ID token, this just validates the token with backend
- * and stores user info locally
+ * Uses PublicAuthApi for initial Firebase auth (no Authorization header)
+ * Uses AuthManager for authenticated API calls after login
  */
 public class FirebaseAuthRepository {
     private static final String TAG = "FirebaseAuthRepository";
     private AuthApi authApi;
+    private PublicAuthApi publicAuthApi;
+    private AuthManager authManager;
 
-    public FirebaseAuthRepository() {
-        this.authApi = ApiClient.get().create(AuthApi.class);
+    public FirebaseAuthRepository(AuthManager authManager) {
+        this.authManager = authManager;
+        // Use authenticated ApiClient for protected endpoints
+        this.authApi = ApiClient.get(authManager).create(AuthApi.class);
+        // Use public ApiClient for Firebase auth endpoint (no auth header)
+        this.publicAuthApi = ApiClient.get().create(PublicAuthApi.class);
     }
 
     /**
      * Validate Firebase ID token with backend and sync user data
-     * Backend returns user info but no separate JWT (uses Firebase ID token directly)
+     * Uses PublicAuthApi to avoid adding Authorization header to initial auth request
      */
     public void authenticateWithFirebase(String idToken, FirebaseAuthCallback callback) {
         FirebaseAuthDto request = new FirebaseAuthDto(idToken);
         
-        Call<FirebaseAuthResponse> call = authApi.firebaseAuth(request);
+        // Use public API for initial Firebase authentication
+        Call<FirebaseAuthResponse> call = publicAuthApi.firebaseAuth(request);
         call.enqueue(new Callback<FirebaseAuthResponse>() {
             @Override
             public void onResponse(Call<FirebaseAuthResponse> call, Response<FirebaseAuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     FirebaseAuthResponse authResponse = response.body();
                     Log.d(TAG, "Firebase auth successful: " + authResponse.message);
-                    // Backend validates token and returns user data
-                    // No separate JWT token needed - we'll use Firebase ID token directly
-                    callback.onSuccess(authResponse, idToken);
+                    // Get the current Firebase ID token (may have been refreshed by interceptor)
+                    String currentToken = authManager.getCachedToken();
+                    callback.onSuccess(authResponse, currentToken != null ? currentToken : idToken);
                 } else {
                     Log.e(TAG, "Firebase auth failed: " + response.code() + " - " + response.message());
                     callback.onError("Authentication failed: " + response.message());
@@ -53,6 +62,13 @@ public class FirebaseAuthRepository {
                 callback.onError("Network error: " + t.getMessage());
             }
         });
+    }
+
+    /**
+     * Make authenticated API calls - the interceptor will automatically handle tokens
+     */
+    public AuthApi getAuthenticatedApi() {
+        return authApi;
     }
 
     /**
