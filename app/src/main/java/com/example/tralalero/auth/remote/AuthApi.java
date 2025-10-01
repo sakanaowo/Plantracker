@@ -1,5 +1,7 @@
 package com.example.tralalero.auth.remote;
 
+import com.example.tralalero.auth.remote.dto.FirebaseAuthDto;
+import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
 import com.example.tralalero.auth.remote.dto.LoginRequest;
 import com.example.tralalero.auth.remote.dto.LoginResponse;
 import com.example.tralalero.auth.remote.dto.UserDto;
@@ -15,6 +17,9 @@ public interface AuthApi {
 
     @POST("users/local/signup")
     Call<LoginResponse> register(@Body LoginRequest request);
+
+    @POST("firebase/auth")
+    Call<FirebaseAuthResponse> firebaseAuth(@Body FirebaseAuthDto request);
 
     @GET("users/me")
     Call<UserDto> getMe();

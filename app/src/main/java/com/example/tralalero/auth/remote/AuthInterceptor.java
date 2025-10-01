@@ -47,6 +47,8 @@ public class AuthInterceptor implements okhttp3.Interceptor {
 
     private boolean shouldSkipAuth(String path) {
         // Khai báo các route public của BE nếu có
-        return path.startsWith("/auth/public") || path.startsWith("/health");
+        return path.startsWith("/auth/public") || 
+               path.startsWith("/health") || 
+               path.equals("/firebase/auth"); // Firebase auth endpoint is public
     }
 }

@@ -17,6 +17,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.tralalero.App.App;
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
+import com.example.tralalero.auth.repository.FirebaseAuthRepository;
+import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
+import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.home.ui.HomeActivity;
@@ -84,7 +87,12 @@ public class ContinueWithGoogle extends AppCompatActivity {
             }
 
             String idToken = account.getIdToken();
+            if (idToken == null) {
+                Toast.makeText(this, "Failed to get ID token", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
+            // First, authenticate with Firebase (existing flow)
             AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
 
             FirebaseAuth.getInstance().signInWithCredential(credential)
@@ -92,14 +100,10 @@ public class ContinueWithGoogle extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                             if (user != null) {
-                                Log.d(TAG,  "Firebase sign-in success: " + user.getEmail());
-
-                                // 👉 Điều hướng HomeActivity (giống navigateToHome trong LoginActivity)
-                                Intent intent = new Intent(ContinueWithGoogle.this, com.example.tralalero.feature.home.ui.HomeActivity.class);
-                                intent.putExtra("user_name", user.getDisplayName());
-                                intent.putExtra("user_email", user.getEmail());
-                                startActivity(intent);
-                                finish();
+                                Log.d(TAG, "Firebase sign-in success: " + user.getEmail());
+                                
+                                // 👉 Now authenticate with backend using Firebase ID token
+                                authenticateWithBackend(idToken, user);
                             }
                         } else {
                             Log.w(TAG, "signInWithCredential failed", task.getException());
@@ -110,6 +114,46 @@ public class ContinueWithGoogle extends AppCompatActivity {
         } catch (ApiException e) {
             Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
         }
+    }
+
+    /**
+     * Authenticate with backend API using Firebase ID token
+     */
+    private void authenticateWithBackend(String idToken, FirebaseUser firebaseUser) {
+        FirebaseAuthRepository repository = new FirebaseAuthRepository();
+        
+        repository.authenticateWithFirebase(idToken, new FirebaseAuthRepository.FirebaseAuthCallback() {
+            @Override
+            public void onSuccess(FirebaseAuthResponse response, String firebaseIdToken) {
+                Log.d(TAG, "Backend authentication successful: " + response.message);
+                
+                // Save Firebase ID token and user info using TokenManager
+                TokenManager tokenManager = new TokenManager(ContinueWithGoogle.this);
+                tokenManager.saveAuthData(
+                    firebaseIdToken,  // Store Firebase ID token instead of separate JWT
+                    firebaseUser.getUid(),
+                    firebaseUser.getEmail(), 
+                    firebaseUser.getDisplayName()
+                );
+                
+                // Navigate to HomeActivity with user data
+                Intent intent = new Intent(ContinueWithGoogle.this, com.example.tralalero.feature.home.ui.HomeActivity.class);
+                intent.putExtra("user_name", firebaseUser.getDisplayName());
+                intent.putExtra("user_email", firebaseUser.getEmail());
+                intent.putExtra("firebase_id_token", firebaseIdToken); // Pass Firebase ID token
+                startActivity(intent);
+                finish();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Backend authentication failed: " + error);
+                Toast.makeText(ContinueWithGoogle.this, "Authentication failed: " + error, Toast.LENGTH_LONG).show();
+                
+                // Optionally sign out from Firebase on backend auth failure
+                FirebaseAuth.getInstance().signOut();
+            }
+        });
     }
 
 }
