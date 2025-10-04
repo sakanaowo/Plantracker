@@ -3,6 +3,7 @@ package com.example.tralalero.auth.remote;
 import android.app.Application;
 import android.util.Log;
 
+import com.example.tralalero.App.App;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -90,6 +91,12 @@ public class AuthManager {
         auth.signOut();
         cachedExpiryEpochSec = 0;
         cachedIdToken = null;
+
+        // Clear stored auth data from SharedPreferences
+        if (App.tokenManager != null) {
+            App.tokenManager.clearAuthData();
+            Log.d(TAG, "Cleared auth data from SharedPreferences");
+        }
     }
 
     /**
