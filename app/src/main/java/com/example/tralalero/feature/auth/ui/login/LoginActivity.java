@@ -60,8 +60,6 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
 
         etPassword.setOnTouchListener((v, event) -> {
-            final int DRAWABLE_END = 2; // index: 0=start, 1=top, 2=end, 3=bottom
-
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 // Kiểm tra click vào khu vực icon bên phải
                 if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {

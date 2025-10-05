@@ -1,4 +1,4 @@
-package com.example.tralalero.feature.home.model;
+package com.example.tralalero.model;
 
 import com.google.gson.annotations.SerializedName;
 

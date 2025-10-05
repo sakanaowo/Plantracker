@@ -17,9 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tralalero.App.App;
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
-import com.example.tralalero.feature.home.adapter.WorkspaceAdapter;
-import com.example.tralalero.feature.home.api.WorkspaceApiService;
-import com.example.tralalero.feature.home.model.Workspace;
+import com.example.tralalero.adapter.WorkspaceAdapter;
+import com.example.tralalero.network.api.WorkspaceApiService;
+import com.example.tralalero.model.Workspace;
 import com.example.tralalero.network.ApiClient;
 
 import java.util.List;
@@ -51,7 +51,8 @@ public class WorkspaceActivity extends ActivityActivity{
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
         btnCreateBoard.setOnClickListener(v -> {
             Intent intent = new Intent(WorkspaceActivity.this, NewBoard.class);
-            startActivityForResult(intent, 100); // 100 là requestCode
+            //startActivityForResult(intent, 100);
+            startActivity(intent);
         });
 
 
@@ -128,23 +129,9 @@ public class WorkspaceActivity extends ActivityActivity{
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-            String workspaceName = data.getStringExtra("workspace_name");
-            String visibility = data.getStringExtra("visibility");
-            String background = data.getStringExtra("background");
-
-            // Tạo object mới
-            Workspace newWorkspace = new Workspace("",workspaceName,"","");
-
-            // Thêm vào list của adapter
-            workspaceAdapter.addWorkspace(newWorkspace);
-
-
-            // Scroll xuống cuối
-
-        }
+        String workspaceName = data.getStringExtra("workspace_name");
+        Workspace newWorkspace = new Workspace("",workspaceName,"","");
+        workspaceAdapter.addWorkspace(newWorkspace);
     }
 
-
 }
-
