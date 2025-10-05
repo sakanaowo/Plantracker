@@ -1,4 +1,4 @@
-package com.example.tralalero.feature.home.adapter;
+package com.example.tralalero.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.feature.home.model.Workspace;
+import com.example.tralalero.model.Workspace;
 
 import java.util.ArrayList;
 import java.util.List;
