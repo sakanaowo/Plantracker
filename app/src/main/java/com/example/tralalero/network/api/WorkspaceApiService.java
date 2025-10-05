@@ -1,6 +1,6 @@
 package com.example.tralalero.network.api;
 
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.model.Workspace.Workspace;
 
 import java.util.List;
 
