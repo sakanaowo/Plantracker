@@ -35,7 +35,7 @@
             android:name=".feature.auth.ui.forgot.ForgotPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.HomeActivity"
+            android:name=".feature.home.ui.Home.HomeActivity"
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.AccountActivity"
@@ -52,10 +52,10 @@
         <activity android:name=".feature.auth.ui.login.ContinueWithGoogle"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.WorkspaceActivity"
+            android:name=".feature.home.ui.Home.WorkspaceActivity"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
+            android:name=".feature.home.ui.Home.ProjectActivity"
             android:exported="false" />
     </application>
 

@@ -3,33 +3,23 @@ package com.example.tralalero.feature.auth.ui.login;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.tralalero.App.App;
-import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.repository.FirebaseAuthRepository;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
 import com.example.tralalero.auth.storage.TokenManager;
-import com.example.tralalero.feature.auth.ui.login.LoginActivity;
-import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
-import com.example.tralalero.feature.home.ui.HomeActivity;
+import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
@@ -151,7 +141,7 @@ public class ContinueWithGoogle extends AppCompatActivity {
                             );
 
                             // Navigate to HomeActivity with user data
-                            Intent intent = new Intent(ContinueWithGoogle.this, com.example.tralalero.feature.home.ui.HomeActivity.class);
+                            Intent intent = new Intent(ContinueWithGoogle.this, HomeActivity.class);
                             intent.putExtra("user_name", firebaseUser.getDisplayName());
                             intent.putExtra("user_email", firebaseUser.getEmail());
                             intent.putExtra("firebase_id_token", firebaseIdToken);

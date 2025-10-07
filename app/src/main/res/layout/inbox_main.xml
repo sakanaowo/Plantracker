@@ -46,7 +46,7 @@
                 android:textSize="14sp" />
 
             <ImageButton
-                android:id="@+id/btnCloseNotification"
+                android:id="@+id/btnClosePjrDetail"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_alignParentEnd="true"
