@@ -4,4 +4,15 @@
     <color name="white">#FFFFFFFF</color>
     <color name="link_normal">#1E88E5</color>
     <color name="link_pressed">#1565C0</color>
+    
+    <!-- Primary colors -->
+    <color name="primary">#6200EE</color>
+    <color name="primary_dark">#3700B3</color>
+    
+    <!-- Light mode colors -->
+    <color name="background">#F5F5F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#000000</color>
+    <color name="on_surface_variant">#666666</color>
+    <color name="divider">#E0E0E0</color>
 </resources>

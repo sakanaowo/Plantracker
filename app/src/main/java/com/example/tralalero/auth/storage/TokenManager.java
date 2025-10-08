@@ -86,4 +86,11 @@ public class TokenManager {
         editor.remove(KEY_USER_NAME);
         editor.apply();
     }
+
+    /**
+     * Clear all data (for account deletion)
+     */
+    public void clearAll() {
+        prefs.edit().clear().apply();
+    }
 }
