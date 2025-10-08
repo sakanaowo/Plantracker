@@ -2,6 +2,7 @@ package com.example.tralalero.network.api;
 
 import com.example.tralalero.model.Workspace;
 import com.example.tralalero.model.Project;
+import com.example.tralalero.model.Board;
 
 import java.util.List;
 
@@ -19,4 +20,8 @@ public interface WorkspaceApiService {
     // POST tạo project mới
     @POST("projects")
     Call<Project> createProject(@Body Project project);
+
+    // GET danh sách boards theo projectId 
+    @GET("boards")
+    Call<List<Board>> getBoards(@Query("projectId") String projectId);
 }

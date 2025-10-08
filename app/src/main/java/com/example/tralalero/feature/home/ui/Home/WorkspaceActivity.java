@@ -107,8 +107,9 @@ public class WorkspaceActivity extends ActivityActivity {
             Log.d(TAG, "Clicked workspace: " + projectName + " (ID: " + projectId + ")");
 
             Intent intent = new Intent(WorkspaceActivity.this, ProjectActivity.class);
-            intent.putExtra("PROJECT_ID", projectId);
-            intent.putExtra("PROJECT_NAME", projectName);
+            intent.putExtra("project_id", projectId);  // Sửa thành chữ thường để match với ProjectActivity
+            intent.putExtra("project_name", projectName);  // Sửa thành chữ thường
+            intent.putExtra("workspace_id", workspaceId);  // Thêm workspace_id
             startActivity(intent);
         });
 

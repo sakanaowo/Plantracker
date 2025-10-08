@@ -15,6 +15,7 @@
         app:cardCornerRadius="8dp">
 
         <CheckBox
+            android:id="@+id/checkBoxTask"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="task name"

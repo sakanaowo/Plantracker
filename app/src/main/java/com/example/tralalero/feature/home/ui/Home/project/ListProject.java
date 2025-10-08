@@ -10,30 +10,45 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.tralalero.R;
-import com.example.tralalero.feature.home.ui.Activity.ListFragment;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.example.tralalero.model.Task;
 
 public class ListProject extends Fragment {
-
+    private static final String TAG = "ListProject";
     private static final String ARG_TYPE = "type";
+    private static final String ARG_PROJECT_ID = "project_id";
 
     public static ListProject newInstance(String type) {
-        ListProject fragment = new ListProject();       Bundle args = new Bundle();
+        ListProject fragment = new ListProject();
+        Bundle args = new Bundle();
         args.putString(ARG_TYPE, type);
         fragment.setArguments(args);
         return fragment;
     }
 
+    public static ListProject newInstance(String type, String projectId) {
+        ListProject fragment = new ListProject();
+        Bundle args = new Bundle();
+        args.putString(ARG_TYPE, type);
+        args.putString(ARG_PROJECT_ID, projectId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     private String type;
+    private String projectId;
+    private ListProjectViewModel viewModel;
+    private TaskAdapter taskAdapter;
+    private ProgressBar progressBar;
+    private TextView emptyView;
 
     @Nullable
     @Override
@@ -42,59 +57,97 @@ public class ListProject extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_list_frm, container, false);
 
+        // Initialize views
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        // Get arguments
         if (getArguments() != null) {
             type = getArguments().getString(ARG_TYPE);
-        }
-//      TODO : lấy dữ liệu từ api
-        // ví dụ dữ liệu test
-        List<String> data = new ArrayList<>();
-        switch (type) {
-            case "TO DO":
-                data.add("All item 1");
-                data.add("All item 2");
-                break;
-            case "IN PROGRESS":
-                data.add("Mention 1");
-                data.add("Mention 2");
-                break;
-            case "DONE":
-                data.add("Unread 1");
-                data.add("Unread 2");
-                break;
+            projectId = getArguments().getString(ARG_PROJECT_ID);
         }
 
-        // set adapter
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_list_item_1,
-                data
-        );
+        // Initialize ViewModel
+        viewModel = new ViewModelProvider(this).get(ListProjectViewModel.class);
 
-        recyclerView.setAdapter(new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            @NonNull
-            @Override
-            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                View itemView = LayoutInflater.from(parent.getContext())
-                        .inflate(android.R.layout.simple_list_item_1, parent, false);
-                return new RecyclerView.ViewHolder(itemView) {};
-            }
-
-            @Override
-            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-                TextView textView = holder.itemView.findViewById(android.R.id.text1);
-                textView.setText(data.get(position));
-            }
-
-            @Override
-            public int getItemCount() {
-                return data.size();
-            }
+        // Initialize adapter with click listener
+        taskAdapter = new TaskAdapter(task -> {
+            // Handle task click
+            Toast.makeText(getContext(), "Clicked: " + task.getTitle(), Toast.LENGTH_SHORT).show();
+            // TODO: Navigate to task detail screen
         });
+
+        recyclerView.setAdapter(taskAdapter);
+
+        // Observe ViewModel data
+        observeViewModel();
+
+        // Load tasks based on status
+        if (projectId != null && !projectId.isEmpty()) {
+            loadTasksForStatus();
+        } else {
+            Log.w(TAG, "No project ID provided, using sample data");
+            // Fallback to sample data if no project ID
+            // This can be removed when integration is complete
+        }
 
         return view;
     }
 
+    private void observeViewModel() {
+        // Observe tasks
+        viewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> {
+            if (tasks != null) {
+                taskAdapter.setTasks(tasks);
+                Log.d(TAG, "Tasks updated: " + tasks.size() + " tasks for " + type);
+            }
+        });
+
+        // Observe loading state
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            // TODO: Show/hide progress bar
+            // if (progressBar != null) {
+            //     progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            // }
+        });
+
+        // Observe errors
+        viewModel.getError().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error: " + error);
+            }
+        });
+    }
+
+    private void loadTasksForStatus() {
+        // Map fragment type to API status
+        String status;
+        switch (type) {
+            case "TO DO":
+                status = "TO_DO";
+                break;
+            case "IN PROGRESS":
+                status = "IN_PROGRESS";
+                break;
+            case "DONE":
+                status = "DONE";
+                break;
+            default:
+                status = "TO_DO";
+                break;
+        }
+
+        Log.d(TAG, "Loading tasks for project: " + projectId + ", status: " + status);
+        viewModel.loadTasks(projectId, status);
+    }
+
+    /**
+     * Method to refresh tasks (can be called from parent activity)
+     */
+    public void refreshTasks() {
+        if (projectId != null && !projectId.isEmpty()) {
+            loadTasksForStatus();
+        }
+    }
 }
