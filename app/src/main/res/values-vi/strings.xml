@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tralalero</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Mật khẩu</string>
+    <string name="action_sign_in">Đăng nhập hoặc Đăng ký</string>
+    <string name="action_sign_in_short">Đăng ký</string>
+    <string name="welcome">Chào mừng!</string>
+    <string name="invalid_username">Tên người dùng không hợp lệ</string>
+    <string name="invalid_password">Mật khẩu phải dài hơn 5 ký tự</string>
+    <string name="login_failed">Đăng nhập thất bại</string>
+    <string name="client_id">710677395196-0f5krq4gdk0hht5ahn2lsk3c1pr0oa25.apps.googleusercontent.com</string>
+    <string name="change_language_title">Ngôn ngữ</string>
+
+    <!-- Account Screen -->
+    <string name="account_title">Tài khoản</string>
+    <string name="workspaces_title">Không gian làm việc</string>
+    <string name="general_title">Chung</string>
+    <string name="offline_boards">Bảng ngoại tuyến</string>
+    <string name="browse_templates">Duyệt mẫu</string>
+    <string name="settings">Cài đặt</string>
+    <string name="share_feedback">Chia sẻ phản hồi</string>
+    <string name="help">Trợ giúp</string>
+    <string name="boards">Bảng</string>
+    <string name="inbox">Hộp thư</string>
+    <string name="activity">Hoạt động</string>
+    <string name="account">Tài khoản</string>
+</resources>

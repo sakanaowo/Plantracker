@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.model.Workspace.Workspace;
 
 import java.util.ArrayList;
 import java.util.List;
