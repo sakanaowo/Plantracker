@@ -13,22 +13,19 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.App.App;
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
-import com.example.tralalero.adapter.HomeAdapter;
 import com.example.tralalero.adapter.WorkspaceAdapter;
 import com.example.tralalero.feature.home.ui.AccountActivity;
 import com.example.tralalero.feature.home.ui.ActivityActivity;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.feature.home.ui.NewBoard;
 import com.example.tralalero.model.Project;
-import com.example.tralalero.model.Workspace;
-import com.example.tralalero.network.api.WorkspaceApiService;
+import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.network.ApiClient;
 
 import java.util.List;

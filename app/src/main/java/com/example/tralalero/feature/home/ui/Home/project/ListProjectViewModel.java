@@ -10,8 +10,8 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.model.Task;
 import com.example.tralalero.model.Board;
 import com.example.tralalero.network.ApiClient;
-import com.example.tralalero.network.api.TaskApiService;
-import com.example.tralalero.network.api.WorkspaceApiService;
+import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.WorkspaceApiService;
 
 import java.util.List;
 import java.util.ArrayList;

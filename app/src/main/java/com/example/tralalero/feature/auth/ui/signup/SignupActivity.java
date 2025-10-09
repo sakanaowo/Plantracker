@@ -22,8 +22,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
-import com.example.tralalero.auth.remote.dto.LoginRequest;
-import com.example.tralalero.auth.remote.dto.LoginResponse;
+import com.example.tralalero.data.remote.dto.auth.LoginRequest;
+import com.example.tralalero.data.remote.dto.auth.LoginResponse;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.example.tralalero.network.ApiClient;

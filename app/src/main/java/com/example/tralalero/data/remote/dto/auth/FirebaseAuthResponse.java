@@ -1,4 +1,4 @@
-package com.example.tralalero.auth.remote.dto;
+package com.example.tralalero.data.remote.dto.auth;
 
 /**
  * Response from Firebase authentication endpoint

@@ -26,7 +26,7 @@ import com.example.tralalero.feature.home.ui.ActivityActivity;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.model.Workspace;
 import com.example.tralalero.network.ApiClient;
-import com.example.tralalero.network.api.HomeApiService;
+import com.example.tralalero.data.remote.api.HomeApiService;
 
 import java.util.List;
 

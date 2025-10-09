@@ -1,11 +1,11 @@
 package com.example.tralalero.auth.remote;
 
 import com.example.tralalero.auth.remote.dto.FirebaseAuthDto;
-import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
-import com.example.tralalero.auth.remote.dto.LoginRequest;
-import com.example.tralalero.auth.remote.dto.LoginResponse;
+import com.example.tralalero.data.remote.dto.auth.FirebaseAuthResponse;
+import com.example.tralalero.data.remote.dto.auth.LoginRequest;
+import com.example.tralalero.data.remote.dto.auth.LoginResponse;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
-import com.example.tralalero.auth.remote.dto.UserDto;
+import com.example.tralalero.data.remote.dto.auth.UserDto;
 
 import retrofit2.Call;
 import retrofit2.http.Body;

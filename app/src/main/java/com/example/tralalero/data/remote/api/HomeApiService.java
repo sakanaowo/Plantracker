@@ -1,4 +1,4 @@
-package com.example.tralalero.network.api;
+package com.example.tralalero.data.remote.api;
 
 import com.example.tralalero.model.Workspace;
 

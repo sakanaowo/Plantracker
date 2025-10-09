@@ -103,7 +103,7 @@ Xử lý tất cả các API calls và network configuration
 com.example.tralalero.network.ApiClient
     └── Cấu hình Retrofit, OkHttp, Interceptors
 
-com.example.tralalero.network.api.WorkspaceApiService
+com.example.tralalero.data.remote.api.WorkspaceApiService
     └── API endpoints cho Workspace
 ```
 

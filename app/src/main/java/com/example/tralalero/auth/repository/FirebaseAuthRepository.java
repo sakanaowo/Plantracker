@@ -6,7 +6,7 @@ import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.remote.PublicAuthApi;
 import com.example.tralalero.auth.remote.dto.FirebaseAuthDto;
-import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
+import com.example.tralalero.data.remote.dto.auth.FirebaseAuthResponse;
 import com.example.tralalero.network.ApiClient;
 
 import retrofit2.Call;

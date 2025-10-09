@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,7 +27,7 @@ import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
-import com.example.tralalero.auth.remote.dto.UserDto;
+import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -38,7 +37,6 @@ import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 

@@ -22,7 +22,11 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
         }
         release {
-            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://plantracker-backend.onrender.com/api/\""
+            )
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -56,6 +60,9 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
     annotationProcessor("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-android:2.9.4")
 
 
     implementation(platform(libs.firebase.bom))
