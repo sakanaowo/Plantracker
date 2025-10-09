@@ -16,7 +16,7 @@
         >
 
         <ImageButton
-            android:id="@+id/btnCloseNotification"
+            android:id="@+id/btnClosePjrDetail"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_alignParentEnd="true"
@@ -51,28 +51,30 @@
 
     </LinearLayout>
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/board_viewPager"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout1"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerContainer"
-        app:layout_constraintBottom_toTopOf="@id/board_indicator"
-        />
-
-    <!-- Indicator chấm -->
-    <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
-        android:id="@+id/board_indicator"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:dotsColor="@android:color/darker_gray"
-        app:selectedDotColor="@android:color/black"
-        app:dotsSpacing="6dp"
-        app:dotsSize="8dp"
-        app:layout_constraintTop_toBottomOf="@id/board_viewPager"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:tabIndicatorFullWidth="false"
+        app:tabIndicatorColor="@android:color/black"
+        app:tabSelectedTextColor="@android:color/black"
+        app:tabTextColor="@android:color/darker_gray"
+        app:tabGravity="fill"
+        app:tabMode="fixed"
+        app:layout_constraintTop_toBottomOf="@id/headerContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/PrjViewPager2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
 

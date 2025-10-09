@@ -11,83 +11,83 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.model.Project;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class WorkspaceAdapter extends RecyclerView.Adapter<WorkspaceAdapter.WorkspaceViewHolder> {
     
-    private List<Workspace> workspaceList;
+    private List<Project> projectList;
     private Context context;
-    private OnWorkspaceClickListener listener;
+    private OnProjectClickListener listener;
 
-    public interface OnWorkspaceClickListener {
-        void onWorkspaceClick(Workspace workspace);
+    public interface OnProjectClickListener {
+        void onProjectClick(Project project);
     }
 
     public WorkspaceAdapter(Context context) {
         this.context = context;
-        this.workspaceList = new ArrayList<>();
+        this.projectList = new ArrayList<>();
     }
 
-    public void setOnWorkspaceClickListener(OnWorkspaceClickListener listener) {
+    public void setOnProjectClickListener(OnProjectClickListener listener) {
         this.listener = listener;
     }
 
-    public void setWorkspaceList(List<Workspace> workspaceList) {
-        this.workspaceList = workspaceList != null ? workspaceList : new ArrayList<>();
+    public void setProjectList(List<Project> projectList) {
+        this.projectList = projectList != null ? projectList : new ArrayList<>();
         notifyDataSetChanged();
     }
 
-    public void addWorkspace(Workspace workspace) {
-        if (workspace != null) {
-            workspaceList.add(workspace);
-            notifyItemInserted(workspaceList.size() - 1);
+    public void addProject(Project project) {
+        if (project != null) {
+            projectList.add(project);
+            notifyItemInserted(projectList.size() - 1);
         }
     }
 
     @NonNull
     @Override
     public WorkspaceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.your_workspace_item, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.project_item, parent, false);
         return new WorkspaceViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull WorkspaceViewHolder holder, int position) {
-        Workspace workspace = workspaceList.get(position);
-        holder.bind(workspace);
+        Project project = projectList.get(position);
+        holder.bind(project);
     }
 
     @Override
     public int getItemCount() {
-        return workspaceList.size();
+        return projectList.size();
     }
 
     public class WorkspaceViewHolder extends RecyclerView.ViewHolder {
-        private ImageButton workspaceIcon;
-        private TextView workspaceName;
+        private ImageButton projectIcon;
+        private TextView projectName;
 
         public WorkspaceViewHolder(@NonNull View itemView) {
             super(itemView);
-            workspaceIcon = itemView.findViewById(R.id.animalImageButton);
-            workspaceName = itemView.findViewById(R.id.tvSubtitle);
+            projectIcon = itemView.findViewById(R.id.animalImageButton);
+            projectName = itemView.findViewById(R.id.tvSubtitle);
         }
 
-        public void bind(Workspace workspace) {
-            workspaceName.setText(workspace.getName());
-            
-            // Set icon based on workspace type or use a default icon
-            if ("PERSONAL".equals(workspace.getType())) {
-                workspaceIcon.setImageResource(R.drawable.acc_icon);
+        public void bind(Project project) {
+            projectName.setText(project.getName());
+
+            // Set icon based on board type
+            if ("KANBAN".equals(project.getBoardType())) {
+                projectIcon.setImageResource(R.drawable.board_icon1);
             } else {
-                workspaceIcon.setImageResource(R.drawable.board_icon1);
+                projectIcon.setImageResource(R.drawable.workspace);
             }
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onWorkspaceClick(workspace);
+                    listener.onProjectClick(project);
                 }
             });
         }

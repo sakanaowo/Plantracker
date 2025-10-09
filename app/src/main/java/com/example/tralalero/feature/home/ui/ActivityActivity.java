@@ -30,7 +30,7 @@ public class ActivityActivity extends AppCompatActivity {
         });
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
-        ViewPager2 viewPager2 = findViewById(R.id.viewPager2);
+        ViewPager2 viewPager2 = findViewById(R.id.PrjViewPager2);
         ListFrmAdapter adapter = new ListFrmAdapter(this);
         viewPager2.setAdapter(adapter);
 

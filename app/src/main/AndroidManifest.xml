@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +21,7 @@
         android:name=".App.App"
         android:theme="@style/Theme.Tralalero"
         android:usesCleartextTraffic="true">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -35,7 +41,7 @@
             android:name=".feature.auth.ui.forgot.ForgotPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.HomeActivity"
+            android:name=".feature.home.ui.Home.HomeActivity"
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.AccountActivity"
@@ -52,11 +58,33 @@
         <activity android:name=".feature.auth.ui.login.ContinueWithGoogle"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.WorkspaceActivity"
+            android:name=".feature.home.ui.Home.WorkspaceActivity"
             android:exported="false" />
         <activity
-            android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
+            android:name=".feature.home.ui.Home.ProjectActivity"
             android:exported="false" />
+
+
+
+
+        <activity
+            android:name=".feature.home.ui.ActivityTimer"
+            android:exported="false"
+            />
+        <activity
+            android:name=".feature.home.ui.SettingsActivity"
+            android:theme="@style/Theme.Tralalero"/>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

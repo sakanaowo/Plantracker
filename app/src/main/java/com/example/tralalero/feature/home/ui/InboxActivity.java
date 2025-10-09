@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -33,7 +32,7 @@ public class InboxActivity extends AppCompatActivity {
         });
 
         RelativeLayout notiLayout = findViewById(R.id.notificationLayout);
-        ImageButton btnCloseNotification = findViewById(R.id.btnCloseNotification);
+        ImageButton btnCloseNotification = findViewById(R.id.btnClosePjrDetail);
         btnCloseNotification.setOnClickListener(v -> notiLayout.setVisibility(View.GONE));
 
         LinearLayout inboxQuickAccess = findViewById(R.id.inboxQuickAccess);

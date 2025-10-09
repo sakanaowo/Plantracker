@@ -144,7 +144,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="visible"
+                android:visibility="gone"
                 >
 
 
@@ -196,30 +196,28 @@
 <!--        />-->
 
 
-    <LinearLayout
-        android:id="@+id/default_button"
+    <TextView
+        android:id="@+id/workspaceTittle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="32dp"
-        android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/inboxContainer"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="12dp"
+        android:text="YOUR WORKSPACE"
+        android:textSize="20sp"
+        android:textStyle="bold"/>
 
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/workspace"
-            />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Default"
-            android:layout_marginStart="8dp"
-            android:textSize="24sp"
-            android:textStyle="bold"/>
-
-    </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/workspaceTittle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
+        android:layout_margin="8dp"
+        android:id="@+id/recyclerBoard"
+        tools:listitem="@layout/workspace_item"
+        />
 
     <LinearLayout
 

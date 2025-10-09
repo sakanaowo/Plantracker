@@ -1,0 +1,66 @@
+package com.example.tralalero.adapter;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CheckBox;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.tralalero.R;
+import com.example.tralalero.model.Task;
+
+import java.util.List;
+
+public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
+    private List<Task> taskList;
+
+    public TaskAdapter(List<Task> taskList) {
+        this.taskList = taskList;
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.board_list_item, parent, false);
+        return new ViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Task task = taskList.get(position);
+        holder.bind(task);
+    }
+
+    @Override
+    public int getItemCount() {
+        return taskList.size();
+    }
+
+    public void updateTasks(List<Task> newTasks) {
+        this.taskList = newTasks;
+        notifyDataSetChanged();
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        CheckBox checkBox;
+
+        ViewHolder(View itemView) {
+            super(itemView);
+            checkBox = itemView.findViewById(R.id.checkBoxTask);
+        }
+
+        void bind(Task task) {
+            checkBox.setText(task.getTitle());
+
+            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                checkBox.setAlpha(isChecked ? 0.5f : 1f);
+                // TODO: Gọi API để update trạng thái task
+            });
+
+            itemView.setOnClickListener(v -> checkBox.toggle());
+        }
+    }
+}

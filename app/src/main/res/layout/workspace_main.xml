@@ -10,7 +10,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Your workspaces"
+        android:text="Your Projects"
         android:textSize="36sp"
         android:textStyle="bold"
         android:padding="16dp"
@@ -76,7 +76,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/btn_create_board"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        tools:listitem="@layout/your_workspace_item"
+                tools:listitem="@layout/workspace_item"
         tools:listitemHeader="@layout/your_workspacxe_header"/>
 
     <LinearLayout
@@ -101,7 +101,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Create board"
+            android:text="Create Project"
             android:textColor="@color/white"
             android:layout_marginStart="8dp"
             android:textSize="16sp"

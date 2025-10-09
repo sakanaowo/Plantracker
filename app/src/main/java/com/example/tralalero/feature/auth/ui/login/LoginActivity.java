@@ -11,7 +11,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -24,8 +23,8 @@ import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.LoginRequest;
 import com.example.tralalero.auth.remote.dto.LoginResponse;
+import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.example.tralalero.network.ApiClient;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -60,8 +59,6 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
 
         etPassword.setOnTouchListener((v, event) -> {
-            final int DRAWABLE_END = 2; // index: 0=start, 1=top, 2=end, 3=bottom
-
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 // Kiểm tra click vào khu vực icon bên phải
                 if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {
@@ -170,7 +167,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHome(LoginResponse body) {
-        Intent intent = new Intent(LoginActivity.this, com.example.tralalero.feature.home.ui.HomeActivity.class);
+        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         if (body != null && body.user != null) {
             intent.putExtra("user_name", body.user.name);
             intent.putExtra("user_email", body.user.email);
