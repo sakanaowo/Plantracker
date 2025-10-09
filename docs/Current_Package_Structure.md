@@ -211,7 +211,7 @@ com.example.tralalero.adapter.WorkspaceAdapter
 ### 6. **Model Package** - `com.example.tralalero.model`
 
 ```
-com.example.tralalero.model.Workspace
+com.example.tralalero.model.Workspace.Workspace
     └── Domain model cho Workspace
 ```
 

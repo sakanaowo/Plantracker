@@ -19,7 +19,7 @@ import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.WorkspaceAdapter;
 import com.example.tralalero.network.api.WorkspaceApiService;
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.model.Workspace.Workspace;
 import com.example.tralalero.network.ApiClient;
 
 import java.util.List;

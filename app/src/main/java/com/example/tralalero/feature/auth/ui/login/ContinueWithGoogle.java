@@ -3,33 +3,25 @@ package com.example.tralalero.feature.auth.ui.login;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.tralalero.App.App;
-import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.repository.FirebaseAuthRepository;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.remote.dto.FirebaseAuthResponse;
 import com.example.tralalero.auth.storage.TokenManager;
-import com.example.tralalero.feature.auth.ui.login.LoginActivity;
-import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.home.ui.HomeActivity;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,142 +30,154 @@ import com.google.firebase.auth.GoogleAuthProvider;
 
 public class ContinueWithGoogle extends AppCompatActivity {
     private static final String TAG = "ContinueWithGoogle";
-    private static final int RC_SIGN_IN = 100;
-    private GoogleSignInClient mGoogleSignInClient;
-    private String mClientId;
-    private AuthManager authManager; // Add AuthManager field
-
-
+    
+    private GoogleSignInClient googleSignInClient;
+    private AuthManager authManager;
+    private TokenManager tokenManager;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
+    
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Initialize AuthManager
-        authManager = new AuthManager(getApplication());
-
-        mClientId = getApplicationContext().getString(R.string.client_id);
-        Log.d(TAG, "mClientId: "+ mClientId);
+        
+        // Initialize managers
+        authManager = App.authManager;
+        tokenManager = new TokenManager(this);
+        
+        // Setup Google Sign-In
+        setupGoogleSignIn();
+        
+        // Setup activity result launcher
+        setupGoogleSignInLauncher();
+        
+        // Setup UI
+        Button btnGoogle = findViewById(R.id.btn_google);
+        if (btnGoogle != null) {
+            btnGoogle.setOnClickListener(v -> signInWithGoogle());
+        }
+    }
+    
+    private void setupGoogleSignIn() {
+        String clientId = getString(R.string.client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(mClientId) // lấy từ google-services.json
+                .requestIdToken(clientId)
                 .requestEmail()
                 .build();
-        // Build a GoogleSignInClient with the options specified by gso.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        Button btn_Google = findViewById(R.id.btn_google);
-        if (btn_Google != null) {
-            btn_Google.setOnClickListener(v -> signIn());
-        }
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
     }
-
-    private void signIn() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach
-            // a listener.
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
-        }
-    }
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        Log.d(TAG,"handleSignInResult:");
-        try {
-            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-            if (account == null) {
-                Toast.makeText(this, "Google Sign-In failed", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            String idToken = account.getIdToken();
-            if (idToken == null) {
-                Toast.makeText(this, "Failed to get ID token", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // First, authenticate with Firebase (existing flow)
-            AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-
-            FirebaseAuth.getInstance().signInWithCredential(credential)
-                    .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                            if (user != null) {
-                                Log.d(TAG, "Firebase sign-in success: " + user.getEmail());
-                                
-                                // 👉 Now authenticate with backend using Firebase ID token
-                                authenticateWithBackend(idToken, user);
-                            }
-                        } else {
-                            Log.w(TAG, "signInWithCredential failed", task.getException());
-                            Toast.makeText(ContinueWithGoogle.this, "Firebase login failed", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-        } catch (ApiException e) {
-            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
-        }
-    }
-
-    /**
-     * Authenticate with backend API using Firebase ID token
-     */
-    private void authenticateWithBackend(String googleIdToken, FirebaseUser firebaseUser) {
-        // Wait for Firebase to fully authenticate and get Firebase ID token
-        firebaseUser.getIdToken(true) // Force refresh to get Firebase ID token
-            .addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null) {
-                    String firebaseIdToken = task.getResult().getToken();
-                    Log.d(TAG, "Got Firebase ID token for backend auth");
-
-                    // Now use Firebase ID token (not Google token) for backend
-                    FirebaseAuthRepository repository = new FirebaseAuthRepository(authManager);
-
-                    repository.authenticateWithFirebase(firebaseIdToken, new FirebaseAuthRepository.FirebaseAuthCallback() {
-                        @Override
-                        public void onSuccess(FirebaseAuthResponse response, String firebaseIdToken) {
-                            Log.d(TAG, "Backend authentication successful: " + response.message);
-
-                            // Save Firebase ID token and user info using TokenManager
-                            TokenManager tokenManager = new TokenManager(ContinueWithGoogle.this);
-                            tokenManager.saveAuthData(
-                                firebaseIdToken,  // Store Firebase ID token
-                                firebaseUser.getUid(),
-                                firebaseUser.getEmail(),
-                                firebaseUser.getDisplayName()
-                            );
-
-                            // Navigate to HomeActivity with user data
-                            Intent intent = new Intent(ContinueWithGoogle.this, com.example.tralalero.feature.home.ui.HomeActivity.class);
-                            intent.putExtra("user_name", firebaseUser.getDisplayName());
-                            intent.putExtra("user_email", firebaseUser.getEmail());
-                            intent.putExtra("firebase_id_token", firebaseIdToken);
-                            startActivity(intent);
-                            finish();
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            Log.e(TAG, "Backend authentication failed: " + error);
-                            Toast.makeText(ContinueWithGoogle.this, "Authentication failed: " + error, Toast.LENGTH_LONG).show();
-
-                            // Sign out from Firebase on backend auth failure
-                            FirebaseAuth.getInstance().signOut();
-                        }
-                    });
-                } else {
-                    Log.e(TAG, "Failed to get Firebase ID token", task.getException());
-                    Toast.makeText(ContinueWithGoogle.this, "Failed to get Firebase token", Toast.LENGTH_SHORT).show();
-                    FirebaseAuth.getInstance().signOut();
+    
+    private void setupGoogleSignInLauncher() {
+        googleSignInLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getData() != null) {
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    handleGoogleSignInResult(task);
                 }
+            }
+        );
+    }
+    
+    private void signInWithGoogle() {
+        Intent signInIntent = googleSignInClient.getSignInIntent();
+        googleSignInLauncher.launch(signInIntent);
+    }
+    
+    private void handleGoogleSignInResult(Task<GoogleSignInAccount> task) {
+        if (!task.isSuccessful()) {
+            Exception exception = task.getException();
+            Log.e(TAG, "Google sign-in failed", exception);
+            showError("Google sign-in failed");
+            return;
+        }
+        
+        GoogleSignInAccount account = task.getResult();
+        if (account == null || account.getIdToken() == null) {
+            showError("Failed to get Google account");
+            return;
+        }
+        
+        String googleIdToken = account.getIdToken();
+        signInToFirebase(googleIdToken);
+    }
+    
+    private void signInToFirebase(String googleIdToken) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(googleIdToken, null);
+        
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+            .addOnSuccessListener(authResult -> {
+                FirebaseUser user = authResult.getUser();
+                if (user != null) {
+                    Log.d(TAG, "Firebase sign-in successful: " + user.getEmail());
+                    authenticateWithBackend(user);
+                } else {
+                    showError("Firebase user is null");
+                }
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Firebase sign-in failed", e);
+                showError("Firebase authentication failed");
             });
     }
-
+    
+    private void authenticateWithBackend(FirebaseUser firebaseUser) {
+        // Get Firebase ID token
+        firebaseUser.getIdToken(true)
+            .addOnSuccessListener(result -> {
+                String firebaseIdToken = result.getToken();
+                if (firebaseIdToken == null) {
+                    showError("Failed to get Firebase token");
+                    return;
+                }
+                
+                syncWithBackend(firebaseUser, firebaseIdToken);
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Failed to get Firebase ID token", e);
+                showError("Failed to get authentication token");
+            });
+    }
+    
+    private void syncWithBackend(FirebaseUser firebaseUser, String firebaseIdToken) {
+        FirebaseAuthRepository repository = new FirebaseAuthRepository(authManager);
+        
+        repository.authenticateWithFirebase(firebaseIdToken, new FirebaseAuthRepository.FirebaseAuthCallback() {
+            @Override
+            public void onSuccess(FirebaseAuthResponse response, String token) {
+                Log.d(TAG, "Backend authentication successful: " + response.message);
+                
+                // Save authentication data
+                tokenManager.saveAuthData(
+                    token,
+                    firebaseUser.getUid(),
+                    firebaseUser.getEmail(),
+                    firebaseUser.getDisplayName()
+                );
+                
+                // Navigate to home
+                navigateToHome(firebaseUser);
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Backend authentication failed: " + error);
+                showError("Authentication failed: " + error);
+                FirebaseAuth.getInstance().signOut();
+            }
+        });
+    }
+    
+    private void navigateToHome(FirebaseUser user) {
+        Intent intent = new Intent(this, HomeActivity.class);
+        intent.putExtra("user_name", user.getDisplayName());
+        intent.putExtra("user_email", user.getEmail());
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+    
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
 }
