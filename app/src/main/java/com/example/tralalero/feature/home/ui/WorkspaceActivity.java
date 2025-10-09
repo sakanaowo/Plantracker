@@ -51,7 +51,8 @@ public class WorkspaceActivity extends ActivityActivity{
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
         btnCreateBoard.setOnClickListener(v -> {
             Intent intent = new Intent(WorkspaceActivity.this, NewBoard.class);
-            startActivityForResult(intent, 100); // 100 là requestCode
+            //startActivityForResult(intent, 100);
+            startActivity(intent);
         });
 
 
@@ -128,23 +129,9 @@ public class WorkspaceActivity extends ActivityActivity{
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-            String workspaceName = data.getStringExtra("workspace_name");
-            String visibility = data.getStringExtra("visibility");
-            String background = data.getStringExtra("background");
-
-            // Tạo object mới
-            Workspace newWorkspace = new Workspace("",workspaceName,"","");
-
-            // Thêm vào list của adapter
-            workspaceAdapter.addWorkspace(newWorkspace);
-
-
-            // Scroll xuống cuối
-
-        }
+        String workspaceName = data.getStringExtra("workspace_name");
+        Workspace newWorkspace = new Workspace("",workspaceName,"","");
+        workspaceAdapter.addWorkspace(newWorkspace);
     }
 
-
 }
-

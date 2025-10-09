@@ -21,6 +21,7 @@
         android:name=".App.App"
         android:theme="@style/Theme.Tralalero"
         android:usesCleartextTraffic="true">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -62,6 +63,14 @@
         <activity
             android:name=".feature.home.ui.BoardDetail.MainBoardDetail"
             android:exported="false" />
+
+
+
+
+        <activity
+            android:name=".feature.home.ui.ActivityTimer"
+            android:exported="false"
+            />
         <activity
             android:name=".feature.home.ui.SettingsActivity"
             android:theme="@style/Theme.Tralalero"/>
