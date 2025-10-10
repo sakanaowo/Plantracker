@@ -42,7 +42,7 @@ public class HomeActivity extends AppCompatActivity {
     private HomeAdapter homeAdapter;
     private static final String TAG = "HomeActivity";
 
-    //TODO: viết lại giao diện, các viewmodel theo như chỉnh sửa mới có trong báo cáo ở md 
+    //TODO: viết lại giao diện, các viewmodel theo như chỉnh sửa mới có trong báo cáo ở md
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
