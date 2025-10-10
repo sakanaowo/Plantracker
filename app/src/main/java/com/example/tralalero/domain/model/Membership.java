@@ -74,8 +74,4 @@ public class Membership {
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
-
-    public enum Role {
-        OWNER, ADMIN, MEMBER
-    }
 }

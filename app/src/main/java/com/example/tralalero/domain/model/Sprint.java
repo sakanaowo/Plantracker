@@ -1,5 +1,7 @@
 package com.example.tralalero.domain.model;
 
+import com.example.tralalero.domain.model.SprintState;
+
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -112,9 +114,5 @@ public class Sprint {
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
-    }
-
-    public enum SprintState {
-        PLANNED, ACTIVE, COMPLETED
     }
 }
