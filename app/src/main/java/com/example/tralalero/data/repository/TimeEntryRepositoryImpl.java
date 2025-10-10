@@ -20,6 +20,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
         this.apiService = apiService;
     }
 
+    //TODO: implement missing methods in API service
     @Override
     public void getTimeEntriesByTask(String taskId, RepositoryCallback<List<TimeEntry>> callback) {
         apiService.getTimeEntriesByTask(taskId).enqueue(new Callback<List<TimeEntryDTO>>() {

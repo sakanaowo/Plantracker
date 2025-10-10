@@ -17,6 +17,13 @@ public interface SprintApiService {
     Call<List<SprintDTO>> getSprintsByProject(@Query("projectId") String projectId);
 
     /**
+     * Get active sprint in a project
+     * GET /sprints/active?projectId={projectId}
+     */
+    @GET("sprints/active")
+    Call<SprintDTO> getActiveSprint(@Query("projectId") String projectId);
+
+    /**
      * Get sprint by ID
      * GET /sprints/{id}
      */
@@ -46,5 +53,18 @@ public interface SprintApiService {
      */
     @DELETE("sprints/{id}")
     Call<Void> deleteSprint(@Path("id") String sprintId);
-}
 
+    /**
+     * Start sprint
+     * POST /sprints/{id}/start
+     */
+    @POST("sprints/{id}/start")
+    Call<SprintDTO> startSprint(@Path("id") String sprintId);
+
+    /**
+     * Complete sprint
+     * POST /sprints/{id}/complete
+     */
+    @POST("sprints/{id}/complete")
+    Call<SprintDTO> completeSprint(@Path("id") String sprintId);
+}

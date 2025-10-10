@@ -17,6 +17,20 @@ public interface NotificationApiService {
     Call<List<NotificationDTO>> getNotifications();
 
     /**
+     * Get unread notifications
+     * GET /notifications/unread
+     */
+    @GET("notifications/unread")
+    Call<List<NotificationDTO>> getUnreadNotifications();
+
+    /**
+     * Get notification by ID
+     * GET /notifications/{id}
+     */
+    @GET("notifications/{id}")
+    Call<NotificationDTO> getNotificationById(@Path("id") String notificationId);
+
+    /**
      * Get unread notifications count
      * GET /notifications/unread/count
      */
@@ -28,7 +42,7 @@ public interface NotificationApiService {
      * PATCH /notifications/{id}/read
      */
     @PATCH("notifications/{id}/read")
-    Call<NotificationDTO> markAsRead(@Path("id") String notificationId);
+    Call<Void> markAsRead(@Path("id") String notificationId);
 
     /**
      * Mark all notifications as read
@@ -44,4 +58,3 @@ public interface NotificationApiService {
     @DELETE("notifications/{id}")
     Call<Void> deleteNotification(@Path("id") String notificationId);
 }
-
