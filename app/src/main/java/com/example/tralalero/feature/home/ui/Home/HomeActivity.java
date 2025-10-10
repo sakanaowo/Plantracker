@@ -27,6 +27,8 @@ import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.model.Workspace;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.data.remote.api.HomeApiService;
+import com.example.tralalero.test.RepositoryTestActivity;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.List;
 
@@ -40,6 +42,7 @@ public class HomeActivity extends AppCompatActivity {
     private HomeAdapter homeAdapter;
     private static final String TAG = "HomeActivity";
 
+    //TODO: viết lại giao diện, các viewmodel theo như chỉnh sửa mới có trong báo cáo ở md 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +59,9 @@ public class HomeActivity extends AppCompatActivity {
 
         // Load workspaces từ API
         loadWorkspacesFromApi();
+
+        // Setup Test Repository Button (Development only)
+        setupTestRepositoryButton();
 
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
@@ -74,7 +80,6 @@ public class HomeActivity extends AppCompatActivity {
             String text = cardNew.getText().toString().trim();
 
             if (!text.isEmpty()) {
-                // 👉 gọi hàm lưu vào database
 //                TODO: lưu vào database
 //                saveToDatabase(text);
 
@@ -165,5 +170,16 @@ public class HomeActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setupTestRepositoryButton() {
+        // Tạo FAB button để test repository (chỉ dùng khi development)
+        FloatingActionButton fabTest = findViewById(R.id.fabTestRepository);
+        if (fabTest != null) {
+            fabTest.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, RepositoryTestActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 }

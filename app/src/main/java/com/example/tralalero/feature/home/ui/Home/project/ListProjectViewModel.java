@@ -7,14 +7,14 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.tralalero.App.App;
-import com.example.tralalero.model.Task;
-import com.example.tralalero.model.Board;
-import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.domain.model.Board;
+import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
+import com.example.tralalero.network.ApiClient;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -22,7 +22,7 @@ import retrofit2.Response;
 
 public class ListProjectViewModel extends ViewModel {
     private static final String TAG = "ListProjectViewModel";
-    
+
     private final MutableLiveData<List<Task>> tasks = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final MutableLiveData<String> error = new MutableLiveData<>();
@@ -48,14 +48,18 @@ public class ListProjectViewModel extends ViewModel {
     }
 
     /**
-     * Logic mới: Load boards trước, tìm board theo status, rồi load tasks từ board đó
-     * @param projectId ID của project
-     * @param status Status cần lọc (TO_DO, IN_PROGRESS, DONE)
+     * Tạm thời vô hiệu hóa để test repository.
+     * TODO: Kích hoạt lại và sửa lỗi logic này.
      */
     public void loadTasks(String projectId, String status) {
+        Log.d(TAG, "loadTasks is temporarily disabled for testing.");
+        tasks.postValue(new ArrayList<>());
+        isLoading.postValue(false);
+        // The original logic is commented out below
+        /*
         isLoading.setValue(true);
         error.setValue(null);
-        
+
         Log.d(TAG, "Starting loadTasks for projectId: " + projectId + ", status: " + status);
 
         // Bước 1: Load danh sách boards của project
@@ -65,11 +69,11 @@ public class ListProjectViewModel extends ViewModel {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Board> boards = response.body();
                     Log.d(TAG, "Boards loaded successfully: " + boards.size() + " boards");
-                    
+
                     // Bước 2: Tìm board theo status mapping
                     String targetBoardName = mapStatusToBoardName(status);
                     Board targetBoard = findBoardByName(boards, targetBoardName);
-                    
+
                     if (targetBoard != null) {
                         Log.d(TAG, "Found target board: " + targetBoard.getName() + " (ID: " + targetBoard.getId() + ")");
                         // Bước 3: Load tasks từ board đó
@@ -102,14 +106,17 @@ public class ListProjectViewModel extends ViewModel {
                 Log.e(TAG, errorMsg, t);
             }
         });
+        */
     }
 
     /**
      * Load tasks từ một board cụ thể và filter theo status
      */
     private void loadTasksFromBoard(String boardId, String status) {
+        // This method is disabled as it's called by the disabled loadTasks method.
+        /*
         Log.d(TAG, "Loading tasks from boardId: " + boardId + " with status filter: " + status);
-        
+
         taskApiService.getTasksByBoard(boardId).enqueue(new Callback<List<Task>>() {
             @Override
             public void onResponse(Call<List<Task>> call, Response<List<Task>> response) {
@@ -117,11 +124,11 @@ public class ListProjectViewModel extends ViewModel {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Task> allTasks = response.body();
                     Log.d(TAG, "Raw tasks loaded from board: " + allTasks.size() + " tasks");
-                    
+
                     // Filter tasks theo status (client-side filtering)
                     List<Task> filteredTasks = filterTasksByStatus(allTasks, status);
                     Log.d(TAG, "Filtered tasks for status " + status + ": " + filteredTasks.size() + " tasks");
-                    
+
                     tasks.setValue(filteredTasks);
                 } else {
                     String errorMsg = "Failed to load tasks from board: " + response.code();
@@ -138,6 +145,7 @@ public class ListProjectViewModel extends ViewModel {
                 Log.e(TAG, errorMsg + " for boardId: " + boardId, t);
             }
         });
+        */
     }
 
     /**

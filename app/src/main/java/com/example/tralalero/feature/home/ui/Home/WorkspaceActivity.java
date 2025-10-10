@@ -25,9 +25,11 @@ import com.example.tralalero.feature.home.ui.ActivityActivity;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.feature.home.ui.NewBoard;
 import com.example.tralalero.model.Project;
+import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.network.ApiClient;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -115,13 +117,18 @@ public class WorkspaceActivity extends ActivityActivity {
 
     private void loadProjects() {
         WorkspaceApiService apiService = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
-        Call<List<Project>> call = apiService.getProjects(workspaceId);
+        Call<List<ProjectDTO>> call = apiService.getProjects(workspaceId);
 
-            call.enqueue(new Callback<List<Project>>() {
+        call.enqueue(new Callback<List<ProjectDTO>>() {
             @Override
-            public void onResponse(Call<List<Project>> call, Response<List<Project>> response) {
+            public void onResponse(Call<List<ProjectDTO>> call, Response<List<ProjectDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Project> projects = response.body();
+                    List<ProjectDTO> projectDTOs = response.body();
+
+                    // TODO: Fix in Phase 4 - Convert DTO to old model temporarily
+                    // This is a temporary solution until we migrate to new architecture
+                    List<Project> projects = convertDTOsToOldModel(projectDTOs);
+
                     workspaceAdapter.setProjectList(projects);
                     Log.d("WorkspaceActivity", "Loaded " + projects.size() + " projects");
                     for (Project project : projects) {
@@ -129,16 +136,34 @@ public class WorkspaceActivity extends ActivityActivity {
                     }
                 } else {
                     Log.e("WorkspaceActivity", "Failed to load projects: " + response.code());
-                    Toast.makeText(WorkspaceActivity.this, "Failed to load workspaces", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(WorkspaceActivity.this, "Failed to load projects", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-                public void onFailure(Call<List<Project>> call, Throwable t) {
-                Log.e(TAG, "Error loading workspaces", t);
-                Toast.makeText(WorkspaceActivity.this, "Error loading workspaces: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<List<ProjectDTO>> call, Throwable t) {
+                Log.e(TAG, "Error loading projects", t);
+                Toast.makeText(WorkspaceActivity.this, "Error loading projects: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Temporary method to convert ProjectDTO to old Project model
+     * TODO: Remove this in Phase 4 when migrating to new architecture
+     */
+    private List<Project> convertDTOsToOldModel(List<ProjectDTO> dtos) {
+        List<Project> projects = new ArrayList<>();
+        for (ProjectDTO dto : dtos) {
+            Project project = new Project(
+                dto.getId(),
+                dto.getName(),
+                dto.getDescription(),
+                dto.getKey()
+            );
+            projects.add(project);
+        }
+        return projects;
     }
 
     @Override

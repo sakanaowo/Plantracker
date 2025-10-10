@@ -323,7 +323,17 @@
 
     </LinearLayout>
 
-
+    <!-- FloatingActionButton để test Repository - Development Only -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabTestRepository"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_menu_search"
+        android:contentDescription="Test Repository"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
+        app:backgroundTint="#FF6B6B"
+        app:tint="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

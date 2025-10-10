@@ -95,6 +95,14 @@ public class ListProject extends Fragment {
     }
 
     private void observeViewModel() {
+        // TODO: Fix in Phase 4 - Conflict between domain.model.Task and model.Task
+        // Need to either:
+        // 1. Create mapper to convert domain.model.Task -> model.Task
+        // 2. Update TaskAdapter to use domain.model.Task
+        // 3. Migrate completely to new architecture
+
+        // TEMPORARILY DISABLED - Uncomment after migration
+        /*
         // Observe tasks
         viewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> {
             if (tasks != null) {
@@ -118,6 +126,9 @@ public class ListProject extends Fragment {
                 Log.e(TAG, "Error: " + error);
             }
         });
+        */
+
+        Log.w(TAG, "observeViewModel temporarily disabled - waiting for Phase 4 migration");
     }
 
     private void loadTasksForStatus() {

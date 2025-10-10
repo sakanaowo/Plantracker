@@ -4,12 +4,17 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
+        android:name=".App.App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -18,7 +23,6 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".App.App"
         android:theme="@style/Theme.Tralalero"
         android:usesCleartextTraffic="true">
 
@@ -27,7 +31,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -55,7 +58,8 @@
         <activity
             android:name=".feature.home.ui.NewBoard"
             android:exported="false" />
-        <activity android:name=".feature.auth.ui.login.ContinueWithGoogle"
+        <activity
+            android:name=".feature.auth.ui.login.ContinueWithGoogle"
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.Home.WorkspaceActivity"
@@ -63,17 +67,19 @@
         <activity
             android:name=".feature.home.ui.Home.ProjectActivity"
             android:exported="false" />
-
-
-
-
         <activity
             android:name=".feature.home.ui.ActivityTimer"
-            android:exported="false"
-            />
+            android:exported="false" />
         <activity
             android:name=".feature.home.ui.SettingsActivity"
-            android:theme="@style/Theme.Tralalero"/>
+            android:theme="@style/Theme.Tralalero" />
+
+        <!--Repository Test Activity - Development Only-->
+        <!--        TODO: sửa các endpoint trong api -->
+        <activity
+            android:name=".test.RepositoryTestActivity"
+            android:exported="false"
+            android:label="Repository Test" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
