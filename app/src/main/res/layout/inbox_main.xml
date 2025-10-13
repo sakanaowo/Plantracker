@@ -90,7 +90,7 @@
         android:layout_marginBottom="8dp"
         android:orientation="vertical"
         android:background="@drawable/bg_header2"
-        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         android:padding="12dp"
         >
             <!-- EXPANDABLE FORM -->
@@ -152,115 +152,13 @@
             </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/bottomNavigation"
+        android:name="com.example.tralalero.feature.home.ui.BottomNavigationFragment"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@color/white"
-        />
-    <LinearLayout
-        android:id="@+id/myLinearIcon"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        android:padding="4dp"
-        android:background="@color/white"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="4:1">
-
-        <ImageButton
-            android:id="@+id/btn1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/board_icon1"
-            android:scaleType="centerInside"
-            android:contentDescription="home"
-            app:tint="@android:color/black" />
-
-
-        <ImageButton
-            android:id="@+id/btn2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/ib_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="inbox"
-            app:tint="@android:color/black" />
-
-        <ImageButton
-            android:id="@+id/btn3"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/bell_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="notify"
-            app:tint="@android:color/black" />
-
-        <ImageButton
-            android:id="@+id/btn4"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/acc_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="account"
-            app:tint="@android:color/black" />
-
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/myLineartitle"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        android:padding="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="16:1">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Workspace"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Quick access"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Activity"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Account"/>
-
-    </LinearLayout>
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

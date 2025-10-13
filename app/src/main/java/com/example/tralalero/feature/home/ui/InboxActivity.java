@@ -19,7 +19,7 @@ import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.google.android.material.textfield.TextInputEditText;
 
-public class InboxActivity extends AppCompatActivity {
+public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,29 +63,7 @@ public class InboxActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton btnBoard = findViewById(R.id.btn1);
-        btnBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(InboxActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        setupBottomNavigation(1);
 
-        ImageButton btnInbox = findViewById(R.id.btn2);
-        btnInbox.setOnClickListener(v -> {
-            Intent intent = new Intent(InboxActivity.this, InboxActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnActivity = findViewById(R.id.btn3);
-        btnActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(InboxActivity.this, ActivityActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnAccount = findViewById(R.id.btn4);
-
-        btnAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(InboxActivity.this, AccountActivity.class);
-            startActivity(intent);
-        });
     }
 }

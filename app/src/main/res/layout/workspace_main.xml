@@ -86,7 +86,7 @@
         android:orientation="horizontal"
         android:background="@drawable/bg_header3"
         android:padding="12dp"
-        app:layout_constraintBottom_toTopOf="@id/myLinearIcon"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="12dp"
         android:gravity="center">
@@ -108,109 +108,15 @@
             android:textStyle="bold"/>
     </LinearLayout>
 
-    <LinearLayout
-
-        android:id="@+id/myLinearIcon"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/bottomNavigation"
+        android:name="com.example.tralalero.feature.home.ui.BottomNavigationFragment"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        android:padding="4dp"
-        android:background="@color/white"
+        android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="4:1">
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-        <ImageButton
-            android:id="@+id/btn1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/board_icon1"
-            android:scaleType="centerInside"
-            android:contentDescription="home"
-            app:tint="@android:color/black" />
-
-
-        <ImageButton
-            android:id="@+id/btn2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/ib_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="inbox"
-            app:tint="@android:color/black" />
-
-        <ImageButton
-            android:id="@+id/btn3"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/bell_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="notify"
-            app:tint="@android:color/black" />
-
-        <ImageButton
-            android:id="@+id/btn4"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/white"
-            android:src="@drawable/acc_icon"
-            android:scaleType="centerInside"
-            android:contentDescription="account"
-            app:tint="@android:color/black" />
-
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/myLineartitle"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        android:padding="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="16:1">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Workspace"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Inbox"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Activity"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:text="Account"/>
-
-    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

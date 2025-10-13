@@ -17,7 +17,7 @@ import com.example.tralalero.feature.home.ui.Activity.ListFrmAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-public class ActivityActivity extends AppCompatActivity {
+public class ActivityActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,29 +49,6 @@ public class ActivityActivity extends AppCompatActivity {
         }).attach();
 
 
-        ImageButton btnBoard = findViewById(R.id.btn1);
-        btnBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(ActivityActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnInbox = findViewById(R.id.btn2);
-        btnInbox.setOnClickListener(v -> {
-            Intent intent = new Intent(ActivityActivity.this, InboxActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnActivity = findViewById(R.id.btn3);
-        btnActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(ActivityActivity.this, ActivityActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnAccount = findViewById(R.id.btn4);
-
-        btnAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(ActivityActivity.this, AccountActivity.class);
-            startActivity(intent);
-        });
+        setupBottomNavigation(2); 
     }
 }

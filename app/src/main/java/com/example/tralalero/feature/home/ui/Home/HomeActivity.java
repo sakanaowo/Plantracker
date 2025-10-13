@@ -23,6 +23,7 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.HomeAdapter;
 import com.example.tralalero.feature.home.ui.AccountActivity;
 import com.example.tralalero.feature.home.ui.ActivityActivity;
+import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.model.Workspace;
 import com.example.tralalero.network.ApiClient;
@@ -36,7 +37,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
 
     private RecyclerView recyclerBoard;
     private HomeAdapter homeAdapter;
@@ -92,23 +93,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton btnInbox = findViewById(R.id.btn2);
-        btnInbox.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, InboxActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnActivity = findViewById(R.id.btn3);
-        btnActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, ActivityActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnAccount = findViewById(R.id.btn4);
-        btnAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, AccountActivity.class);
-            startActivity(intent);
-        });
+        setupBottomNavigation(0);
     }
 
     private void setupRecyclerView() {
