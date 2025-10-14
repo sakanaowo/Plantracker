@@ -27,6 +27,7 @@ import com.example.tralalero.data.remote.dto.auth.LoginResponse;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
@@ -40,7 +41,10 @@ public class SignupActivity extends AppCompatActivity {
     private EditText etEmail;
     private EditText etPassword;
     private EditText etConfirmPassword;
+
     private Button btnSignUp;
+
+    private AuthViewModel authViewModel;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
