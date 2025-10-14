@@ -101,10 +101,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupViewModel() {
-        IAuthRepository authRepository = new AuthRepositoryImpl(
-                ApiClient.get(App.authManager).create(AuthApi.class),
-                App.authManager
-        );
+        IAuthRepository authRepository = new AuthRepositoryImpl(this);
 
         LoginUseCase loginUseCase = new LoginUseCase(authRepository);
         LogoutUseCase logoutUseCase = new LogoutUseCase(authRepository);

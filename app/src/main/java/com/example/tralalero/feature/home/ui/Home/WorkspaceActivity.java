@@ -25,7 +25,7 @@ import com.example.tralalero.feature.home.ui.ActivityActivity;
 import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.feature.home.ui.NewBoard;
-import com.example.tralalero.model.Project;
+import com.example.tralalero.domain.model.Project;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.network.ApiClient;
@@ -140,7 +140,9 @@ public class WorkspaceActivity extends HomeActivity {
                 dto.getId(),
                 dto.getName(),
                 dto.getDescription(),
-                dto.getKey()
+                dto.getKey(),
+                null,
+                null
             );
             projects.add(project);
         }
@@ -157,7 +159,7 @@ public class WorkspaceActivity extends HomeActivity {
             String background = data.getStringExtra("background");
 
             // Tạo object mới
-            Project newProject = new Project("",projectName,"","");
+            Project newProject = new Project("",projectName,"","",null,null);
 
             // Thêm vào list của adapter
             workspaceAdapter.addProject(newProject);

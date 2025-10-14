@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Task;
+import com.example.tralalero.domain.model.Task;
 
 import java.util.List;
 

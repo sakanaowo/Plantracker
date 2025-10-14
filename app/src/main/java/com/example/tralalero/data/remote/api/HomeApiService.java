@@ -1,6 +1,6 @@
 package com.example.tralalero.data.remote.api;
 
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.domain.model.Workspace;
 
 import java.util.List;
 

@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Task;
+import com.example.tralalero.domain.model.Task;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -85,21 +85,21 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             }
 
             // Priority
-            if (task.getPriority() != null && !task.getPriority().isEmpty()) {
-                taskPriority.setText(task.getPriority());
+            if (task.getPriority() != null) {
+                taskPriority.setText(task.getPriority().name());  // Enum → String
                 taskPriority.setVisibility(View.VISIBLE);
                 
                 // Set color based on priority
-                switch (task.getPriority().toUpperCase()) {
-                    case "HIGH":
+                switch (task.getPriority()) {
+                    case HIGH:
                         taskPriority.setBackgroundColor(itemView.getContext().getResources()
                                 .getColor(android.R.color.holo_red_light));
                         break;
-                    case "MEDIUM":
+                    case MEDIUM:
                         taskPriority.setBackgroundColor(itemView.getContext().getResources()
                                 .getColor(android.R.color.holo_orange_light));
                         break;
-                    case "LOW":
+                    case LOW:
                         taskPriority.setBackgroundColor(itemView.getContext().getResources()
                                 .getColor(android.R.color.holo_green_light));
                         break;

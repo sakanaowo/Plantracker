@@ -18,7 +18,7 @@ import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
  * @author Người 2
  * @date 14/10/2025
  */
-public class ProjectFactory implements ViewModelProvider.Factory {
+public class ProjectViewModelFactory implements ViewModelProvider.Factory {
 
     private final GetProjectByIdUseCase getProjectByIdUseCase;
     private final CreateProjectUseCase createProjectUseCase;
@@ -30,7 +30,7 @@ public class ProjectFactory implements ViewModelProvider.Factory {
     /**
      * Constructor with all required UseCases
      */
-    public ProjectFactory(
+    public ProjectViewModelFactory(
             GetProjectByIdUseCase getProjectByIdUseCase,
             CreateProjectUseCase createProjectUseCase,
             UpdateProjectUseCase updateProjectUseCase,
