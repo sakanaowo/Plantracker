@@ -22,4 +22,16 @@ public class FirebaseAuthResponse {
 
     public FirebaseAuthResponse() {
     }
+
+    public UserDto getUser() {
+        return user;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
 }
