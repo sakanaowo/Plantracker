@@ -18,7 +18,7 @@ import com.example.tralalero.domain.usecase.board.GetBoardTasksUseCase;
  * @author Người 2
  * @date 14/10/2025
  */
-public class BoardFactory implements ViewModelProvider.Factory {
+public class BoardViewModelFactory implements ViewModelProvider.Factory {
 
     private final GetBoardByIdUseCase getBoardByIdUseCase;
     private final CreateBoardUseCase createBoardUseCase;
@@ -30,7 +30,7 @@ public class BoardFactory implements ViewModelProvider.Factory {
     /**
      * Constructor with all required UseCases
      */
-    public BoardFactory(
+    public BoardViewModelFactory(
             GetBoardByIdUseCase getBoardByIdUseCase,
             CreateBoardUseCase createBoardUseCase,
             UpdateBoardUseCase updateBoardUseCase,

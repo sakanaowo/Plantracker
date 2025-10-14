@@ -17,7 +17,12 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.WorkspaceAdapter;
 import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
 import com.example.tralalero.feature.home.ui.NewBoard;
-import com.example.tralalero.model.Project;
+// TODO: presentation viewmodel apply
+import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.data.remote.dto.project.ProjectDTO;
+import com.example.tralalero.data.remote.api.WorkspaceApiService;
+import com.example.tralalero.network.ApiClient;
+
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
@@ -198,14 +203,18 @@ public class WorkspaceActivity extends HomeActivity {
      * Convert domain model Projects to old model Projects
      * TODO: Phase 6 - Remove this when adapter is migrated to use domain models
      */
-    private List<Project> convertDomainProjectsToOldModel(List<com.example.tralalero.domain.model.Project> domainProjects) {
-        List<Project> oldProjects = new ArrayList<>();
-        for (com.example.tralalero.domain.model.Project domainProject : domainProjects) {
-            Project oldProject = new Project(
-                domainProject.getId(),
-                domainProject.getName(),
-                domainProject.getDescription(),
-                domainProject.getKey()
+
+    private List<Project> convertDTOsToOldModel(List<ProjectDTO> dtos) {
+        List<Project> projects = new ArrayList<>();
+        for (ProjectDTO dto : dtos) {
+            Project project = new Project(
+                dto.getId(),
+                dto.getName(),
+                dto.getDescription(),
+                dto.getKey(),
+                null,
+                null
+
             );
             oldProjects.add(oldProject);
         }
@@ -222,7 +231,7 @@ public class WorkspaceActivity extends HomeActivity {
             String background = data.getStringExtra("background");
 
             // Tạo object mới
-            Project newProject = new Project("",projectName,"","");
+            Project newProject = new Project("",projectName,"","",null,null);
 
             // Thêm vào list của adapter
             workspaceAdapter.addProject(newProject);

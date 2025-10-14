@@ -16,16 +16,37 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tralalero.R;
 import com.example.tralalero.feature.home.ui.Home.project.ListProjectAdapter;
+
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
+
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+/**
+ * ProjectActivity - Main activity for project management
+ * 
+ * Features:
+ * - Display 3 tabs: TO DO, IN PROGRESS, DONE
+ * - Each tab shows tasks from corresponding board
+ * - Uses ViewPager2 with ListProjectAdapter
+ * - Integrates ProjectViewModel to load boards
+ * 
+ * Phase 5 Integration:
+ * - Load boards from API
+ * - Map boards to tabs
+ * - Pass boardIds to fragments
+ * 
+ * @author Người 2 + Người 3
+ * @date 14/10/2025
+ */
 public class ProjectActivity extends AppCompatActivity {
     private static final String TAG = "ProjectActivity";
-    
+
+    private ImageButton backButton;
+
     // ViewModels
     private ProjectViewModel projectViewModel;
     private BoardViewModel boardViewModel;
@@ -39,6 +60,10 @@ public class ProjectActivity extends AppCompatActivity {
     private String projectId;
     private String projectName;
     private String workspaceId;
+
+    // Adapter
+    private ListProjectAdapter adapter;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,7 +75,26 @@ public class ProjectActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Get data from intent
+
+        getIntentData();
+        
+        // Initialize views
+        initViews();
+        
+        // Setup ViewPager with Adapter
+        setupViewPager();
+        
+        // Setup back button
+        setupBackButton();
+        
+        // Setup TabLayout
+        setupTabs();
+    }
+    
+    // ===== SETUP METHODS =====
+    
+    private void getIntentData() {
+
         projectId = getIntent().getStringExtra("project_id");
         projectName = getIntent().getStringExtra("project_name");
         workspaceId = getIntent().getStringExtra("workspace_id");
@@ -63,66 +107,37 @@ public class ProjectActivity extends AppCompatActivity {
         
         if (projectId == null || projectId.isEmpty()) {
             Log.e(TAG, "ERROR: No project_id provided! Check Intent extras.");
-            Toast.makeText(this, "Error: Project ID is missing", Toast.LENGTH_SHORT).show();
+
+            Toast.makeText(this, "Error: No project ID", Toast.LENGTH_SHORT).show();
             finish();
-            return;
         }
-        
-        // Phase 5: Setup ViewModels FIRST
-        setupViewModels();
-        
-        // Then setup UI
-        setupUI();
-        
-        // Observe ViewModels
-        observeViewModels();
-        
-        // Load project details
-        loadProjectDetails();
     }
     
-    /**
-     * Setup ViewModels with dependency injection
-     * Phase 5: Using ViewModelFactoryProvider
-     */
-    private void setupViewModels() {
-        Log.d(TAG, "Setting up ViewModels...");
-        
-        // Setup ProjectViewModel
-        projectViewModel = new ViewModelProvider(this,
-                ViewModelFactoryProvider.provideProjectViewModelFactory()
-        ).get(ProjectViewModel.class);
-        
-        // Setup BoardViewModel for board operations
-        boardViewModel = new ViewModelProvider(this,
-                ViewModelFactoryProvider.provideBoardViewModelFactory()
-        ).get(BoardViewModel.class);
-        
-        Log.d(TAG, "ViewModels setup completed");
-    }
-    
-    /**
-     * Setup UI components
-     */
-    private void setupUI() {
-        // Find views
+    private void initViews() {
         tabLayout = findViewById(R.id.tabLayout1);
         viewPager2 = findViewById(R.id.PrjViewPager2);
-        
-        // Setup ViewPager with Adapter - PASS boardViewModel to adapter
-        adapter = new ListProjectAdapter(this, projectId, boardViewModel);
+        backButton = findViewById(R.id.btnClosePjrDetail);
+    }
+    
+    private void setupViewPager() {
+        // Create adapter with projectId
+        adapter = new ListProjectAdapter(this, projectId);
         viewPager2.setAdapter(adapter);
         
-        // Setup back button
-        ImageButton backButton = findViewById(R.id.btnClosePjrDetail);
+        Log.d(TAG, "ViewPager2 setup complete");
+    }
+    
+    private void setupBackButton() {
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(ProjectActivity.this, WorkspaceActivity.class);
-            intent.putExtra("WORKSPACE_ID", workspaceId);
+            intent.putExtra("WORKSPACE_ID", workspaceId); // ✅ FIX: Use correct key
             startActivity(intent);
-            finish();
+            finish(); // Close current activity
         });
+    }
+    
+    private void setupTabs() {
 
-        // Connect TabLayout with ViewPager
         new TabLayoutMediator(tabLayout, viewPager2, (tab, position) -> {
             switch (position) {
                 case 0:
