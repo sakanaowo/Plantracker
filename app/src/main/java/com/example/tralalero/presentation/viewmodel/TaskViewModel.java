@@ -251,11 +251,11 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
-    public void moveTaskToBoard(String taskId, String targetBoardId) {
+    public void moveTaskToBoard(String taskId, String targetBoardId, double position) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
-        moveTaskToBoardUseCase.execute(taskId, targetBoardId, new MoveTaskToBoardUseCase.Callback<Task>() {
+        moveTaskToBoardUseCase.execute(taskId, targetBoardId, position, new MoveTaskToBoardUseCase.Callback<Task>() {
             @Override
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
