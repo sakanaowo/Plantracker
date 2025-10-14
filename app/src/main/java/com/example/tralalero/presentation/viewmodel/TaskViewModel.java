@@ -289,11 +289,11 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
-    public void addComment(String taskId, String commentBody) {
+    public void addComment(String taskId, TaskComment comment) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
-        addCommentUseCase.execute(taskId, commentBody, new AddCommentUseCase.Callback<TaskComment>() {
+        addCommentUseCase.execute(taskId, comment, new AddCommentUseCase.Callback<TaskComment>() {
             @Override
             public void onSuccess(TaskComment result) {
                 loadingLiveData.setValue(false);

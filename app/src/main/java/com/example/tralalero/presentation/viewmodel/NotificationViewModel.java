@@ -151,9 +151,9 @@ public class NotificationViewModel extends ViewModel {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
-        markAsReadUseCase.execute(notificationId, new MarkAsReadUseCase.Callback<Notification>() {
+        markAsReadUseCase.execute(notificationId, new MarkAsReadUseCase.Callback<Void>() {
             @Override
-            public void onSuccess(Notification result) {
+            public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 loadNotifications();
                 loadUnreadCount();
