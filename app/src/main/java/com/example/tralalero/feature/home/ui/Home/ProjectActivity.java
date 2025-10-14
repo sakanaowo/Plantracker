@@ -3,24 +3,42 @@ package com.example.tralalero.feature.home.ui.Home;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tralalero.R;
 import com.example.tralalero.feature.home.ui.Home.project.ListProjectAdapter;
 import com.example.tralalero.feature.home.ui.InboxActivity;
+import com.example.tralalero.presentation.viewmodel.BoardViewModel;
+import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class ProjectActivity extends AppCompatActivity {
     private static final String TAG = "ProjectActivity";
+    
+    // ViewModels
+    private ProjectViewModel projectViewModel;
+    private BoardViewModel boardViewModel;
+    
+    // UI Components
+    private TabLayout tabLayout;
+    private ViewPager2 viewPager2;
+    private ListProjectAdapter adapter;
+    
+    // Data
+    private String projectId;
+    private String projectName;
+    private String workspaceId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,13 +50,10 @@ public class ProjectActivity extends AppCompatActivity {
             return insets;
         });
 
-        TabLayout tabLayout = findViewById(R.id.tabLayout1);
-        ViewPager2 viewPager2 = findViewById(R.id.PrjViewPager2);
-        
-        // Lấy project_id từ Intent
-        String projectId = getIntent().getStringExtra("project_id");
-        String projectName = getIntent().getStringExtra("project_name");
-        String workspaceId = getIntent().getStringExtra("workspace_id");
+        // Get data from intent
+        projectId = getIntent().getStringExtra("project_id");
+        projectName = getIntent().getStringExtra("project_name");
+        workspaceId = getIntent().getStringExtra("workspace_id");
         
         // Debug logging
         Log.d(TAG, "=== ProjectActivity Started ===");
@@ -48,19 +63,66 @@ public class ProjectActivity extends AppCompatActivity {
         
         if (projectId == null || projectId.isEmpty()) {
             Log.e(TAG, "ERROR: No project_id provided! Check Intent extras.");
+            Toast.makeText(this, "Error: Project ID is missing", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
         
-        // Sử dụng ListProjectAdapter mới với projectId
-        ListProjectAdapter adapter = new ListProjectAdapter(this, projectId);
+        // Phase 5: Setup ViewModels FIRST
+        setupViewModels();
+        
+        // Then setup UI
+        setupUI();
+        
+        // Observe ViewModels
+        observeViewModels();
+        
+        // Load project details
+        loadProjectDetails();
+    }
+    
+    /**
+     * Setup ViewModels with dependency injection
+     * Phase 5: Using ViewModelFactoryProvider
+     */
+    private void setupViewModels() {
+        Log.d(TAG, "Setting up ViewModels...");
+        
+        // Setup ProjectViewModel
+        projectViewModel = new ViewModelProvider(this,
+                ViewModelFactoryProvider.provideProjectViewModelFactory()
+        ).get(ProjectViewModel.class);
+        
+        // Setup BoardViewModel for board operations
+        boardViewModel = new ViewModelProvider(this,
+                ViewModelFactoryProvider.provideBoardViewModelFactory()
+        ).get(BoardViewModel.class);
+        
+        Log.d(TAG, "ViewModels setup completed");
+    }
+    
+    /**
+     * Setup UI components
+     */
+    private void setupUI() {
+        // Find views
+        tabLayout = findViewById(R.id.tabLayout1);
+        viewPager2 = findViewById(R.id.PrjViewPager2);
+        
+        // Setup ViewPager with Adapter - PASS boardViewModel to adapter
+        adapter = new ListProjectAdapter(this, projectId, boardViewModel);
         viewPager2.setAdapter(adapter);
-
+        
+        // Setup back button
         ImageButton backButton = findViewById(R.id.btnClosePjrDetail);
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(ProjectActivity.this, WorkspaceActivity.class);
-            intent.putExtra("workspace_id", workspaceId); // truyền workspace ID
+            intent.putExtra("WORKSPACE_ID", workspaceId);
             startActivity(intent);
+            finish();
         });
 
+        // Connect TabLayout with ViewPager
         new TabLayoutMediator(tabLayout, viewPager2, (tab, position) -> {
             switch (position) {
                 case 0:
@@ -74,5 +136,67 @@ public class ProjectActivity extends AppCompatActivity {
                     break;
             }
         }).attach();
+        
+        Log.d(TAG, "UI setup completed with " + adapter.getItemCount() + " tabs");
+    }
+    
+    /**
+     * Observe ViewModel LiveData
+     * Phase 5: Replace direct API calls with ViewModel observations
+     */
+    private void observeViewModels() {
+        // Observe project details
+        projectViewModel.getSelectedProject().observe(this, project -> {
+            if (project != null) {
+                Log.d(TAG, "Project loaded: " + project.getName());
+                // Update UI with project details if needed
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(project.getName());
+                }
+            }
+        });
+        
+        // Observe loading state
+        projectViewModel.isLoading().observe(this, isLoading -> {
+            // TODO: Add ProgressBar to layout if needed in future
+            Log.d(TAG, "Loading state: " + isLoading);
+        });
+        
+        // Observe errors from ProjectViewModel
+        projectViewModel.getError().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Project error: " + error);
+                projectViewModel.clearError();
+            }
+        });
+        
+        // Observe errors from BoardViewModel
+        boardViewModel.getError().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Board error: " + error);
+                boardViewModel.clearError();
+            }
+        });
+        
+        // Observe board operations
+        boardViewModel.getSelectedBoard().observe(this, board -> {
+            if (board != null) {
+                Log.d(TAG, "Board operation completed: " + board.getName());
+                // Refresh the adapter if needed
+                if (adapter != null) {
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Load project details using ViewModel
+     */
+    private void loadProjectDetails() {
+        Log.d(TAG, "Loading project details for: " + projectId);
+        projectViewModel.loadProjectById(projectId);
     }
 }
