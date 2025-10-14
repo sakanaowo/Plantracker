@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+// TODO: resolve conflict here
 /**
  * Adapter for ViewPager2 in ProjectActivity
  * Creates 3 fragments: TO DO, IN PROGRESS, DONE
@@ -59,11 +59,23 @@ public class ListProjectAdapter extends FragmentStateAdapter {
 
     // ===== CONSTRUCTORS =====
     
+    private BoardViewModel boardViewModel;
+
+    /**
+     * Constructor without projectId (legacy support)
+     * @deprecated Use constructor with boardViewModel
+     */
+    @Deprecated
     public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
         setupViewModels(fragmentActivity);
     }
 
+    /**
+     * Constructor with projectId only (legacy support)
+     * @deprecated Use constructor with boardViewModel
+     */
+    @Deprecated
     public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity, String projectId) {
         super(fragmentActivity);
         this.projectId = projectId;
@@ -84,6 +96,22 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         setBoardIds(boardIds);
         
         Log.d(TAG, "ListProjectAdapter created with boardIds: " + boardIds);
+    }
+    
+    /**
+     * Constructor with BoardViewModel injection
+     * Phase 5: NEW - Inject BoardViewModel to pass to fragments
+     * 
+     * @param fragmentActivity Parent activity
+     * @param projectId Project ID for loading boards
+     * @param boardViewModel Shared BoardViewModel instance
+     */
+    public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity, 
+                             String projectId, 
+                             BoardViewModel boardViewModel) {
+        super(fragmentActivity);
+        this.projectId = projectId;
+        this.boardViewModel = boardViewModel;
     }
 
     // ===== SETUP METHODS =====
@@ -179,6 +207,9 @@ public class ListProjectAdapter extends FragmentStateAdapter {
 
     // ===== SETTERS =====
     
+    /**
+     * Update project ID and refresh
+     */
     public void setProjectId(String projectId) {
         this.projectId = projectId;
         notifyDataSetChanged();
@@ -235,6 +266,38 @@ public class ListProjectAdapter extends FragmentStateAdapter {
             Log.w(TAG, "Using legacy mode for position " + position + 
                        " - boardId not available");
             return ListProject.newInstance(displayName, projectId);
+        // Map position to board status
+        String boardStatus;
+        String boardName;
+        
+        switch (position) {
+            case 0:
+                boardStatus = "TO_DO";
+                boardName = "TO DO";
+                break;
+            case 1:
+                boardStatus = "IN_PROGRESS";
+                boardName = "IN PROGRESS";
+                break;
+            case 2:
+                boardStatus = "DONE";
+                boardName = "DONE";
+                break;
+            default:
+                boardStatus = "TO_DO";
+                boardName = "TO DO";
+                break;
+        }
+        
+        // Phase 5: Pass BoardViewModel to fragment
+        if (boardViewModel != null && projectId != null) {
+            return ListProject.newInstance(boardName, projectId, boardViewModel);
+        } else if (projectId != null) {
+            // Legacy: Without ViewModel (will use old approach)
+            return ListProject.newInstance(boardName, projectId);
+        } else {
+            // Fallback: No projectId
+            return ListProject.newInstance(boardName);
         }
         
         // Fallback: Create empty fragment

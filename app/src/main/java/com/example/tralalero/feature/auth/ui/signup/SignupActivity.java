@@ -19,22 +19,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tralalero.R;
-import com.example.tralalero.auth.remote.AuthApi;
-import com.example.tralalero.data.remote.dto.auth.LoginRequest;
-import com.example.tralalero.data.remote.dto.auth.LoginResponse;
+import com.example.tralalero.data.repository.AuthRepositoryImpl;
+import com.example.tralalero.domain.repository.IAuthRepository;
+import com.example.tralalero.domain.usecase.auth.GetCurrentUserUseCase;
+import com.example.tralalero.domain.usecase.auth.IsLoggedInUseCase;
+import com.example.tralalero.domain.usecase.auth.LoginUseCase;
+import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
-import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthUserCollisionException;
-import com.google.firebase.auth.FirebaseUser;
+import com.example.tralalero.presentation.viewmodel.AuthViewModelFactory;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class SignupActivity extends AppCompatActivity {
     private static final String TAG = "SignupActivity";
@@ -63,6 +61,9 @@ public class SignupActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.editTextPasswordSignup);
         etConfirmPassword = findViewById(R.id.editTextConfirmPasswordSignup);
         btnSignUp = findViewById(R.id.buttonSignUp);
+
+        setupViewModel();
+        observeViewModel();
 
         final boolean[] isPasswordVisible = {false};
         // Set icon mặc định ban đầu
@@ -147,6 +148,57 @@ public class SignupActivity extends AppCompatActivity {
         }
     }
 
+    private void setupViewModel() {
+        IAuthRepository authRepository = new AuthRepositoryImpl(this);
+
+        LoginUseCase loginUseCase = new LoginUseCase(authRepository);
+        LogoutUseCase logoutUseCase = new LogoutUseCase(authRepository);
+        GetCurrentUserUseCase getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
+        IsLoggedInUseCase isLoggedInUseCase = new IsLoggedInUseCase(authRepository);
+
+        AuthViewModelFactory factory = new AuthViewModelFactory(
+                loginUseCase,
+                logoutUseCase,
+                getCurrentUserUseCase,
+                isLoggedInUseCase
+        );
+        authViewModel = new ViewModelProvider(this, factory).get(AuthViewModel.class);
+
+    }
+
+    private void observeViewModel() {
+        authViewModel.isLoading().observe(this, isLoading -> {
+            if (isLoading) {
+                btnSignUp.setEnabled(false);
+                btnSignUp.setText("Signing up...");
+            } else {
+                btnSignUp.setEnabled(true);
+                btnSignUp.setText("Sign Up");
+            }
+        });
+        authViewModel.getCurrentUser().observe(this, user -> {
+            if (user != null) {
+                Log.d("SignupActivity", "Signed up user id=" + user.id
+                        + ", email=" + user.email
+                        + ", firebaseUid=" + user.firebaseUid);
+                Toast.makeText(this, "Welcome back, " + user.name, Toast.LENGTH_SHORT).show();
+
+                Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
+                intent.putExtra("user_name", user.getName());
+                intent.putExtra("user_email", user.getEmail());
+                startActivity(intent);
+                finish();
+            }
+        });
+        authViewModel.getError().observe(this, error -> {
+            if (error != null) {
+                Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
+                authViewModel.clearError();
+            }
+        });
+    }
+
+
     private void attemptSignUp() {
         String email = etEmail != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword != null ? etPassword.getText().toString() : "";
@@ -157,7 +209,7 @@ public class SignupActivity extends AppCompatActivity {
             Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         // Basic email validation
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
@@ -188,140 +240,6 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        // Disable button during API call
-        btnSignUp.setEnabled(false);
-
-        // Log the request data for debugging
-        Log.d(TAG, "Attempting signup with email: " + email);
-        Log.d(TAG, "Password length: " + password.length());
-
-        // Call signup API
-        AuthApi api = ApiClient.get().create(AuthApi.class);
-        Call<LoginResponse> call = api.register(new LoginRequest(email, password));
-        call.enqueue(new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                Log.d(TAG, "Response code: " + response.code());
-                Log.d(TAG, "Response message: " + response.message());
-
-                if (response.isSuccessful()) {
-                    LoginResponse body = response.body();
-                    String msg = body != null && !TextUtils.isEmpty(body.message)
-                            ? body.message
-                            : "Sign up successful";
-                    Toast.makeText(SignupActivity.this, msg, Toast.LENGTH_SHORT).show();
-                    syncFirebaseAccount(email, password, body);
-                } else {
-                    btnSignUp.setEnabled(true);
-                    // Try to get error message from response body
-                    String errorMessage = "Sign up failed";
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e(TAG, "Error response body: " + errorBody);
-
-                            // Try to parse error response as JSON
-                            try {
-                                com.google.gson.Gson gson = new com.google.gson.Gson();
-                                LoginResponse errorResponse = gson.fromJson(errorBody, LoginResponse.class);
-                                if (errorResponse != null && !TextUtils.isEmpty(errorResponse.message)) {
-                                    errorMessage = errorResponse.message;
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "Failed to parse error response", e);
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to read error body", e);
-                    }
-
-                    // Fallback to status code based messages
-                    if (errorMessage.equals("Sign up failed")) {
-                        if (response.code() == 400) {
-                            errorMessage = "Invalid email or password format";
-                        } else if (response.code() == 409) {
-                            errorMessage = "Email already exists";
-                        } else if (response.code() == 404) {
-                            errorMessage = "Server endpoint not found";
-                        } else if (response.code() >= 500) {
-                            errorMessage = "Server error. Please try again later";
-                        } else {
-                            errorMessage = "Sign up failed (Code: " + response.code() + ")";
-                        }
-                    }
-
-                    Toast.makeText(SignupActivity.this, errorMessage, Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                btnSignUp.setEnabled(true);
-                Log.e(TAG, "Network error", t);
-
-                String errorMessage = "Network error";
-                if (t instanceof java.net.ConnectException) {
-                    errorMessage = "Cannot connect to server. Please check if server is running.";
-                } else if (t instanceof java.net.UnknownHostException) {
-                    errorMessage = "Network connection error. Check your internet connection.";
-                } else if (t instanceof java.net.SocketTimeoutException) {
-                    errorMessage = "Request timeout. Please try again.";
-                } else {
-                    errorMessage = "Network error: " + t.getMessage();
-                }
-
-                Toast.makeText(SignupActivity.this, errorMessage, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void syncFirebaseAccount(String email, String password, LoginResponse body) {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        FirebaseUser current = auth.getCurrentUser();
-        if (current != null && current.getEmail() != null && current.getEmail().equalsIgnoreCase(email)) {
-            Log.d(TAG, "Already signed into Firebase uid=" + current.getUid());
-            navigateToHome(body);
-            return;
-        }
-
-        auth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener(result -> {
-                    FirebaseUser firebaseUser = result.getUser();
-                    if (firebaseUser != null) {
-                        Log.d(TAG, "Firebase account created uid=" + firebaseUser.getUid());
-                    }
-                    navigateToHome(body);
-                })
-                .addOnFailureListener(error -> {
-                    if (error instanceof FirebaseAuthUserCollisionException) {
-                        auth.signInWithEmailAndPassword(email, password)
-                                .addOnSuccessListener(signInResult -> {
-                                    FirebaseUser firebaseUser = signInResult.getUser();
-                                    if (firebaseUser != null) {
-                                        Log.d(TAG, "Firebase sign-in success uid=" + firebaseUser.getUid());
-                                    }
-                                    navigateToHome(body);
-                                })
-                                .addOnFailureListener(signInError -> {
-                                    btnSignUp.setEnabled(true);
-                                    Log.e(TAG, "Firebase sign-in failed", signInError);
-                                    Toast.makeText(SignupActivity.this, "Firebase login failed: " + signInError.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                    } else {
-                        btnSignUp.setEnabled(true);
-                        Log.e(TAG, "Firebase create user failed", error);
-                        Toast.makeText(SignupActivity.this, "Firebase signup failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void navigateToHome(LoginResponse body) {
-        Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
-        if (body != null && body.user != null) {
-            intent.putExtra("user_name", body.user.name);
-            intent.putExtra("user_email", body.user.email);
-        }
-        startActivity(intent);
-        finish();
+        authViewModel.login(email, password);
     }
 }

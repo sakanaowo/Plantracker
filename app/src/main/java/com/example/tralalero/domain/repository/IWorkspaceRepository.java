@@ -13,6 +13,10 @@ public interface IWorkspaceRepository {
 
     void createWorkspace(Workspace workspace, RepositoryCallback<Workspace> callback);
 
+    void updateWorkspace(String workspaceId, Workspace workspace, RepositoryCallback<Workspace> callback);
+
+    void deleteWorkspace(String workspaceId, RepositoryCallback<Void> callback);
+
     void getProjects(String workspaceId, RepositoryCallback<List<Project>> callback);
 
     void getBoards(String projectId, RepositoryCallback<List<Board>> callback);
