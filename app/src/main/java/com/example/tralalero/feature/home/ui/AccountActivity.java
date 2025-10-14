@@ -40,7 +40,7 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.IOException;
 
-public class AccountActivity extends AppCompatActivity {
+public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     
     private static final String TAG = "AccountActivity";
     private TokenManager tokenManager;
@@ -106,23 +106,7 @@ public class AccountActivity extends AppCompatActivity {
         });
         
         // Bottom navigation
-        LinearLayout navBoards = findViewById(R.id.navBoards);
-        navBoards.setOnClickListener(v -> {
-            Intent intent = new Intent(AccountActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
-
-        LinearLayout navInbox = findViewById(R.id.navInbox);
-        navInbox.setOnClickListener(v -> {
-            Intent intent = new Intent(AccountActivity.this, InboxActivity.class);
-            startActivity(intent);
-        });
-
-        LinearLayout navActivity = findViewById(R.id.navActivity);
-        navActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(AccountActivity.this, ActivityActivity.class);
-            startActivity(intent);
-        });
+        setupBottomNavigation(3);
 
         // Other menu items (placeholder for now)
         LinearLayout layoutOfflineBoards = findViewById(R.id.layoutOfflineBoards);

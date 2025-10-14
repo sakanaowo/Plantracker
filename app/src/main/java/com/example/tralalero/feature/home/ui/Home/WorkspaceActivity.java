@@ -22,6 +22,7 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.WorkspaceAdapter;
 import com.example.tralalero.feature.home.ui.AccountActivity;
 import com.example.tralalero.feature.home.ui.ActivityActivity;
+import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
 import com.example.tralalero.feature.home.ui.InboxActivity;
 import com.example.tralalero.feature.home.ui.NewBoard;
 import com.example.tralalero.model.Project;
@@ -36,7 +37,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class WorkspaceActivity extends ActivityActivity {
+public class WorkspaceActivity extends HomeActivity {
 
     private WorkspaceAdapter workspaceAdapter;
     private RecyclerView recyclerView;
@@ -66,30 +67,10 @@ public class WorkspaceActivity extends ActivityActivity {
         });
 
 
-        ImageButton btnBoard = findViewById(R.id.btn1);
-        btnBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkspaceActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        BottomNavigationFragment bottomNav = (BottomNavigationFragment)
+                getSupportFragmentManager().findFragmentById(R.id.bottomNavigation);
 
-        ImageButton btnInbox = findViewById(R.id.btn2);
-        btnInbox.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkspaceActivity.this, InboxActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnActivity = findViewById(R.id.btn3);
-        btnActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkspaceActivity.this, ActivityActivity.class);
-            startActivity(intent);
-        });
-
-        ImageButton btnAccount = findViewById(R.id.btn4);
-
-        btnAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkspaceActivity.this, AccountActivity.class);
-            startActivity(intent);
-        });
+        setupBottomNavigation(0);
 
     }
 
