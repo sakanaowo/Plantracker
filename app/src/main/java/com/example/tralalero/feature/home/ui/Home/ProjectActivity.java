@@ -61,9 +61,6 @@ public class ProjectActivity extends AppCompatActivity {
     private String projectName;
     private String workspaceId;
 
-    // Adapter
-    private ListProjectAdapter adapter;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

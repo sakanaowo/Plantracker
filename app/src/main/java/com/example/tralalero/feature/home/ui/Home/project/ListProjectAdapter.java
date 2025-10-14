@@ -27,111 +27,88 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-// TODO: resolve conflict here
+
 /**
  * Adapter for ViewPager2 in ProjectActivity
  * Creates 3 fragments: TO DO, IN PROGRESS, DONE
- * 
+ * <p>
  * Phase 5 Integration:
  * - Uses TaskViewModel (shared across activity)
  * - Maps status to boardId
  * - Supports both legacy (projectId) and new (boardId) modes
- * 
+ *
  * @author Người 3
  * @date 14/10/2025
  */
 public class ListProjectAdapter extends FragmentStateAdapter {
-    
+
     private static final String TAG = "ListProjectAdapter";
-    
+
     // Data
     private String projectId;
     private TaskViewModel taskViewModel;
     private BoardViewModel boardViewModel;
-    
+
     // BoardId mapping: position -> boardId
     // Position 0 = TO_DO, 1 = IN_PROGRESS, 2 = DONE
     private Map<Integer, String> boardIdMap = new HashMap<>();
-    
+
     // Status mapping
     private static final String[] STATUSES = {"TO_DO", "IN_PROGRESS", "DONE"};
     private static final String[] DISPLAY_NAMES = {"TO DO", "IN PROGRESS", "DONE"};
 
     // ===== CONSTRUCTORS =====
-    
-    private BoardViewModel boardViewModel;
 
-    /**
-     * Constructor without projectId (legacy support)
-     * @deprecated Use constructor with boardViewModel
-     */
+
     @Deprecated
     public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
         setupViewModels(fragmentActivity);
     }
 
-    /**
-     * Constructor with projectId only (legacy support)
-     * @deprecated Use constructor with boardViewModel
-     */
     @Deprecated
     public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity, String projectId) {
         super(fragmentActivity);
         this.projectId = projectId;
         setupViewModels(fragmentActivity);
-        
+
         Log.d(TAG, "ListProjectAdapter created with projectId: " + projectId);
     }
-    
-    /**
-     * Constructor with boardIds (Phase 5 - PREFERRED)
-     */
-    public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity, 
-                              String projectId, 
+
+    public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity,
+                              String projectId,
                               List<String> boardIds) {
         super(fragmentActivity);
         this.projectId = projectId;
         setupViewModels(fragmentActivity);
         setBoardIds(boardIds);
-        
+
         Log.d(TAG, "ListProjectAdapter created with boardIds: " + boardIds);
     }
-    
-    /**
-     * Constructor with BoardViewModel injection
-     * Phase 5: NEW - Inject BoardViewModel to pass to fragments
-     * 
-     * @param fragmentActivity Parent activity
-     * @param projectId Project ID for loading boards
-     * @param boardViewModel Shared BoardViewModel instance
-     */
-    public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity, 
-                             String projectId, 
-                             BoardViewModel boardViewModel) {
+
+    public ListProjectAdapter(@NonNull FragmentActivity fragmentActivity,
+                              String projectId,
+                              BoardViewModel boardViewModel) {
         super(fragmentActivity);
         this.projectId = projectId;
         this.boardViewModel = boardViewModel;
     }
 
     // ===== SETUP METHODS =====
-    
-    /**
-     * Setup ViewModels - shared across all fragments
-     */
+
     private void setupViewModels(@NonNull FragmentActivity activity) {
         // Setup TaskViewModel
         setupTaskViewModel(activity);
-        
+
         // Setup BoardViewModel
         setupBoardViewModel(activity);
     }
-    
+
     private void setupTaskViewModel(@NonNull FragmentActivity activity) {
         // Create repository
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository repository = new TaskRepositoryImpl(apiService);
-        
+
         // Create UseCases
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
@@ -148,40 +125,40 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
-        
+
         // Create Factory
         TaskViewModelFactory factory = new TaskViewModelFactory(
-            getTaskByIdUseCase,
-            getTasksByBoardUseCase,
-            createTaskUseCase,
-            updateTaskUseCase,
-            deleteTaskUseCase,
-            assignTaskUseCase,
-            unassignTaskUseCase,
-            moveTaskToBoardUseCase,
-            updateTaskPositionUseCase,
-            addCommentUseCase,
-            getTaskCommentsUseCase,
-            addAttachmentUseCase,
-            getTaskAttachmentsUseCase,
-            addChecklistUseCase,
-            getTaskChecklistsUseCase
+                getTaskByIdUseCase,
+                getTasksByBoardUseCase,
+                createTaskUseCase,
+                updateTaskUseCase,
+                deleteTaskUseCase,
+                assignTaskUseCase,
+                unassignTaskUseCase,
+                moveTaskToBoardUseCase,
+                updateTaskPositionUseCase,
+                addCommentUseCase,
+                getTaskCommentsUseCase,
+                addAttachmentUseCase,
+                getTaskAttachmentsUseCase,
+                addChecklistUseCase,
+                getTaskChecklistsUseCase
         );
-        
+
         // Create ViewModel - SHARED across Activity
         taskViewModel = new ViewModelProvider(activity, factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");
     }
-    
+
     private void setupBoardViewModel(@NonNull FragmentActivity activity) {
         // Create board repository
         BoardApiService boardApiService = ApiClient.get(App.authManager).create(BoardApiService.class);
         IBoardRepository boardRepository = new BoardRepositoryImpl(boardApiService);
-        
+
         // Create task repository for GetBoardTasksUseCase
         TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository taskRepository = new TaskRepositoryImpl(taskApiService);
-        
+
         // Create UseCases
         GetBoardByIdUseCase getBoardByIdUseCase = new GetBoardByIdUseCase(boardRepository);
         CreateBoardUseCase createBoardUseCase = new CreateBoardUseCase(boardRepository);
@@ -189,40 +166,33 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         DeleteBoardUseCase deleteBoardUseCase = new DeleteBoardUseCase(boardRepository);
         ReorderBoardsUseCase reorderBoardsUseCase = new ReorderBoardsUseCase(boardRepository);
         GetBoardTasksUseCase getBoardTasksUseCase = new GetBoardTasksUseCase(taskRepository);  // ✅ Use taskRepository
-        
+
         // Create Factory
         BoardViewModelFactory factory = new BoardViewModelFactory(
-            getBoardByIdUseCase,
-            createBoardUseCase,
-            updateBoardUseCase,
-            deleteBoardUseCase,
-            reorderBoardsUseCase,
-            getBoardTasksUseCase
+                getBoardByIdUseCase,
+                createBoardUseCase,
+                updateBoardUseCase,
+                deleteBoardUseCase,
+                reorderBoardsUseCase,
+                getBoardTasksUseCase
         );
-        
+
         // Create ViewModel
         boardViewModel = new ViewModelProvider(activity, factory).get(BoardViewModel.class);
         Log.d(TAG, "BoardViewModel initialized");
     }
 
     // ===== SETTERS =====
-    
-    /**
-     * Update project ID and refresh
-     */
+
     public void setProjectId(String projectId) {
         this.projectId = projectId;
         notifyDataSetChanged();
         Log.d(TAG, "ProjectId updated: " + projectId);
     }
-    
-    /**
-     * Set boardIds for each tab position
-     * @param boardIds List of boardIds [TO_DO_boardId, IN_PROGRESS_boardId, DONE_boardId]
-     */
+
     public void setBoardIds(List<String> boardIds) {
         boardIdMap.clear();
-        
+
         if (boardIds != null) {
             for (int i = 0; i < Math.min(boardIds.size(), 3); i++) {
                 boardIdMap.put(i, boardIds.get(i));
@@ -231,12 +201,7 @@ public class ListProjectAdapter extends FragmentStateAdapter {
             notifyDataSetChanged();
         }
     }
-    
-    /**
-     * Set boardId for specific position
-     * @param position Tab position (0=TO_DO, 1=IN_PROGRESS, 2=DONE)
-     * @param boardId Board ID
-     */
+
     public void setBoardIdForPosition(int position, String boardId) {
         boardIdMap.put(position, boardId);
         notifyItemChanged(position);
@@ -244,108 +209,62 @@ public class ListProjectAdapter extends FragmentStateAdapter {
     }
 
     // ===== FRAGMENT CREATION =====
-    
+
     @NonNull
     @Override
     public Fragment createFragment(int position) {
         String status = STATUSES[position];
         String displayName = DISPLAY_NAMES[position];
         String boardId = boardIdMap.get(position);
-        
-        Log.d(TAG, "Creating fragment for position " + position + 
-                   ", status: " + status + 
-                   ", boardId: " + boardId);
-        
+
+        Log.d(TAG, "Creating fragment for position " + position +
+                ", status: " + status +
+                ", boardId: " + boardId);
+
         // Phase 5 - PREFERRED: Use boardId
         if (boardId != null && !boardId.isEmpty()) {
             return ListProject.newInstance(displayName, projectId, boardId);
         }
-        
-        // Legacy mode: Use projectId + status
+
+        // Legacy/Fallback: Calculate boardId from projectId + position
         if (projectId != null && !projectId.isEmpty()) {
-            Log.w(TAG, "Using legacy mode for position " + position + 
-                       " - boardId not available");
-            return ListProject.newInstance(displayName, projectId);
-        // Map position to board status
-        String boardStatus;
-        String boardName;
-        
-        switch (position) {
-            case 0:
-                boardStatus = "TO_DO";
-                boardName = "TO DO";
-                break;
-            case 1:
-                boardStatus = "IN_PROGRESS";
-                boardName = "IN PROGRESS";
-                break;
-            case 2:
-                boardStatus = "DONE";
-                boardName = "DONE";
-                break;
-            default:
-                boardStatus = "TO_DO";
-                boardName = "TO DO";
-                break;
+            Log.w(TAG, "Using calculated boardId for position " + position);
+            // Simple boardId calculation: projectId_status
+            String calculatedBoardId = projectId + "_" + status;
+            return ListProject.newInstance(displayName, projectId, calculatedBoardId);
         }
-        
-        // Phase 5: Pass BoardViewModel to fragment
-        if (boardViewModel != null && projectId != null) {
-            return ListProject.newInstance(boardName, projectId, boardViewModel);
-        } else if (projectId != null) {
-            // Legacy: Without ViewModel (will use old approach)
-            return ListProject.newInstance(boardName, projectId);
-        } else {
-            // Fallback: No projectId
-            return ListProject.newInstance(boardName);
-        }
-        
-        // Fallback: Create empty fragment
-        Log.w(TAG, "Creating fragment without projectId or boardId for position " + position);
-        return ListProject.newInstance(displayName);
-    }
+
+        // Final fallback: Create empty fragment
+        Log.e(TAG, "Cannot create fragment: no projectId or boardId for position " + position);
+        return ListProject.newInstance(displayName, "", "");
+    }  // ✅ ĐÓNG METHOD createFragment()
 
     @Override
     public int getItemCount() {
         return 3; // TO DO, IN PROGRESS, DONE
     }
-    
+
     // ===== GETTERS =====
-    
-    /**
-     * Get TaskViewModel (shared across fragments)
-     */
+
     public TaskViewModel getTaskViewModel() {
         return taskViewModel;
     }
-    
-    /**
-     * Get BoardViewModel (shared across fragments)
-     */
+
     public BoardViewModel getBoardViewModel() {
         return boardViewModel;
     }
-    
-    /**
-     * Get boardId for specific position
-     */
+
     public String getBoardIdForPosition(int position) {
         return boardIdMap.get(position);
     }
-    
-    /**
-     * Get status for position
-     */
+
     public String getStatusForPosition(int position) {
         if (position >= 0 && position < STATUSES.length) {
             return STATUSES[position];
         }
         return "TO_DO";
     }
-    
-    /**
-     * Get display name for position
-     */
+
     public String getDisplayNameForPosition(int position) {
         if (position >= 0 && position < DISPLAY_NAMES.length) {
             return DISPLAY_NAMES[position];

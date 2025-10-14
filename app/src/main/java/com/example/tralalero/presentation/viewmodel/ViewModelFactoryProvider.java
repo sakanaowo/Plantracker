@@ -91,16 +91,16 @@ public class ViewModelFactoryProvider {
     }
     
     /**
-     * Provide ProjectFactory with all dependencies
-     * 
-     * @return ProjectFactory instance ready to use
+     * Provide ProjectViewModelFactory with all dependencies
+     *
+     * @return ProjectViewModelFactory instance ready to use
      */
-    public static ProjectFactory provideProjectViewModelFactory() {
+    public static ProjectViewModelFactory provideProjectViewModelFactory() {
         initApis();
         
         IProjectRepository repository = new ProjectRepositoryImpl(projectApi);
         
-        return new ProjectFactory(
+        return new ProjectViewModelFactory(
             new GetProjectByIdUseCase(repository),
             new CreateProjectUseCase(repository),
             new UpdateProjectUseCase(repository),
@@ -111,11 +111,11 @@ public class ViewModelFactoryProvider {
     }
     
     /**
-     * Provide BoardFactory with all dependencies
-     * 
-     * @return BoardFactory instance ready to use
+     * Provide BoardViewModelFactory with all dependencies
+     *
+     * @return BoardViewModelFactory instance ready to use
      */
-    public static BoardFactory provideBoardViewModelFactory() {
+    public static BoardViewModelFactory provideBoardViewModelFactory() {
         initApis();
         
         // BoardRepository needs BoardApiService
@@ -124,7 +124,7 @@ public class ViewModelFactoryProvider {
         // GetBoardTasksUseCase needs TaskRepository
         ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi);
         
-        return new BoardFactory(
+        return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),
             new CreateBoardUseCase(boardRepository),
             new UpdateBoardUseCase(boardRepository),

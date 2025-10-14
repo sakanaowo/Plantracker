@@ -15,9 +15,18 @@ import java.util.List;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     private List<Task> taskList;
+    private OnTaskClickListener listener;
+
+    public interface OnTaskClickListener {
+        void onTaskClick(Task task);
+    }
 
     public TaskAdapter(List<Task> taskList) {
         this.taskList = taskList;
+    }
+
+    public void setOnTaskClickListener(OnTaskClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -31,7 +40,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Task task = taskList.get(position);
-        holder.bind(task);
+        holder.bind(task, listener);
     }
 
     @Override
@@ -52,7 +61,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             checkBox = itemView.findViewById(R.id.checkBoxTask);
         }
 
-        void bind(Task task) {
+        void bind(Task task, OnTaskClickListener listener) {
             checkBox.setText(task.getTitle());
 
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -60,7 +69,13 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
                 // TODO: Gọi API để update trạng thái task
             });
 
-            itemView.setOnClickListener(v -> checkBox.toggle());
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onTaskClick(task);
+                } else {
+                    checkBox.toggle();
+                }
+            });
         }
     }
 }
