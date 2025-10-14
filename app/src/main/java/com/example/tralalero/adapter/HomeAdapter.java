@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Workspace;
+import com.example.tralalero.domain.model.Workspace;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,11 +55,10 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder
         }
     }
 
-    public void updateWorkspace(int position, Workspace workspace) {
-        if (position >= 0 && position < workspaceList.size() && workspace != null) {
-            workspaceList.set(position, workspace);
-            notifyItemChanged(position);
-        }
+    public void updateWorkspace(List<Workspace> workspace) {
+        this.workspaceList.clear();
+        this.workspaceList.addAll(workspace);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -108,4 +107,3 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder
         }
     }
 }
-

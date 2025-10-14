@@ -6,44 +6,73 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.lifecycle.ViewModelProvider;
 
-import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.HomeAdapter;
-import com.example.tralalero.feature.home.ui.AccountActivity;
-import com.example.tralalero.feature.home.ui.ActivityActivity;
-import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
-import com.example.tralalero.feature.home.ui.InboxActivity;
-import com.example.tralalero.model.Workspace;
-import com.example.tralalero.network.ApiClient;
-import com.example.tralalero.data.remote.api.HomeApiService;
+import com.example.tralalero.feature.home.ui.BaseActivity;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.test.RepositoryTestActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.List;
+import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-public class HomeActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
+public class HomeActivity extends BaseActivity {
 
     private RecyclerView recyclerBoard;
     private HomeAdapter homeAdapter;
     private static final String TAG = "HomeActivity";
 
-    //TODO: viết lại giao diện, các viewmodel theo như chỉnh sửa mới có trong báo cáo ở md
+    private WorkspaceViewModel workspaceViewModel;
+
+    private void setupWorkspaceViewModel() {
+        // Sử dụng ViewModelFactoryProvider thay vì tạo thủ công
+        workspaceViewModel = new ViewModelProvider(
+                this,
+                ViewModelFactoryProvider.provideWorkspaceViewModelFactory()
+        ).get(WorkspaceViewModel.class);
+    }
+
+    private void observeWorkspaceViewModel() {
+        workspaceViewModel.getWorkspaces().observe(this, workspaces -> {
+            if (workspaces != null && !workspaces.isEmpty()) {
+                Log.d(TAG, "Loaded " + workspaces.size() + " workspaces from ViewModel");
+
+                // LOẠI BỎ CONVERT - Dùng domain model trực tiếp
+                homeAdapter.setWorkspaceList(workspaces);
+            } else {
+                Log.d(TAG, "No workspaces found");
+            }
+        });
+
+        workspaceViewModel.isLoading().observe(this, isLoading -> {
+            if (isLoading) {
+                // TODO: show loading indicator
+                Log.d(TAG, "Loading workspaces...");
+            } else {
+                // TODO: hide loading indicator
+                Log.d(TAG, "Finished loading workspaces.");
+            }
+        });
+
+        workspaceViewModel.getError().observe(this, error -> {
+            if (error != null) {
+                Toast.makeText(this, "Error loading workspaces: " + error, Toast.LENGTH_SHORT).show();
+                workspaceViewModel.clearError();
+            }
+        });
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,11 +84,15 @@ public class HomeActivity extends com.example.tralalero.feature.home.ui.BaseActi
             return insets;
         });
 
+        // Setup ViewModel TRƯỚC khi setup UI
+        setupWorkspaceViewModel();
+        observeWorkspaceViewModel();
+
         // Initialize RecyclerView
         setupRecyclerView();
 
-        // Load workspaces từ API
-        loadWorkspacesFromApi();
+        // Load workspaces từ ViewModel
+        workspaceViewModel.loadWorkspaces();
 
         // Setup Test Repository Button (Development only)
         setupTestRepositoryButton();
@@ -81,9 +114,7 @@ public class HomeActivity extends com.example.tralalero.feature.home.ui.BaseActi
             String text = cardNew.getText().toString().trim();
 
             if (!text.isEmpty()) {
-//                TODO: lưu vào database
-//                saveToDatabase(text);
-
+                // TODO: lưu vào database
                 Toast.makeText(this, "Đã thêm: " + text, Toast.LENGTH_SHORT).show();
 
                 inboxForm.setVisibility(View.GONE);
@@ -117,45 +148,6 @@ public class HomeActivity extends com.example.tralalero.feature.home.ui.BaseActi
         recyclerBoard.setAdapter(homeAdapter);
     }
 
-    private void loadWorkspacesFromApi() {
-        // Tạo API service
-        HomeApiService apiService = ApiClient.get(App.authManager).create(HomeApiService.class);
-
-        // Gọi API
-        Call<List<Workspace>> call = apiService.getWorkspaces();
-
-        call.enqueue(new Callback<List<Workspace>>() {
-            @Override
-            public void onResponse(Call<List<Workspace>> call, Response<List<Workspace>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Workspace> workspaces = response.body();
-
-                    Log.d(TAG, "Loaded " + workspaces.size() + " workspaces from API");
-
-                    // Cập nhật adapter với dữ liệu từ API
-                    homeAdapter.setWorkspaceList(workspaces);
-
-                    // Log để debug
-                    for (Workspace workspace : workspaces) {
-                        Log.d(TAG, "Workspace: " + workspace.getName() + " (ID: " + workspace.getId() + ")");
-                    }
-                } else {
-                    Log.e(TAG, "Failed to load workspaces: " + response.code());
-                    Toast.makeText(HomeActivity.this,
-                            "Failed to load workspaces",
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Workspace>> call, Throwable t) {
-                Log.e(TAG, "Error loading workspaces", t);
-                Toast.makeText(HomeActivity.this,
-                        "Error: " + t.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
     private void setupTestRepositoryButton() {
         // Tạo FAB button để test repository (chỉ dùng khi development)

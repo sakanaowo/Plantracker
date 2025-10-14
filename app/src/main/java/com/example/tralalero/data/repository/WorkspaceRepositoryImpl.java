@@ -87,6 +87,46 @@ public class WorkspaceRepositoryImpl implements IWorkspaceRepository {
     }
 
     @Override
+    public void updateWorkspace(String workspaceId, Workspace workspace, IWorkspaceRepository.RepositoryCallback<Workspace> callback) {
+        WorkspaceDTO dto = WorkspaceMapper.toDTO(workspace);
+        apiService.updateWorkspace(workspaceId, dto).enqueue(new Callback<WorkspaceDTO>() {
+            @Override
+            public void onResponse(Call<WorkspaceDTO> call, Response<WorkspaceDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Workspace updatedWorkspace = WorkspaceMapper.toDomain(response.body());
+                    callback.onSuccess(updatedWorkspace);
+                } else {
+                    callback.onError("Failed to update workspace: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<WorkspaceDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void deleteWorkspace(String workspaceId, IWorkspaceRepository.RepositoryCallback<Void> callback) {
+        apiService.deleteWorkspace(workspaceId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to delete workspace: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
     public void getProjects(String workspaceId, IWorkspaceRepository.RepositoryCallback<List<Project>> callback) {
         apiService.getProjects(workspaceId).enqueue(new Callback<List<ProjectDTO>>() {
             @Override

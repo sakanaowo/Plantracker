@@ -31,6 +31,7 @@ import com.example.tralalero.domain.usecase.auth.*;
 import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.domain.repository.IAuthRepository;
 import com.example.tralalero.App.App;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 
 
 public class LoginActivity extends AppCompatActivity {
@@ -101,10 +102,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupViewModel() {
-        IAuthRepository authRepository = new AuthRepositoryImpl(
-                ApiClient.get(App.authManager).create(AuthApi.class),
-                App.authManager
-        );
+        IAuthRepository authRepository = new AuthRepositoryImpl(this);
 
         LoginUseCase loginUseCase = new LoginUseCase(authRepository);
         LogoutUseCase logoutUseCase = new LogoutUseCase(authRepository);
@@ -117,7 +115,7 @@ public class LoginActivity extends AppCompatActivity {
                 getCurrentUserUseCase,
                 isLoggedInUseCase
         );
-        authViewModel = new ViewModelProvider(this, factory).get(AuthViewModel.class);
+        authViewModel = new ViewModelProvider(this, ViewModelFactoryProvider.provideWorkspaceViewModelFactory()).get(AuthViewModel.class);
 
     }
 
