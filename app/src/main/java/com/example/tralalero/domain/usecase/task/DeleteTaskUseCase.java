@@ -25,7 +25,7 @@ public class DeleteTaskUseCase {
      * @param taskId Task ID to delete (UUID format)
      * @param callback Callback to receive result
      */
-    public void execute(String taskId, Callback callback) {
+    public void execute(String taskId, Callback<Void> callback) {
         // Validate input
         if (taskId == null || taskId.trim().isEmpty()) {
             callback.onError("Task ID cannot be empty");
@@ -43,7 +43,7 @@ public class DeleteTaskUseCase {
         taskRepository.deleteTask(taskId, new ITaskRepository.RepositoryCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                callback.onSuccess();
+                callback.onSuccess(result);
             }
             
             @Override
@@ -60,8 +60,8 @@ public class DeleteTaskUseCase {
         return uuid.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
     }
     
-    public interface Callback {
-        void onSuccess();
+    public interface Callback<T> {
+        void onSuccess(T result);
         void onError(String error);
     }
 }
