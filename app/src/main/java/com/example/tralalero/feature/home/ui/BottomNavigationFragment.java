@@ -1,17 +1,13 @@
 package com.example.tralalero.feature.home.ui;
-
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
 import com.example.tralalero.R;
-
 public class BottomNavigationFragment extends Fragment {
     private OnNavigationItemSelectedListener listener;
     private int selectedItem = 0;
@@ -33,12 +29,10 @@ public class BottomNavigationFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         ImageButton btn1 = view.findViewById(R.id.btn1);
         ImageButton btn2 = view.findViewById(R.id.btn2);
         ImageButton btn3 = view.findViewById(R.id.btn3);
         ImageButton btn4 = view.findViewById(R.id.btn4);
-
         btn1.setOnClickListener(v -> {
             selectedItem = 0;
             updateSelection();
@@ -67,12 +61,10 @@ public class BottomNavigationFragment extends Fragment {
         ImageButton btn2 = getView().findViewById(R.id.btn2);
         ImageButton btn3 = getView().findViewById(R.id.btn3);
         ImageButton btn4 = getView().findViewById(R.id.btn4);
-
         btn1.setImageTintList(getResources().getColorStateList(android.R.color.black, null));
         btn2.setImageTintList(getResources().getColorStateList(android.R.color.black, null));
         btn3.setImageTintList(getResources().getColorStateList(android.R.color.black, null));
         btn4.setImageTintList(getResources().getColorStateList(android.R.color.black, null));
-
         int selectedColor = getResources().getColor(R.color.primary, null);
         switch (selectedItem) {
             case 0:

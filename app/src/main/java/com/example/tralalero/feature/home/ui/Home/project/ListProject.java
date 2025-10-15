@@ -1,15 +1,11 @@
 package com.example.tralalero.feature.home.ui.Home.project;
-
 import androidx.lifecycle.ViewModelProvider;
-
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.TaskAdapter;
 import com.example.tralalero.domain.model.Task;
@@ -30,37 +25,22 @@ import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
 import com.example.tralalero.domain.usecase.task.*;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Fragment displaying tasks for a specific board (TO DO, IN PROGRESS, DONE)
- * Phase 5: Using TaskViewModel with domain models only
- *
- * @author Phase 5 - Consolidated
- * @date 15/10/2025
- */
 public class ListProject extends Fragment {
     private static final String TAG = "ListProject";
     private static final String ARG_TYPE = "type";
     private static final String ARG_PROJECT_ID = "project_id";
     private static final String ARG_BOARD_ID = "board_id";
-
     private String type;
     private String projectId;
     private String boardId;
-
-    // ViewModel
     private TaskViewModel taskViewModel;
-
-    // UI Components
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView emptyView;
     private TaskAdapter taskAdapter;
     private FloatingActionButton fabAddTask;
-
     public static ListProject newInstance(String type, String projectId, String boardId) {
         ListProject fragment = new ListProject();
         Bundle args = new Bundle();
@@ -70,35 +50,26 @@ public class ListProject extends Fragment {
         fragment.setArguments(args);
         return fragment;
     }
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_list_frm, container, false);
-
-        // Get arguments
         if (getArguments() != null) {
             type = getArguments().getString(ARG_TYPE);
             projectId = getArguments().getString(ARG_PROJECT_ID);
             boardId = getArguments().getString(ARG_BOARD_ID);
         }
-        
         Log.d(TAG, "onCreateView - Type: " + type + ", BoardId: " + boardId);
-
-        // Setup
         initViews(view);
         setupViewModel();
         setupRecyclerView();
         observeViewModel();
-        
-        // Load tasks if boardId is available
         if (boardId != null && !boardId.isEmpty()) {
             loadTasksForBoard();
         } else {
             Log.w(TAG, "BoardId not available yet, waiting for boards to load...");
-            // Show loading state while waiting for boardId
             if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
@@ -106,43 +77,29 @@ public class ListProject extends Fragment {
                 emptyView.setVisibility(View.GONE);
             }
         }
-
         return view;
     }
-
     @Override
     public void onResume() {
         super.onResume();
-
-        // Check if boardId has been updated since fragment creation
         if (boardId == null || boardId.isEmpty()) {
-            // Try to get boardId from adapter
             if (getActivity() != null) {
-                // Fragment will be notified when boards are loaded via observeViewModel
                 Log.d(TAG, "onResume - Still waiting for boardId");
             }
         }
     }
-
-    
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
         fabAddTask = view.findViewById(R.id.fabAddTask);
-
-        // Setup FAB click listener
         if (fabAddTask != null) {
             fabAddTask.setOnClickListener(v -> showCreateTaskDialog());
         }
     }
-    
     private void setupViewModel() {
-        // Create repository
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository repository = new TaskRepositoryImpl(apiService);
-        
-        // Create UseCases
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
@@ -158,8 +115,6 @@ public class ListProject extends Fragment {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
-        
-        // Create Factory
         TaskViewModelFactory factory = new TaskViewModelFactory(
             getTaskByIdUseCase,
             getTasksByBoardUseCase,
@@ -177,42 +132,29 @@ public class ListProject extends Fragment {
             addChecklistUseCase,
             getTaskChecklistsUseCase
         );
-        
-        // Create ViewModel - shared across Activity
         taskViewModel = new ViewModelProvider(requireActivity(), factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");
     }
-    
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        
-        // Initialize adapter with click listener
         taskAdapter = new TaskAdapter(new ArrayList<>());
         taskAdapter.setOnTaskClickListener(task -> {
             showTaskDetailBottomSheet(task);
             Log.d(TAG, "Task clicked: " + task.getId());
         });
-        
         recyclerView.setAdapter(taskAdapter);
     }
-
     private void observeViewModel() {
-        // ✅ FIX: Observe tasks for THIS specific board only
-        // Wait until boardId is available
         if (boardId != null && !boardId.isEmpty()) {
             taskViewModel.getTasksForBoard(boardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
-                    // ✅ TaskAdapter already uses domain.model.Task - no conversion needed!
                     taskAdapter.updateTasks(tasks);
                     Log.d(TAG, "Loaded " + tasks.size() + " tasks for board: " + boardId);
-
-                    // Show/hide views
                     recyclerView.setVisibility(View.VISIBLE);
                     if (emptyView != null) {
                         emptyView.setVisibility(View.GONE);
                     }
                 } else {
-                    // No tasks - show empty view
                     recyclerView.setVisibility(View.GONE);
                     if (emptyView != null) {
                         emptyView.setVisibility(View.VISIBLE);
@@ -224,16 +166,12 @@ public class ListProject extends Fragment {
         } else {
             Log.w(TAG, "Cannot observe tasks yet - boardId is null");
         }
-
-        // Observe loading state
         taskViewModel.isLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             }
             Log.d(TAG, "Loading state for " + type + ": " + isLoading);
         });
-        
-        // Observe errors
         taskViewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
@@ -242,38 +180,28 @@ public class ListProject extends Fragment {
             }
         });
     }
-    
-    // ===== HELPER METHODS =====
-
     private void loadTasksForBoard() {
         if (boardId == null || boardId.isEmpty()) {
             Log.e(TAG, "Cannot load tasks: boardId is null");
             return;
         }
-        
         Log.d(TAG, "Loading tasks for board: " + boardId);
         taskViewModel.loadTasksByBoard(boardId);
     }
-
     private void showTaskDetailBottomSheet(Task task) {
-        // Show edit task dialog
         TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForEdit(
             task, boardId, projectId
         );
-
         bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
             @Override
             public void onTaskCreated(Task task) {
-                // Not used in edit mode
             }
-
             @Override
             public void onTaskUpdated(Task updatedTask) {
                 Log.d(TAG, "Updating task: " + updatedTask.getId());
                 taskViewModel.updateTask(updatedTask.getId(), updatedTask);
                 Toast.makeText(getContext(), "Task updated successfully", Toast.LENGTH_SHORT).show();
             }
-
             @Override
             public void onTaskDeleted(String taskId) {
                 Log.d(TAG, "Deleting task: " + taskId);
@@ -281,31 +209,21 @@ public class ListProject extends Fragment {
                 Toast.makeText(getContext(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
             }
         });
-
         bottomSheet.show(getParentFragmentManager(), "EDIT_TASK");
     }
-
-    /**
-     * Show dialog to create new task
-     * Phase 6 - Person 3 Implementation
-     */
     private void showCreateTaskDialog() {
         if (boardId == null || boardId.isEmpty()) {
             Toast.makeText(getContext(), "Board not ready yet, please wait...", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (projectId == null || projectId.isEmpty()) {
             Toast.makeText(getContext(), "Project ID missing", Toast.LENGTH_SHORT).show();
             return;
         }
-
         Log.d(TAG, "Opening create task dialog for board: " + boardId);
-
         TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForCreate(
             boardId, projectId
         );
-
         bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
             @Override
             public void onTaskCreated(Task newTask) {
@@ -313,40 +231,25 @@ public class ListProject extends Fragment {
                 taskViewModel.createTask(newTask);
                 Toast.makeText(getContext(), "Task created successfully", Toast.LENGTH_SHORT).show();
             }
-
             @Override
             public void onTaskUpdated(Task task) {
-                // Not used in create mode
             }
-
             @Override
             public void onTaskDeleted(String taskId) {
-                // Not used in create mode
             }
         });
-
         bottomSheet.show(getParentFragmentManager(), "CREATE_TASK");
     }
-
     private String getEmptyMessage() {
         return "No tasks in " + type;
     }
-
-    /**
-     * Update boardId and reload tasks
-     * Called when boards are loaded after fragment creation
-     */
     public void updateBoardIdAndReload(String newBoardId) {
         if (newBoardId != null && !newBoardId.isEmpty() && !newBoardId.equals(this.boardId)) {
             Log.d(TAG, "Updating boardId from " + this.boardId + " to " + newBoardId);
             this.boardId = newBoardId;
-
-            // Update arguments for configuration changes
             if (getArguments() != null) {
                 getArguments().putString(ARG_BOARD_ID, newBoardId);
             }
-
-            // ✅ FIX: Re-observe with new boardId
             taskViewModel.getTasksForBoard(newBoardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
                     taskAdapter.updateTasks(tasks);
@@ -364,15 +267,9 @@ public class ListProject extends Fragment {
                     Log.d(TAG, "No tasks found for updated board: " + newBoardId);
                 }
             });
-
-            // Reload tasks with new boardId
             loadTasksForBoard();
         }
     }
-
-    /**
-     * Get current boardId
-     */
     public String getBoardId() {
         return boardId;
     }
