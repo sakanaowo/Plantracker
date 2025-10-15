@@ -6,16 +6,16 @@ public class MembershipDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspace_id")
+    @SerializedName("workspaceId")
     private String workspaceId;
 
-    @SerializedName("user_id")
+    @SerializedName("userId")
     private String userId;
 
     @SerializedName("role")
     private String role;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     private String createdAt;
 
     public String getId() {

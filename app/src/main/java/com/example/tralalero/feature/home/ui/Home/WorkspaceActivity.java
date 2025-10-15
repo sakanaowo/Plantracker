@@ -225,6 +225,7 @@ public class WorkspaceActivity extends HomeActivity {
     /**
      * Show dialog to create new project
      * Phase 6: Task 2.1 - Create Project Feature
+     * FIXED: Prevent dialog from closing when validation fails
      */
     private void showCreateProjectDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -237,21 +238,33 @@ public class WorkspaceActivity extends HomeActivity {
 
         builder.setView(dialogView);
 
-        builder.setPositiveButton("Create", (dialog, which) -> {
-            String projectName = etProjectName.getText().toString().trim();
-            String projectDescription = etProjectDescription.getText().toString().trim();
+        builder.setPositiveButton("Create", null); // Set null first
+        builder.setNegativeButton("Cancel", null);
 
-            if (projectName.isEmpty()) {
-                Toast.makeText(this, "Project name is required", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        AlertDialog dialog = builder.create();
 
-            // Create project
-            createProject(projectName, projectDescription);
+        // Override positive button behavior to prevent auto-close
+        dialog.setOnShowListener(dialogInterface -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String projectName = etProjectName.getText().toString().trim();
+                String projectDescription = etProjectDescription.getText().toString().trim();
+
+                // Validate project name
+                if (projectName.isEmpty()) {
+                    etProjectName.setError("Project name cannot be empty");
+                    Toast.makeText(this, "Project name cannot be empty", Toast.LENGTH_SHORT).show();
+                    return; // Don't close dialog
+                }
+
+                // Validation passed - create project
+                createProject(projectName, projectDescription);
+
+                // Close dialog manually after successful validation
+                dialog.dismiss();
+            });
         });
 
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+        dialog.show();
     }
 
     /**

@@ -60,12 +60,9 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
 
         if (intent != null) {
-            // Clear back stack để tránh bị chồng Activity
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();
-
-            // Animation mượt mà
         }
     }
 }

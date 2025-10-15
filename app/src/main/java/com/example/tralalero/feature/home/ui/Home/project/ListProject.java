@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.ItemTouchHelper;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,6 +30,7 @@ import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
 import com.example.tralalero.domain.usecase.task.*;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,6 @@ public class ListProject extends Fragment {
     private static final String ARG_PROJECT_ID = "project_id";
     private static final String ARG_BOARD_ID = "board_id";
 
-    // ===== INSTANCE VARIABLES =====
     private String type;
     private String projectId;
     private String boardId;
@@ -59,8 +60,9 @@ public class ListProject extends Fragment {
     private ProgressBar progressBar;
     private TextView emptyView;
     private TaskAdapter taskAdapter;
+    private FloatingActionButton fabAddTask;
+    private ItemTouchHelper itemTouchHelper; // ✅ For drag & drop
 
-    // ===== FACTORY METHOD =====
     public static ListProject newInstance(String type, String projectId, String boardId) {
         ListProject fragment = new ListProject();
         Bundle args = new Bundle();
@@ -124,12 +126,17 @@ public class ListProject extends Fragment {
         }
     }
 
-    // ===== SETUP METHODS =====
     
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
+        fabAddTask = view.findViewById(R.id.fabAddTask);
+
+        // Setup FAB click listener
+        if (fabAddTask != null) {
+            fabAddTask.setOnClickListener(v -> showCreateTaskDialog());
+        }
     }
     
     private void setupViewModel() {
@@ -188,33 +195,123 @@ public class ListProject extends Fragment {
             Log.d(TAG, "Task clicked: " + task.getId());
         });
         
+        // ✅ Setup drag & drop listener
+        taskAdapter.setOnTaskDragListener((fromPosition, toPosition) -> {
+            Log.d(TAG, "Task moved from " + fromPosition + " to " + toPosition);
+            // TODO: Update task position in backend
+            Task movedTask = taskAdapter.getTaskAt(toPosition);
+            if (movedTask != null) {
+                // Calculate new position value
+                double newPosition = toPosition * 1000.0;
+                taskViewModel.updateTaskPosition(movedTask.getId(), newPosition);
+            }
+        });
+
         recyclerView.setAdapter(taskAdapter);
+
+        // ✅ Setup ItemTouchHelper for drag & drop
+        setupDragAndDrop();
+    }
+
+    /**
+     * ✅ Setup drag and drop functionality
+     */
+    private void setupDragAndDrop() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN, // Drag directions
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT // Swipe directions
+        ) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                int fromPosition = viewHolder.getAdapterPosition();
+                int toPosition = target.getAdapterPosition();
+
+                // Move item in adapter
+                taskAdapter.moveItem(fromPosition, toPosition);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Optional: Handle swipe to delete
+                int position = viewHolder.getAdapterPosition();
+                Task task = taskAdapter.getTaskAt(position);
+
+                if (direction == ItemTouchHelper.LEFT || direction == ItemTouchHelper.RIGHT) {
+                    // Show confirmation dialog before delete
+                    showDeleteConfirmation(task);
+                }
+            }
+
+            @Override
+            public boolean isLongPressDragEnabled() {
+                return true; // Enable long press to drag
+            }
+
+            @Override
+            public boolean isItemViewSwipeEnabled() {
+                return false; // Disable swipe to delete for now (can enable later)
+            }
+        };
+
+        itemTouchHelper = new ItemTouchHelper(callback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
+    /**
+     * Show confirmation dialog before deleting task
+     */
+    private void showDeleteConfirmation(Task task) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Delete Task")
+                .setMessage("Are you sure you want to delete \"" + task.getTitle() + "\"?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    Log.d(TAG, "Deleting task: " + task.getId());
+                    taskViewModel.deleteTask(task.getId());
+                    Toast.makeText(getContext(), "Task deleted", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    // Refresh list to restore the item
+                    taskAdapter.notifyDataSetChanged();
+                })
+                .setOnCancelListener(dialog -> {
+                    // Refresh list to restore the item
+                    taskAdapter.notifyDataSetChanged();
+                })
+                .show();
     }
 
     private void observeViewModel() {
-        // Observe tasks list
-        taskViewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> {
-            if (tasks != null && !tasks.isEmpty()) {
-                // ✅ TaskAdapter already uses domain.model.Task - no conversion needed!
-                taskAdapter.updateTasks(tasks);
-                Log.d(TAG, "Loaded " + tasks.size() + " tasks for " + type);
+        // ✅ FIX: Observe tasks for THIS specific board only
+        // Wait until boardId is available
+        if (boardId != null && !boardId.isEmpty()) {
+            taskViewModel.getTasksForBoard(boardId).observe(getViewLifecycleOwner(), tasks -> {
+                if (tasks != null && !tasks.isEmpty()) {
+                    // ✅ TaskAdapter already uses domain.model.Task - no conversion needed!
+                    taskAdapter.updateTasks(tasks);
+                    Log.d(TAG, "Loaded " + tasks.size() + " tasks for board: " + boardId);
 
-                // Show/hide views
-                recyclerView.setVisibility(View.VISIBLE);
-                if (emptyView != null) {
-                    emptyView.setVisibility(View.GONE);
+                    // Show/hide views
+                    recyclerView.setVisibility(View.VISIBLE);
+                    if (emptyView != null) {
+                        emptyView.setVisibility(View.GONE);
+                    }
+                } else {
+                    // No tasks - show empty view
+                    recyclerView.setVisibility(View.GONE);
+                    if (emptyView != null) {
+                        emptyView.setVisibility(View.VISIBLE);
+                        emptyView.setText(getEmptyMessage());
+                    }
+                    Log.d(TAG, "No tasks found for board: " + boardId);
                 }
-            } else {
-                // No tasks - show empty view
-                recyclerView.setVisibility(View.GONE);
-                if (emptyView != null) {
-                    emptyView.setVisibility(View.VISIBLE);
-                    emptyView.setText(getEmptyMessage());
-                }
-                Log.d(TAG, "No tasks found for " + type);
-            }
-        });
-        
+            });
+        } else {
+            Log.w(TAG, "Cannot observe tasks yet - boardId is null");
+        }
+
         // Observe loading state
         taskViewModel.isLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
@@ -246,8 +343,76 @@ public class ListProject extends Fragment {
     }
 
     private void showTaskDetailBottomSheet(Task task) {
-        // TODO: Implement TaskDetailBottomSheet
-        Toast.makeText(getContext(), "Task: " + task.getTitle(), Toast.LENGTH_SHORT).show();
+        // Show edit task dialog
+        TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForEdit(
+            task, boardId, projectId
+        );
+
+        bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
+            @Override
+            public void onTaskCreated(Task task) {
+                // Not used in edit mode
+            }
+
+            @Override
+            public void onTaskUpdated(Task updatedTask) {
+                Log.d(TAG, "Updating task: " + updatedTask.getId());
+                taskViewModel.updateTask(updatedTask.getId(), updatedTask);
+                Toast.makeText(getContext(), "Task updated successfully", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onTaskDeleted(String taskId) {
+                Log.d(TAG, "Deleting task: " + taskId);
+                taskViewModel.deleteTask(taskId);
+                Toast.makeText(getContext(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        bottomSheet.show(getParentFragmentManager(), "EDIT_TASK");
+    }
+
+    /**
+     * Show dialog to create new task
+     * Phase 6 - Person 3 Implementation
+     */
+    private void showCreateTaskDialog() {
+        if (boardId == null || boardId.isEmpty()) {
+            Toast.makeText(getContext(), "Board not ready yet, please wait...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(getContext(), "Project ID missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Log.d(TAG, "Opening create task dialog for board: " + boardId);
+
+        TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForCreate(
+            boardId, projectId
+        );
+
+        bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
+            @Override
+            public void onTaskCreated(Task newTask) {
+                Log.d(TAG, "Creating new task: " + newTask.getTitle());
+                taskViewModel.createTask(newTask);
+                Toast.makeText(getContext(), "Task created successfully", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onTaskUpdated(Task task) {
+                // Not used in create mode
+            }
+
+            @Override
+            public void onTaskDeleted(String taskId) {
+                // Not used in create mode
+            }
+        });
+
+        bottomSheet.show(getParentFragmentManager(), "CREATE_TASK");
     }
 
     private String getEmptyMessage() {
@@ -268,6 +433,25 @@ public class ListProject extends Fragment {
                 getArguments().putString(ARG_BOARD_ID, newBoardId);
             }
 
+            // ✅ FIX: Re-observe with new boardId
+            taskViewModel.getTasksForBoard(newBoardId).observe(getViewLifecycleOwner(), tasks -> {
+                if (tasks != null && !tasks.isEmpty()) {
+                    taskAdapter.updateTasks(tasks);
+                    Log.d(TAG, "Loaded " + tasks.size() + " tasks for updated board: " + newBoardId);
+                    recyclerView.setVisibility(View.VISIBLE);
+                    if (emptyView != null) {
+                        emptyView.setVisibility(View.GONE);
+                    }
+                } else {
+                    recyclerView.setVisibility(View.GONE);
+                    if (emptyView != null) {
+                        emptyView.setVisibility(View.VISIBLE);
+                        emptyView.setText(getEmptyMessage());
+                    }
+                    Log.d(TAG, "No tasks found for updated board: " + newBoardId);
+                }
+            });
+
             // Reload tasks with new boardId
             loadTasksForBoard();
         }
@@ -280,3 +464,4 @@ public class ListProject extends Fragment {
         return boardId;
     }
 }
+

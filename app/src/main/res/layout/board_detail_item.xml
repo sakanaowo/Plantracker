@@ -5,20 +5,47 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingHorizontal="8dp"
-    android:paddingVertical="8dp"
-    >
+    android:paddingVertical="4dp">
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        app:cardCornerRadius="8dp">
+        app:cardCornerRadius="4dp"
+        app:cardElevation="1dp"
+        app:cardBackgroundColor="@android:color/white">
 
-        <CheckBox
-            android:id="@+id/checkBoxTask"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="task name"
-            android:padding="12dp" />
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:gravity="center_vertical">
+
+            <!-- Checkbox - smaller -->
+            <CheckBox
+                android:id="@+id/checkBoxTask"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:scaleX="0.75"
+                android:scaleY="0.75"
+                android:layout_marginEnd="6dp" />
+
+            <!-- Task title -->
+            <TextView
+                android:id="@+id/tvTaskTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Task name"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:maxLines="3"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
     </androidx.cardview.widget.CardView>
 </LinearLayout>

@@ -163,10 +163,16 @@ public class HomeActivity extends BaseActivity {
         // Tạo FAB button để test repository (chỉ dùng khi development)
         FloatingActionButton fabTest = findViewById(R.id.fabTestRepository);
         if (fabTest != null) {
+            // ẨN nút test repository trong production
+            fabTest.setVisibility(View.GONE);
+
+            // Comment out click listener vì nút đã ẩn
+            /*
             fabTest.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, RepositoryTestActivity.class);
                 startActivity(intent);
             });
+            */
         }
     }
 }

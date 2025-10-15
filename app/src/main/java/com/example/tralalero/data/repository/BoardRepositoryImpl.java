@@ -42,16 +42,44 @@ public class BoardRepositoryImpl implements IBoardRepository {
 
     @Override
     public void getBoardsByProject(String projectId, RepositoryCallback<List<Board>> callback) {
-        Log.d(TAG, "Loading boards for project: " + projectId);
+        Log.d(TAG, "=== GET BOARDS BY PROJECT ===");
+        Log.d(TAG, "Project ID: " + projectId);
+        Log.d(TAG, "API Call: GET /boards?projectId=" + projectId);
+
         apiService.getBoardsByProject(projectId).enqueue(new Callback<List<BoardDTO>>() {
             @Override
             public void onResponse(Call<List<BoardDTO>> call, Response<List<BoardDTO>> response) {
+                Log.d(TAG, "=== RESPONSE RECEIVED ===");
+                Log.d(TAG, "Response Code: " + response.code());
+                Log.d(TAG, "Response Success: " + response.isSuccessful());
+                Log.d(TAG, "Response Body Null: " + (response.body() == null));
+
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Board> boards = BoardMapper.toDomainList(response.body());
-                    Log.d(TAG, "✅ Loaded " + boards.size() + " boards from API");
+                    List<BoardDTO> boardDTOs = response.body();
+                    Log.d(TAG, "✅ Received " + boardDTOs.size() + " boards from API");
+
+                    // Log each board
+                    for (int i = 0; i < boardDTOs.size(); i++) {
+                        BoardDTO dto = boardDTOs.get(i);
+                        Log.d(TAG, "Board " + (i + 1) + ": " +
+                                "id=" + dto.getId() +
+                                ", projectId=" + dto.getProjectId() +
+                                ", name=" + dto.getName() +
+                                ", order=" + dto.getOrder());
+                    }
+
+                    List<Board> boards = BoardMapper.toDomainList(boardDTOs);
+                    Log.d(TAG, "✅ Mapped to " + boards.size() + " domain boards");
                     callback.onSuccess(boards);
                 } else {
                     String errorMsg = "Failed to load boards: " + response.code();
+                    if (response.errorBody() != null) {
+                        try {
+                            errorMsg += " - " + response.errorBody().string();
+                        } catch (Exception e) {
+                            errorMsg += " - Could not read error body";
+                        }
+                    }
                     Log.e(TAG, "❌ " + errorMsg);
                     callback.onError(errorMsg);
                 }
@@ -60,7 +88,9 @@ public class BoardRepositoryImpl implements IBoardRepository {
             @Override
             public void onFailure(Call<List<BoardDTO>> call, Throwable t) {
                 String errorMsg = "Network error: " + t.getMessage();
-                Log.e(TAG, "❌ " + errorMsg, t);
+                Log.e(TAG, "❌ NETWORK FAILURE ===");
+                Log.e(TAG, "Error: " + errorMsg, t);
+                Log.e(TAG, "URL: " + call.request().url());
                 callback.onError(errorMsg);
             }
         });
