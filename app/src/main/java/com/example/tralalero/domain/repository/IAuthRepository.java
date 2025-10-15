@@ -19,6 +19,16 @@ public interface IAuthRepository {
     void login(String email, String password, RepositoryCallback<AuthResult> callback);
 
     /**
+     * Sign up new user with email and password
+     *
+     * @param email User email
+     * @param password User password
+     * @param name User display name
+     * @param callback Callback with auth result (User + token)
+     */
+    void signup(String email, String password, String name, RepositoryCallback<AuthResult> callback);
+
+    /**
      * Logout current user
      * Clear tokens and session
      *
@@ -83,4 +93,3 @@ public interface IAuthRepository {
         void onError(String error);
     }
 }
-

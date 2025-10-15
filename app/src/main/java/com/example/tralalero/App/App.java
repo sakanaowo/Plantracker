@@ -16,6 +16,7 @@ import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.sync.StartupSyncWorker;
 
 public class App extends Application {
+    private static App instance;
     public static AuthManager authManager;
     public static TokenManager tokenManager;
 
@@ -23,6 +24,8 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         
+        instance = this;
+
         // Load preferences before anything else
         loadLanguagePreference();
         loadDarkModePreference();
@@ -74,5 +77,13 @@ public class App extends Application {
         } else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
+    }
+
+    /**
+     * Get application instance
+     * @return App instance
+     */
+    public static App getInstance() {
+        return instance;
     }
 }

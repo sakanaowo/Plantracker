@@ -5,14 +5,21 @@ import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
+import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.data.repository.BoardRepositoryImpl;
 import com.example.tralalero.data.repository.ProjectRepositoryImpl;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.data.repository.WorkspaceRepositoryImpl;
+import com.example.tralalero.domain.repository.IAuthRepository;
 import com.example.tralalero.domain.repository.IBoardRepository;
 import com.example.tralalero.domain.repository.IProjectRepository;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.repository.IWorkspaceRepository;
+import com.example.tralalero.domain.usecase.auth.GetCurrentUserUseCase;
+import com.example.tralalero.domain.usecase.auth.IsLoggedInUseCase;
+import com.example.tralalero.domain.usecase.auth.LoginUseCase;
+import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
+import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 import com.example.tralalero.domain.usecase.board.CreateBoardUseCase;
 import com.example.tralalero.domain.usecase.board.DeleteBoardUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardByIdUseCase;
@@ -71,6 +78,25 @@ public class ViewModelFactoryProvider {
         }
     }
     
+    /**
+     * Provide AuthViewModelFactory with all dependencies
+     *
+     * @return AuthViewModelFactory instance ready to use
+     */
+    public static AuthViewModelFactory provideAuthViewModelFactory() {
+        // AuthRepository không cần API service vì dùng Firebase
+        // Sử dụng App.getInstance() để lấy context
+        IAuthRepository repository = new AuthRepositoryImpl(App.getInstance());
+
+        return new AuthViewModelFactory(
+            new LoginUseCase(repository),
+            new SignupUseCase(repository),
+            new LogoutUseCase(repository),
+            new GetCurrentUserUseCase(repository),
+            new IsLoggedInUseCase(repository)
+        );
+    }
+
     /**
      * Provide WorkspaceViewModelFactory with all dependencies
      * 

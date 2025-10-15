@@ -10,6 +10,7 @@ import com.example.tralalero.domain.usecase.auth.GetCurrentUserUseCase;
 import com.example.tralalero.domain.usecase.auth.IsLoggedInUseCase;
 import com.example.tralalero.domain.usecase.auth.LoginUseCase;
 import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
+import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 
 /**
  * ViewModel quản lý authentication state và operations.
@@ -19,6 +20,7 @@ public class AuthViewModel extends ViewModel {
     
     // ========== Dependencies ==========
     private final LoginUseCase loginUseCase;
+    private final SignupUseCase signupUseCase;
     private final LogoutUseCase logoutUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final IsLoggedInUseCase isLoggedInUseCase;
@@ -35,17 +37,20 @@ public class AuthViewModel extends ViewModel {
      * Tự động check login status khi khởi tạo.
      * 
      * @param loginUseCase UseCase xử lý đăng nhập
+     * @param signupUseCase UseCase xử lý đăng ký
      * @param logoutUseCase UseCase xử lý đăng xuất
      * @param getCurrentUserUseCase UseCase lấy thông tin user hiện tại
      * @param isLoggedInUseCase UseCase kiểm tra trạng thái đăng nhập
      */
     public AuthViewModel(
             LoginUseCase loginUseCase,
+            SignupUseCase signupUseCase,
             LogoutUseCase logoutUseCase,
             GetCurrentUserUseCase getCurrentUserUseCase,
             IsLoggedInUseCase isLoggedInUseCase
     ) {
         this.loginUseCase = loginUseCase;
+        this.signupUseCase = signupUseCase;
         this.logoutUseCase = logoutUseCase;
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.isLoggedInUseCase = isLoggedInUseCase;
@@ -104,7 +109,35 @@ public class AuthViewModel extends ViewModel {
                 currentUserLiveData.setValue(result.getUser());
                 isLoggedInLiveData.setValue(true);
             }
-            
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    /**
+     * Đăng ký tài khoản mới với email, password và tên.
+     * Set loading state và handle success/error callbacks.
+     *
+     * @param email Email của user
+     * @param password Password của user
+     * @param name Tên hiển thị của user
+     */
+    public void signup(String email, String password, String name) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        signupUseCase.execute(email, password, name, new SignupUseCase.Callback<IAuthRepository.AuthResult>() {
+            @Override
+            public void onSuccess(IAuthRepository.AuthResult result) {
+                loadingLiveData.setValue(false);
+                currentUserLiveData.setValue(result.getUser());
+                isLoggedInLiveData.setValue(true);
+            }
+
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);

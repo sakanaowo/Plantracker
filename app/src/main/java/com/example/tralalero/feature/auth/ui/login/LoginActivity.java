@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -22,6 +23,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
+import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
+import com.example.tralalero.feature.auth.ui.forgot.ForgotPasswordActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.example.tralalero.network.ApiClient;
 
@@ -32,12 +35,16 @@ import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.domain.repository.IAuthRepository;
 import com.example.tralalero.App.App;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
+import com.google.android.material.button.MaterialButton;
 
 
 public class LoginActivity extends AppCompatActivity {
     private EditText etEmail;
     private EditText etPassword;
     private Button btnLogin;
+    private MaterialButton btnGoogleSignIn;
+    private TextView textViewForgotPassword;
+    private TextView textViewSignUp;
 
     private AuthViewModel authViewModel;
 
@@ -56,9 +63,13 @@ public class LoginActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.editTextEmail);
         etPassword = findViewById(R.id.editTextPassword);
         btnLogin = findViewById(R.id.buttonLogin);
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        textViewForgotPassword = findViewById(R.id.textViewForgotPassword);
+        textViewSignUp = findViewById(R.id.textViewSignUp);
 
         setupViewModel();
         observeViewModel();
+        setupClickListeners();
 
         final boolean[] isPasswordVisible = {false};
 
@@ -101,22 +112,40 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    private void setupClickListeners() {
+        // Google Sign In button
+        if (btnGoogleSignIn != null) {
+            btnGoogleSignIn.setOnClickListener(v -> {
+                Log.d("LoginActivity", "Google Sign In clicked");
+                Toast.makeText(this, "Google Sign In - Coming soon!", Toast.LENGTH_SHORT).show();
+                // TODO: Implement Google Sign In
+                // Intent intent = new Intent(LoginActivity.this, ContinueWithGoogle.class);
+                // startActivity(intent);
+            });
+        }
+
+        // Forgot Password
+        if (textViewForgotPassword != null) {
+            textViewForgotPassword.setOnClickListener(v -> {
+                Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // Sign Up
+        if (textViewSignUp != null) {
+            textViewSignUp.setOnClickListener(v -> {
+                Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+                startActivity(intent);
+            });
+        }
+    }
+
     private void setupViewModel() {
-        IAuthRepository authRepository = new AuthRepositoryImpl(this);
-
-        LoginUseCase loginUseCase = new LoginUseCase(authRepository);
-        LogoutUseCase logoutUseCase = new LogoutUseCase(authRepository);
-        GetCurrentUserUseCase getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
-        IsLoggedInUseCase isLoggedInUseCase = new IsLoggedInUseCase(authRepository);
-
-        AuthViewModelFactory factory = new AuthViewModelFactory(
-                loginUseCase,
-                logoutUseCase,
-                getCurrentUserUseCase,
-                isLoggedInUseCase
-        );
-        authViewModel = new ViewModelProvider(this, ViewModelFactoryProvider.provideWorkspaceViewModelFactory()).get(AuthViewModel.class);
-
+        // Sử dụng ViewModelFactoryProvider để có factory đúng
+        authViewModel = new ViewModelProvider(this,
+            ViewModelFactoryProvider.provideAuthViewModelFactory()
+        ).get(AuthViewModel.class);
     }
 
     private void observeViewModel() {
@@ -136,6 +165,9 @@ public class LoginActivity extends AppCompatActivity {
                         + ", firebaseUid=" + user.firebaseUid);
                 Toast.makeText(this, "Welcome back, " + user.name, Toast.LENGTH_SHORT).show();
 
+                // Get and log Firebase ID Token
+                getFirebaseToken();
+
                 Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                 intent.putExtra("user_name", user.getName());
                 intent.putExtra("user_email", user.getEmail());
@@ -150,6 +182,37 @@ public class LoginActivity extends AppCompatActivity {
                 authViewModel.clearError();
             }
         });
+    }
+
+    /**
+     * Lấy và log Firebase ID Token sau khi login thành công
+     */
+    private void getFirebaseToken() {
+        com.google.firebase.auth.FirebaseUser firebaseUser =
+            com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+
+        if (firebaseUser != null) {
+            firebaseUser.getIdToken(true)
+                .addOnSuccessListener(result -> {
+                    String token = result.getToken();
+                    Log.d("LoginActivity", "==========================================");
+                    Log.d("LoginActivity", "FIREBASE ID TOKEN:");
+                    Log.d("LoginActivity", token);
+                    Log.d("LoginActivity", "==========================================");
+                    Log.d("LoginActivity", "Token length: " + (token != null ? token.length() : 0));
+
+                    // Log first 50 characters for quick verification
+                    if (token != null && token.length() > 50) {
+                        Log.d("LoginActivity", "Token preview: " + token.substring(0, 50) + "...");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LoginActivity", "Failed to get Firebase token", e);
+                    Toast.makeText(this, "Failed to get token: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+        } else {
+            Log.e("LoginActivity", "No Firebase user found after login!");
+        }
     }
 
     private void attemptLogin() {

@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -29,8 +30,10 @@ import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
 import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -49,7 +52,8 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private View avatarCircle;
     private ImageView imgAvatar;
     private Uri currentPhotoUri;
-    
+    private MaterialButton btnLogout;
+
     // Activity Result Launchers
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
@@ -105,6 +109,10 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             startActivity(intent);
         });
         
+        // Logout button
+        btnLogout = findViewById(R.id.btnLogout);
+        btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
+
         // Bottom navigation
         setupBottomNavigation(3);
 
@@ -369,5 +377,33 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 Log.e(TAG, "Failed to remove profile photo", e);
                 Toast.makeText(this, "Failed to remove photo", Toast.LENGTH_SHORT).show();
             });
+    }
+
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setPositiveButton("Yes", (dialog, which) -> logout())
+            .setNegativeButton("No", null)
+            .show();
+    }
+
+    private void logout() {
+        Log.d(TAG, "Logout button clicked");
+
+        // Sign out from Firebase
+        FirebaseAuth.getInstance().signOut();
+        Log.d(TAG, "User signed out from Firebase");
+
+        // Clear token and navigate to login
+        tokenManager.clearAuthData();
+        Log.d(TAG, "Auth data cleared");
+
+        Intent intent = new Intent(AccountActivity.this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        Log.d(TAG, "Navigated to LoginActivity");
+
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
     }
 }

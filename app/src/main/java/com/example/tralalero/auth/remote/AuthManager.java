@@ -82,6 +82,22 @@ public class AuthManager {
         return cachedIdToken;
     }
 
+    /**
+     * Clear cached token (used on logout)
+     */
+    public void clearCache() {
+        Log.d(TAG, "Clearing cached token");
+        cachedIdToken = null;
+        cachedExpiryEpochSec = 0;
+    }
+
+    /**
+     * Get application context
+     */
+    public Application getContext() {
+        return (Application) auth.getApp().getApplicationContext();
+    }
+
     public boolean isSignedIn() {
         return auth.getCurrentUser() != null;
     }

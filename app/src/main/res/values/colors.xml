@@ -9,6 +9,9 @@
     <color name="primary">#6200EE</color>
     <color name="primary_dark">#3700B3</color>
     
+    <!-- Error color -->
+    <color name="error">#D32F2F</color>
+
     <!-- Light mode colors -->
     <color name="background">#F5F5F5</color>
     <color name="surface">#FFFFFF</color>

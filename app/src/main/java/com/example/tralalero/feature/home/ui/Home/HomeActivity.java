@@ -27,6 +27,7 @@ import com.example.tralalero.test.RepositoryTestActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
+import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 
 public class HomeActivity extends BaseActivity {
 
@@ -35,13 +36,20 @@ public class HomeActivity extends BaseActivity {
     private static final String TAG = "HomeActivity";
 
     private WorkspaceViewModel workspaceViewModel;
+    private AuthViewModel authViewModel;
 
-    private void setupWorkspaceViewModel() {
-        // Sử dụng ViewModelFactoryProvider thay vì tạo thủ công
+    private void setupViewModels() {
+        // Setup WorkspaceViewModel
         workspaceViewModel = new ViewModelProvider(
                 this,
                 ViewModelFactoryProvider.provideWorkspaceViewModelFactory()
         ).get(WorkspaceViewModel.class);
+
+        // Setup AuthViewModel for logout
+        authViewModel = new ViewModelProvider(
+                this,
+                ViewModelFactoryProvider.provideAuthViewModelFactory()
+        ).get(AuthViewModel.class);
     }
 
     private void observeWorkspaceViewModel() {
@@ -87,7 +95,7 @@ public class HomeActivity extends BaseActivity {
         });
 
         // Setup ViewModel TRƯỚC khi setup UI
-        setupWorkspaceViewModel();
+        setupViewModels();
         observeWorkspaceViewModel();
 
         // Initialize RecyclerView

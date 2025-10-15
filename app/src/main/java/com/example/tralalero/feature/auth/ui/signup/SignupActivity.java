@@ -32,6 +32,7 @@ import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.AuthViewModelFactory;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 
 
 public class SignupActivity extends AppCompatActivity {
@@ -39,6 +40,7 @@ public class SignupActivity extends AppCompatActivity {
     private EditText etEmail;
     private EditText etPassword;
     private EditText etConfirmPassword;
+    private EditText etName;
 
     private Button btnSignUp;
 
@@ -60,6 +62,7 @@ public class SignupActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.editTextEmailSignup);
         etPassword = findViewById(R.id.editTextPasswordSignup);
         etConfirmPassword = findViewById(R.id.editTextConfirmPasswordSignup);
+        etName = findViewById(R.id.editTextNameSignup);
         btnSignUp = findViewById(R.id.buttonSignUp);
 
         setupViewModel();
@@ -149,21 +152,10 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void setupViewModel() {
-        IAuthRepository authRepository = new AuthRepositoryImpl(this);
-
-        LoginUseCase loginUseCase = new LoginUseCase(authRepository);
-        LogoutUseCase logoutUseCase = new LogoutUseCase(authRepository);
-        GetCurrentUserUseCase getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
-        IsLoggedInUseCase isLoggedInUseCase = new IsLoggedInUseCase(authRepository);
-
-        AuthViewModelFactory factory = new AuthViewModelFactory(
-                loginUseCase,
-                logoutUseCase,
-                getCurrentUserUseCase,
-                isLoggedInUseCase
-        );
-        authViewModel = new ViewModelProvider(this, factory).get(AuthViewModel.class);
-
+        // Sử dụng ViewModelFactoryProvider để có factory đúng
+        authViewModel = new ViewModelProvider(this,
+            ViewModelFactoryProvider.provideAuthViewModelFactory()
+        ).get(AuthViewModel.class);
     }
 
     private void observeViewModel() {
@@ -203,6 +195,13 @@ public class SignupActivity extends AppCompatActivity {
         String email = etEmail != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword != null ? etPassword.getText().toString() : "";
         String confirmPassword = etConfirmPassword != null ? etConfirmPassword.getText().toString() : "";
+        String name = etName != null ? etName.getText().toString().trim() : "";
+
+        // Validate name
+        if (TextUtils.isEmpty(name)) {
+            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Validate email
         if (TextUtils.isEmpty(email)) {
@@ -240,6 +239,7 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        authViewModel.login(email, password);
+        // Gọi signup() thay vì login()
+        authViewModel.signup(email, password, name);
     }
 }
