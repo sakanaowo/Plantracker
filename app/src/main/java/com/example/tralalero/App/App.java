@@ -33,13 +33,10 @@ public class App extends Application {
         
         instance = this;
 
-        // Initialize Firebase first
         FirebaseApp.initializeApp(this);
 
-        // Initialize Firebase App Check
         initializeAppCheck();
 
-        // Load preferences before anything else
         loadLanguagePreference();
         loadDarkModePreference();
         
@@ -58,22 +55,16 @@ public class App extends Application {
         );
     }
     
-    /**
-     * Initialize Firebase App Check
-     * In debug mode, use DebugAppCheckProviderFactory
-     * In production, use PlayIntegrityAppCheckProviderFactory
-     */
+
     private void initializeAppCheck() {
         FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
 
         if (BuildConfig.DEBUG) {
-            // Use debug provider for development
             Log.d(TAG, "Initializing Firebase App Check with Debug Provider");
             firebaseAppCheck.installAppCheckProviderFactory(
                 DebugAppCheckProviderFactory.getInstance()
             );
         } else {
-            // Use Play Integrity for production
             Log.d(TAG, "Initializing Firebase App Check with Play Integrity Provider");
             firebaseAppCheck.installAppCheckProviderFactory(
                 PlayIntegrityAppCheckProviderFactory.getInstance()
@@ -83,9 +74,6 @@ public class App extends Application {
         Log.d(TAG, "Firebase App Check initialized successfully");
     }
 
-    /**
-     * Load language preference from SharedPreferences and apply it
-     */
     private void loadLanguagePreference() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String languageCode = preferences.getString("language", "en");
@@ -103,9 +91,6 @@ public class App extends Application {
         getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
     }
     
-    /**
-     * Load dark mode preference from SharedPreferences and apply it
-     */
     private void loadDarkModePreference() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isDarkMode = preferences.getBoolean("theme", false);
@@ -117,10 +102,6 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Get application instance
-     * @return App instance
-     */
     public static App getInstance() {
         return instance;
     }

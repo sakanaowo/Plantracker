@@ -4,16 +4,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Domain model for Checklist
- * A checklist is a group of items to be completed within a task
- */
+
 public class Checklist {
     private final String id;
     private final String taskId;
     private final String title;
     private final Date createdAt;
-    private final List<ChecklistItem> items; // Nested items
+    private final List<ChecklistItem> items; 
 
     public Checklist(String id, String taskId, String title, Date createdAt) {
         this(id, taskId, title, createdAt, new ArrayList<>());
@@ -27,14 +24,12 @@ public class Checklist {
         this.items = items != null ? new ArrayList<>(items) : new ArrayList<>();
     }
 
-    // Getters
     public String getId() { return id; }
     public String getTaskId() { return taskId; }
     public String getTitle() { return title; }
     public Date getCreatedAt() { return createdAt; }
     public List<ChecklistItem> getItems() { return new ArrayList<>(items); }
 
-    // Business logic
     public int getTotalItems() {
         return items.size();
     }

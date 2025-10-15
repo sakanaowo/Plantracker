@@ -78,7 +78,6 @@ public class WorkspaceAdapter extends RecyclerView.Adapter<WorkspaceAdapter.Work
         public void bind(Project project) {
             projectName.setText(project.getName());
 
-            // Set icon based on board type
             if ("KANBAN".equals(project.getBoardType())) {
                 projectIcon.setImageResource(R.drawable.board_icon1);
             } else {

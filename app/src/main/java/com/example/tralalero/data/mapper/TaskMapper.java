@@ -13,7 +13,6 @@ import java.util.TimeZone;
 
 public class TaskMapper {
 
-    // ISO 8601 date format: "2025-01-15T10:30:00Z"
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
             "dd-MM-yyyy'T'HH:mm:ss.SSS'Z'",
             Locale.US

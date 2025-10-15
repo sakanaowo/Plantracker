@@ -9,62 +9,37 @@ import retrofit2.http.*;
 
 public interface SprintApiService {
 
-    /**
-     * Get all sprints in a project
-     * GET /sprints?projectId={projectId}
-     */
     @GET("sprints")
     Call<List<SprintDTO>> getSprintsByProject(@Query("projectId") String projectId);
 
-    /**
-     * Get active sprint in a project
-     * GET /sprints/active?projectId={projectId}
-     */
+
     @GET("sprints/active")
     Call<SprintDTO> getActiveSprint(@Query("projectId") String projectId);
 
-    /**
-     * Get sprint by ID
-     * GET /sprints/{id}
-     */
+ 
     @GET("sprints/{id}")
     Call<SprintDTO> getSprintById(@Path("id") String sprintId);
 
-    /**
-     * Create a new sprint
-     * POST /sprints
-     */
+  
     @POST("sprints")
     Call<SprintDTO> createSprint(@Body SprintDTO sprint);
 
-    /**
-     * Update sprint
-     * PATCH /sprints/{id}
-     */
+  
     @PATCH("sprints/{id}")
     Call<SprintDTO> updateSprint(
         @Path("id") String sprintId,
         @Body SprintDTO sprint
     );
 
-    /**
-     * Delete sprint
-     * DELETE /sprints/{id}
-     */
+
     @DELETE("sprints/{id}")
     Call<Void> deleteSprint(@Path("id") String sprintId);
 
-    /**
-     * Start sprint
-     * POST /sprints/{id}/start
-     */
+
     @POST("sprints/{id}/start")
     Call<SprintDTO> startSprint(@Path("id") String sprintId);
 
-    /**
-     * Complete sprint
-     * POST /sprints/{id}/complete
-     */
+ 
     @POST("sprints/{id}/complete")
     Call<SprintDTO> completeSprint(@Path("id") String sprintId);
 }

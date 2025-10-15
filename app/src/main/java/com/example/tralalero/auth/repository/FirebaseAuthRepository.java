@@ -13,11 +13,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/**
- * Repository class to handle Firebase Authentication with backend
- * Uses PublicAuthApi for initial Firebase auth (no Authorization header)
- * Uses AuthManager for authenticated API calls after login
- */
+
 public class FirebaseAuthRepository {
     private static final String TAG = "FirebaseAuthRepository";
     private AuthApi authApi;
@@ -26,20 +22,14 @@ public class FirebaseAuthRepository {
 
     public FirebaseAuthRepository(AuthManager authManager) {
         this.authManager = authManager;
-        // Use authenticated ApiClient for protected endpoints
         this.authApi = ApiClient.get(authManager).create(AuthApi.class);
-        // Use public ApiClient for Firebase auth endpoint (no auth header)
         this.publicAuthApi = ApiClient.get().create(PublicAuthApi.class);
     }
 
-    /**
-     * Validate Firebase ID token with backend and sync user data
-     * Uses PublicAuthApi to avoid adding Authorization header to initial auth request
-     */
+
     public void authenticateWithFirebase(String idToken, FirebaseAuthCallback callback) {
         FirebaseAuthDto request = new FirebaseAuthDto(idToken);
         
-        // Use public API for initial Firebase authentication
         Call<FirebaseAuthResponse> call = publicAuthApi.firebaseAuth(request);
         call.enqueue(new Callback<FirebaseAuthResponse>() {
             @Override
@@ -47,7 +37,6 @@ public class FirebaseAuthRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     FirebaseAuthResponse authResponse = response.body();
                     Log.d(TAG, "Firebase auth successful: " + authResponse.message);
-                    // Get the current Firebase ID token (may have been refreshed by interceptor)
                     String currentToken = authManager.getCachedToken();
                     callback.onSuccess(authResponse, currentToken != null ? currentToken : idToken);
                 } else {
@@ -64,16 +53,12 @@ public class FirebaseAuthRepository {
         });
     }
 
-    /**
-     * Make authenticated API calls - the interceptor will automatically handle tokens
-     */
+
     public AuthApi getAuthenticatedApi() {
         return authApi;
     }
 
-    /**
-     * Callback interface for Firebase authentication
-     */
+
     public interface FirebaseAuthCallback {
         void onSuccess(FirebaseAuthResponse response, String firebaseIdToken);
         void onError(String error);

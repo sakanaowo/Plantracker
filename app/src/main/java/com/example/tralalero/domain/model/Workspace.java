@@ -3,7 +3,7 @@ package com.example.tralalero.domain.model;
 public class Workspace {
     private final String id;
     private final String name;
-    private final String type; // PERSONAL or TEAM
+    private final String type; 
     private final String ownerId;
 
     public Workspace(String id, String name, String type, String ownerId) {
@@ -13,7 +13,6 @@ public class Workspace {
         this.ownerId = ownerId;
     }
 
-    // Getters
     public String getId() {
         return id;
     }
@@ -30,7 +29,6 @@ public class Workspace {
         return ownerId;
     }
 
-    // Business logic
     public boolean isPersonal() {
         return "PERSONAL".equalsIgnoreCase(type);
     }

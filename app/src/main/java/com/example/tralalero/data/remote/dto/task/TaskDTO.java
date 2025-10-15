@@ -2,21 +2,11 @@ package com.example.tralalero.data.remote.dto.task;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * TaskDTO - Data Transfer Object for Task API
- *
- * SUPPORTS BOTH FORMATS:
- * - snake_case from backend (if TransformInterceptor not active)
- * - camelCase from backend (if TransformInterceptor active)
- *
- * NOTE: Only use 'alternate' when field names are DIFFERENT
- */
+
 public class TaskDTO {
-    // Core fields
     @SerializedName("id")
     private String id;
 
-    // Support both camelCase and snake_case
     @SerializedName(value = "projectId", alternate = {"project_id"})
     private String projectId;
 

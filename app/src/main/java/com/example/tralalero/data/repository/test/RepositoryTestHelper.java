@@ -6,19 +6,13 @@ import com.example.tralalero.domain.repository.*;
 
 import java.util.List;
 
-/**
- * Manual Test Helper for Repositories
- * Sử dụng class này để test các Repository trước khi tích hợp vào UI
- */
+
 public class RepositoryTestHelper {
 
-    /**
-     * Test WorkspaceRepository
-     */
+
     public static void testWorkspaceRepository(IWorkspaceRepository repository) {
         System.out.println("=== Testing WorkspaceRepository ===");
 
-        // Test getWorkspaces
         repository.getWorkspaces(new IWorkspaceRepository.RepositoryCallback<List<Workspace>>() {
             @Override
             public void onSuccess(List<Workspace> result) {
@@ -32,13 +26,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test ProjectRepository
-     */
+
     public static void testProjectRepository(IProjectRepository repository, String testProjectId) {
         System.out.println("=== Testing ProjectRepository ===");
 
-        // Test getProjectById
         repository.getProjectById(testProjectId, new IProjectRepository.RepositoryCallback<Project>() {
             @Override
             public void onSuccess(Project result) {
@@ -52,13 +43,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test BoardRepository
-     */
+
     public static void testBoardRepository(IBoardRepository repository, String testBoardId) {
         System.out.println("=== Testing BoardRepository ===");
 
-        // Test getBoardById
         repository.getBoardById(testBoardId, new IBoardRepository.RepositoryCallback<Board>() {
             @Override
             public void onSuccess(Board result) {
@@ -72,13 +60,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test TaskRepository
-     */
+
     public static void testTaskRepository(ITaskRepository repository, String testBoardId) {
         System.out.println("=== Testing TaskRepository ===");
 
-        // Test getTasksByBoard
         repository.getTasksByBoard(testBoardId, new ITaskRepository.RepositoryCallback<List<Task>>() {
             @Override
             public void onSuccess(List<Task> result) {
@@ -92,13 +77,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test NotificationRepository
-     */
+
     public static void testNotificationRepository(INotificationRepository repository) {
         System.out.println("=== Testing NotificationRepository ===");
 
-        // Test getUnreadCount
         repository.getUnreadCount(new INotificationRepository.RepositoryCallback<Integer>() {
             @Override
             public void onSuccess(Integer result) {
@@ -112,13 +94,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test LabelRepository
-     */
+
     public static void testLabelRepository(ILabelRepository repository, String testWorkspaceId) {
         System.out.println("=== Testing LabelRepository ===");
 
-        // Test getLabelsByWorkspace
         repository.getLabelsByWorkspace(testWorkspaceId, new ILabelRepository.RepositoryCallback<List<Label>>() {
             @Override
             public void onSuccess(List<Label> result) {
@@ -132,13 +111,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test SprintRepository
-     */
+
     public static void testSprintRepository(ISprintRepository repository, String testProjectId) {
         System.out.println("=== Testing SprintRepository ===");
 
-        // Test getSprintsByProject
         repository.getSprintsByProject(testProjectId, new ISprintRepository.RepositoryCallback<List<Sprint>>() {
             @Override
             public void onSuccess(List<Sprint> result) {
@@ -152,13 +128,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test EventRepository
-     */
+
     public static void testEventRepository(IEventRepository repository, String testProjectId) {
         System.out.println("=== Testing EventRepository ===");
 
-        // Test getEventsByProject
         repository.getEventsByProject(testProjectId, new IEventRepository.RepositoryCallback<List<Event>>() {
             @Override
             public void onSuccess(List<Event> result) {
@@ -172,13 +145,10 @@ public class RepositoryTestHelper {
         });
     }
 
-    /**
-     * Test TimeEntryRepository
-     */
+
     public static void testTimeEntryRepository(ITimeEntryRepository repository, String testTaskId) {
         System.out.println("=== Testing TimeEntryRepository ===");
 
-        // Test getTimeEntriesByTask
         repository.getTimeEntriesByTask(testTaskId, new ITimeEntryRepository.RepositoryCallback<List<TimeEntry>>() {
             @Override
             public void onSuccess(List<TimeEntry> result) {

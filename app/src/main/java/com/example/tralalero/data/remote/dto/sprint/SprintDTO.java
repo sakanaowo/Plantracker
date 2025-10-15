@@ -6,7 +6,7 @@ public class SprintDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("projectId")  // ✅ FIXED: camelCase
+    @SerializedName("projectId")  
     private String projectId;
 
     @SerializedName("name")
@@ -15,16 +15,16 @@ public class SprintDTO {
     @SerializedName("goal")
     private String goal;
 
-    @SerializedName("startAt")  // ✅ FIXED: camelCase
+    @SerializedName("startAt") 
     private String startAt;
 
-    @SerializedName("endAt")  // ✅ FIXED: camelCase
+    @SerializedName("endAt") 
     private String endAt;
 
     @SerializedName("state")
     private String state;
 
-    @SerializedName("createdAt")  // ✅ FIXED: camelCase
+    @SerializedName("createdAt")  
     private String createdAt;
 
     public String getId() {

@@ -6,14 +6,10 @@ import com.example.tralalero.domain.model.Workspace;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Mapper for converting between WorkspaceDTO and Workspace domain model
- */
+
 public class WorkspaceMapper {
 
-    /**
-     * Convert WorkspaceDTO (from API) to Workspace (Domain Model)
-     */
+
     public static Workspace toDomain(WorkspaceDTO dto) {
         if (dto == null) {
             return null;
@@ -27,9 +23,7 @@ public class WorkspaceMapper {
         );
     }
 
-    /**
-     * Convert Workspace (Domain Model) to WorkspaceDTO (for API request)
-     */
+
     public static WorkspaceDTO toDTO(Workspace workspace) {
         if (workspace == null) {
             return null;
@@ -44,9 +38,7 @@ public class WorkspaceMapper {
         return dto;
     }
 
-    /**
-     * Convert list of WorkspaceDTO to list of Workspace
-     */
+
     public static List<Workspace> toDomainList(List<WorkspaceDTO> dtos) {
         if (dtos == null) {
             return new ArrayList<>();
@@ -62,9 +54,7 @@ public class WorkspaceMapper {
         return workspaces;
     }
 
-    /**
-     * Convert list of Workspace to list of WorkspaceDTO
-     */
+
     public static List<WorkspaceDTO> toDTOList(List<Workspace> workspaces) {
         if (workspaces == null) {
             return new ArrayList<>();

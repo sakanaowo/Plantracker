@@ -10,13 +10,13 @@ public class AttachmentDTO {
     public String url;
 
     @SerializedName("mime_type")
-    public String mimeType; // nullable
+    public String mimeType; 
 
     @SerializedName("size")
-    public Integer size; // nullable - bytes
+    public Integer size; 
 
     @SerializedName("uploaded_by")
-    public String uploadedBy; // nullable
+    public String uploadedBy; 
 
     @SerializedName("created_at")
     public String createdAt;

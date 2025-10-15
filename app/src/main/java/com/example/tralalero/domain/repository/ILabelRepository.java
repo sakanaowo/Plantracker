@@ -5,12 +5,10 @@ import com.example.tralalero.domain.model.Label;
 import java.util.List;
 
 public interface ILabelRepository {
-    // Get labels
     void getLabelsByWorkspace(String workspaceId, RepositoryCallback<List<Label>> callback);
 
     void getLabelById(String labelId, RepositoryCallback<Label> callback);
 
-    // CRUD operations
     void createLabel(String workspaceId, Label label, RepositoryCallback<Label> callback);
 
     void updateLabel(String labelId, Label label, RepositoryCallback<Label> callback);

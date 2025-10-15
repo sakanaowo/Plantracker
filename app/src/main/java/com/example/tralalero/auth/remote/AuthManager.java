@@ -35,9 +35,6 @@ public class AuthManager {
         });
     }
 
-    /**
-     * Get ID token for interceptor, auto refresh if nearly expired
-     */
     public String getIdTokenBlocking() throws Exception {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -45,7 +42,6 @@ public class AuthManager {
             return null;
         }
 
-        // Check if we need to refresh (token is null or expires within 5 minutes)
         boolean needRefresh = cachedIdToken == null ||
                 (cachedExpiryEpochSec > 0 && (cachedExpiryEpochSec - 300) <= (System.currentTimeMillis() / 1000));
 
@@ -62,9 +58,6 @@ public class AuthManager {
         return cachedIdToken;
     }
 
-    /**
-     * Force refresh the Firebase ID token (used by authenticator)
-     */
     public String forceRefreshToken() throws Exception {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -73,7 +66,7 @@ public class AuthManager {
         }
 
         Log.d(TAG, "Force refreshing Firebase ID token");
-        Task<GetTokenResult> task = user.getIdToken(true); // Force refresh
+        Task<GetTokenResult> task = user.getIdToken(true);
         GetTokenResult res = com.google.android.gms.tasks.Tasks.await(task);
         cachedIdToken = res.getToken();
         cachedExpiryEpochSec = res.getExpirationTimestamp();
@@ -82,18 +75,12 @@ public class AuthManager {
         return cachedIdToken;
     }
 
-    /**
-     * Clear cached token (used on logout)
-     */
     public void clearCache() {
         Log.d(TAG, "Clearing cached token");
         cachedIdToken = null;
         cachedExpiryEpochSec = 0;
     }
 
-    /**
-     * Get application context
-     */
     public Application getContext() {
         return (Application) auth.getApp().getApplicationContext();
     }
@@ -108,27 +95,20 @@ public class AuthManager {
         cachedExpiryEpochSec = 0;
         cachedIdToken = null;
 
-        // Clear stored auth data from SharedPreferences
         if (App.tokenManager != null) {
             App.tokenManager.clearAuthData();
             Log.d(TAG, "Cleared auth data from SharedPreferences");
         }
     }
 
-    /**
-     * Get current cached token without refresh (for debugging)
-     */
-    public String getCachedToken() {
+    public synchronized String getCachedToken() {
         return cachedIdToken;
     }
 
-    /**
-     * Check if cached token is expired
-     */
     public boolean isTokenExpired() {
         if (cachedIdToken == null || cachedExpiryEpochSec == 0) {
             return true;
         }
-        return (cachedExpiryEpochSec - 60) <= (System.currentTimeMillis() / 1000); // Consider expired 1 minute early
+        return (cachedExpiryEpochSec - 60) <= (System.currentTimeMillis() / 1000);
     }
 }

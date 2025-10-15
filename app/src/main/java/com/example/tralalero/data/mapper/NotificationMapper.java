@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Mapper for Notification entity
- */
+
 public class NotificationMapper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -75,7 +73,6 @@ public class NotificationMapper {
         return notifications;
     }
 
-    // Helper
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;

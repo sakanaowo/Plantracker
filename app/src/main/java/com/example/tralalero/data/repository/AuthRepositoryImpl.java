@@ -74,7 +74,6 @@ public class AuthRepositoryImpl implements IAuthRepository {
 
     @Override
     public void signup(String email, String password, String name, RepositoryCallback<AuthResult> callback) {
-        // Create Firebase account
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
                     FirebaseUser firebaseUser = authResult.getUser();
@@ -83,7 +82,6 @@ public class AuthRepositoryImpl implements IAuthRepository {
                         return;
                     }
 
-                    // Update display name
                     com.google.firebase.auth.UserProfileChangeRequest profileUpdates =
                         new com.google.firebase.auth.UserProfileChangeRequest.Builder()
                             .setDisplayName(name)
@@ -91,7 +89,6 @@ public class AuthRepositoryImpl implements IAuthRepository {
 
                     firebaseUser.updateProfile(profileUpdates)
                             .addOnSuccessListener(aVoid -> {
-                                // Get ID token and authenticate with backend
                                 firebaseUser.getIdToken(true)
                                         .addOnSuccessListener(getTokenResult -> {
                                             String idToken = getTokenResult.getToken();
@@ -128,16 +125,13 @@ public class AuthRepositoryImpl implements IAuthRepository {
     public void logout(RepositoryCallback<Void> callback) {
         Log.d("AuthRepositoryImpl", "Logout: Clearing Firebase auth and tokens");
 
-        // 1. Sign out khỏi Firebase
         firebaseAuth.signOut();
 
-        // 2. Clear cached token trong AuthManager (quan trọng!)
         if (com.example.tralalero.App.App.authManager != null) {
             com.example.tralalero.App.App.authManager.clearCache();
             Log.d("AuthRepositoryImpl", "Logout: Cleared AuthManager cache");
         }
 
-        // 3. Clear token local (SharedPreferences)
         tokenManager.clearAuthData();
         Log.d("AuthRepositoryImpl", "Logout: Cleared TokenManager data");
 

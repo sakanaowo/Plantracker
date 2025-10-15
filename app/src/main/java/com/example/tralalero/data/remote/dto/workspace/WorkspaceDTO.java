@@ -12,16 +12,15 @@ public class WorkspaceDTO {
     @SerializedName("type")
     private String type;
 
-    @SerializedName("ownerId")  // ✅ FIXED: camelCase
+    @SerializedName("ownerId")  
     private String ownerId;
 
-    @SerializedName("createdAt")  // ✅ FIXED: camelCase
+    @SerializedName("createdAt")  
     private String createdAt;
 
-    @SerializedName("updatedAt")  // ✅ FIXED: camelCase
+    @SerializedName("updatedAt")  
     private String updatedAt;
 
-    // Getters và Setters
     public String getId() {
         return id;
     }

@@ -92,7 +92,6 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder
         public void bind(Workspace workspace) {
             workspaceName.setText(workspace.getName());
 
-            // Set icon based on workspace type or use a default icon
             if ("PERSONAL".equals(workspace.getType())) {
                 workspaceIcon.setImageResource(R.drawable.acc_icon);
             } else {

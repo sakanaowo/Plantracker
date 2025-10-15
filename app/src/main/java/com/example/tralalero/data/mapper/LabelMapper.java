@@ -6,9 +6,7 @@ import com.example.tralalero.domain.model.Label;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Mapper for Label entity
- */
+
 public class LabelMapper {
 
     public static Label toDomain(LabelDTO dto) {

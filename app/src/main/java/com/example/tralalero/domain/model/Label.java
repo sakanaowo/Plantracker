@@ -4,7 +4,7 @@ public class Label {
     private final String id;
     private final String workspaceId;
     private final String name;
-    private final String color; // Hex color code
+    private final String color; 
 
     public Label(String id, String workspaceId, String name, String color) {
         this.id = id;

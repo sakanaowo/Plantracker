@@ -5,8 +5,8 @@ public class Project {
     private final String workspaceId;
     private final String name;
     private final String description;
-    private final String key; // VD: "PLAN"
-    private final String boardType; // KANBAN or SCRUM/ default is KANBAN
+    private final String key; 
+    private final String boardType; 
 
     public Project(String id, String workspaceId, String name, String description,
                    String key, String boardType) {
@@ -18,7 +18,6 @@ public class Project {
         this.boardType = boardType;
     }
 
-    // Getters
     public String getId() {
         return id;
     }
@@ -43,7 +42,6 @@ public class Project {
         return boardType;
     }
 
-    // Business logic
     public boolean isKanban() {
         return "KANBAN".equalsIgnoreCase(boardType);
     }

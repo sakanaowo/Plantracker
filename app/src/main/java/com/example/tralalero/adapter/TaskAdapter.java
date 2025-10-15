@@ -64,7 +64,6 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-    // ✅ Hỗ trợ kéo thả
     public void moveItem(int fromPosition, int toPosition) {
         if (fromPosition < toPosition) {
             for (int i = fromPosition; i < toPosition; i++) {
@@ -97,28 +96,21 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         }
 
         void bind(Task task, OnTaskClickListener listener) {
-            // Set task title
             tvTaskTitle.setText(task.getTitle());
 
-            // Set checkbox state (if task has completion status)
-            checkBox.setChecked(false); // TODO: Bind with task.isCompleted() if available
+            checkBox.setChecked(false); 
 
-            // Checkbox change listener
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 tvTaskTitle.setAlpha(isChecked ? 0.5f : 1f);
-                // TODO: Call API to update task status
             });
 
-            // ✅ Click entire item to open detail
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onTaskClick(task);
                 }
             });
 
-            // Prevent checkbox click from triggering item click
             checkBox.setOnClickListener(v -> {
-                // Just toggle checkbox, don't open detail
             });
         }
     }

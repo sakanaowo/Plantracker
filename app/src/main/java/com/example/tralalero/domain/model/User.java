@@ -35,7 +35,6 @@ public class User {
         return firebaseUid;
     }
 
-    // business method
     public boolean hasAvatar() {
         return avatarUrl != null && !avatarUrl.isEmpty();
     }
@@ -44,7 +43,6 @@ public class User {
         if (name != null && !name.isEmpty()) {
             return name;
         }
-        // Fallback to email username
         if (email != null && email.contains("@")) {
             return email.split("@")[0];
         }

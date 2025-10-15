@@ -68,7 +68,6 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void getTasksByProject(String projectId, RepositoryCallback<List<Task>> callback) {
-        // Note: This would need API support or we filter by project on client side
         callback.onError("Get tasks by project not yet implemented in API");
     }
 
@@ -265,7 +264,6 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void deleteAttachment(String attachmentId, RepositoryCallback<Void> callback) {
-        // Note: Would need specific API endpoint
         callback.onError("Delete attachment not yet implemented in API");
     }
 

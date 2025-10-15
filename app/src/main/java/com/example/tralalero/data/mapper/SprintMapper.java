@@ -12,9 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Mapper for Sprint entity
- */
+
 public class SprintMapper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -93,13 +91,13 @@ public class SprintMapper {
 
     private static SprintState parseSprintState(String stateString) {
         if (stateString == null || stateString.isEmpty()) {
-            return SprintState.PLANNED; // Default
+            return SprintState.PLANNED; 
         }
 
         try {
             return SprintState.valueOf(stateString.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return SprintState.PLANNED; // Default fallback
+            return SprintState.PLANNED; 
         }
     }
 

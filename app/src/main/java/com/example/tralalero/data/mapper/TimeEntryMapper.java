@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Mapper for TimeEntry entity
- */
+
 public class TimeEntryMapper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(

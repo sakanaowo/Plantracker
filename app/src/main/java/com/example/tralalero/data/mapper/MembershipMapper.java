@@ -12,9 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Mapper for Membership entity
- */
+
 public class MembershipMapper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(

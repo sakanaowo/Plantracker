@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 
 public interface ITimeEntryRepository {
-    // Get time entries
     void getTimeEntriesByTask(String taskId, RepositoryCallback<List<TimeEntry>> callback);
 
     void getTimeEntriesByUser(String userId, RepositoryCallback<List<TimeEntry>> callback);
@@ -15,7 +14,6 @@ public interface ITimeEntryRepository {
 
     void getActiveTimeEntry(String userId, RepositoryCallback<TimeEntry> callback);
 
-    // CRUD operations
     void startTimer(String taskId, RepositoryCallback<TimeEntry> callback);
 
     void stopTimer(String timeEntryId, RepositoryCallback<TimeEntry> callback);
@@ -26,7 +24,6 @@ public interface ITimeEntryRepository {
 
     void deleteTimeEntry(String timeEntryId, RepositoryCallback<Void> callback);
 
-    // Statistics
     void getTotalTimeByTask(String taskId, RepositoryCallback<Integer> callback);
 
     void getTotalTimeByUser(String userId, Date startDate, Date endDate, RepositoryCallback<Integer> callback);

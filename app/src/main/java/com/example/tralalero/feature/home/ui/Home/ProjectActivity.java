@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnTaskPositionChangeListener {
+public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener {
     private static final String TAG = "ProjectActivity";
 
     private ProjectViewModel projectViewModel;
@@ -319,4 +319,3 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         bottomSheet.show(getSupportFragmentManager(), "EDIT_TASK");
     }
 }
-

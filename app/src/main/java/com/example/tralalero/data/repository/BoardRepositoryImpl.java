@@ -58,7 +58,6 @@ public class BoardRepositoryImpl implements IBoardRepository {
                     List<BoardDTO> boardDTOs = response.body();
                     Log.d(TAG, "✅ Received " + boardDTOs.size() + " boards from API");
 
-                    // Log each board
                     for (int i = 0; i < boardDTOs.size(); i++) {
                         BoardDTO dto = boardDTOs.get(i);
                         Log.d(TAG, "Board " + (i + 1) + ": " +
@@ -188,8 +187,7 @@ public class BoardRepositoryImpl implements IBoardRepository {
 
     @Override
     public void reorderBoards(String projectId, List<String> boardIds, RepositoryCallback<Void> callback) {
-        // This would need a specific API endpoint for reordering
-        // For now, we'll update each board's order individually
+
         callback.onError("Reorder boards not yet implemented in API");
     }
 

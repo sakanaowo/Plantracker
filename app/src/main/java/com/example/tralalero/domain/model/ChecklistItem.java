@@ -2,16 +2,13 @@ package com.example.tralalero.domain.model;
 
 import java.util.Date;
 
-/**
- * Domain model for Checklist Item
- * Individual item within a checklist
- */
+
 public class ChecklistItem {
     private final String id;
     private final String checklistId;
     private final String content;
     private final boolean isDone;
-    private final double position; // For ordering
+    private final double position; 
     private final Date createdAt;
 
     public ChecklistItem(String id, String checklistId, String content,
@@ -24,7 +21,6 @@ public class ChecklistItem {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getChecklistId() { return checklistId; }
     public String getContent() { return content; }
@@ -32,7 +28,6 @@ public class ChecklistItem {
     public double getPosition() { return position; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isEmpty() {
         return content == null || content.trim().isEmpty();
     }

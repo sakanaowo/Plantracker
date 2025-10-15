@@ -1,12 +1,6 @@
 package com.example.tralalero.data.remote.dto.task;
 
-/*
-Fields:
-- id: String
-- task_id: String
-- title: String
-- created_at: String
-* */
+
 
 import com.google.gson.annotations.SerializedName;
 

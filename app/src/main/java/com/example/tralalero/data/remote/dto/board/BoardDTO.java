@@ -2,20 +2,11 @@ package com.example.tralalero.data.remote.dto.board;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * BoardDTO - Data Transfer Object for Board API
- *
- * SUPPORTS BOTH FORMATS:
- * - snake_case from backend (if TransformInterceptor not active)
- * - camelCase from backend (if TransformInterceptor active)
- *
- * @SerializedName supports multiple names via alternate attribute
- */
+
 public class BoardDTO {
     @SerializedName("id")
     private String id;
 
-    // Support both "projectId" (camelCase) and "project_id" (snake_case)
     @SerializedName(value = "projectId", alternate = {"project_id"})
     private String projectId;
 
@@ -25,11 +16,9 @@ public class BoardDTO {
     @SerializedName("order")
     private int order;
 
-    // Support both "createdAt" (camelCase) and "created_at" (snake_case)
     @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
-    // Support both "updatedAt" (camelCase) and "updated_at" (snake_case)
     @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
 

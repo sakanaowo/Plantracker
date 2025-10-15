@@ -18,10 +18,6 @@ import com.example.tralalero.domain.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * BoardAdapter - Adapter for horizontal board list (Trello style)
- * Each item is a board card containing tasks
- */
 public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHolder> {
 
     private List<Board> boards = new ArrayList<>();
@@ -29,8 +25,11 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
 
     public interface OnBoardActionListener {
         void onAddCardClick(Board board);
+
         void onBoardMenuClick(Board board);
+
         void onTaskClick(Task task, Board board);
+
         List<Task> getTasksForBoard(String boardId);
     }
 
@@ -67,7 +66,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         RecyclerView taskRecycler;
         LinearLayout btnAddCard;
         TaskAdapter taskAdapter;
-        ItemTouchHelper itemTouchHelper; // ✅ Add ItemTouchHelper
+        ItemTouchHelper itemTouchHelper;
 
         BoardViewHolder(View itemView) {
             super(itemView);
@@ -75,7 +74,6 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             taskRecycler = itemView.findViewById(R.id.taskRecycler);
             btnAddCard = itemView.findViewById(R.id.btnAddCard);
 
-            // Setup task RecyclerView
             taskRecycler.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             taskAdapter = new TaskAdapter(new ArrayList<>());
             taskRecycler.setAdapter(taskAdapter);
@@ -84,35 +82,27 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         void bind(Board board, OnBoardActionListener listener) {
             tvBoardTitle.setText(board.getName());
 
-            // Load tasks for this board
             if (listener != null) {
                 List<Task> tasks = listener.getTasksForBoard(board.getId());
                 if (tasks != null) {
                     taskAdapter.updateTasks(tasks);
                 }
 
-                // Set task click listener
                 taskAdapter.setOnTaskClickListener(task -> {
                     listener.onTaskClick(task, board);
                 });
 
-                // Add card button
                 btnAddCard.setOnClickListener(v -> {
                     listener.onAddCardClick(board);
                 });
 
-                // ✅ Setup drag & drop for tasks
                 setupDragAndDrop(board, listener);
             }
         }
 
-        /**
-         * ✅ Setup ItemTouchHelper for drag & drop tasks within board
-         */
         private void setupDragAndDrop(Board board, OnBoardActionListener listener) {
             ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
-                    ItemTouchHelper.UP | ItemTouchHelper.DOWN,  // Drag up/down
-                    0  // No swipe
+                    ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0
             ) {
                 @Override
                 public boolean onMove(@NonNull RecyclerView recyclerView,
@@ -121,10 +111,8 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
-                    // Move item in adapter
                     taskAdapter.moveItem(fromPosition, toPosition);
 
-                    // Notify listener to update position in backend
                     if (listener instanceof OnTaskPositionChangeListener) {
                         Task movedTask = taskAdapter.getTaskAt(toPosition);
                         ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
@@ -137,17 +125,16 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
 
                 @Override
                 public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                    // Not used
                 }
 
                 @Override
                 public boolean isLongPressDragEnabled() {
-                    return true; // Enable long press to drag
+                    return true;
                 }
 
                 @Override
                 public boolean isItemViewSwipeEnabled() {
-                    return false; // Disable swipe
+                    return false;
                 }
             };
 
@@ -156,10 +143,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         }
     }
 
-    /**
-     * ✅ Extended interface for position change callback
-     */
-    interface OnTaskPositionChangeListener {
+    public interface OnTaskPositionChangeListener {
         void onTaskPositionChanged(Task task, int newPosition, Board board);
     }
 }

@@ -2,17 +2,13 @@ package com.example.tralalero.domain.model;
 
 import java.util.Date;
 
-/**
- * Domain model for Task Attachment
- * Represents files attached to tasks (images, documents, etc.)
- */
 public class Attachment {
     private final String id;
     private final String taskId;
     private final String url;
-    private final String mimeType; // e.g., "image/png", "application/pdf"
-    private final Integer size; // File size in bytes
-    private final String uploadedBy; // User ID
+    private final String mimeType;
+    private final Integer size;
+    private final String uploadedBy; 
     private final Date createdAt;
 
     public Attachment(String id, String taskId, String url, String mimeType,
@@ -26,7 +22,6 @@ public class Attachment {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getTaskId() { return taskId; }
     public String getUrl() { return url; }
@@ -35,7 +30,6 @@ public class Attachment {
     public String getUploadedBy() { return uploadedBy; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isImage() {
         return mimeType != null && mimeType.startsWith("image/");
     }

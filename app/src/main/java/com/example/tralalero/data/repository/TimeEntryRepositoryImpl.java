@@ -20,7 +20,6 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
         this.apiService = apiService;
     }
 
-    //TODO: implement missing methods in API service
     @Override
     public void getTimeEntriesByTask(String taskId, RepositoryCallback<List<TimeEntry>> callback) {
         apiService.getTimeEntriesByTask(taskId).enqueue(new Callback<List<TimeEntryDTO>>() {
@@ -72,7 +71,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     callback.onSuccess(TimeEntryMapper.toDomain(response.body()));
                 } else if (response.code() == 404) {
-                    callback.onSuccess(null); // No active timer
+                    callback.onSuccess(null); 
                 } else {
                     callback.onError("Failed to fetch active time entry: " + response.code());
                 }

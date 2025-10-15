@@ -5,10 +5,7 @@ import com.example.tralalero.domain.model.SprintState;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Domain model for Sprint
- * Time-boxed iteration in Scrum methodology
- */
+
 public class Sprint {
     private final String id;
     private final String projectId;
@@ -31,7 +28,6 @@ public class Sprint {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getProjectId() { return projectId; }
     public String getName() { return name; }
@@ -41,7 +37,6 @@ public class Sprint {
     public SprintState getState() { return state; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isPlanned() {
         return state == SprintState.PLANNED;
     }
