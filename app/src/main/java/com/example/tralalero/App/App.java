@@ -2,6 +2,7 @@ package com.example.tralalero.App;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
@@ -11,11 +12,17 @@ import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.sync.StartupSyncWorker;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 
 public class App extends Application {
+    private static final String TAG = "App";
     private static App instance;
     public static AuthManager authManager;
     public static TokenManager tokenManager;
@@ -25,6 +32,12 @@ public class App extends Application {
         super.onCreate();
         
         instance = this;
+
+        // Initialize Firebase first
+        FirebaseApp.initializeApp(this);
+
+        // Initialize Firebase App Check
+        initializeAppCheck();
 
         // Load preferences before anything else
         loadLanguagePreference();
@@ -45,6 +58,31 @@ public class App extends Application {
         );
     }
     
+    /**
+     * Initialize Firebase App Check
+     * In debug mode, use DebugAppCheckProviderFactory
+     * In production, use PlayIntegrityAppCheckProviderFactory
+     */
+    private void initializeAppCheck() {
+        FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+
+        if (BuildConfig.DEBUG) {
+            // Use debug provider for development
+            Log.d(TAG, "Initializing Firebase App Check with Debug Provider");
+            firebaseAppCheck.installAppCheckProviderFactory(
+                DebugAppCheckProviderFactory.getInstance()
+            );
+        } else {
+            // Use Play Integrity for production
+            Log.d(TAG, "Initializing Firebase App Check with Play Integrity Provider");
+            firebaseAppCheck.installAppCheckProviderFactory(
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            );
+        }
+
+        Log.d(TAG, "Firebase App Check initialized successfully");
+    }
+
     /**
      * Load language preference from SharedPreferences and apply it
      */

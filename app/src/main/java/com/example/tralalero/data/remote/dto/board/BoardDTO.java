@@ -6,7 +6,7 @@ public class BoardDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("project_id")
+    @SerializedName("projectId")  // ✅ Changed from "project_id" to "projectId"
     private String projectId;
 
     @SerializedName("name")
@@ -15,10 +15,10 @@ public class BoardDTO {
     @SerializedName("order")
     private int order;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  // ✅ Changed from "created_at" to "createdAt"
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")  // ✅ Changed from "updated_at" to "updatedAt"
     private String updatedAt;
 
     public String getId() {

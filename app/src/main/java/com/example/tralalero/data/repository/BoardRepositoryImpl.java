@@ -1,5 +1,6 @@
 package com.example.tralalero.data.repository;
 
+import android.util.Log;
 import com.example.tralalero.data.mapper.BoardMapper;
 import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.data.remote.dto.board.BoardDTO;
@@ -13,6 +14,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class BoardRepositoryImpl implements IBoardRepository {
+    private static final String TAG = "BoardRepositoryImpl";
     private final BoardApiService apiService;
 
     public BoardRepositoryImpl(BoardApiService apiService) {
@@ -40,22 +42,50 @@ public class BoardRepositoryImpl implements IBoardRepository {
 
     @Override
     public void createBoard(String projectId, Board board, RepositoryCallback<Board> callback) {
+        Log.d(TAG, "=== CREATE BOARD DEBUG ===");
+        Log.d(TAG, "Input projectId: " + projectId);
+        Log.d(TAG, "Input Board - ID: " + board.getId() +
+                   ", ProjectId: " + board.getProjectId() +
+                   ", Name: " + board.getName() +
+                   ", Order: " + board.getOrder());
+
         BoardDTO dto = BoardMapper.toDTO(board);
         dto.setProjectId(projectId);
+
+        Log.d(TAG, "DTO after mapping - ID: " + dto.getId() +
+                   ", ProjectId: " + dto.getProjectId() +
+                   ", Name: " + dto.getName() +
+                   ", Order: " + dto.getOrder());
+        Log.d(TAG, "DTO ProjectId is null? " + (dto.getProjectId() == null));
+        Log.d(TAG, "DTO ProjectId is empty? " + (dto.getProjectId() != null && dto.getProjectId().isEmpty()));
+        Log.d(TAG, "========================");
 
         apiService.createBoard(dto).enqueue(new Callback<BoardDTO>() {
             @Override
             public void onResponse(Call<BoardDTO> call, Response<BoardDTO> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "✅ Board created successfully: " + response.body().getId());
                     callback.onSuccess(BoardMapper.toDomain(response.body()));
                 } else {
-                    callback.onError("Failed to create board: " + response.code());
+                    String errorMsg = "Failed to create board: " + response.code();
+                    Log.e(TAG, "❌ " + errorMsg);
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error body: " + errorBody);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error reading error body", e);
+                    }
+                    callback.onError(errorMsg);
                 }
             }
 
             @Override
             public void onFailure(Call<BoardDTO> call, Throwable t) {
-                callback.onError("Network error: " + t.getMessage());
+                String errorMsg = "Network error: " + t.getMessage();
+                Log.e(TAG, "❌ " + errorMsg, t);
+                callback.onError(errorMsg);
             }
         });
     }
