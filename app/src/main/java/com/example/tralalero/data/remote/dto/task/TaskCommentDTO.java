@@ -6,16 +6,16 @@ public class TaskCommentDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("task_id")
+    @SerializedName("taskId")
     private String taskId;
 
-    @SerializedName("user_id")
+    @SerializedName("userId")
     private String userId;
 
     @SerializedName("body")
     private String body;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     private String createdAt;
 
     public String getId() {

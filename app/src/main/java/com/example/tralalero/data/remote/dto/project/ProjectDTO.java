@@ -2,11 +2,19 @@ package com.example.tralalero.data.remote.dto.project;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * ProjectDTO - Data Transfer Object for Project API
+ *
+ * SUPPORTS BOTH FORMATS:
+ * - snake_case from backend (if TransformInterceptor not active)
+ * - camelCase from backend (if TransformInterceptor active)
+ */
 public class ProjectDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspace_id")
+    // Support both "workspaceId" (camelCase) and "workspace_id" (snake_case)
+    @SerializedName(value = "workspaceId", alternate = {"workspace_id"})
     private String workspaceId;
 
     @SerializedName("name")
@@ -18,16 +26,20 @@ public class ProjectDTO {
     @SerializedName("key")
     private String key;
 
-    @SerializedName("issue_seq")
+    // Support both "issueSeq" (camelCase) and "issue_seq" (snake_case)
+    @SerializedName(value = "issueSeq", alternate = {"issue_seq"})
     private int issueSeq;
 
-    @SerializedName("board_type")
+    // Support both "boardType" (camelCase) and "board_type" (snake_case)
+    @SerializedName(value = "boardType", alternate = {"board_type"})
     private String boardType;
 
-    @SerializedName("created_at")
+    // Support both "createdAt" (camelCase) and "created_at" (snake_case)
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
-    @SerializedName("updated_at")
+    // Support both "updatedAt" (camelCase) and "updated_at" (snake_case)
+    @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
 
     public String getId() {

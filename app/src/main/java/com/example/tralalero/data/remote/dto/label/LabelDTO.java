@@ -6,7 +6,7 @@ public class LabelDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspace_id")
+    @SerializedName("workspaceId")
     private String workspaceId;
 
     @SerializedName("name")
@@ -15,10 +15,10 @@ public class LabelDTO {
     @SerializedName("color")
     private String color;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")
     private String updatedAt;
 
     public String getId() {

@@ -6,6 +6,8 @@ import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.remote.FirebaseAuthenticator;
 import com.example.tralalero.auth.remote.FirebaseInterceptor;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.concurrent.TimeUnit;
 
@@ -66,9 +68,15 @@ public class ApiClient {
                 .addInterceptor(logging)
                 .build();
 
+        // ✅ FIXED: Create Gson with proper configuration
+        Gson gson = new GsonBuilder()
+                .setLenient() // Allow lenient parsing
+                .serializeNulls() // Keep null values
+                .create();
+
         return new Retrofit.Builder()
                 .baseUrl(BuildConfig.API_BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson)) // ✅ Use custom Gson
                 .client(client)
                 .build();
     }

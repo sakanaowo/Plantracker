@@ -27,7 +27,9 @@ import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TaskViewModel extends ViewModel {
 
@@ -47,6 +49,8 @@ public class TaskViewModel extends ViewModel {
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
 
+    // ✅ FIX: Store tasks per board instead of single shared LiveData
+    private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Task> selectedTaskLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<TaskComment>> commentsLiveData = new MutableLiveData<>();
@@ -89,6 +93,25 @@ public class TaskViewModel extends ViewModel {
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
     }
 
+    /**
+     * ✅ FIX: Get LiveData for specific board
+     * Each board now has its own LiveData to prevent data overwrite
+     */
+    public LiveData<List<Task>> getTasksForBoard(String boardId) {
+        if (boardId == null || boardId.isEmpty()) {
+            return tasksLiveData; // Return empty LiveData
+        }
+
+        if (!tasksPerBoardMap.containsKey(boardId)) {
+            tasksPerBoardMap.put(boardId, new MutableLiveData<>());
+        }
+        return tasksPerBoardMap.get(boardId);
+    }
+
+    /**
+     * @deprecated Use getTasksForBoard(boardId) instead
+     */
+    @Deprecated
     public LiveData<List<Task>> getTasks() {
         return tasksLiveData;
     }
@@ -144,6 +167,16 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(List<Task> result) {
                 loadingLiveData.setValue(false);
+                // ✅ FIX: Update specific board's LiveData instead of shared one
+                if (!tasksPerBoardMap.containsKey(boardId)) {
+                    tasksPerBoardMap.put(boardId, new MutableLiveData<>());
+                }
+                MutableLiveData<List<Task>> boardLiveData = tasksPerBoardMap.get(boardId);
+                if (boardLiveData != null) {
+                    boardLiveData.setValue(result);
+                }
+
+                // Also update the deprecated shared LiveData for backward compatibility
                 tasksLiveData.setValue(result);
             }
 
