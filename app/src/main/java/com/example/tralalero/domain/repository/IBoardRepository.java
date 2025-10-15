@@ -8,6 +8,8 @@ public interface IBoardRepository {
     // CRUD operations
     void getBoardById(String boardId, RepositoryCallback<Board> callback);
 
+    void getBoardsByProject(String projectId, RepositoryCallback<List<Board>> callback);
+
     void createBoard(String projectId, Board board, RepositoryCallback<Board> callback);
 
     void updateBoard(String boardId, Board board, RepositoryCallback<Board> callback);

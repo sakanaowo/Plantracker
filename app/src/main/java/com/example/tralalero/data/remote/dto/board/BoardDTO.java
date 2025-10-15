@@ -6,7 +6,7 @@ public class BoardDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("projectId")  // ✅ Changed from "project_id" to "projectId"
+    @SerializedName("project_id")  // ✅ FIXED: Match backend snake_case
     private String projectId;
 
     @SerializedName("name")
@@ -15,10 +15,10 @@ public class BoardDTO {
     @SerializedName("order")
     private int order;
 
-    @SerializedName("createdAt")  // ✅ Changed from "created_at" to "createdAt"
+    @SerializedName("created_at")  // ✅ FIXED: Match backend snake_case
     private String createdAt;
 
-    @SerializedName("updatedAt")  // ✅ Changed from "updated_at" to "updatedAt"
+    @SerializedName("updated_at")  // ✅ FIXED: Match backend snake_case
     private String updatedAt;
 
     public String getId() {

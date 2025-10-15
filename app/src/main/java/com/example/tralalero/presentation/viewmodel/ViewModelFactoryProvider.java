@@ -23,6 +23,7 @@ import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 import com.example.tralalero.domain.usecase.board.CreateBoardUseCase;
 import com.example.tralalero.domain.usecase.board.DeleteBoardUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardByIdUseCase;
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardTasksUseCase;
 import com.example.tralalero.domain.usecase.board.ReorderBoardsUseCase;
 import com.example.tralalero.domain.usecase.board.UpdateBoardUseCase;
@@ -152,6 +153,7 @@ public class ViewModelFactoryProvider {
         
         return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),
+            new GetBoardsByProjectUseCase(boardRepository),
             new CreateBoardUseCase(boardRepository),
             new UpdateBoardUseCase(boardRepository),
             new DeleteBoardUseCase(boardRepository),

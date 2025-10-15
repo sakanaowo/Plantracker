@@ -93,16 +93,37 @@ public class ListProject extends Fragment {
         setupRecyclerView();
         observeViewModel();
         
-        // Load tasks
+        // Load tasks if boardId is available
         if (boardId != null && !boardId.isEmpty()) {
             loadTasksForBoard();
         } else {
-            Log.w(TAG, "No board ID provided");
+            Log.w(TAG, "BoardId not available yet, waiting for boards to load...");
+            // Show loading state while waiting for boardId
+            if (progressBar != null) {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+            if (emptyView != null) {
+                emptyView.setVisibility(View.GONE);
+            }
         }
 
         return view;
     }
-    
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // Check if boardId has been updated since fragment creation
+        if (boardId == null || boardId.isEmpty()) {
+            // Try to get boardId from adapter
+            if (getActivity() != null) {
+                // Fragment will be notified when boards are loaded via observeViewModel
+                Log.d(TAG, "onResume - Still waiting for boardId");
+            }
+        }
+    }
+
     // ===== SETUP METHODS =====
     
     private void initViews(View view) {
@@ -231,5 +252,31 @@ public class ListProject extends Fragment {
 
     private String getEmptyMessage() {
         return "No tasks in " + type;
+    }
+
+    /**
+     * Update boardId and reload tasks
+     * Called when boards are loaded after fragment creation
+     */
+    public void updateBoardIdAndReload(String newBoardId) {
+        if (newBoardId != null && !newBoardId.isEmpty() && !newBoardId.equals(this.boardId)) {
+            Log.d(TAG, "Updating boardId from " + this.boardId + " to " + newBoardId);
+            this.boardId = newBoardId;
+
+            // Update arguments for configuration changes
+            if (getArguments() != null) {
+                getArguments().putString(ARG_BOARD_ID, newBoardId);
+            }
+
+            // Reload tasks with new boardId
+            loadTasksForBoard();
+        }
+    }
+
+    /**
+     * Get current boardId
+     */
+    public String getBoardId() {
+        return boardId;
     }
 }

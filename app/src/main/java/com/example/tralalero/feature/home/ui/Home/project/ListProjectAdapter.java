@@ -161,6 +161,7 @@ public class ListProjectAdapter extends FragmentStateAdapter {
 
         // Create UseCases
         GetBoardByIdUseCase getBoardByIdUseCase = new GetBoardByIdUseCase(boardRepository);
+        GetBoardsByProjectUseCase getBoardsByProjectUseCase = new GetBoardsByProjectUseCase(boardRepository);
         CreateBoardUseCase createBoardUseCase = new CreateBoardUseCase(boardRepository);
         UpdateBoardUseCase updateBoardUseCase = new UpdateBoardUseCase(boardRepository);
         DeleteBoardUseCase deleteBoardUseCase = new DeleteBoardUseCase(boardRepository);
@@ -170,6 +171,7 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         // Create Factory
         BoardViewModelFactory factory = new BoardViewModelFactory(
                 getBoardByIdUseCase,
+                getBoardsByProjectUseCase,
                 createBoardUseCase,
                 updateBoardUseCase,
                 deleteBoardUseCase,
@@ -221,23 +223,16 @@ public class ListProjectAdapter extends FragmentStateAdapter {
                 ", status: " + status +
                 ", boardId: " + boardId);
 
-        // Phase 5 - PREFERRED: Use boardId
+        // Phase 5 - PREFERRED: Use boardId if available
         if (boardId != null && !boardId.isEmpty()) {
             return ListProject.newInstance(displayName, projectId, boardId);
         }
 
-        // Legacy/Fallback: Calculate boardId from projectId + position
-        if (projectId != null && !projectId.isEmpty()) {
-            Log.w(TAG, "Using calculated boardId for position " + position);
-            // Simple boardId calculation: projectId_status
-            String calculatedBoardId = projectId + "_" + status;
-            return ListProject.newInstance(displayName, projectId, calculatedBoardId);
-        }
-
-        // Final fallback: Create empty fragment
-        Log.e(TAG, "Cannot create fragment: no projectId or boardId for position " + position);
-        return ListProject.newInstance(displayName, "", "");
-    }  // ✅ ĐÓNG METHOD createFragment()
+        // If boardId not available yet, create fragment with null boardId
+        // Fragment will wait for boards to be loaded before fetching tasks
+        Log.w(TAG, "BoardId not available yet for position " + position + ", fragment will wait for boards to load");
+        return ListProject.newInstance(displayName, projectId, null);
+    }
 
     @Override
     public int getItemCount() {

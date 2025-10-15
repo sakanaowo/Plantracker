@@ -17,10 +17,10 @@ public interface TaskApiService {
 
     /**
      * Get tasks by board
-     * GET /tasks?boardId={boardId}
+     * GET /tasks/by-board/{boardId}
      */
-    @GET("tasks")
-    Call<List<TaskDTO>> getTasksByBoard(@Query("boardId") String boardId);
+    @GET("tasks/by-board/{boardId}")
+    Call<List<TaskDTO>> getTasksByBoard(@Path("boardId") String boardId);
 
     /**
      * Get task by ID

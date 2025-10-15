@@ -41,6 +41,32 @@ public class BoardRepositoryImpl implements IBoardRepository {
     }
 
     @Override
+    public void getBoardsByProject(String projectId, RepositoryCallback<List<Board>> callback) {
+        Log.d(TAG, "Loading boards for project: " + projectId);
+        apiService.getBoardsByProject(projectId).enqueue(new Callback<List<BoardDTO>>() {
+            @Override
+            public void onResponse(Call<List<BoardDTO>> call, Response<List<BoardDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Board> boards = BoardMapper.toDomainList(response.body());
+                    Log.d(TAG, "✅ Loaded " + boards.size() + " boards from API");
+                    callback.onSuccess(boards);
+                } else {
+                    String errorMsg = "Failed to load boards: " + response.code();
+                    Log.e(TAG, "❌ " + errorMsg);
+                    callback.onError(errorMsg);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<BoardDTO>> call, Throwable t) {
+                String errorMsg = "Network error: " + t.getMessage();
+                Log.e(TAG, "❌ " + errorMsg, t);
+                callback.onError(errorMsg);
+            }
+        });
+    }
+
+    @Override
     public void createBoard(String projectId, Board board, RepositoryCallback<Board> callback) {
         Log.d(TAG, "=== CREATE BOARD DEBUG ===");
         Log.d(TAG, "Input projectId: " + projectId);

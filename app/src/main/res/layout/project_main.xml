@@ -30,18 +30,22 @@
             android:orientation="vertical"
             >
             <TextView
+                android:id="@+id/tvProjectName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cá muối team"
+                android:text="Project Name"
                 android:textSize="20sp"
                 android:textStyle="bold"
+                tools:text="Cá muối team"
                 />
             <TextView
+                android:id="@+id/tvWorkspaceName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="my workspace"
+                android:text="Workspace"
                 android:textSize="14sp"
                 android:textStyle="normal"
+                tools:text="my workspace"
                 />
         </LinearLayout>
         <Button
@@ -77,4 +81,3 @@
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

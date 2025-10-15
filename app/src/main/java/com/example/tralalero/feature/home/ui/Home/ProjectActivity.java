@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -13,11 +14,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.Board;
+import com.example.tralalero.feature.home.ui.Home.project.ListProject;
 import com.example.tralalero.feature.home.ui.Home.project.ListProjectAdapter;
 
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
@@ -62,15 +65,21 @@ public class ProjectActivity extends AppCompatActivity {
     private ViewPager2 viewPager2;
     private ListProjectAdapter adapter;
     private ProgressBar progressBar;
+    private TextView tvProjectName;
+    private TextView tvWorkspaceName;
 
     // Data
     private String projectId;
     private String projectName;
     private String workspaceId;
+    private String workspaceName;
 
     // Board IDs for 3 tabs
     private List<String> boardIds = new ArrayList<>();
     private int boardsCreatedCount = 0;
+
+    // Flag to prevent infinite loop of board creation
+    private boolean isDefaultBoardsCreated = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,13 +120,15 @@ public class ProjectActivity extends AppCompatActivity {
         projectId = getIntent().getStringExtra("project_id");
         projectName = getIntent().getStringExtra("project_name");
         workspaceId = getIntent().getStringExtra("workspace_id");
-        
+        workspaceName = getIntent().getStringExtra("workspace_name");
+
         // Debug logging
         Log.d(TAG, "=== ProjectActivity Started ===");
         Log.d(TAG, "Project ID: " + projectId);
         Log.d(TAG, "Project Name: " + projectName);
         Log.d(TAG, "Workspace ID: " + workspaceId);
-        
+        Log.d(TAG, "Workspace Name: " + workspaceName);
+
         if (projectId == null || projectId.isEmpty()) {
             Log.e(TAG, "ERROR: No project_id provided! Check Intent extras.");
             Toast.makeText(this, "Error: No project ID", Toast.LENGTH_SHORT).show();
@@ -146,9 +157,24 @@ public class ProjectActivity extends AppCompatActivity {
         viewPager2 = findViewById(R.id.PrjViewPager2);
         backButton = findViewById(R.id.btnClosePjrDetail);
         progressBar = findViewById(R.id.progressBar);
+        tvProjectName = findViewById(R.id.tvProjectName);
+        tvWorkspaceName = findViewById(R.id.tvWorkspaceName);
 
         if (progressBar == null) {
             Log.w(TAG, "ProgressBar not found in layout");
+        }
+
+        // Set project name and workspace name from intent
+        if (projectName != null && !projectName.isEmpty()) {
+            tvProjectName.setText(projectName);
+        } else {
+            tvProjectName.setText("Project");
+        }
+
+        if (workspaceName != null && !workspaceName.isEmpty()) {
+            tvWorkspaceName.setText(workspaceName);
+        } else {
+            tvWorkspaceName.setText("Workspace");
         }
     }
     
@@ -216,19 +242,14 @@ public class ProjectActivity extends AppCompatActivity {
             }
         });
         
-        // Observe board created (for auto-creation of 3 default boards)
-        boardViewModel.isBoardCreated().observe(this, created -> {
-            if (created != null && created) {
-                boardsCreatedCount++;
-                Log.d(TAG, "Board created, count: " + boardsCreatedCount + "/3");
-
-                // When all 3 boards are created, reload boards
-                if (boardsCreatedCount >= 3) {
-                    Toast.makeText(this, "Default boards created!", Toast.LENGTH_SHORT).show();
-                    boardsCreatedCount = 0; // Reset counter
-                    // Reload boards to get IDs
-                    loadBoards();
-                }
+        // Observe boards loaded from API
+        boardViewModel.getProjectBoards().observe(this, boards -> {
+            if (boards != null && !boards.isEmpty()) {
+                Log.d(TAG, "✅ Boards loaded successfully: " + boards.size() + " boards");
+                setupTabsWithBoardIds(boards);
+            } else {
+                Log.w(TAG, "⚠️ No boards found for project");
+                Toast.makeText(this, "No boards found", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -236,66 +257,25 @@ public class ProjectActivity extends AppCompatActivity {
     /**
      * Load boards for this project
      * Phase 6: Task 2.2 - Core Implementation
+     * FIXED: Load boards from backend instead of creating new ones
      */
     private void loadBoards() {
         Log.d(TAG, "Loading boards for project: " + projectId);
 
-        // TODO: Need to add loadBoardsForProject method to WorkspaceViewModel
-        // For now, we'll use a workaround
-
-        // Since we don't have a direct "get boards by project" endpoint in ViewModel yet,
-        // we'll check if boards exist and create default ones
-        // This will be implemented when backend provides the endpoint
-
-        // For Phase 6 demo, create 3 default boards
-        createDefaultBoards();
-    }
-
-    /**
-     * Create 3 default boards: TO DO, IN PROGRESS, DONE
-     * Phase 6: Task 2.2 Implementation
-     */
-    private void createDefaultBoards() {
-        Log.d(TAG, "=== CREATE DEFAULT BOARDS DEBUG ===");
-        Log.d(TAG, "ProjectId from intent: " + projectId);
-        Log.d(TAG, "ProjectId is null? " + (projectId == null));
-        Log.d(TAG, "ProjectId is empty? " + (projectId != null && projectId.isEmpty()));
-        Log.d(TAG, "ProjectId length: " + (projectId != null ? projectId.length() : 0));
-
-        // Validate projectId first
         if (projectId == null || projectId.isEmpty()) {
-            Log.e(TAG, "❌ Cannot create boards: projectId is null or empty");
+            Log.e(TAG, "❌ Cannot load boards: projectId is null or empty");
             Toast.makeText(this, "Error: Invalid project ID", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String[] boardNames = {"TO DO", "IN PROGRESS", "DONE"};
-        boardIds.clear();
-        boardsCreatedCount = 0;
-
-        for (int i = 0; i < boardNames.length; i++) {
-            Board board = new Board(
-                "", // id will be generated by backend
-                projectId,
-                boardNames[i],
-                i + 1 // order starts from 1, not 0 (backend validation)
-            );
-
-            Log.d(TAG, "Creating board #" + (i + 1) + ": " + boardNames[i]);
-            Log.d(TAG, "  - Board.projectId: " + board.getProjectId());
-            Log.d(TAG, "  - Board.name: " + board.getName());
-            Log.d(TAG, "  - Board.order: " + board.getOrder());
-            Log.d(TAG, "  - Sending with projectId param: " + projectId);
-
-            boardViewModel.createBoard(projectId, board);
-        }
-        Log.d(TAG, "===================================");
-
-        // After creating boards, setup tabs
-        // Note: In real scenario, we should wait for backend response
-        // For demo, we'll setup tabs immediately
-        setupTabsWithDefaultBoards();
+        // Load boards from backend (backend already created default boards)
+        boardViewModel.loadBoardsByProject(projectId);
     }
+
+    /**
+     * ❌ REMOVED: createDefaultBoards() method
+     * Backend already creates default boards automatically
+     */
 
     /**
      * Setup tabs with default board names
@@ -346,5 +326,32 @@ public class ProjectActivity extends AppCompatActivity {
         }).attach();
 
         Log.d(TAG, "Tabs setup with " + boards.size() + " boards");
+
+        // Notify fragments to reload tasks with new boardIds
+        notifyFragmentsToReload();
+    }
+
+    /**
+     * Notify all fragments to reload tasks with updated boardIds
+     */
+    private void notifyFragmentsToReload() {
+        // ViewPager2 may have already created fragments
+        // We need to update their boardIds and trigger reload
+        viewPager2.post(() -> {
+            for (int position = 0; position < adapter.getItemCount(); position++) {
+                String boardId = adapter.getBoardIdForPosition(position);
+                if (boardId != null && !boardId.isEmpty()) {
+                    // Try to get fragment from ViewPager2
+                    Fragment fragment = getSupportFragmentManager()
+                            .findFragmentByTag("f" + position);
+
+                    if (fragment instanceof ListProject) {
+                        ListProject listProjectFragment = (ListProject) fragment;
+                        listProjectFragment.updateBoardIdAndReload(boardId);
+                        Log.d(TAG, "Updated fragment at position " + position + " with boardId: " + boardId);
+                    }
+                }
+            }
+        });
     }
 }
