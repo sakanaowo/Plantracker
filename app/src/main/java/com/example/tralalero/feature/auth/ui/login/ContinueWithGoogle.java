@@ -1,15 +1,12 @@
 package com.example.tralalero.feature.auth.ui.login;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.repository.FirebaseAuthRepository;
@@ -26,37 +23,25 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-
 public class ContinueWithGoogle extends AppCompatActivity {
     private static final String TAG = "ContinueWithGoogle";
-    
     private GoogleSignInClient googleSignInClient;
     private AuthManager authManager;
     private TokenManager tokenManager;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
-        // Initialize managers
         authManager = App.authManager;
         tokenManager = new TokenManager(this);
-        
-        // Setup Google Sign-In
         setupGoogleSignIn();
-        
-        // Setup activity result launcher
         setupGoogleSignInLauncher();
-        
-        // Setup UI
         Button btnGoogle = findViewById(R.id.btn_google);
         if (btnGoogle != null) {
             btnGoogle.setOnClickListener(v -> signInWithGoogle());
         }
     }
-    
     private void setupGoogleSignIn() {
         String clientId = getString(R.string.client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -65,7 +50,6 @@ public class ContinueWithGoogle extends AppCompatActivity {
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
     }
-    
     private void setupGoogleSignInLauncher() {
         googleSignInLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -77,12 +61,10 @@ public class ContinueWithGoogle extends AppCompatActivity {
             }
         );
     }
-    
     private void signInWithGoogle() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         googleSignInLauncher.launch(signInIntent);
     }
-    
     private void handleGoogleSignInResult(Task<GoogleSignInAccount> task) {
         if (!task.isSuccessful()) {
             Exception exception = task.getException();
@@ -90,20 +72,16 @@ public class ContinueWithGoogle extends AppCompatActivity {
             showError("Google sign-in failed");
             return;
         }
-        
         GoogleSignInAccount account = task.getResult();
         if (account == null || account.getIdToken() == null) {
             showError("Failed to get Google account");
             return;
         }
-        
         String googleIdToken = account.getIdToken();
         signInToFirebase(googleIdToken);
     }
-    
     private void signInToFirebase(String googleIdToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(googleIdToken, null);
-        
         FirebaseAuth.getInstance().signInWithCredential(credential)
             .addOnSuccessListener(authResult -> {
                 FirebaseUser user = authResult.getUser();
@@ -119,9 +97,7 @@ public class ContinueWithGoogle extends AppCompatActivity {
                 showError("Firebase authentication failed");
             });
     }
-    
     private void authenticateWithBackend(FirebaseUser firebaseUser) {
-        // Get Firebase ID token
         firebaseUser.getIdToken(true)
             .addOnSuccessListener(result -> {
                 String firebaseIdToken = result.getToken();
@@ -129,7 +105,6 @@ public class ContinueWithGoogle extends AppCompatActivity {
                     showError("Failed to get Firebase token");
                     return;
                 }
-                
                 syncWithBackend(firebaseUser, firebaseIdToken);
             })
             .addOnFailureListener(e -> {
@@ -137,27 +112,20 @@ public class ContinueWithGoogle extends AppCompatActivity {
                 showError("Failed to get authentication token");
             });
     }
-    
     private void syncWithBackend(FirebaseUser firebaseUser, String firebaseIdToken) {
         FirebaseAuthRepository repository = new FirebaseAuthRepository(authManager);
-        
         repository.authenticateWithFirebase(firebaseIdToken, new FirebaseAuthRepository.FirebaseAuthCallback() {
             @Override
             public void onSuccess(FirebaseAuthResponse response, String token) {
                 Log.d(TAG, "Backend authentication successful: " + response.message);
-                
-                // Save authentication data
                 tokenManager.saveAuthData(
                     token,
                     firebaseUser.getUid(),
                     firebaseUser.getEmail(),
                     firebaseUser.getDisplayName()
                 );
-                
-                // Navigate to home
                 navigateToHome(firebaseUser);
             }
-            
             @Override
             public void onError(String error) {
                 Log.e(TAG, "Backend authentication failed: " + error);
@@ -166,7 +134,6 @@ public class ContinueWithGoogle extends AppCompatActivity {
             }
         });
     }
-    
     private void navigateToHome(FirebaseUser user) {
         Intent intent = new Intent(this, HomeActivity.class);
         intent.putExtra("user_name", user.getDisplayName());
@@ -175,7 +142,6 @@ public class ContinueWithGoogle extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-    
     private void showError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }

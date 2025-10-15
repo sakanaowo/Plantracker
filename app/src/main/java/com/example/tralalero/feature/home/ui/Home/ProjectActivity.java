@@ -127,11 +127,11 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
 
         TaskViewModelFactory taskFactory = new TaskViewModelFactory(
-            getTaskByIdUseCase, getTasksByBoardUseCase, createTaskUseCase,
-            updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
-            unassignTaskUseCase, moveTaskToBoardUseCase, updateTaskPositionUseCase,
-            addCommentUseCase, getTaskCommentsUseCase, addAttachmentUseCase,
-            getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase
+                getTaskByIdUseCase, getTasksByBoardUseCase, createTaskUseCase,
+                updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
+                unassignTaskUseCase, moveTaskToBoardUseCase, updateTaskPositionUseCase,
+                addCommentUseCase, getTaskCommentsUseCase, addAttachmentUseCase,
+                getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase
         );
 
         taskViewModel = new ViewModelProvider(this, taskFactory).get(TaskViewModel.class);
@@ -139,6 +139,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     }
 
     private void initViews() {
+//        TODO: fix this red line
         boardsRecyclerView = findViewById(R.id.boardsRecyclerView);
         backButton = findViewById(R.id.btnClosePjrDetail);
         progressBar = findViewById(R.id.progressBar);
@@ -162,7 +163,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
 
     private void setupRecyclerView() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(
-            this, LinearLayoutManager.HORIZONTAL, false
+                this, LinearLayoutManager.HORIZONTAL, false
         );
         boardsRecyclerView.setLayoutManager(layoutManager);
 
@@ -254,7 +255,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
 
     private void showCreateTaskDialog(Board board) {
         TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForCreate(
-            board.getId(), projectId
+                board.getId(), projectId
         );
 
         bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
@@ -285,7 +286,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
 
     private void showTaskDetailBottomSheet(Task task, Board board) {
         TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForEdit(
-            task, board.getId(), projectId
+                task, board.getId(), projectId
         );
 
         bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
