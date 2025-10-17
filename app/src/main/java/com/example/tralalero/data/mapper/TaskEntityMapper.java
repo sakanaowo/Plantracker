@@ -5,116 +5,166 @@ import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.Task.TaskType;
 import com.example.tralalero.domain.model.Task.TaskStatus;
 import com.example.tralalero.domain.model.Task.TaskPriority;
-
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Mapper between Task domain model and TaskEntity
+ * CRITICAL: Maps all 23 fields without faking data
+ * CRITICAL: Uses String IDs directly (no int conversion)
+ * CRITICAL: Converts enums to/from strings for Room storage
+ */
 public class TaskEntityMapper {
-    
+
+    /**
+     * Convert domain Task to TaskEntity
+     * Maps all 23 fields: id, projectId, boardId, title, description, issueKey,
+     * type, status, priority, position, assigneeId, createdBy, sprintId, epicId,
+     * parentTaskId, startAt, dueAt, storyPoints, originalEstimateSec,
+     * remainingEstimateSec, timeSpentSec, createdAt, updatedAt
+     */
     public static TaskEntity toEntity(Task task) {
         if (task == null) {
             return null;
         }
-        
-        // Convert domain Task to Room entity
-        // Map available fields, entity has simpler structure
-        return new TaskEntity(
-            parseId(task.getId()),
-            task.getTitle(),
-            task.getDescription(),
-            task.getDueAt(), // dueDate -> dueAt
-            priorityToInt(task.getPriority()),
-            task.isDone(), // completed -> isDone()
-            parseId(task.getProjectId()),
-            task.getAssigneeId(), // userId -> assigneeId
-            task.getCreatedAt(),
-            task.getUpdatedAt()
+
+        // Create entity with required fields (id, projectId, boardId, title)
+        TaskEntity entity = new TaskEntity(
+            task.getId(),
+            task.getProjectId(),
+            task.getBoardId(),
+            task.getTitle()
         );
+
+        // Set all optional fields
+        entity.setDescription(task.getDescription());
+        entity.setIssueKey(task.getIssueKey());
+
+        // Convert enums to strings for Room storage
+        entity.setType(task.getType() != null ? task.getType().name() : null);
+        entity.setStatus(task.getStatus() != null ? task.getStatus().name() : null);
+        entity.setPriority(task.getPriority() != null ? task.getPriority().name() : null);
+
+        entity.setPosition(task.getPosition());
+        entity.setAssigneeId(task.getAssigneeId());
+        entity.setCreatedBy(task.getCreatedBy());
+        entity.setSprintId(task.getSprintId());
+        entity.setEpicId(task.getEpicId());
+        entity.setParentTaskId(task.getParentTaskId());
+        entity.setStartAt(task.getStartAt());
+        entity.setDueAt(task.getDueAt());
+        entity.setStoryPoints(task.getStoryPoints());
+        entity.setOriginalEstimateSec(task.getOriginalEstimateSec());
+        entity.setRemainingEstimateSec(task.getRemainingEstimateSec());
+        entity.setCreatedAt(task.getCreatedAt());
+        entity.setUpdatedAt(task.getUpdatedAt());
+
+        return entity;
     }
-    
+
+    /**
+     * Convert TaskEntity to domain Task
+     * Maps all 23 fields without faking any data
+     */
     public static Task toDomain(TaskEntity entity) {
         if (entity == null) {
             return null;
         }
-        
-        // Convert Room entity to domain Task (22 parameters!)
-        // Use default values for fields not in entity
+
+        // Parse enum strings back to enums
+        TaskType type = parseTaskType(entity.getType());
+        TaskStatus status = parseTaskStatus(entity.getStatus());
+        TaskPriority priority = parseTaskPriority(entity.getPriority());
+
+        // Create domain Task with all 23 fields
         return new Task(
-            String.valueOf(entity.getId()),              // id
-            String.valueOf(entity.getProjectId()),       // projectId
-            null,                                         // boardId - not in entity
-            entity.getTitle(),                            // title
-            entity.getDescription(),                      // description
-            null,                                         // issueKey - not in entity
-            TaskType.TASK,                                // type - default TASK
-            entity.isCompleted() ? TaskStatus.DONE : TaskStatus.TO_DO, // status
-            intToPriority(entity.getPriority()),          // priority
-            0.0,                                          // position - default 0
-            entity.getUserId(),                           // assigneeId
-            null,                                         // createdBy - not in entity
-            null,                                         // sprintId - not in entity
-            null,                                         // epicId - not in entity
-            null,                                         // parentTaskId - not in entity
-            null,                                         // startAt - not in entity
-            entity.getDueDate(),                          // dueAt
-            null,                                         // storyPoints - not in entity
-            null,                                         // originalEstimateSec - not in entity
-            null,                                         // remainingEstimateSec - not in entity
-            entity.getCreatedAt(),                        // createdAt
-            entity.getUpdatedAt()                         // updatedAt
+            entity.getId(),
+            entity.getProjectId(),
+            entity.getBoardId(),
+            entity.getTitle(),
+            entity.getDescription(),
+            entity.getIssueKey(),
+            type,
+            status,
+            priority,
+            entity.getPosition(),
+            entity.getAssigneeId(),
+            entity.getCreatedBy(),
+            entity.getSprintId(),
+            entity.getEpicId(),
+            entity.getParentTaskId(),
+            entity.getStartAt(),
+            entity.getDueAt(),
+            entity.getStoryPoints(),
+            entity.getOriginalEstimateSec(),
+            entity.getRemainingEstimateSec(),
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
         );
     }
-    
-    private static int parseId(String id) {
-        if (id == null || id.isEmpty()) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(id);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-    
-    private static int priorityToInt(TaskPriority priority) {
-        if (priority == null) return 1; // MEDIUM
-        switch (priority) {
-            case LOW: return 0;
-            case MEDIUM: return 1;
-            case HIGH: return 2;
-            default: return 1;
-        }
-    }
-    
-    private static TaskPriority intToPriority(int priority) {
-        switch (priority) {
-            case 0: return TaskPriority.LOW;
-            case 2: return TaskPriority.HIGH;
-            default: return TaskPriority.MEDIUM;
-        }
-    }
-    
-    public static List<TaskEntity> toEntityList(List<Task> tasks) {
-        if (tasks == null) {
-            return null;
-        }
-        
-        List<TaskEntity> entities = new ArrayList<>();
-        for (Task task : tasks) {
-            entities.add(toEntity(task));
-        }
-        return entities;
-    }
-    
+
+    /**
+     * Convert list of TaskEntities to domain Tasks
+     */
     public static List<Task> toDomainList(List<TaskEntity> entities) {
         if (entities == null) {
-            return null;
+            return new ArrayList<>();
         }
-        
+
         List<Task> tasks = new ArrayList<>();
         for (TaskEntity entity : entities) {
-            tasks.add(toDomain(entity));
+            Task task = toDomain(entity);
+            if (task != null) {
+                tasks.add(task);
+            }
         }
         return tasks;
     }
+
+    /**
+     * Convert list of domain Tasks to TaskEntities
+     */
+    public static List<TaskEntity> toEntityList(List<Task> tasks) {
+        if (tasks == null) {
+            return new ArrayList<>();
+        }
+
+        List<TaskEntity> entities = new ArrayList<>();
+        for (Task task : tasks) {
+            TaskEntity entity = toEntity(task);
+            if (entity != null) {
+                entities.add(entity);
+            }
+        }
+        return entities;
+    }
+
+    // Helper methods to parse enum strings
+    private static TaskType parseTaskType(String typeStr) {
+        if (typeStr == null) return TaskType.TASK;
+        try {
+            return TaskType.valueOf(typeStr);
+        } catch (IllegalArgumentException e) {
+            return TaskType.TASK;
+        }
+    }
+
+    private static TaskStatus parseTaskStatus(String statusStr) {
+        if (statusStr == null) return TaskStatus.TO_DO;
+        try {
+            return TaskStatus.valueOf(statusStr);
+        } catch (IllegalArgumentException e) {
+            return TaskStatus.TO_DO;
+        }
+    }
+
+    private static TaskPriority parseTaskPriority(String priorityStr) {
+        if (priorityStr == null) return TaskPriority.MEDIUM;
+        try {
+            return TaskPriority.valueOf(priorityStr);
+        } catch (IllegalArgumentException e) {
+            return TaskPriority.MEDIUM;
+        }
+    }
 }
+

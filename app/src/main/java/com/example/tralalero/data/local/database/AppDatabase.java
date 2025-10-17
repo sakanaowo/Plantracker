@@ -22,7 +22,7 @@ import com.example.tralalero.data.local.database.entity.WorkspaceEntity;
         ProjectEntity.class,
         WorkspaceEntity.class
     },
-    version = 1,
+    version = 2,  // CRITICAL: Schema changed - entities now use String IDs, added 19 Task fields, added key/boardType to Project
     exportSchema = false
 )
 @TypeConverters({DateConverter.class})

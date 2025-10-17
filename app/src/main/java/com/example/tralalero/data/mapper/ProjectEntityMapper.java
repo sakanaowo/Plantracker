@@ -2,81 +2,94 @@ package com.example.tralalero.data.mapper;
 
 import com.example.tralalero.data.local.database.entity.ProjectEntity;
 import com.example.tralalero.domain.model.Project;
-
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Mapper between Project domain model and ProjectEntity
+ * CRITICAL: Maps all 6 fields including key and boardType
+ * CRITICAL: Uses String IDs directly (no int conversion)
+ * NOTE: boardType is String in entity, not enum
+ */
 public class ProjectEntityMapper {
     
+    /**
+     * Convert domain Project to ProjectEntity
+     * Maps all 6 fields: id, workspaceId, name, description, key, boardType
+     */
     public static ProjectEntity toEntity(Project project) {
         if (project == null) {
             return null;
         }
         
-        // Convert domain Project to Room entity
-        // Note: Some fields like color, userId, createdAt, updatedAt are not in domain model
-        // We'll use default/empty values for Room-specific fields
-        return new ProjectEntity(
-            parseId(project.getId()),
+        // Create entity with all required fields
+        ProjectEntity entity = new ProjectEntity(
+            project.getId(),
+            project.getWorkspaceId(),
             project.getName(),
-            project.getDescription(),
-            null, // color - not in domain model
-            parseId(project.getWorkspaceId()),
-            null, // userId - not in domain model
-            null, // createdAt - not in domain model
-            null  // updatedAt - not in domain model
+            project.getKey(),
+            project.getBoardType() != null ? project.getBoardType() : "KANBAN"
         );
+        
+        // Set optional fields
+        entity.setDescription(project.getDescription());
+        
+        return entity;
     }
     
+    /**
+     * Convert ProjectEntity to domain Project
+     * Maps all 6 fields: id, workspaceId, name, description, key, boardType
+     */
     public static Project toDomain(ProjectEntity entity) {
         if (entity == null) {
             return null;
         }
         
-        // Convert Room entity to domain Project
-        // Map available fields, use empty string for missing fields
+        // Create domain Project with all 6 fields
         return new Project(
-            String.valueOf(entity.getId()),
-            String.valueOf(entity.getWorkspaceId()),
+            entity.getId(),
+            entity.getWorkspaceId(),
             entity.getName(),
             entity.getDescription(),
-            "", // key - not in entity, would come from API
-            "KANBAN" // boardType - default to KANBAN, not stored in entity
+            entity.getKey(),
+            entity.getBoardType() != null ? entity.getBoardType() : "KANBAN"
         );
     }
     
-    private static int parseId(String id) {
-        if (id == null || id.isEmpty()) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(id);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-    
-    public static List<ProjectEntity> toEntityList(List<Project> projects) {
-        if (projects == null) {
-            return null;
-        }
-        
-        List<ProjectEntity> entities = new ArrayList<>();
-        for (Project project : projects) {
-            entities.add(toEntity(project));
-        }
-        return entities;
-    }
-    
+    /**
+     * Convert list of ProjectEntities to domain Projects
+     */
     public static List<Project> toDomainList(List<ProjectEntity> entities) {
         if (entities == null) {
-            return null;
+            return new ArrayList<>();
         }
         
         List<Project> projects = new ArrayList<>();
         for (ProjectEntity entity : entities) {
-            projects.add(toDomain(entity));
+            Project project = toDomain(entity);
+            if (project != null) {
+                projects.add(project);
+            }
         }
         return projects;
+    }
+    
+    /**
+     * Convert list of domain Projects to ProjectEntities
+     */
+    public static List<ProjectEntity> toEntityList(List<Project> projects) {
+        if (projects == null) {
+            return new ArrayList<>();
+        }
+        
+        List<ProjectEntity> entities = new ArrayList<>();
+        for (Project project : projects) {
+            ProjectEntity entity = toEntity(project);
+            if (entity != null) {
+                entities.add(entity);
+            }
+        }
+        return entities;
     }
 }

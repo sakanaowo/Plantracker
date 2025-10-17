@@ -6,11 +6,8 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
-
-import com.example.tralalero.data.local.database.entity.TaskEntity;
-
 import java.util.List;
-
+import com.example.tralalero.data.local.database.entity.TaskEntity;
 @Dao
 public interface TaskDao {
     
@@ -30,26 +27,41 @@ public interface TaskDao {
     void deleteAll();
     
     @Query("SELECT * FROM tasks WHERE id = :taskId LIMIT 1")
-    TaskEntity getById(int taskId);
+    TaskEntity getById(String taskId);
     
-    @Query("SELECT * FROM tasks WHERE userId = :userId")
+    @Query("SELECT * FROM tasks WHERE assigneeId = :userId OR createdBy = :userId ORDER BY position ASC")
     List<TaskEntity> getAllByUserId(String userId);
     
-    @Query("SELECT * FROM tasks WHERE projectId = :projectId")
-    List<TaskEntity> getByProjectId(int projectId);
+    @Query("SELECT * FROM tasks WHERE boardId = :boardId ORDER BY position ASC")
+    List<TaskEntity> getTasksByBoardSync(String boardId);
     
-    @Query("SELECT * FROM tasks WHERE userId = :userId AND completed = 0")
-    List<TaskEntity> getIncompleteTasks(String userId);
+    @Query("SELECT * FROM tasks WHERE projectId = :projectId ORDER BY position ASC")
+    List<TaskEntity> getByProjectId(String projectId);
     
-    @Query("SELECT * FROM tasks WHERE userId = :userId AND completed = 1")
-    List<TaskEntity> getCompletedTasks(String userId);
+    @Query("SELECT * FROM tasks WHERE assigneeId = :assigneeId ORDER BY position ASC")
+    List<TaskEntity> getTasksByAssigneeSync(String assigneeId);
     
-    @Query("DELETE FROM tasks WHERE userId = :userId")
-    void deleteByUserId(String userId);
+    @Query("SELECT * FROM tasks WHERE sprintId = :sprintId ORDER BY position ASC")
+    List<TaskEntity> getTasksBySprintSync(String sprintId);
+    
+    @Query("UPDATE tasks SET position = :newPosition WHERE id = :taskId")
+    void updateTaskPosition(String taskId, double newPosition);
+    
+    @Query("UPDATE tasks SET boardId = :newBoardId, position = :newPosition WHERE id = :taskId")
+    void moveTaskToBoard(String taskId, String newBoardId, double newPosition);
+    
+    @Query("UPDATE tasks SET status = :newStatus WHERE id = :taskId")
+    void updateTaskStatus(String taskId, String newStatus);
     
     @Query("DELETE FROM tasks WHERE projectId = :projectId")
-    void deleteByProjectId(int projectId);
+    void deleteByProjectId(String projectId);
     
-    @Query("SELECT COUNT(*) FROM tasks WHERE userId = :userId")
-    int getTaskCount(String userId);
+    @Query("DELETE FROM tasks WHERE boardId = :boardId")
+    void deleteByBoardId(String boardId);
+    
+    @Query("SELECT COUNT(*) FROM tasks WHERE boardId = :boardId")
+    int countByBoardId(String boardId);
+    
+    @Query("SELECT COUNT(*) FROM tasks WHERE projectId = :projectId")
+    int countByProjectId(String projectId);
 }

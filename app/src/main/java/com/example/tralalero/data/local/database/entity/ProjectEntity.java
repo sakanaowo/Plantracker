@@ -1,52 +1,77 @@
 package com.example.tralalero.data.local.database.entity;
 
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
-import java.util.Date;
-
-@Entity(tableName = "projects")
+/**
+ * Room Entity for Project
+ * Matches domain model Project.java with all 6 fields
+ */
+@Entity(
+    tableName = "projects",
+    indices = {
+        @Index(value = "workspaceId"),
+        @Index(value = "key", unique = true)
+    }
+)
 public class ProjectEntity {
     
     @PrimaryKey
-    private int id;
+    @NonNull
+    private String id;
     
+    @NonNull
+    private String workspaceId;
+    
+    @NonNull
     private String name;
+    
     private String description;
-    private String color;
-    private int workspaceId;
-    private String userId;
-    private Date createdAt;
-    private Date updatedAt;
     
-    public ProjectEntity() {
-    }
+    @NonNull
+    private String key;  // CRITICAL FIELD - Project unique key (e.g., "PROJ")
     
-    public ProjectEntity(int id, String name, String description, String color,
-                        int workspaceId, String userId, Date createdAt, Date updatedAt) {
+    @NonNull
+    private String boardType;  // CRITICAL FIELD - BoardType: KANBAN, SCRUM
+    
+    // Constructor with required fields
+    public ProjectEntity(@NonNull String id, @NonNull String workspaceId, 
+                        @NonNull String name, @NonNull String key, 
+                        @NonNull String boardType) {
         this.id = id;
-        this.name = name;
-        this.description = description;
-        this.color = color;
         this.workspaceId = workspaceId;
-        this.userId = userId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.name = name;
+        this.key = key;
+        this.boardType = boardType;
     }
     
-    public int getId() {
+    // Getters and Setters
+    @NonNull
+    public String getId() {
         return id;
     }
     
-    public void setId(int id) {
+    public void setId(@NonNull String id) {
         this.id = id;
     }
     
+    @NonNull
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+    
+    public void setWorkspaceId(@NonNull String workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+    
+    @NonNull
     public String getName() {
         return name;
     }
     
-    public void setName(String name) {
+    public void setName(@NonNull String name) {
         this.name = name;
     }
     
@@ -58,43 +83,21 @@ public class ProjectEntity {
         this.description = description;
     }
     
-    public String getColor() {
-        return color;
+    @NonNull
+    public String getKey() {
+        return key;
     }
     
-    public void setColor(String color) {
-        this.color = color;
+    public void setKey(@NonNull String key) {
+        this.key = key;
     }
     
-    public int getWorkspaceId() {
-        return workspaceId;
+    @NonNull
+    public String getBoardType() {
+        return boardType;
     }
     
-    public void setWorkspaceId(int workspaceId) {
-        this.workspaceId = workspaceId;
-    }
-    
-    public String getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-    
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setBoardType(@NonNull String boardType) {
+        this.boardType = boardType;
     }
 }

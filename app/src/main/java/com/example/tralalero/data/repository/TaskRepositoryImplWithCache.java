@@ -6,6 +6,7 @@ import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.local.database.dao.TaskDao;
 import com.example.tralalero.data.mapper.TaskEntityMapper;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.data.local.database.entity.TaskEntity;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,7 @@ public class TaskRepositoryImplWithCache {
             try {
                 String userId = tokenManager.getUserId();
                 
-                List<com.example.tralalero.data.local.database.entity.TaskEntity> entities = taskDao.getAllByUserId(userId);
+                List<TaskEntity> entities = taskDao.getAllByUserId(userId);
                 
                 if (entities != null && !entities.isEmpty()) {
                     Log.d(TAG, "✓ Loaded " + entities.size() + " tasks from cache");
@@ -50,7 +51,7 @@ public class TaskRepositoryImplWithCache {
     public void saveTasksToCache(List<Task> tasks) {
         executorService.execute(() -> {
             try {
-                List<com.example.tralalero.data.local.database.entity.TaskEntity> entities = TaskEntityMapper.toEntityList(tasks);
+                List<TaskEntity> entities = TaskEntityMapper.toEntityList(tasks);
                 taskDao.insertAll(entities);
                 Log.d(TAG, "✓ Saved " + tasks.size() + " tasks to cache");
             } catch (Exception e) {
@@ -59,10 +60,10 @@ public class TaskRepositoryImplWithCache {
         });
     }
     
-    public void getTaskById(int taskId, SingleTaskCallback callback) {
+    public void getTaskById(String taskId, SingleTaskCallback callback) {
         executorService.execute(() -> {
             try {
-                com.example.tralalero.data.local.database.entity.TaskEntity entity = taskDao.getById(taskId);
+                TaskEntity entity = taskDao.getById(taskId);
                 
                 if (entity != null) {
                     Log.d(TAG, "✓ Loaded task " + taskId + " from cache");
@@ -83,7 +84,7 @@ public class TaskRepositoryImplWithCache {
     public void saveTaskToCache(Task task) {
         executorService.execute(() -> {
             try {
-                com.example.tralalero.data.local.database.entity.TaskEntity entity = TaskEntityMapper.toEntity(task);
+                TaskEntity entity = TaskEntityMapper.toEntity(task);
                 taskDao.insert(entity);
                 Log.d(TAG, "✓ Saved task " + task.getId() + " to cache");
             } catch (Exception e) {
@@ -92,10 +93,10 @@ public class TaskRepositoryImplWithCache {
         });
     }
     
-    public void deleteTaskFromCache(int taskId) {
+    public void deleteTaskFromCache(String taskId) {
         executorService.execute(() -> {
             try {
-                com.example.tralalero.data.local.database.entity.TaskEntity entity = taskDao.getById(taskId);
+                TaskEntity entity = taskDao.getById(taskId);
                 if (entity != null) {
                     taskDao.delete(entity);
                     Log.d(TAG, "✓ Deleted task " + taskId + " from cache");
