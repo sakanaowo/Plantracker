@@ -7,27 +7,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectMapper {
-
+    
     public static Project toDomain(ProjectDTO dto) {
         if (dto == null) {
             return null;
         }
-
+        
         return new Project(
-                dto.getId(),
-                dto.getWorkspaceId(),
-                dto.getName(),
-                dto.getDescription(),
-                dto.getKey(),
-                dto.getBoardType()
+            dto.getId(),
+            dto.getWorkspaceId(),
+            dto.getName(),
+            dto.getDescription(),
+            dto.getKey(),
+            dto.getBoardType()
         );
     }
-
-    public static ProjectDTO toDTO(Project project) {
+    
+    public static ProjectDTO toDto(Project project) {
         if (project == null) {
             return null;
         }
-
+        
         ProjectDTO dto = new ProjectDTO();
         dto.setId(project.getId());
         dto.setWorkspaceId(project.getWorkspaceId());
@@ -35,37 +35,31 @@ public class ProjectMapper {
         dto.setDescription(project.getDescription());
         dto.setKey(project.getKey());
         dto.setBoardType(project.getBoardType());
-
+        
         return dto;
     }
-
-    public static List<Project> toDomainList(List<ProjectDTO> dtos) {
-        if (dtos == null) {
-            return new ArrayList<>();
+    
+    public static List<Project> toDomainList(List<ProjectDTO> dtoList) {
+        if (dtoList == null) {
+            return null;
         }
-
+        
         List<Project> projects = new ArrayList<>();
-        for (ProjectDTO dto : dtos) {
-            Project project = toDomain(dto);
-            if (project != null) {
-                projects.add(project);
-            }
+        for (ProjectDTO dto : dtoList) {
+            projects.add(toDomain(dto));
         }
         return projects;
     }
-
-    public static List<ProjectDTO> toDTOList(List<Project> projects) {
+    
+    public static List<ProjectDTO> toDtoList(List<Project> projects) {
         if (projects == null) {
-            return new ArrayList<>();
+            return null;
         }
-
-        List<ProjectDTO> dtos = new ArrayList<>();
+        
+        List<ProjectDTO> dtoList = new ArrayList<>();
         for (Project project : projects) {
-            ProjectDTO dto = toDTO(project);
-            if (dto != null) {
-                dtos.add(dto);
-            }
+            dtoList.add(toDto(project));
         }
-        return dtos;
+        return dtoList;
     }
 }

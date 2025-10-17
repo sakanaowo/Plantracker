@@ -1,6 +1,6 @@
 package com.example.tralalero.data.repository;
 
-import com.example.tralalero.data.mapper.TimeEntryMapper;
+import com.example.tralalero.data.remote.mapper.TimeEntryMapper;
 import com.example.tralalero.data.remote.api.TimerApiService;
 import com.example.tralalero.data.remote.dto.task.TimeEntryDTO;
 import com.example.tralalero.domain.model.TimeEntry;
@@ -124,7 +124,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
 
     @Override
     public void createTimeEntry(TimeEntry timeEntry, RepositoryCallback<TimeEntry> callback) {
-        TimeEntryDTO dto = TimeEntryMapper.toDTO(timeEntry);
+        TimeEntryDTO dto = TimeEntryMapper.toDto(timeEntry);
 
         apiService.createTimeEntry(dto).enqueue(new Callback<TimeEntryDTO>() {
             @Override
@@ -145,7 +145,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
 
     @Override
     public void updateTimeEntry(String timeEntryId, TimeEntry timeEntry, RepositoryCallback<TimeEntry> callback) {
-        TimeEntryDTO dto = TimeEntryMapper.toDTO(timeEntry);
+        TimeEntryDTO dto = TimeEntryMapper.toDto(timeEntry);
 
         apiService.updateTimeEntry(timeEntryId, dto).enqueue(new Callback<TimeEntryDTO>() {
             @Override

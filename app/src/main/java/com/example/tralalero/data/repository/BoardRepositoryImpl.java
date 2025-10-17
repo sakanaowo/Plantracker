@@ -104,7 +104,7 @@ public class BoardRepositoryImpl implements IBoardRepository {
                    ", Name: " + board.getName() +
                    ", Order: " + board.getOrder());
 
-        BoardDTO dto = BoardMapper.toDTO(board);
+        BoardDTO dto = BoardMapper.toDto(board);
         dto.setProjectId(projectId);
 
         Log.d(TAG, "DTO after mapping - ID: " + dto.getId() +
@@ -147,7 +147,7 @@ public class BoardRepositoryImpl implements IBoardRepository {
 
     @Override
     public void updateBoard(String boardId, Board board, RepositoryCallback<Board> callback) {
-        BoardDTO dto = BoardMapper.toDTO(board);
+        BoardDTO dto = BoardMapper.toDto(board);
 
         apiService.updateBoard(boardId, dto).enqueue(new Callback<BoardDTO>() {
             @Override

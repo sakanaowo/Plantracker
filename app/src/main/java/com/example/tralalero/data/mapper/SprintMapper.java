@@ -12,40 +12,42 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-
 public class SprintMapper {
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            Locale.US
-    );
-
+    
+    private static final SimpleDateFormat ISO_DATE_FORMAT;
+    
     static {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
+    
     public static Sprint toDomain(SprintDTO dto) {
         if (dto == null) {
             return null;
         }
-
+        
+        SprintState state = parseSprintState(dto.getState());
+        Date startAt = parseDate(dto.getStartAt());
+        Date endAt = parseDate(dto.getEndAt());
+        Date createdAt = parseDate(dto.getCreatedAt());
+        
         return new Sprint(
-                dto.getId(),
-                dto.getProjectId(),
-                dto.getName(),
-                dto.getGoal(),
-                parseDate(dto.getStartAt()),
-                parseDate(dto.getEndAt()),
-                parseSprintState(dto.getState()),
-                parseDate(dto.getCreatedAt())
+            dto.getId(),
+            dto.getProjectId(),
+            dto.getName(),
+            dto.getGoal(),
+            startAt,
+            endAt,
+            state,
+            createdAt
         );
     }
-
-    public static SprintDTO toDTO(Sprint sprint) {
+    
+    public static SprintDTO toDto(Sprint sprint) {
         if (sprint == null) {
             return null;
         }
-
+        
         SprintDTO dto = new SprintDTO();
         dto.setId(sprint.getId());
         dto.setProjectId(sprint.getProjectId());
@@ -55,76 +57,76 @@ public class SprintMapper {
         dto.setEndAt(formatDate(sprint.getEndAt()));
         dto.setState(formatSprintState(sprint.getState()));
         dto.setCreatedAt(formatDate(sprint.getCreatedAt()));
-
+        
         return dto;
     }
-
-    public static List<Sprint> toDomainList(List<SprintDTO> dtos) {
-        if (dtos == null) {
-            return new ArrayList<>();
+    
+    public static List<Sprint> toDomainList(List<SprintDTO> dtoList) {
+        if (dtoList == null) {
+            return null;
         }
-
+        
         List<Sprint> sprints = new ArrayList<>();
-        for (SprintDTO dto : dtos) {
-            Sprint sprint = toDomain(dto);
-            if (sprint != null) {
-                sprints.add(sprint);
-            }
+        for (SprintDTO dto : dtoList) {
+            sprints.add(toDomain(dto));
         }
         return sprints;
     }
-
-    public static List<SprintDTO> toDTOList(List<Sprint> sprints) {
+    
+    public static List<SprintDTO> toDtoList(List<Sprint> sprints) {
         if (sprints == null) {
-            return new ArrayList<>();
+            return null;
         }
-
-        List<SprintDTO> dtos = new ArrayList<>();
+        
+        List<SprintDTO> dtoList = new ArrayList<>();
         for (Sprint sprint : sprints) {
-            SprintDTO dto = toDTO(sprint);
-            if (dto != null) {
-                dtos.add(dto);
-            }
+            dtoList.add(toDto(sprint));
         }
-        return dtos;
+        return dtoList;
     }
-
+    
     private static SprintState parseSprintState(String stateString) {
         if (stateString == null || stateString.isEmpty()) {
-            return SprintState.PLANNED; 
+            return SprintState.PLANNED;
         }
-
+        
         try {
             return SprintState.valueOf(stateString.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return SprintState.PLANNED; 
+            return SprintState.PLANNED;
         }
     }
-
+    
     private static String formatSprintState(SprintState state) {
         if (state == null) {
             return "PLANNED";
         }
+        
         return state.name();
     }
-
+    
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;
         }
+        
         try {
-            return DATE_FORMAT.parse(dateString);
+            return ISO_DATE_FORMAT.parse(dateString);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+                return altFormat.parse(dateString);
+            } catch (ParseException ex) {
+                return null;
+            }
         }
     }
-
+    
     private static String formatDate(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_FORMAT.format(date);
+        
+        return ISO_DATE_FORMAT.format(date);
     }
 }
-

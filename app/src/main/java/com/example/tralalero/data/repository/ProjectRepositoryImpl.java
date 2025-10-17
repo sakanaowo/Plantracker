@@ -38,7 +38,7 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void createProject(String workspaceId, Project project, RepositoryCallback<Project> callback) {
-        ProjectDTO dto = ProjectMapper.toDTO(project);
+        ProjectDTO dto = ProjectMapper.toDto(project);
         dto.setWorkspaceId(workspaceId);
 
         apiService.createProject(dto).enqueue(new Callback<ProjectDTO>() {
@@ -60,7 +60,7 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void updateProject(String projectId, Project project, RepositoryCallback<Project> callback) {
-        ProjectDTO dto = ProjectMapper.toDTO(project);
+        ProjectDTO dto = ProjectMapper.toDto(project);
 
         apiService.updateProject(projectId, dto).enqueue(new Callback<ProjectDTO>() {
             @Override

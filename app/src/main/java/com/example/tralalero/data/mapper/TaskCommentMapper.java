@@ -11,94 +11,92 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-
 public class TaskCommentMapper {
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            Locale.US
-    );
-
+    
+    private static final SimpleDateFormat ISO_DATE_FORMAT;
+    
     static {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
+    
     public static TaskComment toDomain(TaskCommentDTO dto) {
         if (dto == null) {
             return null;
         }
-
+        
+        Date createdAt = parseDate(dto.getCreatedAt());
+        
         return new TaskComment(
-                dto.getId(),
-                dto.getTaskId(),
-                dto.getUserId(),
-                dto.getBody(),
-                parseDate(dto.getCreatedAt())
+            dto.getId(),
+            dto.getTaskId(),
+            dto.getUserId(),
+            dto.getBody(),
+            createdAt
         );
     }
-
-    public static TaskCommentDTO toDTO(TaskComment comment) {
+    
+    public static TaskCommentDTO toDto(TaskComment comment) {
         if (comment == null) {
             return null;
         }
-
+        
         TaskCommentDTO dto = new TaskCommentDTO();
         dto.setId(comment.getId());
         dto.setTaskId(comment.getTaskId());
         dto.setUserId(comment.getUserId());
         dto.setBody(comment.getBody());
         dto.setCreatedAt(formatDate(comment.getCreatedAt()));
-
+        
         return dto;
     }
-
-    public static List<TaskComment> toDomainList(List<TaskCommentDTO> dtos) {
-        if (dtos == null) {
-            return new ArrayList<>();
+    
+    public static List<TaskComment> toDomainList(List<TaskCommentDTO> dtoList) {
+        if (dtoList == null) {
+            return null;
         }
-
+        
         List<TaskComment> comments = new ArrayList<>();
-        for (TaskCommentDTO dto : dtos) {
-            TaskComment comment = toDomain(dto);
-            if (comment != null) {
-                comments.add(comment);
-            }
+        for (TaskCommentDTO dto : dtoList) {
+            comments.add(toDomain(dto));
         }
         return comments;
     }
-
-    public static List<TaskCommentDTO> toDTOList(List<TaskComment> comments) {
+    
+    public static List<TaskCommentDTO> toDtoList(List<TaskComment> comments) {
         if (comments == null) {
-            return new ArrayList<>();
+            return null;
         }
-
-        List<TaskCommentDTO> dtos = new ArrayList<>();
+        
+        List<TaskCommentDTO> dtoList = new ArrayList<>();
         for (TaskComment comment : comments) {
-            TaskCommentDTO dto = toDTO(comment);
-            if (dto != null) {
-                dtos.add(dto);
-            }
+            dtoList.add(toDto(comment));
         }
-        return dtos;
+        return dtoList;
     }
-
+    
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;
         }
+        
         try {
-            return DATE_FORMAT.parse(dateString);
+            return ISO_DATE_FORMAT.parse(dateString);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+                return altFormat.parse(dateString);
+            } catch (ParseException ex) {
+                return null;
+            }
         }
     }
-
+    
     private static String formatDate(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_FORMAT.format(date);
+        
+        return ISO_DATE_FORMAT.format(date);
     }
 }
-

@@ -11,6 +11,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
+import com.example.tralalero.App.App;
+import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.R;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.BaseActivity;
@@ -119,10 +121,23 @@ public class AccountActivity extends BaseActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+    
     private void performLogout() {
         Log.d(TAG, "Performing logout...");
-        authViewModel.logout();
+        
+        App.authManager.signOut();
+        Log.d(TAG, "✓ Auth cleared");
+        
+        App.dependencyProvider.clearAllCaches();
+        Log.d(TAG, "✓ Database cache cleared");
+        
+        DependencyProvider.reset();
+        Log.d(TAG, "✓ DependencyProvider reset");
+        
+        redirectToLogin();
+        Log.d(TAG, "✓ Logout complete");
     }
+    
     private void redirectToLogin() {
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
