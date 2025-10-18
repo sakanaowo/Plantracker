@@ -73,7 +73,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void createTask(String boardId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDTO(task);
+        TaskDTO dto = TaskMapper.toDto(task);
         dto.setBoardId(boardId);
 
         apiService.createTask(dto).enqueue(new Callback<TaskDTO>() {
@@ -95,7 +95,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void updateTask(String taskId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDTO(task);
+        TaskDTO dto = TaskMapper.toDto(task);
 
         apiService.updateTask(taskId, dto).enqueue(new Callback<TaskDTO>() {
             @Override
@@ -243,7 +243,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addAttachment(String taskId, Attachment attachment, RepositoryCallback<Attachment> callback) {
-        AttachmentDTO dto = AttachmentMapper.toDTO(attachment);
+        AttachmentDTO dto = AttachmentMapper.toDto(attachment);
 
         apiService.addTaskAttachment(taskId, dto).enqueue(new Callback<AttachmentDTO>() {
             @Override
@@ -288,7 +288,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addComment(String taskId, TaskComment comment, RepositoryCallback<TaskComment> callback) {
-        TaskCommentDTO dto = TaskCommentMapper.toDTO(comment);
+        TaskCommentDTO dto = TaskCommentMapper.toDto(comment);
 
         apiService.addTaskComment(taskId, dto).enqueue(new Callback<TaskCommentDTO>() {
             @Override

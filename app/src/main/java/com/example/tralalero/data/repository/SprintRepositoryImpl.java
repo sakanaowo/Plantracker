@@ -79,7 +79,7 @@ public class SprintRepositoryImpl implements ISprintRepository {
 
     @Override
     public void createSprint(String projectId, Sprint sprint, RepositoryCallback<Sprint> callback) {
-        SprintDTO dto = SprintMapper.toDTO(sprint);
+        SprintDTO dto = SprintMapper.toDto(sprint);
         dto.setProjectId(projectId);
 
         apiService.createSprint(dto).enqueue(new Callback<SprintDTO>() {
@@ -101,7 +101,7 @@ public class SprintRepositoryImpl implements ISprintRepository {
 
     @Override
     public void updateSprint(String sprintId, Sprint sprint, RepositoryCallback<Sprint> callback) {
-        SprintDTO dto = SprintMapper.toDTO(sprint);
+        SprintDTO dto = SprintMapper.toDto(sprint);
 
         apiService.updateSprint(sprintId, dto).enqueue(new Callback<SprintDTO>() {
             @Override

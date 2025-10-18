@@ -15,6 +15,7 @@ import androidx.work.WorkManager;
 import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.sync.StartupSyncWorker;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.FirebaseAppCheck;
@@ -26,6 +27,7 @@ public class App extends Application {
     private static App instance;
     public static AuthManager authManager;
     public static TokenManager tokenManager;
+    public static DependencyProvider dependencyProvider;
 
     @Override
     public void onCreate() {
@@ -42,6 +44,9 @@ public class App extends Application {
         
         authManager = new AuthManager(this);
         tokenManager = new TokenManager(this);
+        
+        dependencyProvider = DependencyProvider.getInstance(this, tokenManager);
+        Log.d(TAG, "✓ DependencyProvider initialized with Database");
 
         OneTimeWorkRequest syncWork =
                 new OneTimeWorkRequest.Builder(StartupSyncWorker.class)
@@ -55,6 +60,16 @@ public class App extends Application {
         );
     }
     
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        Log.d(TAG, "App terminating, clearing caches...");
+        
+        if (dependencyProvider != null) {
+            dependencyProvider.clearAllCaches();
+            Log.d(TAG, "✓ All caches cleared");
+        }
+    }
 
     private void initializeAppCheck() {
         FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();

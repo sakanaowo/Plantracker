@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import com.example.tralalero.App.App;
+import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
@@ -308,16 +309,28 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             .setNegativeButton("No", null)
             .show();
     }
+    
     private void logout() {
         Log.d(TAG, "Logout button clicked");
+        
         FirebaseAuth.getInstance().signOut();
-        Log.d(TAG, "User signed out from Firebase");
+        Log.d(TAG, "✓ User signed out from Firebase");
+        
         tokenManager.clearAuthData();
-        Log.d(TAG, "Auth data cleared");
+        Log.d(TAG, "✓ Auth data cleared");
+        
+        App.dependencyProvider.clearAllCaches();
+        Log.d(TAG, "✓ Database cache cleared");
+        
+        DependencyProvider.reset();
+        Log.d(TAG, "✓ DependencyProvider reset");
+        
         Intent intent = new Intent(AccountActivity.this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        Log.d(TAG, "Navigated to LoginActivity");
+        Log.d(TAG, "✓ Navigated to LoginActivity");
+        
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "✓ Logout complete");
     }
 }

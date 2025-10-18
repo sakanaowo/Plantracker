@@ -12,36 +12,36 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class ChecklistItemMapper {
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            Locale.US
-    );
-
+    
+    private static final SimpleDateFormat ISO_DATE_FORMAT;
+    
     static {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
+    
     public static ChecklistItem toDomain(CheckListItemDTO dto) {
         if (dto == null) {
             return null;
         }
-
+        
+        Date createdAt = parseDate(dto.getCreatedAt());
+        
         return new ChecklistItem(
-                dto.getId(),
-                dto.getChecklistId(),
-                dto.getContent(),
-                dto.isDone(),
-                dto.getPosition(),
-                parseDate(dto.getCreatedAt())
+            dto.getId(),
+            dto.getChecklistId(),
+            dto.getContent(),
+            dto.isDone(),
+            dto.getPosition(),
+            createdAt
         );
     }
-
-    public static CheckListItemDTO toDTO(ChecklistItem item) {
+    
+    public static CheckListItemDTO toDto(ChecklistItem item) {
         if (item == null) {
             return null;
         }
-
+        
         CheckListItemDTO dto = new CheckListItemDTO();
         dto.setId(item.getId());
         dto.setChecklistId(item.getChecklistId());
@@ -49,57 +49,56 @@ public class ChecklistItemMapper {
         dto.setDone(item.isDone());
         dto.setPosition(item.getPosition());
         dto.setCreatedAt(formatDate(item.getCreatedAt()));
-
+        
         return dto;
     }
-
-    public static List<ChecklistItem> toDomainList(List<CheckListItemDTO> dtos) {
-        if (dtos == null) {
-            return new ArrayList<>();
+    
+    public static List<ChecklistItem> toDomainList(List<CheckListItemDTO> dtoList) {
+        if (dtoList == null) {
+            return null;
         }
-
+        
         List<ChecklistItem> items = new ArrayList<>();
-        for (CheckListItemDTO dto : dtos) {
-            ChecklistItem item = toDomain(dto);
-            if (item != null) {
-                items.add(item);
-            }
+        for (CheckListItemDTO dto : dtoList) {
+            items.add(toDomain(dto));
         }
         return items;
     }
-
-    public static List<CheckListItemDTO> toDTOList(List<ChecklistItem> items) {
+    
+    public static List<CheckListItemDTO> toDtoList(List<ChecklistItem> items) {
         if (items == null) {
-            return new ArrayList<>();
+            return null;
         }
-
-        List<CheckListItemDTO> dtos = new ArrayList<>();
+        
+        List<CheckListItemDTO> dtoList = new ArrayList<>();
         for (ChecklistItem item : items) {
-            CheckListItemDTO dto = toDTO(item);
-            if (dto != null) {
-                dtos.add(dto);
-            }
+            dtoList.add(toDto(item));
         }
-        return dtos;
+        return dtoList;
     }
-
+    
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;
         }
+        
         try {
-            return DATE_FORMAT.parse(dateString);
+            return ISO_DATE_FORMAT.parse(dateString);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+                return altFormat.parse(dateString);
+            } catch (ParseException ex) {
+                return null;
+            }
         }
     }
-
+    
     private static String formatDate(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_FORMAT.format(date);
+        
+        return ISO_DATE_FORMAT.format(date);
     }
 }
-

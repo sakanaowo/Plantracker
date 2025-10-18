@@ -59,7 +59,7 @@ public class LabelRepositoryImpl implements ILabelRepository {
 
     @Override
     public void createLabel(String workspaceId, Label label, RepositoryCallback<Label> callback) {
-        LabelDTO dto = LabelMapper.toDTO(label);
+        LabelDTO dto = LabelMapper.toDto(label);
         dto.setWorkspaceId(workspaceId);
 
         apiService.createLabel(dto).enqueue(new Callback<LabelDTO>() {
@@ -81,7 +81,7 @@ public class LabelRepositoryImpl implements ILabelRepository {
 
     @Override
     public void updateLabel(String labelId, Label label, RepositoryCallback<Label> callback) {
-        LabelDTO dto = LabelMapper.toDTO(label);
+        LabelDTO dto = LabelMapper.toDto(label);
 
         apiService.updateLabel(labelId, dto).enqueue(new Callback<LabelDTO>() {
             @Override
