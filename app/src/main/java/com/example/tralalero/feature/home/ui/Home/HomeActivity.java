@@ -14,14 +14,21 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.lifecycle.ViewModelProvider;
+import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.HomeAdapter;
+import com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache;
+import com.example.tralalero.domain.model.Workspace;
+import com.example.tralalero.domain.repository.IWorkspaceRepository;
 import com.example.tralalero.feature.home.ui.BaseActivity;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.test.RepositoryTestActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
+
+import java.util.List;
+
 public class HomeActivity extends BaseActivity {
     private RecyclerView recyclerBoard;
     private HomeAdapter homeAdapter;
@@ -63,6 +70,68 @@ public class HomeActivity extends BaseActivity {
             }
         });
     }
+    
+    /**
+     * Load workspaces with cache
+     * Cache-first approach: instant load from cache, then refresh from API
+     * 
+     * @author Person 1
+     */
+    private void loadWorkspacesWithCache() {
+        Log.d(TAG, "Loading workspaces with cache...");
+        final long startTime = System.currentTimeMillis();
+        
+        App.dependencyProvider.getWorkspaceRepositoryWithCache()
+            .getWorkspaces(new WorkspaceRepositoryImplWithCache.WorkspaceCallback() {
+                @Override
+                public void onSuccess(List<Workspace> workspaces) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    
+                    runOnUiThread(() -> {
+                        if (workspaces != null && !workspaces.isEmpty()) {
+                            homeAdapter.setWorkspaceList(workspaces);
+                            
+                            // Performance logging
+                            String message;
+                            if (duration < 100) {
+                                message = "⚡ Cache: " + duration + "ms (" + workspaces.size() + " workspaces)";
+                                Log.i(TAG, "CACHE HIT: " + duration + "ms");
+                            } else {
+                                message = "🌐 API: " + duration + "ms (" + workspaces.size() + " workspaces)";
+                                Log.i(TAG, "API CALL: " + duration + "ms");
+                            }
+                            
+                            // Optional: Show toast for demo
+                            Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d(TAG, "No workspaces found");
+                        }
+                    });
+                }
+                
+                @Override
+                public void onCacheEmpty() {
+                    Log.d(TAG, "Cache empty, falling back to API...");
+                    runOnUiThread(() -> {
+                        // Fall back to ViewModel when cache is empty
+                        workspaceViewModel.loadWorkspaces();
+                    });
+                }
+                
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "Cache error: " + e.getMessage());
+                    runOnUiThread(() -> {
+                        Toast.makeText(HomeActivity.this, 
+                            "Error loading from cache, trying API...", 
+                            Toast.LENGTH_SHORT).show();
+                        // Fall back to ViewModel on cache error
+                        workspaceViewModel.loadWorkspaces();
+                    });
+                }
+            });
+    }
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,7 +145,10 @@ public class HomeActivity extends BaseActivity {
         setupViewModels();
         observeWorkspaceViewModel();
         setupRecyclerView();
-        workspaceViewModel.loadWorkspaces();
+        
+        // Use cached repository instead of ViewModel
+        loadWorkspacesWithCache();  // Person 1: Cache-first approach
+        
         setupTestRepositoryButton();
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);

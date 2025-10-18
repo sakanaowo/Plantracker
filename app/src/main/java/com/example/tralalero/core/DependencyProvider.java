@@ -10,7 +10,10 @@ import com.example.tralalero.data.local.database.dao.BoardDao;
 import com.example.tralalero.data.local.database.dao.ProjectDao;
 import com.example.tralalero.data.local.database.dao.TaskDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
+import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
+import com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache;
+import com.example.tralalero.network.ApiClient;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +47,7 @@ public class DependencyProvider {
 
     // Cached Repositories
     private TaskRepositoryImplWithCache taskRepositoryWithCache;
+    private WorkspaceRepositoryImplWithCache workspaceRepositoryWithCache;
     
     // Executor for background operations
     private final ExecutorService executorService;
@@ -133,6 +137,24 @@ public class DependencyProvider {
             Log.d(TAG, "✓ TaskRepositoryImplWithCache created");
         }
         return taskRepositoryWithCache;
+    }
+    
+    /**
+     * Get WorkspaceRepository with caching
+     * Lazy initialization - only created when needed
+     * 
+     * @author Person 1
+     */
+    public synchronized WorkspaceRepositoryImplWithCache getWorkspaceRepositoryWithCache() {
+        if (workspaceRepositoryWithCache == null) {
+            workspaceRepositoryWithCache = new WorkspaceRepositoryImplWithCache(
+                workspaceDao,
+                executorService,
+                tokenManager
+            );
+            Log.d(TAG, "✓ WorkspaceRepositoryImplWithCache created");
+        }
+        return workspaceRepositoryWithCache;
     }
     
     // TODO: Person 2 - Add more cached repositories
