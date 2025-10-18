@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.local.database.AppDatabase;
+import com.example.tralalero.data.local.database.dao.BoardDao;
 import com.example.tralalero.data.local.database.dao.ProjectDao;
 import com.example.tralalero.data.local.database.dao.TaskDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
@@ -39,7 +40,8 @@ public class DependencyProvider {
     private final TaskDao taskDao;
     private final ProjectDao projectDao;
     private final WorkspaceDao workspaceDao;
-    
+    private final BoardDao boardDao;
+
     // Cached Repositories
     private TaskRepositoryImplWithCache taskRepositoryWithCache;
     
@@ -63,8 +65,9 @@ public class DependencyProvider {
         this.taskDao = database.taskDao();
         this.projectDao = database.projectDao();
         this.workspaceDao = database.workspaceDao();
+        this.boardDao = database.boardDao();
         Log.d(TAG, "✓ All DAOs initialized");
-        
+
         // Initialize ExecutorService
         this.executorService = Executors.newFixedThreadPool(3);
         Log.d(TAG, "✓ ExecutorService initialized with 3 threads");
@@ -165,8 +168,12 @@ public class DependencyProvider {
                     Log.d(TAG, "✓ Workspace cache cleared");
                 }
                 
-                // TODO: Person 2 - Clear Board cache when implemented
-                
+                // Clear Board cache
+                if (boardDao != null) {
+                    boardDao.deleteAll();
+                    Log.d(TAG, "✓ Board cache cleared");
+                }
+
                 Log.d(TAG, "✓ All caches cleared successfully");
                 
             } catch (Exception e) {
@@ -196,6 +203,13 @@ public class DependencyProvider {
         executorService.execute(() -> {
             workspaceDao.deleteAll();
             Log.d(TAG, "✓ Workspace cache cleared");
+        });
+    }
+
+    public void clearBoardCache() {
+        executorService.execute(() -> {
+            boardDao.deleteAll();
+            Log.d(TAG, "✓ Board cache cleared");
         });
     }
 }

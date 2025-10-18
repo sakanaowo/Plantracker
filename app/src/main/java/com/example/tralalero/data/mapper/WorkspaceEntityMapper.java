@@ -16,7 +16,7 @@ public class WorkspaceEntityMapper {
         // Convert domain Workspace to Room entity
         // Entity has different structure (description, userId, dates)
         return new WorkspaceEntity(
-            parseId(workspace.getId()),
+            workspace.getId(),  // Direct String, no parsing
             workspace.getName(),
             null, // description - not in domain model
             workspace.getOwnerId(), // userId -> ownerId
@@ -32,22 +32,11 @@ public class WorkspaceEntityMapper {
         
         // Convert Room entity to domain Workspace (4 parameters)
         return new Workspace(
-            String.valueOf(entity.getId()),
+            entity.getId(),  // Direct String
             entity.getName(),
             "TEAM", // type - default to TEAM, not stored in entity
             entity.getUserId() // ownerId
         );
-    }
-    
-    private static int parseId(String id) {
-        if (id == null || id.isEmpty()) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(id);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
     
     public static List<WorkspaceEntity> toEntityList(List<Workspace> workspaces) {

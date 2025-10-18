@@ -2,6 +2,7 @@ package com.example.tralalero.data.local.database.entity;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 import java.util.Date;
 
@@ -9,8 +10,9 @@ import java.util.Date;
 public class WorkspaceEntity {
     
     @PrimaryKey
-    private int id;
-    
+    @NonNull
+    private String id;  // ✅ FIXED: Changed from int to String
+
     private String name;
     private String description;
     private String userId;
@@ -20,7 +22,7 @@ public class WorkspaceEntity {
     public WorkspaceEntity() {
     }
     
-    public WorkspaceEntity(int id, String name, String description, String userId,
+    public WorkspaceEntity(@NonNull String id, String name, String description, String userId,
                           Date createdAt, Date updatedAt) {
         this.id = id;
         this.name = name;
@@ -30,11 +32,12 @@ public class WorkspaceEntity {
         this.updatedAt = updatedAt;
     }
     
-    public int getId() {
+    @NonNull
+    public String getId() {
         return id;
     }
     
-    public void setId(int id) {
+    public void setId(@NonNull String id) {
         this.id = id;
     }
     

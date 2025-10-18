@@ -30,14 +30,14 @@ public interface WorkspaceDao {
     void deleteAll();
     
     @Query("SELECT * FROM workspaces WHERE id = :workspaceId LIMIT 1")
-    WorkspaceEntity getById(int workspaceId);
-    
+    WorkspaceEntity getById(String workspaceId);  // ✅ FIXED: Changed from int to String
+
+    @Query("SELECT * FROM workspaces")
+    List<WorkspaceEntity> getAll();
+
     @Query("SELECT * FROM workspaces WHERE userId = :userId")
     List<WorkspaceEntity> getAllByUserId(String userId);
     
-    @Query("DELETE FROM workspaces WHERE userId = :userId")
-    void deleteByUserId(String userId);
-    
-    @Query("SELECT COUNT(*) FROM workspaces WHERE userId = :userId")
-    int getWorkspaceCount(String userId);
+    @Query("SELECT COUNT(*) FROM workspaces")
+    int getCount();
 }
