@@ -4,6 +4,8 @@ package com.example.tralalero.core;
 import android.content.Context;
 import android.util.Log;
 
+import com.example.tralalero.App.App;
+import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.local.database.AppDatabase;
 import com.example.tralalero.data.local.database.dao.BoardDao;
@@ -54,13 +56,13 @@ public class DependencyProvider {
     
     // Token Manager
     private final TokenManager tokenManager;
-    
+
     /**
      * Private constructor - Singleton pattern
      */
     private DependencyProvider(Context context, TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        
+
         // Initialize Database
         this.database = AppDatabase.getInstance(context);
         Log.d(TAG, "✓ AppDatabase initialized");
@@ -147,10 +149,14 @@ public class DependencyProvider {
      */
     public synchronized WorkspaceRepositoryImplWithCache getWorkspaceRepositoryWithCache() {
         if (workspaceRepositoryWithCache == null) {
+            // Get WorkspaceApiService from ApiClient with App.authManager
+            WorkspaceApiService apiService = ApiClient.get(App.authManager)
+                .create(WorkspaceApiService.class);
+
             workspaceRepositoryWithCache = new WorkspaceRepositoryImplWithCache(
-                workspaceDao,
-                executorService,
-                tokenManager
+                apiService,          // ✅ WorkspaceApiService
+                workspaceDao,        // ✅ WorkspaceDao
+                executorService      // ✅ ExecutorService
             );
             Log.d(TAG, "✓ WorkspaceRepositoryImplWithCache created");
         }
