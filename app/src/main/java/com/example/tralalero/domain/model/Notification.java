@@ -12,7 +12,6 @@ public class Notification {
     private final Date readAt;
     private final Date createdAt;
 
-    // Constructor
     public Notification(String id, String userId, NotificationType type, String title,
                        String body, String deeplink, Date readAt, Date createdAt) {
         this.id = id;
@@ -25,7 +24,6 @@ public class Notification {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() {
         return id;
     }
@@ -58,7 +56,6 @@ public class Notification {
         return createdAt;
     }
 
-    // Business logic methods
     public boolean isRead() {
         return readAt != null;
     }

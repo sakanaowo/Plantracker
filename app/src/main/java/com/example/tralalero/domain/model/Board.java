@@ -13,7 +13,6 @@ public class Board {
         this.order = order;
     }
 
-    // Getters
     public String getId() {
         return id;
     }

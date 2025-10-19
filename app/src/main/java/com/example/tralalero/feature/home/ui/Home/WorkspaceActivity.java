@@ -1,10 +1,15 @@
 package com.example.tralalero.feature.home.ui.Home;
 
 import static android.content.ContentValues.TAG;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
@@ -17,7 +22,8 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.WorkspaceAdapter;
 import com.example.tralalero.feature.home.ui.BottomNavigationFragment;
 import com.example.tralalero.feature.home.ui.NewBoard;
-import com.example.tralalero.model.Project;
+import com.example.tralalero.domain.model.Project;
+
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
@@ -25,13 +31,28 @@ import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * WorkspaceActivity - Display projects within a workspace
+ *
+ * Phase 6 - Task 2.1 Implementation:
+ * - Integrated WorkspaceViewModel and ProjectViewModel
+ * - Create project with dialog
+ * - Navigate to ProjectActivity
+ * - Handle loading states and errors
+ *
+ * @author Người 2 - Phase 6
+ * @date 16/10/2025
+ */
 public class WorkspaceActivity extends HomeActivity {
+
+    private static final String TAG = "WorkspaceActivity";
 
     private WorkspaceViewModel workspaceViewModel;
     private ProjectViewModel projectViewModel;
     
     private WorkspaceAdapter workspaceAdapter;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
     private String workspaceId;
 
     @Override
@@ -45,12 +66,23 @@ public class WorkspaceActivity extends HomeActivity {
             return insets;
         });
 
+        // Get workspace ID from intent
         workspaceId = getIntent().getStringExtra("WORKSPACE_ID");
+
+        if (workspaceId == null || workspaceId.isEmpty()) {
+            Toast.makeText(this, "Error: No workspace ID provided", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        Log.d(TAG, "=== WorkspaceActivity Started ===");
+        Log.d(TAG, "Workspace ID: " + workspaceId);
 
         // Setup ViewModels FIRST
         setupViewModels();
         
         // Then setup UI
+        setupUI();
         setupRecyclerView();
         
         // Observe ViewModels
@@ -59,24 +91,28 @@ public class WorkspaceActivity extends HomeActivity {
         // Finally load data
         loadProjects();
 
-
+        // Setup create board/project button
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
-        btnCreateBoard.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkspaceActivity.this, NewBoard.class);
-            startActivityForResult(intent, 100); // 100 là requestCode
-        });
+        btnCreateBoard.setOnClickListener(v -> showCreateProjectDialog());
 
-
-        BottomNavigationFragment bottomNav = (BottomNavigationFragment)
-                getSupportFragmentManager().findFragmentById(R.id.bottomNavigation);
-
+        // Setup bottom navigation
         setupBottomNavigation(0);
+    }
 
+    /**
+     * Setup UI components
+     */
+    private void setupUI() {
+        progressBar = findViewById(R.id.progressBar);
+        if (progressBar == null) {
+            Log.w(TAG, "ProgressBar not found in layout, creating programmatically");
+            // If layout doesn't have progressBar, that's okay
+        }
     }
     
     /**
      * Setup ViewModels with dependency injection
-     * Phase 5: Using ViewModelFactoryProvider for cleaner code
+     * Phase 6: Using ViewModelFactoryProvider for cleaner code
      */
     private void setupViewModels() {
         // Setup WorkspaceViewModel
@@ -88,31 +124,35 @@ public class WorkspaceActivity extends HomeActivity {
         projectViewModel = new ViewModelProvider(this,
                 ViewModelFactoryProvider.provideProjectViewModelFactory()
         ).get(ProjectViewModel.class);
+
+        Log.d(TAG, "ViewModels setup complete");
     }
     
     /**
      * Observe ViewModel LiveData and update UI accordingly
-     * Phase 5: Replace direct API calls with ViewModel observations
+     * Phase 6: Enhanced error handling and loading states
      */
     private void observeViewModels() {
         // Observe projects from workspace
         workspaceViewModel.getProjects().observe(this, projects -> {
-            if (projects != null && !projects.isEmpty()) {
+            if (projects != null) {
                 Log.d(TAG, "Projects loaded from ViewModel: " + projects.size());
-                
-                // Convert domain Project to old model Project temporarily
-                // TODO: Phase 6 - Migrate adapter to use domain models directly
-                List<Project> oldProjects = convertDomainProjectsToOldModel(projects);
-                workspaceAdapter.setProjectList(oldProjects);
+                workspaceAdapter.setProjectList(projects);
+
+                if (projects.isEmpty()) {
+                    Toast.makeText(this, "No projects yet. Create one!", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                Log.d(TAG, "No projects loaded or list is empty");
+                Log.d(TAG, "No projects loaded or list is null");
                 workspaceAdapter.setProjectList(new ArrayList<>());
             }
         });
         
         // Observe loading state
         workspaceViewModel.isLoading().observe(this, isLoading -> {
-            // TODO: Add ProgressBar to layout if needed in future
+            if (progressBar != null) {
+                progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
             Log.d(TAG, "Loading state: " + isLoading);
         });
         
@@ -125,19 +165,20 @@ public class WorkspaceActivity extends HomeActivity {
             }
         });
         
-        // Observe project operations from ProjectViewModel
-        projectViewModel.getSelectedProject().observe(this, project -> {
-            if (project != null) {
-                Log.d(TAG, "Project operation completed: " + project.getName());
-                Toast.makeText(this, "Project saved successfully", Toast.LENGTH_SHORT).show();
+        // Observe project creation
+        projectViewModel.isProjectCreated().observe(this, created -> {
+            if (created != null && created) {
+                Log.d(TAG, "Project created successfully");
+                Toast.makeText(this, "Project created successfully!", Toast.LENGTH_SHORT).show();
                 // Reload projects list
                 loadProjects();
             }
         });
         
+        // Observe project errors
         projectViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Project Error: " + error, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Project error: " + error);
                 projectViewModel.clearError();
             }
@@ -158,80 +199,122 @@ public class WorkspaceActivity extends HomeActivity {
 
         workspaceAdapter = new WorkspaceAdapter(this);
         workspaceAdapter.setOnProjectClickListener(project -> {
-            // Khi click vào project, navigate to ProjectActivity
-            String projectId = project.getId();
-            String projectName = project.getName();
-
-            Log.d(TAG, "Clicked project: " + projectName + " (ID: " + projectId + ")");
-
-            Intent intent = new Intent(WorkspaceActivity.this, ProjectActivity.class);
-            intent.putExtra("project_id", projectId);
-            intent.putExtra("project_name", projectName);
-            intent.putExtra("workspace_id", workspaceId);
-            startActivity(intent);
+            // Navigate to ProjectActivity when clicking project
+            navigateToProject(project);
         });
 
         recyclerView.setAdapter(workspaceAdapter);
+        Log.d(TAG, "RecyclerView setup complete");
     }
 
     /**
-     * Load projects using ViewModel instead of direct API call
-     * Phase 5: Refactored from direct Retrofit call to ViewModel
+     * Load projects using ViewModel
+     * Phase 6: Enhanced with proper error handling
      */
     private void loadProjects() {
         Log.d(TAG, "Loading projects for workspace: " + workspaceId);
-        
+
         if (workspaceId == null || workspaceId.isEmpty()) {
             Toast.makeText(this, "Workspace ID is missing", Toast.LENGTH_SHORT).show();
             return;
         }
-        
-        // BEFORE (Phase 4): Direct API call
-        // WorkspaceApiService apiService = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
-        // Call<List<ProjectDTO>> call = apiService.getProjects(workspaceId);
-        
-        // AFTER (Phase 5): Use ViewModel
+
         workspaceViewModel.loadWorkspaceProjects(workspaceId);
     }
-    
+
     /**
-     * Convert domain model Projects to old model Projects
-     * TODO: Phase 6 - Remove this when adapter is migrated to use domain models
+     * Show dialog to create new project
+     * Phase 6: Task 2.1 - Create Project Feature
+     * FIXED: Prevent dialog from closing when validation fails
      */
-    private List<Project> convertDomainProjectsToOldModel(List<com.example.tralalero.domain.model.Project> domainProjects) {
-        List<Project> oldProjects = new ArrayList<>();
-        for (com.example.tralalero.domain.model.Project domainProject : domainProjects) {
-            Project oldProject = new Project(
-                domainProject.getId(),
-                domainProject.getName(),
-                domainProject.getDescription(),
-                domainProject.getKey()
-            );
-            oldProjects.add(oldProject);
-        }
-        return oldProjects;
+    private void showCreateProjectDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Create New Project");
+
+        // Inflate custom layout for dialog
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_project, null);
+        EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
+        EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
+
+        builder.setView(dialogView);
+
+        builder.setPositiveButton("Create", null); // Set null first
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+
+        // Override positive button behavior to prevent auto-close
+        dialog.setOnShowListener(dialogInterface -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String projectName = etProjectName.getText().toString().trim();
+                String projectDescription = etProjectDescription.getText().toString().trim();
+
+                // Validate project name
+                if (projectName.isEmpty()) {
+                    etProjectName.setError("Project name cannot be empty");
+                    Toast.makeText(this, "Project name cannot be empty", Toast.LENGTH_SHORT).show();
+                    return; // Don't close dialog
+                }
+
+                // Validation passed - create project
+                createProject(projectName, projectDescription);
+
+                // Close dialog manually after successful validation
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
     }
 
+    /**
+     * Create new project using ProjectViewModel
+     * Phase 6: Task 2.1 Implementation
+     */
+    private void createProject(String projectName, String projectDescription) {
+        Log.d(TAG, "Creating project: " + projectName);
+
+        // Generate project key from name (first 3 letters uppercase)
+        String projectKey = projectName.length() >= 3
+            ? projectName.substring(0, 3).toUpperCase()
+            : projectName.toUpperCase();
+
+        Project newProject = new Project(
+            "", // id will be generated by backend
+            projectName,
+            projectDescription,
+            projectKey,
+            workspaceId,
+            "KANBAN" // default board type
+        );
+
+        projectViewModel.createProject(workspaceId, newProject);
+    }
+
+    /**
+     * Navigate to ProjectActivity
+     * Phase 6: Task 2.1 - Navigation Implementation
+     */
+    private void navigateToProject(Project project) {
+        String projectId = project.getId();
+        String projectName = project.getName();
+
+        Log.d(TAG, "Navigating to project: " + projectName + " (ID: " + projectId + ")");
+
+        Intent intent = new Intent(WorkspaceActivity.this, ProjectActivity.class);
+        intent.putExtra("project_id", projectId);
+        intent.putExtra("project_name", projectName);
+        intent.putExtra("workspace_id", workspaceId);
+        startActivity(intent);
+    }
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 100 && resultCode == RESULT_OK) {
-            String projectName = data.getStringExtra("workspace_name");
-            String visibility = data.getStringExtra("visibility");
-            String background = data.getStringExtra("background");
-
-            // Tạo object mới
-            Project newProject = new Project("",projectName,"","");
-
-            // Thêm vào list của adapter
-            workspaceAdapter.addProject(newProject);
-
-
-            // Scroll xuống cuối
-
+            // Reload projects when returning from NewBoard activity
+            loadProjects();
         }
     }
-
-
 }

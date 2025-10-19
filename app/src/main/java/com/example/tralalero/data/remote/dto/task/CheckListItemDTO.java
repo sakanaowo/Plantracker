@@ -6,19 +6,19 @@ public class CheckListItemDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("checklist_id")
+    @SerializedName("checklistId")
     private String checklistId;
 
     @SerializedName("content")
     private String content;
 
-    @SerializedName("is_done")
+    @SerializedName("isDone")
     private boolean isDone;
 
     @SerializedName("position")
     private double position;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     private String createdAt;
 
     public String getId() {

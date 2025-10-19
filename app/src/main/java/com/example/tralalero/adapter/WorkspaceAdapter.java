@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
-import com.example.tralalero.model.Project;
+import com.example.tralalero.domain.model.Project;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,6 @@ public class WorkspaceAdapter extends RecyclerView.Adapter<WorkspaceAdapter.Work
         public void bind(Project project) {
             projectName.setText(project.getName());
 
-            // Set icon based on board type
             if ("KANBAN".equals(project.getBoardType())) {
                 projectIcon.setImageResource(R.drawable.board_icon1);
             } else {

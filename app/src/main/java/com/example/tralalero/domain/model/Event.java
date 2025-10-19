@@ -3,10 +3,7 @@ package com.example.tralalero.domain.model;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Domain model for Event
- * Represents a calendar event or meeting
- */
+
 public class Event {
     private final String id;
     private final String projectId;
@@ -34,7 +31,6 @@ public class Event {
         this.updatedAt = updatedAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getProjectId() { return projectId; }
     public String getTitle() { return title; }
@@ -46,7 +42,6 @@ public class Event {
     public Date getCreatedAt() { return createdAt; }
     public Date getUpdatedAt() { return updatedAt; }
 
-    // Business logic
     public boolean hasLocation() {
         return location != null && !location.trim().isEmpty();
     }

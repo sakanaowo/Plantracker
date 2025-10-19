@@ -2,11 +2,12 @@ package com.example.tralalero.data.remote.dto.project;
 
 import com.google.gson.annotations.SerializedName;
 
+
 public class ProjectDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspace_id")
+    @SerializedName(value = "workspaceId", alternate = {"workspace_id"})
     private String workspaceId;
 
     @SerializedName("name")
@@ -18,16 +19,16 @@ public class ProjectDTO {
     @SerializedName("key")
     private String key;
 
-    @SerializedName("issue_seq")
+    @SerializedName(value = "issueSeq", alternate = {"issue_seq"})
     private int issueSeq;
 
-    @SerializedName("board_type")
+    @SerializedName(value = "boardType", alternate = {"board_type"})
     private String boardType;
 
-    @SerializedName("created_at")
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
 
     public String getId() {

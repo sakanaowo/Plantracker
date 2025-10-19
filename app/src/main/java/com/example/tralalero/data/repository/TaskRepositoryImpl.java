@@ -68,13 +68,12 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void getTasksByProject(String projectId, RepositoryCallback<List<Task>> callback) {
-        // Note: This would need API support or we filter by project on client side
         callback.onError("Get tasks by project not yet implemented in API");
     }
 
     @Override
     public void createTask(String boardId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDTO(task);
+        TaskDTO dto = TaskMapper.toDto(task);
         dto.setBoardId(boardId);
 
         apiService.createTask(dto).enqueue(new Callback<TaskDTO>() {
@@ -96,7 +95,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void updateTask(String taskId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDTO(task);
+        TaskDTO dto = TaskMapper.toDto(task);
 
         apiService.updateTask(taskId, dto).enqueue(new Callback<TaskDTO>() {
             @Override
@@ -244,7 +243,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addAttachment(String taskId, Attachment attachment, RepositoryCallback<Attachment> callback) {
-        AttachmentDTO dto = AttachmentMapper.toDTO(attachment);
+        AttachmentDTO dto = AttachmentMapper.toDto(attachment);
 
         apiService.addTaskAttachment(taskId, dto).enqueue(new Callback<AttachmentDTO>() {
             @Override
@@ -265,7 +264,6 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void deleteAttachment(String attachmentId, RepositoryCallback<Void> callback) {
-        // Note: Would need specific API endpoint
         callback.onError("Delete attachment not yet implemented in API");
     }
 
@@ -290,7 +288,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addComment(String taskId, TaskComment comment, RepositoryCallback<TaskComment> callback) {
-        TaskCommentDTO dto = TaskCommentMapper.toDTO(comment);
+        TaskCommentDTO dto = TaskCommentMapper.toDto(comment);
 
         apiService.addTaskComment(taskId, dto).enqueue(new Callback<TaskCommentDTO>() {
             @Override

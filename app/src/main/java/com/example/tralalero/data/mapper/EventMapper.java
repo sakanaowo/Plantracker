@@ -11,44 +11,44 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Mapper for Event entity
- */
 public class EventMapper {
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            Locale.US
-    );
-
+    
+    private static final SimpleDateFormat ISO_DATE_FORMAT;
+    
     static {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
+    
     public static Event toDomain(EventDTO dto) {
         if (dto == null) {
             return null;
         }
-
+        
+        Date startAt = parseDate(dto.getStartAt());
+        Date endAt = parseDate(dto.getEndAt());
+        Date createdAt = parseDate(dto.getCreatedAt());
+        Date updatedAt = parseDate(dto.getUpdatedAt());
+        
         return new Event(
-                dto.getId(),
-                dto.getProjectId(),
-                dto.getTitle(),
-                parseDate(dto.getStartAt()),
-                parseDate(dto.getEndAt()),
-                dto.getLocation(),
-                dto.getMeetLink(),
-                dto.getCreatedBy(),
-                parseDate(dto.getCreatedAt()),
-                parseDate(dto.getUpdatedAt())
+            dto.getId(),
+            dto.getProjectId(),
+            dto.getTitle(),
+            startAt,
+            endAt,
+            dto.getLocation(),
+            dto.getMeetLink(),
+            dto.getCreatedBy(),
+            createdAt,
+            updatedAt
         );
     }
-
-    public static EventDTO toDTO(Event event) {
+    
+    public static EventDTO toDto(Event event) {
         if (event == null) {
             return null;
         }
-
+        
         EventDTO dto = new EventDTO();
         dto.setId(event.getId());
         dto.setProjectId(event.getProjectId());
@@ -60,57 +60,56 @@ public class EventMapper {
         dto.setCreatedBy(event.getCreatedBy());
         dto.setCreatedAt(formatDate(event.getCreatedAt()));
         dto.setUpdatedAt(formatDate(event.getUpdatedAt()));
-
+        
         return dto;
     }
-
-    public static List<Event> toDomainList(List<EventDTO> dtos) {
-        if (dtos == null) {
-            return new ArrayList<>();
+    
+    public static List<Event> toDomainList(List<EventDTO> dtoList) {
+        if (dtoList == null) {
+            return null;
         }
-
+        
         List<Event> events = new ArrayList<>();
-        for (EventDTO dto : dtos) {
-            Event event = toDomain(dto);
-            if (event != null) {
-                events.add(event);
-            }
+        for (EventDTO dto : dtoList) {
+            events.add(toDomain(dto));
         }
         return events;
     }
-
-    public static List<EventDTO> toDTOList(List<Event> events) {
+    
+    public static List<EventDTO> toDtoList(List<Event> events) {
         if (events == null) {
-            return new ArrayList<>();
+            return null;
         }
-
-        List<EventDTO> dtos = new ArrayList<>();
+        
+        List<EventDTO> dtoList = new ArrayList<>();
         for (Event event : events) {
-            EventDTO dto = toDTO(event);
-            if (dto != null) {
-                dtos.add(dto);
-            }
+            dtoList.add(toDto(event));
         }
-        return dtos;
+        return dtoList;
     }
-
+    
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;
         }
+        
         try {
-            return DATE_FORMAT.parse(dateString);
+            return ISO_DATE_FORMAT.parse(dateString);
         } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+                return altFormat.parse(dateString);
+            } catch (ParseException ex) {
+                return null;
+            }
         }
     }
-
+    
     private static String formatDate(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_FORMAT.format(date);
+        
+        return ISO_DATE_FORMAT.format(date);
     }
 }
-

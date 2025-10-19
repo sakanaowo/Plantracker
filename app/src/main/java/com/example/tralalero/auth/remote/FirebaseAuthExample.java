@@ -3,16 +3,12 @@ package com.example.tralalero.auth.remote;
 import android.app.Application;
 import android.util.Log;
 
-/**
- * Example usage of Firebase token management system
- * Shows how to initialize and use the AuthManager with automatic token handling
- */
+
 public class FirebaseAuthExample {
     private static final String TAG = "FirebaseAuthExample";
     private AuthManager authManager;
 
     public void initializeAuth(Application application) {
-        // Initialize AuthManager
         authManager = new AuthManager(application);
 
         Log.d(TAG, "Firebase auth system initialized with automatic token management");
@@ -27,18 +23,15 @@ public class FirebaseAuthExample {
             return;
         }
 
-        // Check authentication status
         if (authManager.isSignedIn()) {
             Log.d(TAG, "User is signed in");
 
-            // Check token status
             if (authManager.isTokenExpired()) {
                 Log.d(TAG, "Token is expired - will be auto-refreshed on next API call");
             } else {
                 Log.d(TAG, "Token is valid");
             }
 
-            // Get current cached token (for debugging)
             String cachedToken = authManager.getCachedToken();
             if (cachedToken != null) {
                 Log.d(TAG, "Current cached token: " + cachedToken.substring(0, Math.min(20, cachedToken.length())) + "...");

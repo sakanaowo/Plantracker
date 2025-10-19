@@ -5,7 +5,8 @@ import com.google.gson.annotations.SerializedName;
 public class SprintDTO {
     @SerializedName("id")
     private String id;
-    @SerializedName("project_id")
+
+    @SerializedName("projectId")  
     private String projectId;
 
     @SerializedName("name")
@@ -14,16 +15,16 @@ public class SprintDTO {
     @SerializedName("goal")
     private String goal;
 
-    @SerializedName("start_at")
+    @SerializedName("startAt") 
     private String startAt;
 
-    @SerializedName("end_at")
+    @SerializedName("endAt") 
     private String endAt;
 
     @SerializedName("state")
     private String state;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  
     private String createdAt;
 
     public String getId() {

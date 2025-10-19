@@ -12,8 +12,6 @@ public class EventDTO {
     @SerializedName("title")
     private String title;
 
-//    @SerializedName("description")
-//    private String description;
 
     @SerializedName("start_at")
     private String startAt;

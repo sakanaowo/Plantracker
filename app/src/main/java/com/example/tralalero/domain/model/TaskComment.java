@@ -2,15 +2,11 @@ package com.example.tralalero.domain.model;
 
 import java.util.Date;
 
-/**
- * Domain model for Task Comment
- * Represents a comment/discussion on a task
- */
 public class TaskComment {
     private final String id;
     private final String taskId;
     private final String userId;
-    private final String body; // Comment content
+    private final String body; 
     private final Date createdAt;
 
     public TaskComment(String id, String taskId, String userId, String body, Date createdAt) {
@@ -21,14 +17,12 @@ public class TaskComment {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getTaskId() { return taskId; }
     public String getUserId() { return userId; }
     public String getBody() { return body; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isEmpty() {
         return body == null || body.trim().isEmpty();
     }

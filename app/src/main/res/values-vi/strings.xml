@@ -21,6 +21,7 @@
     <string name="settings">Cài đặt</string>
     <string name="share_feedback">Chia sẻ phản hồi</string>
     <string name="help">Trợ giúp</string>
+    <string name="logout">Đăng xuất</string>
     <string name="boards">Bảng</string>
     <string name="inbox">Hộp thư</string>
     <string name="activity">Hoạt động</string>

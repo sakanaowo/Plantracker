@@ -26,6 +26,7 @@
                 android:contentDescription="Close" />
 
             <RadioButton
+                android:id="@+id/rbTaskTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -89,11 +90,12 @@
             android:layout_marginTop="8dp">
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMembers"
                 style="@style/SquareOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="50dp"
                 android:layout_weight="1"
-                android:text="Members"
+                android:text="Assign Task"
                 app:icon="@drawable/acc_icon" />
 
             <View
@@ -101,12 +103,46 @@
                 android:layout_height="match_parent" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddAttachment"
                 style="@style/SquareOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="50dp"
                 android:layout_weight="1"
-                android:text="Add Attachment"
+                android:text="Move Task"
                 app:icon="@drawable/pin_svg" />
+        </LinearLayout>
+
+        <!-- Second row of Quick Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddComment"
+                style="@style/SquareOutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="Add Comment"
+                app:icon="@drawable/ib_icon" />
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteTask"
+                style="@style/SquareOutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="Delete Task"
+                android:textColor="#F44336"
+                app:iconTint="#F44336"
+                app:icon="@drawable/trash_icon" />
         </LinearLayout>
 
 

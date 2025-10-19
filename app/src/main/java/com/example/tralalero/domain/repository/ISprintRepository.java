@@ -6,21 +6,18 @@ import com.example.tralalero.domain.model.Task;
 import java.util.List;
 
 public interface ISprintRepository {
-    // Get sprints
     void getSprintsByProject(String projectId, RepositoryCallback<List<Sprint>> callback);
 
     void getSprintById(String sprintId, RepositoryCallback<Sprint> callback);
 
     void getActiveSprint(String projectId, RepositoryCallback<Sprint> callback);
 
-    // CRUD operations
     void createSprint(String projectId, Sprint sprint, RepositoryCallback<Sprint> callback);
 
     void updateSprint(String sprintId, Sprint sprint, RepositoryCallback<Sprint> callback);
 
     void deleteSprint(String sprintId, RepositoryCallback<Void> callback);
 
-    // Sprint-specific operations
     void startSprint(String sprintId, RepositoryCallback<Sprint> callback);
 
     void completeSprint(String sprintId, RepositoryCallback<Sprint> callback);

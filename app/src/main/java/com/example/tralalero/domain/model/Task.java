@@ -8,35 +8,29 @@ public class Task {
     private final String boardId;
     private final String title;
     private final String description;
-    private final String issueKey; // e.g., "PLAN-123"
+    private final String issueKey; 
 
-    // Type and status
     private final TaskType type;
     private final TaskStatus status;
     private final TaskPriority priority;
 
-    // Position for ordering
     private final double position;
 
-    // Relationships
     private final String assigneeId;
     private final String createdBy;
     private final String sprintId;
     private final String epicId;
     private final String parentTaskId;
 
-    // Time tracking
     private final Date startAt;
     private final Date dueAt;
     private final Integer storyPoints;
     private final Integer originalEstimateSec;
     private final Integer remainingEstimateSec;
 
-    // Timestamps
     private final Date createdAt;
     private final Date updatedAt;
 
-    // Constructor
     public Task(String id, String projectId, String boardId, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
                 double position, String assigneeId, String createdBy, String sprintId,
@@ -67,7 +61,6 @@ public class Task {
         this.updatedAt = updatedAt;
     }
 
-    // Getters
     public String getId() {
         return id;
     }
@@ -156,7 +149,6 @@ public class Task {
         return updatedAt;
     }
 
-    // Business logic methods
     public boolean isAssigned() {
         return assigneeId != null && !assigneeId.isEmpty();
     }
@@ -234,7 +226,6 @@ public class Task {
         return id != null ? id.hashCode() : 0;
     }
 
-    // Enums
     public enum TaskType {
         TASK, STORY, BUG, EPIC, SUBTASK
     }

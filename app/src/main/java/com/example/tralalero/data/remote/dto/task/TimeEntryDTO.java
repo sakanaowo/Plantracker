@@ -6,25 +6,25 @@ public class TimeEntryDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("task_id")
+    @SerializedName("taskId")  
     private String taskId;
 
-    @SerializedName("user_id")
+    @SerializedName("userId")  
     private String userId;
 
-    @SerializedName("start_at")
+    @SerializedName("startAt")  
     private String startAt;
 
-    @SerializedName("end_at")
+    @SerializedName("endAt")  
     private String endAt;
 
-    @SerializedName("duration_sec")
+    @SerializedName("durationSec") 
     private Integer durationSec;
 
     @SerializedName("note")
     private String note;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt") 
     private String createdAt;
 
     public String getId() {

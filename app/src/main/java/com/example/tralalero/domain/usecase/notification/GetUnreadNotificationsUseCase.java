@@ -5,18 +5,7 @@ import com.example.tralalero.domain.repository.INotificationRepository;
 
 import java.util.List;
 
-/**
- * UseCase: Get unread notifications only
- *
- * Matches Backend: GET /api/notifications/unread
- *
- * Input: None
- * Output: List<Notification> (only unread ones)
- *
- * Business Logic:
- * - Retrieve only unread notifications
- * - Used for notification badge count
- */
+
 public class GetUnreadNotificationsUseCase {
 
     private final INotificationRepository repository;
@@ -25,11 +14,7 @@ public class GetUnreadNotificationsUseCase {
         this.repository = repository;
     }
 
-    /**
-     * Execute: Get unread notifications
-     *
-     * @param callback Callback to receive result
-     */
+    
     public void execute(Callback<List<Notification>> callback) {
         if (callback == null) {
             throw new IllegalArgumentException("Callback cannot be null");
@@ -48,9 +33,7 @@ public class GetUnreadNotificationsUseCase {
         });
     }
 
-    /**
-     * Callback interface for use case result
-     */
+
     public interface Callback<T> {
         void onSuccess(T result);
         void onError(String error);

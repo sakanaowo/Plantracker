@@ -1,20 +1,16 @@
 package com.example.tralalero.feature.home.ui;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
-
 public class NewBoard extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,19 +27,14 @@ public class NewBoard extends AppCompatActivity {
             Intent intent = new Intent(NewBoard.this, MainActivity.class);
             startActivity(intent);
         });
-
         TextView btnCreate = findViewById(R.id.btnCreate);
         EditText editBoardName = findViewById(R.id.edtBoardName);
-
         btnCreate.setOnClickListener(v -> {
             String workspaceName = editBoardName.getText().toString();
-
             Intent resultIntent = new Intent();
             resultIntent.putExtra("workspace_name", workspaceName);
-
             setResult(RESULT_OK, resultIntent);
-            finish(); // đóng BoardActivity để quay về YourWorkspaceActivity
+            finish(); 
         });
-
     }
 }

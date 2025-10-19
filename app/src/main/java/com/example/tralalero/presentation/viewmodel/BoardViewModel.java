@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.usecase.board.GetBoardByIdUseCase;
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.board.CreateBoardUseCase;
 import com.example.tralalero.domain.usecase.board.UpdateBoardUseCase;
 import com.example.tralalero.domain.usecase.board.DeleteBoardUseCase;
@@ -20,6 +21,7 @@ import java.util.List;
  *
  * Features:
  * - CRUD operations for boards
+ * - Load boards by project
  * - Reorder boards within a project
  * - Get tasks of a board
  *
@@ -30,6 +32,7 @@ public class BoardViewModel extends ViewModel {
 
     // ========== Dependencies (UseCases) ==========
     private final GetBoardByIdUseCase getBoardByIdUseCase;
+    private final GetBoardsByProjectUseCase getBoardsByProjectUseCase;
     private final CreateBoardUseCase createBoardUseCase;
     private final UpdateBoardUseCase updateBoardUseCase;
     private final DeleteBoardUseCase deleteBoardUseCase;
@@ -38,6 +41,7 @@ public class BoardViewModel extends ViewModel {
 
     // ========== LiveData (UI State) ==========
     private final MutableLiveData<Board> selectedBoardLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Board>> projectBoardsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Task>> boardTasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -51,6 +55,7 @@ public class BoardViewModel extends ViewModel {
      * Constructor with dependency injection
      *
      * @param getBoardByIdUseCase UseCase to get board by ID
+     * @param getBoardsByProjectUseCase UseCase to get boards by project
      * @param createBoardUseCase UseCase to create new board
      * @param updateBoardUseCase UseCase to update board
      * @param deleteBoardUseCase UseCase to delete board
@@ -59,6 +64,7 @@ public class BoardViewModel extends ViewModel {
      */
     public BoardViewModel(
             GetBoardByIdUseCase getBoardByIdUseCase,
+            GetBoardsByProjectUseCase getBoardsByProjectUseCase,
             CreateBoardUseCase createBoardUseCase,
             UpdateBoardUseCase updateBoardUseCase,
             DeleteBoardUseCase deleteBoardUseCase,
@@ -66,6 +72,7 @@ public class BoardViewModel extends ViewModel {
             GetBoardTasksUseCase getBoardTasksUseCase
     ) {
         this.getBoardByIdUseCase = getBoardByIdUseCase;
+        this.getBoardsByProjectUseCase = getBoardsByProjectUseCase;
         this.createBoardUseCase = createBoardUseCase;
         this.updateBoardUseCase = updateBoardUseCase;
         this.deleteBoardUseCase = deleteBoardUseCase;
@@ -81,6 +88,14 @@ public class BoardViewModel extends ViewModel {
      */
     public LiveData<Board> getSelectedBoard() {
         return selectedBoardLiveData;
+    }
+
+    /**
+     * Get all boards for a project
+     * @return LiveData containing list of boards
+     */
+    public LiveData<List<Board>> getProjectBoards() {
+        return projectBoardsLiveData;
     }
 
     /**
@@ -154,6 +169,29 @@ public class BoardViewModel extends ViewModel {
             public void onSuccess(Board result) {
                 loadingLiveData.setValue(false);
                 selectedBoardLiveData.setValue(result);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    /**
+     * Load all boards for a project
+     * @param projectId The project ID to load boards from
+     */
+    public void loadBoardsByProject(String projectId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        getBoardsByProjectUseCase.execute(projectId, new GetBoardsByProjectUseCase.Callback<List<Board>>() {
+            @Override
+            public void onSuccess(List<Board> result) {
+                loadingLiveData.setValue(false);
+                projectBoardsLiveData.setValue(result);
             }
 
             @Override

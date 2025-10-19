@@ -2,7 +2,7 @@ package com.example.tralalero.data.repository;
 
 import com.example.tralalero.data.mapper.BoardMapper;
 import com.example.tralalero.data.mapper.ProjectMapper;
-import com.example.tralalero.data.mapper.WorkspaceMapper;
+import com.example.tralalero.data.remote.mapper.WorkspaceMapper;
 import com.example.tralalero.data.remote.dto.board.BoardDTO;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.dto.workspace.WorkspaceDTO;
@@ -67,7 +67,7 @@ public class WorkspaceRepositoryImpl implements IWorkspaceRepository {
 
     @Override
     public void createWorkspace(Workspace workspace, IWorkspaceRepository.RepositoryCallback<Workspace> callback) {
-        WorkspaceDTO dto = WorkspaceMapper.toDTO(workspace);
+        WorkspaceDTO dto = WorkspaceMapper.toDto(workspace);
         apiService.createWorkspace(dto).enqueue(new Callback<WorkspaceDTO>() {
             @Override
             public void onResponse(Call<WorkspaceDTO> call, Response<WorkspaceDTO> response) {
@@ -88,7 +88,7 @@ public class WorkspaceRepositoryImpl implements IWorkspaceRepository {
 
     @Override
     public void updateWorkspace(String workspaceId, Workspace workspace, IWorkspaceRepository.RepositoryCallback<Workspace> callback) {
-        WorkspaceDTO dto = WorkspaceMapper.toDTO(workspace);
+        WorkspaceDTO dto = WorkspaceMapper.toDto(workspace);
         apiService.updateWorkspace(workspaceId, dto).enqueue(new Callback<WorkspaceDTO>() {
             @Override
             public void onResponse(Call<WorkspaceDTO> call, Response<WorkspaceDTO> response) {

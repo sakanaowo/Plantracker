@@ -5,18 +5,7 @@ import com.example.tralalero.domain.repository.IProjectRepository;
 
 import java.util.regex.Pattern;
 
-/**
- * UseCase: Update existing project
- *
- * Input: String projectId, Project project
- * Output: Project (updated)
- *
- * Business Logic:
- * - Validate projectId is not null or empty
- * - Validate project name is not empty
- * - Validate project key format (if changed)
- * - Trim whitespace from name and description
- */
+
 public class UpdateProjectUseCase {
 
     private static final int MIN_KEY_LENGTH = 2;
@@ -29,41 +18,30 @@ public class UpdateProjectUseCase {
         this.repository = repository;
     }
 
-    /**
-     * Execute the use case to update a project
-     *
-     * @param projectId The project ID to update
-     * @param project The project object with updated values
-     * @param callback Callback to receive the result
-     */
+
     public void execute(String projectId, Project project, Callback<Project> callback) {
-        // Validate callback
         if (callback == null) {
             throw new IllegalArgumentException("Callback cannot be null");
         }
 
-        // Validate project ID
         if (projectId == null || projectId.trim().isEmpty()) {
             callback.onError("Project ID cannot be empty");
             return;
         }
 
-        // Validate project object
         if (project == null) {
             callback.onError("Project cannot be null");
             return;
         }
 
-        // Validate project name
         String name = project.getName();
         if (name == null || name.trim().isEmpty()) {
             callback.onError("Project name cannot be empty");
             return;
         }
 
-        // Validate project key if present AND NOT EMPTY
         String key = project.getKey();
-        if (key != null && !key.trim().isEmpty()) {  // ← QUAN TRỌNG: Chỉ validate nếu key có giá trị
+        if (key != null && !key.trim().isEmpty()) {  
             String trimmedKey = key.trim().toUpperCase();
             if (!KEY_PATTERN.matcher(trimmedKey).matches()) {
                 callback.onError("Project key must be " + MIN_KEY_LENGTH + "-" + MAX_KEY_LENGTH +

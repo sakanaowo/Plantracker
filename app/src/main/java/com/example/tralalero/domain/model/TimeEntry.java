@@ -3,17 +3,14 @@ package com.example.tralalero.domain.model;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Domain model for Time Entry
- * Tracks time spent working on a task
- */
+
 public class TimeEntry {
     private final String id;
     private final String taskId;
     private final String userId;
     private final Date startAt;
     private final Date endAt;
-    private final Integer durationSec; // Duration in seconds
+    private final Integer durationSec; 
     private final String note;
     private final Date createdAt;
 
@@ -29,7 +26,6 @@ public class TimeEntry {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getTaskId() { return taskId; }
     public String getUserId() { return userId; }
@@ -39,7 +35,6 @@ public class TimeEntry {
     public String getNote() { return note; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isRunning() {
         return endAt == null;
     }

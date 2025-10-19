@@ -2,6 +2,7 @@ package com.example.tralalero.data.repository;
 
 import android.app.Application;
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -72,9 +73,68 @@ public class AuthRepositoryImpl implements IAuthRepository {
     }
 
     @Override
+    public void signup(String email, String password, String name, RepositoryCallback<AuthResult> callback) {
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> {
+                    FirebaseUser firebaseUser = authResult.getUser();
+                    if (firebaseUser == null) {
+                        callback.onError("Firebase user creation failed");
+                        return;
+                    }
+
+                    com.google.firebase.auth.UserProfileChangeRequest profileUpdates =
+                        new com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                            .setDisplayName(name)
+                            .build();
+
+                    firebaseUser.updateProfile(profileUpdates)
+                            .addOnSuccessListener(aVoid -> {
+                                firebaseUser.getIdToken(true)
+                                        .addOnSuccessListener(getTokenResult -> {
+                                            String idToken = getTokenResult.getToken();
+
+                                            firebaseAuthRepository.authenticateWithFirebase(idToken,
+                                                    new FirebaseAuthRepository.FirebaseAuthCallback() {
+                                                        @Override
+                                                        public void onSuccess(FirebaseAuthResponse response, String firebaseIdToken) {
+                                                            tokenManager.saveAuthData(
+                                                                    firebaseIdToken,
+                                                                    response.getUser().getId(),
+                                                                    response.getUser().getEmail(),
+                                                                    response.getUser().getName()
+                                                            );
+                                                            User user = UserMapper.toDomain(response.getUser());
+                                                            AuthResult authResult = new AuthResult(user, firebaseIdToken, null);
+                                                            callback.onSuccess(authResult);
+                                                        }
+
+                                                        @Override
+                                                        public void onError(String error) {
+                                                            callback.onError("Backend authentication failed: " + error);
+                                                        }
+                                                    });
+                                        })
+                                        .addOnFailureListener(e -> callback.onError("Failed to get ID token: " + e.getMessage()));
+                            })
+                            .addOnFailureListener(e -> callback.onError("Failed to update profile: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> callback.onError("Firebase signup failed: " + e.getMessage()));
+    }
+
+    @Override
     public void logout(RepositoryCallback<Void> callback) {
+        Log.d("AuthRepositoryImpl", "Logout: Clearing Firebase auth and tokens");
+
         firebaseAuth.signOut();
+
+        if (com.example.tralalero.App.App.authManager != null) {
+            com.example.tralalero.App.App.authManager.clearCache();
+            Log.d("AuthRepositoryImpl", "Logout: Cleared AuthManager cache");
+        }
+
         tokenManager.clearAuthData();
+        Log.d("AuthRepositoryImpl", "Logout: Cleared TokenManager data");
+
         callback.onSuccess(null);
     }
 

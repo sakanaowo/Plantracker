@@ -38,7 +38,7 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void createProject(String workspaceId, Project project, RepositoryCallback<Project> callback) {
-        ProjectDTO dto = ProjectMapper.toDTO(project);
+        ProjectDTO dto = ProjectMapper.toDto(project);
         dto.setWorkspaceId(workspaceId);
 
         apiService.createProject(dto).enqueue(new Callback<ProjectDTO>() {
@@ -60,7 +60,7 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void updateProject(String projectId, Project project, RepositoryCallback<Project> callback) {
-        ProjectDTO dto = ProjectMapper.toDTO(project);
+        ProjectDTO dto = ProjectMapper.toDto(project);
 
         apiService.updateProject(projectId, dto).enqueue(new Callback<ProjectDTO>() {
             @Override
@@ -100,7 +100,6 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void updateProjectKey(String projectId, String newKey, RepositoryCallback<Project> callback) {
-        // Create a partial update DTO with only the key
         ProjectDTO dto = new ProjectDTO();
         dto.setKey(newKey);
 
@@ -123,7 +122,6 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     @Override
     public void updateBoardType(String projectId, String boardType, RepositoryCallback<Project> callback) {
-        // Create a partial update DTO with only the board type
         ProjectDTO dto = new ProjectDTO();
         dto.setBoardType(boardType);
 

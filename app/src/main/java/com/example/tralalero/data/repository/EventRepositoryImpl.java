@@ -60,19 +60,17 @@ public class EventRepositoryImpl implements IEventRepository {
 
     @Override
     public void getEventsByDateRange(String projectId, Date startDate, Date endDate, RepositoryCallback<List<Event>> callback) {
-        // This would need specific API support with date range parameters
         callback.onError("Get events by date range not yet implemented in API");
     }
 
     @Override
     public void getUpcomingEvents(String projectId, RepositoryCallback<List<Event>> callback) {
-        // This would need specific API endpoint for upcoming events
         callback.onError("Get upcoming events not yet implemented in API");
     }
 
     @Override
     public void createEvent(String projectId, Event event, RepositoryCallback<Event> callback) {
-        EventDTO dto = EventMapper.toDTO(event);
+        EventDTO dto = EventMapper.toDto(event);
         dto.setProjectId(projectId);
 
         apiService.createEvent(dto).enqueue(new Callback<EventDTO>() {
@@ -94,7 +92,7 @@ public class EventRepositoryImpl implements IEventRepository {
 
     @Override
     public void updateEvent(String eventId, Event event, RepositoryCallback<Event> callback) {
-        EventDTO dto = EventMapper.toDTO(event);
+        EventDTO dto = EventMapper.toDto(event);
 
         apiService.updateEvent(eventId, dto).enqueue(new Callback<EventDTO>() {
             @Override

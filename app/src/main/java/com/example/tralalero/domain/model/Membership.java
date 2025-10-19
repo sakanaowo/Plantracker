@@ -2,10 +2,6 @@ package com.example.tralalero.domain.model;
 
 import java.util.Date;
 
-/**
- * Domain model for Membership
- * Represents a user's membership in a workspace with a specific role
- */
 public class Membership {
     private final String id;
     private final String userId;
@@ -21,14 +17,12 @@ public class Membership {
         this.createdAt = createdAt;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getUserId() { return userId; }
     public String getWorkspaceId() { return workspaceId; }
     public Role getRole() { return role; }
     public Date getCreatedAt() { return createdAt; }
 
-    // Business logic
     public boolean isOwner() {
         return role == Role.OWNER;
     }

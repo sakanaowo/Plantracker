@@ -1,5 +1,4 @@
 package com.example.tralalero.feature.home.ui;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
@@ -15,33 +14,32 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-
 import com.example.tralalero.App.App;
+import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
 import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
 import java.io.File;
 import java.io.IOException;
-
 public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
-    
     private static final String TAG = "AccountActivity";
     private TokenManager tokenManager;
     private FirebaseUser firebaseUser;
@@ -49,35 +47,26 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private View avatarCircle;
     private ImageView imgAvatar;
     private Uri currentPhotoUri;
-    
-    // Activity Result Launchers
+    private MaterialButton btnLogout;
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<String> storagePermissionLauncher;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.account);
-        
         tokenManager = new TokenManager(this);
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        
-        // Initialize activity result launchers
         setupActivityResultLaunchers();
-        
-        // Set user info
         TextView tvName = findViewById(R.id.tvName);
         TextView tvUsername = findViewById(R.id.tvUsername);
         TextView tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         avatarCircle = findViewById(R.id.avatarCircle);
-        
         if (firebaseUser != null) {
             String email = firebaseUser.getEmail();
             String displayName = firebaseUser.getDisplayName();
-            
             if (displayName != null && !displayName.isEmpty()) {
                 tvName.setText(displayName);
                 tvUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
@@ -88,50 +77,38 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 tvUsername.setText("@" + username);
                 tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
             }
-            
             if (email != null) {
                 tvEmail.setText(email);
             }
         }
-        
-        // Avatar click listener
         FrameLayout avatarContainer = findViewById(R.id.avatarContainer);
         avatarContainer.setOnClickListener(v -> showImagePickerBottomSheet());
-        
-        // Settings click
         LinearLayout layoutSettings = findViewById(R.id.layoutSettings);
         layoutSettings.setOnClickListener(v -> {
             Intent intent = new Intent(AccountActivity.this, SettingsActivity.class);
             startActivity(intent);
         });
-        
-        // Bottom navigation
+        btnLogout = findViewById(R.id.btnLogout);
+        btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
         setupBottomNavigation(3);
-
-        // Other menu items (placeholder for now)
         LinearLayout layoutOfflineBoards = findViewById(R.id.layoutOfflineBoards);
         layoutOfflineBoards.setOnClickListener(v -> {
             // TODO: Implement offline boards
         });
-        
         LinearLayout layoutBrowseTemplates = findViewById(R.id.layoutBrowseTemplates);
         layoutBrowseTemplates.setOnClickListener(v -> {
             // TODO: Implement browse templates
         });
-        
         LinearLayout layoutShareFeedback = findViewById(R.id.layoutShareFeedback);
         layoutShareFeedback.setOnClickListener(v -> {
             // TODO: Implement share feedback
         });
-        
         LinearLayout layoutHelp = findViewById(R.id.layoutHelp);
         layoutHelp.setOnClickListener(v -> {
             // TODO: Implement help
         });
     }
-    
     private void setupActivityResultLaunchers() {
-        // Gallery launcher
         galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -143,8 +120,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 }
             }
         );
-        
-        // Camera launcher
         cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.TakePicture(),
             success -> {
@@ -153,8 +128,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 }
             }
         );
-        
-        // Camera permission launcher
         cameraPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -165,8 +138,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 }
             }
         );
-        
-        // Storage permission launcher
         storagePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -178,36 +149,25 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             }
         );
     }
-    
     private void showImagePickerBottomSheet() {
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_profile_image, null);
         bottomSheet.setContentView(view);
-        
-        // Take photo
         view.findViewById(R.id.layoutTakePhoto).setOnClickListener(v -> {
             bottomSheet.dismiss();
             checkCameraPermissionAndOpen();
         });
-        
-        // Choose from gallery
         view.findViewById(R.id.layoutChooseGallery).setOnClickListener(v -> {
             bottomSheet.dismiss();
             checkStoragePermissionAndOpen();
         });
-        
-        // Remove photo
         view.findViewById(R.id.layoutRemovePhoto).setOnClickListener(v -> {
             bottomSheet.dismiss();
             removeProfilePhoto();
         });
-        
-        // Cancel
         view.findViewById(R.id.btnCancel).setOnClickListener(v -> bottomSheet.dismiss());
-        
         bottomSheet.show();
     }
-    
     private void checkCameraPermissionAndOpen() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
                 == PackageManager.PERMISSION_GRANTED) {
@@ -216,10 +176,8 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
     }
-    
     private void checkStoragePermissionAndOpen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ uses READ_MEDIA_IMAGES
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) 
                     == PackageManager.PERMISSION_GRANTED) {
                 openGallery();
@@ -227,7 +185,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 storagePermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES);
             }
         } else {
-            // Below Android 13 uses READ_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) 
                     == PackageManager.PERMISSION_GRANTED) {
                 openGallery();
@@ -236,7 +193,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             }
         }
     }
-    
     private void openCamera() {
         try {
             File photoFile = createImageFile();
@@ -248,38 +204,28 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             Toast.makeText(this, "Error opening camera", Toast.LENGTH_SHORT).show();
         }
     }
-    
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryLauncher.launch(intent);
     }
-    
     private File createImageFile() throws IOException {
         String imageFileName = "profile_" + System.currentTimeMillis();
         File storageDir = getExternalFilesDir(null);
         return File.createTempFile(imageFileName, ".jpg", storageDir);
     }
-    
     private void uploadImageToFirebase(Uri imageUri) {
         if (firebaseUser == null) {
             Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-        
         Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "Starting upload for user: " + firebaseUser.getUid());
-        
-        // Create reference to Firebase Storage
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
         StorageReference profileImageRef = storageRef.child("profile_images/" + firebaseUser.getUid() + ".jpg");
-        
         Log.d(TAG, "Upload path: profile_images/" + firebaseUser.getUid() + ".jpg");
-        
-        // Upload image
         profileImageRef.putFile(imageUri)
             .addOnSuccessListener(taskSnapshot -> {
                 Log.d(TAG, "Upload successful, getting download URL...");
-                // Get download URL
                 profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                     Log.d(TAG, "Download URL obtained: " + uri.toString());
                     updateUserProfile(uri);
@@ -297,21 +243,15 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
             });
     }
-    
     private void updateUserProfile(Uri photoUri) {
         if (firebaseUser == null) return;
-        
         String photoUrl = photoUri.toString();
-        
-        // Step 1: Update Firebase Auth Profile
         UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
             .setPhotoUri(photoUri)
             .build();
-        
         firebaseUser.updateProfile(profileUpdates)
             .addOnSuccessListener(aVoid -> {
                 Log.d(TAG, "Firebase profile updated: " + photoUrl);
-                // Step 2: Sync with Backend
                 syncProfileImageWithBackend(photoUrl);
             })
             .addOnFailureListener(e -> {
@@ -319,11 +259,9 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 Toast.makeText(this, "Failed to update profile", Toast.LENGTH_SHORT).show();
             });
     }
-    
     private void syncProfileImageWithBackend(String avatarUrl) {
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
         UpdateProfileRequest request = UpdateProfileRequest.withAvatar(avatarUrl);
-        
         authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
             @Override
             public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
@@ -337,7 +275,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                     Toast.makeText(AccountActivity.this, "Profile updated in Firebase only", Toast.LENGTH_SHORT).show();
                 }
             }
-            
             @Override
             public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
                 Log.e(TAG, "Backend sync failed", t);
@@ -345,20 +282,14 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             }
         });
     }
-    
     private void removeProfilePhoto() {
         if (firebaseUser == null) return;
-        
         UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
             .setPhotoUri(null)
             .build();
-        
         firebaseUser.updateProfile(profileUpdates)
             .addOnSuccessListener(aVoid -> {
-                // Sync with backend to remove avatar
                 syncProfileImageWithBackend(null);
-                
-                // Show avatar letter again
                 tvAvatarLetter.setVisibility(View.VISIBLE);
                 if (imgAvatar != null) {
                     imgAvatar.setVisibility(View.GONE);
@@ -369,5 +300,37 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 Log.e(TAG, "Failed to remove profile photo", e);
                 Toast.makeText(this, "Failed to remove photo", Toast.LENGTH_SHORT).show();
             });
+    }
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setPositiveButton("Yes", (dialog, which) -> logout())
+            .setNegativeButton("No", null)
+            .show();
+    }
+    
+    private void logout() {
+        Log.d(TAG, "Logout button clicked");
+        
+        FirebaseAuth.getInstance().signOut();
+        Log.d(TAG, "✓ User signed out from Firebase");
+        
+        tokenManager.clearAuthData();
+        Log.d(TAG, "✓ Auth data cleared");
+        
+        App.dependencyProvider.clearAllCaches();
+        Log.d(TAG, "✓ Database cache cleared");
+        
+        DependencyProvider.reset();
+        Log.d(TAG, "✓ DependencyProvider reset");
+        
+        Intent intent = new Intent(AccountActivity.this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        Log.d(TAG, "✓ Navigated to LoginActivity");
+        
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "✓ Logout complete");
     }
 }

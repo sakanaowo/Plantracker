@@ -21,9 +21,9 @@
     <string name="settings">設定</string>
     <string name="share_feedback">フィードバックを共有</string>
     <string name="help">ヘルプ</string>
+    <string name="logout">ログアウト</string>
     <string name="boards">ボード</string>
     <string name="inbox">受信トレイ</string>
     <string name="activity">アクティビティ</string>
     <string name="account">アカウント</string>
 </resources>
-

@@ -2,15 +2,15 @@ package com.example.tralalero.data.remote.dto.task;
 
 import com.google.gson.annotations.SerializedName;
 
+
 public class TaskDTO {
-    // Core fields
     @SerializedName("id")
     private String id;
 
-    @SerializedName("project_id")
+    @SerializedName(value = "projectId", alternate = {"project_id"})
     private String projectId;
 
-    @SerializedName("board_id")
+    @SerializedName(value = "boardId", alternate = {"board_id"})
     private String boardId;
 
     @SerializedName("title")
@@ -19,62 +19,62 @@ public class TaskDTO {
     @SerializedName("description")
     private String description;
 
-    @SerializedName("issue_key")
+    @SerializedName(value = "issueKey", alternate = {"issue_key"})
     private String issueKey;
 
     @SerializedName("type")
-    private String type; // TASK, STORY, BUG, EPIC, SUBTASK
+    private String type;
 
     @SerializedName("status")
-    private String status; // TO_DO, IN_PROGRESS, IN_REVIEW, DONE
+    private String status;
 
     @SerializedName("priority")
-    private String priority; // LOW, MEDIUM, HIGH
+    private String priority;
 
     @SerializedName("position")
     private double position;
 
     // Assignment
-    @SerializedName("assignee_id")
+    @SerializedName(value = "assigneeId", alternate = {"assignee_id"})
     private String assigneeId;
 
-    @SerializedName("created_by")
+    @SerializedName(value = "createdBy", alternate = {"created_by"})
     private String createdBy;
 
     // Relationships
-    @SerializedName("sprint_id")
+    @SerializedName(value = "sprintId", alternate = {"sprint_id"})
     private String sprintId;
 
-    @SerializedName("epic_id")
+    @SerializedName(value = "epicId", alternate = {"epic_id"})
     private String epicId;
 
-    @SerializedName("parent_task_id")
+    @SerializedName(value = "parentTaskId", alternate = {"parent_task_id"})
     private String parentTaskId;
 
     // Time tracking
-    @SerializedName("start_at")
+    @SerializedName(value = "startAt", alternate = {"start_at"})
     private String startAt;
 
-    @SerializedName("due_at")
+    @SerializedName(value = "dueAt", alternate = {"due_at"})
     private String dueAt;
 
-    @SerializedName("story_points")
+    @SerializedName(value = "storyPoints", alternate = {"story_points"})
     private Integer storyPoints;
 
-    @SerializedName("original_estimate_sec")
+    @SerializedName(value = "originalEstimateSec", alternate = {"original_estimate_sec"})
     private Integer originalEstimateSec;
 
-    @SerializedName("remaining_estimate_sec")
+    @SerializedName(value = "remainingEstimateSec", alternate = {"remaining_estimate_sec"})
     private Integer remainingEstimateSec;
 
     // Timestamps
-    @SerializedName("created_at")
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
 
-    @SerializedName("deleted_at")
+    @SerializedName(value = "deletedAt", alternate = {"deleted_at"})
     private String deletedAt;
 
     public String getId() {

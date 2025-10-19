@@ -1,6 +1,6 @@
 package com.example.tralalero.data.repository;
 
-import com.example.tralalero.data.mapper.TimeEntryMapper;
+import com.example.tralalero.data.remote.mapper.TimeEntryMapper;
 import com.example.tralalero.data.remote.api.TimerApiService;
 import com.example.tralalero.data.remote.dto.task.TimeEntryDTO;
 import com.example.tralalero.domain.model.TimeEntry;
@@ -20,7 +20,6 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
         this.apiService = apiService;
     }
 
-    //TODO: implement missing methods in API service
     @Override
     public void getTimeEntriesByTask(String taskId, RepositoryCallback<List<TimeEntry>> callback) {
         apiService.getTimeEntriesByTask(taskId).enqueue(new Callback<List<TimeEntryDTO>>() {
@@ -72,7 +71,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     callback.onSuccess(TimeEntryMapper.toDomain(response.body()));
                 } else if (response.code() == 404) {
-                    callback.onSuccess(null); // No active timer
+                    callback.onSuccess(null); 
                 } else {
                     callback.onError("Failed to fetch active time entry: " + response.code());
                 }
@@ -125,7 +124,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
 
     @Override
     public void createTimeEntry(TimeEntry timeEntry, RepositoryCallback<TimeEntry> callback) {
-        TimeEntryDTO dto = TimeEntryMapper.toDTO(timeEntry);
+        TimeEntryDTO dto = TimeEntryMapper.toDto(timeEntry);
 
         apiService.createTimeEntry(dto).enqueue(new Callback<TimeEntryDTO>() {
             @Override
@@ -146,7 +145,7 @@ public class TimeEntryRepositoryImpl implements ITimeEntryRepository {
 
     @Override
     public void updateTimeEntry(String timeEntryId, TimeEntry timeEntry, RepositoryCallback<TimeEntry> callback) {
-        TimeEntryDTO dto = TimeEntryMapper.toDTO(timeEntry);
+        TimeEntryDTO dto = TimeEntryMapper.toDto(timeEntry);
 
         apiService.updateTimeEntry(timeEntryId, dto).enqueue(new Callback<TimeEntryDTO>() {
             @Override

@@ -12,16 +12,15 @@ public class WorkspaceDTO {
     @SerializedName("type")
     private String type;
 
-    @SerializedName("owner_id")
+    @SerializedName("ownerId")  
     private String ownerId;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")  
     private String updatedAt;
 
-    // Getters và Setters
     public String getId() {
         return id;
     }

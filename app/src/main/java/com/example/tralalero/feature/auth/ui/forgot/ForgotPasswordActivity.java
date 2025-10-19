@@ -1,15 +1,11 @@
 package com.example.tralalero.feature.auth.ui.forgot;
-
 import android.os.Bundle;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.example.tralalero.R;
-
 public class ForgotPasswordActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,4 +19,3 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         });
     }
 }
-

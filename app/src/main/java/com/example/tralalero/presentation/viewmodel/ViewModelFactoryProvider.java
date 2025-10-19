@@ -5,17 +5,25 @@ import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
+import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.data.repository.BoardRepositoryImpl;
 import com.example.tralalero.data.repository.ProjectRepositoryImpl;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.data.repository.WorkspaceRepositoryImpl;
+import com.example.tralalero.domain.repository.IAuthRepository;
 import com.example.tralalero.domain.repository.IBoardRepository;
 import com.example.tralalero.domain.repository.IProjectRepository;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.repository.IWorkspaceRepository;
+import com.example.tralalero.domain.usecase.auth.GetCurrentUserUseCase;
+import com.example.tralalero.domain.usecase.auth.IsLoggedInUseCase;
+import com.example.tralalero.domain.usecase.auth.LoginUseCase;
+import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
+import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 import com.example.tralalero.domain.usecase.board.CreateBoardUseCase;
 import com.example.tralalero.domain.usecase.board.DeleteBoardUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardByIdUseCase;
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardTasksUseCase;
 import com.example.tralalero.domain.usecase.board.ReorderBoardsUseCase;
 import com.example.tralalero.domain.usecase.board.UpdateBoardUseCase;
@@ -72,6 +80,25 @@ public class ViewModelFactoryProvider {
     }
     
     /**
+     * Provide AuthViewModelFactory with all dependencies
+     *
+     * @return AuthViewModelFactory instance ready to use
+     */
+    public static AuthViewModelFactory provideAuthViewModelFactory() {
+        // AuthRepository không cần API service vì dùng Firebase
+        // Sử dụng App.getInstance() để lấy context
+        IAuthRepository repository = new AuthRepositoryImpl(App.getInstance());
+
+        return new AuthViewModelFactory(
+            new LoginUseCase(repository),
+            new SignupUseCase(repository),
+            new LogoutUseCase(repository),
+            new GetCurrentUserUseCase(repository),
+            new IsLoggedInUseCase(repository)
+        );
+    }
+
+    /**
      * Provide WorkspaceViewModelFactory with all dependencies
      * 
      * @return WorkspaceViewModelFactory instance ready to use
@@ -91,16 +118,16 @@ public class ViewModelFactoryProvider {
     }
     
     /**
-     * Provide ProjectFactory with all dependencies
-     * 
-     * @return ProjectFactory instance ready to use
+     * Provide ProjectViewModelFactory with all dependencies
+     *
+     * @return ProjectViewModelFactory instance ready to use
      */
-    public static ProjectFactory provideProjectViewModelFactory() {
+    public static ProjectViewModelFactory provideProjectViewModelFactory() {
         initApis();
         
         IProjectRepository repository = new ProjectRepositoryImpl(projectApi);
         
-        return new ProjectFactory(
+        return new ProjectViewModelFactory(
             new GetProjectByIdUseCase(repository),
             new CreateProjectUseCase(repository),
             new UpdateProjectUseCase(repository),
@@ -111,11 +138,11 @@ public class ViewModelFactoryProvider {
     }
     
     /**
-     * Provide BoardFactory with all dependencies
-     * 
-     * @return BoardFactory instance ready to use
+     * Provide BoardViewModelFactory with all dependencies
+     *
+     * @return BoardViewModelFactory instance ready to use
      */
-    public static BoardFactory provideBoardViewModelFactory() {
+    public static BoardViewModelFactory provideBoardViewModelFactory() {
         initApis();
         
         // BoardRepository needs BoardApiService
@@ -124,8 +151,9 @@ public class ViewModelFactoryProvider {
         // GetBoardTasksUseCase needs TaskRepository
         ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi);
         
-        return new BoardFactory(
+        return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),
+            new GetBoardsByProjectUseCase(boardRepository),
             new CreateBoardUseCase(boardRepository),
             new UpdateBoardUseCase(boardRepository),
             new DeleteBoardUseCase(boardRepository),
