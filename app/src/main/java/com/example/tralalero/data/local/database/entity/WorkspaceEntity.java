@@ -1,6 +1,7 @@
 package com.example.tralalero.data.local.database.entity;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
@@ -22,6 +23,7 @@ public class WorkspaceEntity {
     public WorkspaceEntity() {
     }
     
+    @Ignore
     public WorkspaceEntity(@NonNull String id, String name, String description, String userId,
                           Date createdAt, Date updatedAt) {
         this.id = id;

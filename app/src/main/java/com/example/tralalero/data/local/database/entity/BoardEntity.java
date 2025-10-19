@@ -1,6 +1,7 @@
 package com.example.tralalero.data.local.database.entity;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
@@ -33,6 +34,7 @@ public class BoardEntity {
     public BoardEntity() {
     }
 
+    @Ignore
     public BoardEntity(@NonNull String id, @NonNull String projectId,
                        @NonNull String name, int order) {
         this.id = id;
@@ -92,4 +94,3 @@ public class BoardEntity {
         this.updatedAt = updatedAt;
     }
 }
-

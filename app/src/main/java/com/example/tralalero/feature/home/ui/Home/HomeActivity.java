@@ -1,12 +1,16 @@
 package com.example.tralalero.feature.home.ui.Home;
+
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -14,6 +18,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.HomeAdapter;
@@ -32,6 +38,7 @@ import java.util.List;
 public class HomeActivity extends BaseActivity {
     private RecyclerView recyclerBoard;
     private HomeAdapter homeAdapter;
+    private SwipeRefreshLayout swipeRefreshLayout;  // ← ADDED
     private static final String TAG = "HomeActivity";
     private WorkspaceViewModel workspaceViewModel;
     private AuthViewModel authViewModel;
@@ -88,6 +95,11 @@ public class HomeActivity extends BaseActivity {
                     long duration = System.currentTimeMillis() - startTime;
                     
                     runOnUiThread(() -> {
+                        // Stop refreshing indicator
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+
                         if (workspaces != null && !workspaces.isEmpty()) {
                             homeAdapter.setWorkspaceList(workspaces);
                             
@@ -122,7 +134,12 @@ public class HomeActivity extends BaseActivity {
                 public void onError(Exception e) {
                     Log.e(TAG, "Cache error: " + e.getMessage());
                     runOnUiThread(() -> {
-                        Toast.makeText(HomeActivity.this, 
+                        // Stop refreshing on error
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+
+                        Toast.makeText(HomeActivity.this,
                             "Error loading from cache, trying API...", 
                             Toast.LENGTH_SHORT).show();
                         // Fall back to ViewModel on cache error
@@ -132,6 +149,56 @@ public class HomeActivity extends BaseActivity {
             });
     }
     
+    /**
+     * Setup pull-to-refresh functionality
+     *
+     * @author Minor Issues Fix - October 19, 2025
+     */
+    private void setupSwipeRefresh() {
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+
+        if (swipeRefreshLayout != null) {
+            // Configure refresh colors
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent
+            );
+
+            // Set refresh listener
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                Log.d(TAG, "User triggered pull-to-refresh");
+                forceRefreshWorkspaces();
+            });
+        }
+    }
+
+    /**
+     * Force refresh workspaces (bypass cache)
+     * Called by pull-to-refresh
+     */
+    private void forceRefreshWorkspaces() {
+        Log.d(TAG, "Force refreshing workspaces from API...");
+
+        // Clear cache first
+        App.dependencyProvider.clearWorkspaceCache();
+
+        // Show refreshing indicator
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(true);
+        }
+
+        // Load from API directly (cache empty will trigger API call)
+        loadWorkspacesWithCache();
+
+        // Timeout after 5 seconds max
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                swipeRefreshLayout.setRefreshing(false);
+                Log.d(TAG, "Refresh timeout");
+            }
+        }, 5000);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -145,7 +212,8 @@ public class HomeActivity extends BaseActivity {
         setupViewModels();
         observeWorkspaceViewModel();
         setupRecyclerView();
-        
+        setupSwipeRefresh();  // ← ADDED: Setup pull-to-refresh
+
         // Use cached repository instead of ViewModel
         loadWorkspacesWithCache();  // Person 1: Cache-first approach
         

@@ -9,6 +9,7 @@ import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.local.database.AppDatabase;
 import com.example.tralalero.data.local.database.dao.BoardDao;
+import com.example.tralalero.data.local.database.dao.CacheMetadataDao;
 import com.example.tralalero.data.local.database.dao.ProjectDao;
 import com.example.tralalero.data.local.database.dao.TaskDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
@@ -46,6 +47,7 @@ public class DependencyProvider {
     private final ProjectDao projectDao;
     private final WorkspaceDao workspaceDao;
     private final BoardDao boardDao;
+    private final CacheMetadataDao cacheMetadataDao;  // ← ADDED
 
     // Cached Repositories
     private TaskRepositoryImplWithCache taskRepositoryWithCache;
@@ -72,7 +74,8 @@ public class DependencyProvider {
         this.projectDao = database.projectDao();
         this.workspaceDao = database.workspaceDao();
         this.boardDao = database.boardDao();
-        Log.d(TAG, "✓ All DAOs initialized");
+        this.cacheMetadataDao = database.cacheMetadataDao();  // ← ADDED
+        Log.d(TAG, "✓ All DAOs initialized (including CacheMetadataDao)");
 
         // Initialize ExecutorService
         this.executorService = Executors.newFixedThreadPool(3);
@@ -126,26 +129,30 @@ public class DependencyProvider {
     // ==================== Cached Repositories ====================
     
     /**
-     * Get TaskRepository with caching
+     * Get TaskRepository with caching + TTL support
      * Lazy initialization - only created when needed
+     *
+     * @updated October 19, 2025 - Added CacheMetadataDao injection
      */
     public synchronized TaskRepositoryImplWithCache getTaskRepositoryWithCache() {
         if (taskRepositoryWithCache == null) {
             taskRepositoryWithCache = new TaskRepositoryImplWithCache(
                 taskDao,
                 executorService,
-                tokenManager
+                tokenManager,
+                cacheMetadataDao  // ← ADDED for TTL support
             );
-            Log.d(TAG, "✓ TaskRepositoryImplWithCache created");
+            Log.d(TAG, "✓ TaskRepositoryImplWithCache created with TTL support");
         }
         return taskRepositoryWithCache;
     }
     
     /**
-     * Get WorkspaceRepository with caching
+     * Get WorkspaceRepository with caching + TTL support
      * Lazy initialization - only created when needed
      * 
      * @author Person 1
+     * @updated October 19, 2025 - Added CacheMetadataDao injection
      */
     public synchronized WorkspaceRepositoryImplWithCache getWorkspaceRepositoryWithCache() {
         if (workspaceRepositoryWithCache == null) {
@@ -154,11 +161,12 @@ public class DependencyProvider {
                 .create(WorkspaceApiService.class);
 
             workspaceRepositoryWithCache = new WorkspaceRepositoryImplWithCache(
-                apiService,          // ✅ WorkspaceApiService
-                workspaceDao,        // ✅ WorkspaceDao
-                executorService      // ✅ ExecutorService
+                apiService,
+                workspaceDao,
+                cacheMetadataDao,  // ← ADDED for TTL support
+                executorService
             );
-            Log.d(TAG, "✓ WorkspaceRepositoryImplWithCache created");
+            Log.d(TAG, "✓ WorkspaceRepositoryImplWithCache created with TTL support");
         }
         return workspaceRepositoryWithCache;
     }
@@ -239,5 +247,9 @@ public class DependencyProvider {
             boardDao.deleteAll();
             Log.d(TAG, "✓ Board cache cleared");
         });
+    }
+
+    public CacheMetadataDao getCacheMetadataDao() {
+        return cacheMetadataDao;
     }
 }

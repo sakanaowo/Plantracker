@@ -1,6 +1,8 @@
 package com.example.tralalero.feature.home.ui;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,6 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.tralalero.R;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
@@ -46,6 +49,7 @@ import java.util.List;
  * 
  * @author Người 3
  * @date 15/10/2025
+ * @updated October 19, 2025 - Added pull-to-refresh
  */
 public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "InboxActivity";
@@ -56,6 +60,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     private RelativeLayout notiLayout;
     private LinearLayout inboxQuickAccess;
     private TextInputEditText inboxAddCard;
+    private SwipeRefreshLayout swipeRefreshLayout;  // ← ADDED
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +75,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         setupViewModel();
         initViews();
         setupRecyclerView();
+        setupSwipeRefresh();  // ← ADDED: Setup pull-to-refresh
         setupNotificationCard();
         setupQuickAddTask();
         observeViewModel();
@@ -183,6 +190,56 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
     
     /**
+     * Setup pull-to-refresh functionality
+     *
+     * @author Minor Issues Fix - October 19, 2025
+     */
+    private void setupSwipeRefresh() {
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+
+        if (swipeRefreshLayout != null) {
+            // Configure refresh colors
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent
+            );
+
+            // Set refresh listener
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                Log.d(TAG, "User triggered pull-to-refresh for tasks");
+                forceRefreshTasks();
+            });
+        }
+    }
+
+    /**
+     * Force refresh tasks (bypass cache)
+     * Called by pull-to-refresh
+     */
+    private void forceRefreshTasks() {
+        Log.d(TAG, "Force refreshing tasks from API...");
+
+        // Clear task cache
+        App.dependencyProvider.clearTaskCache();
+
+        // Show refreshing indicator
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(true);
+        }
+
+        // Reload tasks (will fetch from API)
+        loadAllTasks();
+
+        // Timeout after 5 seconds
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                swipeRefreshLayout.setRefreshing(false);
+                Log.d(TAG, "Refresh timeout");
+            }
+        }, 5000);
+    }
+
+    /**
      * Load all tasks with cache
      * Cache-first approach: instant load from cache, then refresh from API
      * 
@@ -199,6 +256,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     long duration = System.currentTimeMillis() - startTime;
                     
                     runOnUiThread(() -> {
+                        // Stop refreshing indicator
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+
                         if (tasks != null && !tasks.isEmpty()) {
                             taskAdapter.setTasks(tasks);
                             recyclerView.setVisibility(View.VISIBLE);
@@ -236,7 +298,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 @Override
                 public void onError(Exception e) {
                     runOnUiThread(() -> {
-                        Toast.makeText(InboxActivity.this, 
+                        // Stop refreshing on error
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+
+                        Toast.makeText(InboxActivity.this,
                             "Error loading tasks: " + e.getMessage(), 
                             Toast.LENGTH_LONG).show();
                         Log.e(TAG, "Error loading tasks", e);
@@ -386,3 +453,4 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             .show();
     }
 }
+

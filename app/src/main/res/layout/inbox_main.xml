@@ -64,21 +64,27 @@
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Task list -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewInbox"
+    <!-- SwipeRefreshLayout for pull-to-refresh functionality -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toTopOf="@id/inboxContainer"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/notificationCard"
-        app:layout_constraintVertical_bias="0.0"
-        tools:listitem="@layout/inbox_item1" />
+        app:layout_constraintTop_toBottomOf="@+id/notificationCard">
+
+        <!-- Task list -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewInbox"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/inbox_item1" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <LinearLayout
         android:id="@+id/inboxContainer"

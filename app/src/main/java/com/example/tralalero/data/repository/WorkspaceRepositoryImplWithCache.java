@@ -4,7 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.example.tralalero.data.local.database.dao.CacheMetadataDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
+import com.example.tralalero.data.local.database.entity.CacheMetadata;
 import com.example.tralalero.data.local.database.entity.WorkspaceEntity;
 import com.example.tralalero.data.mapper.WorkspaceEntityMapper;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
@@ -21,37 +23,40 @@ import retrofit2.Response;
 
 /**
  * Workspace Repository with Room Database caching
- * Pattern: Cache-first with silent background refresh
- *
- * NOTE: This does NOT implement IWorkspaceRepository because we need
- * a different callback pattern with onCacheEmpty() support
+ * Pattern: Cache-first with silent background refresh + TTL support
  *
  * @author Person 1
  * @date October 18, 2025
+ * @updated October 19, 2025 - Added TTL support
  */
 public class WorkspaceRepositoryImplWithCache {
     private static final String TAG = "WorkspaceRepoCache";
+    private static final long CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    private static final String CACHE_KEY = "workspaces";
 
     private final WorkspaceApiService apiService;
     private final WorkspaceDao workspaceDao;
+    private final CacheMetadataDao cacheMetadataDao;
     private final ExecutorService executorService;
     private final Handler mainHandler;
 
     public WorkspaceRepositoryImplWithCache(
             WorkspaceApiService apiService,
             WorkspaceDao workspaceDao,
+            CacheMetadataDao cacheMetadataDao,
             ExecutorService executorService) {
         this.apiService = apiService;
         this.workspaceDao = workspaceDao;
+        this.cacheMetadataDao = cacheMetadataDao;
         this.executorService = executorService;
         this.mainHandler = new Handler(Looper.getMainLooper());
-        Log.d(TAG, "WorkspaceRepositoryImplWithCache initialized");
+        Log.d(TAG, "WorkspaceRepositoryImplWithCache initialized with TTL support");
     }
 
     // ==================== GET ALL WORKSPACES ====================
 
     /**
-     * Get all workspaces with cache-first approach
+     * Get all workspaces with cache-first approach + TTL checking
      *
      * @param callback WorkspaceCallback with onSuccess, onCacheEmpty, onError
      */
@@ -63,20 +68,35 @@ public class WorkspaceRepositoryImplWithCache {
 
         executorService.execute(() -> {
             try {
-                // 1. Return from cache immediately (30ms)
+                // 1. Check cache metadata for TTL
+                CacheMetadata metadata = cacheMetadataDao.getMetadata(CACHE_KEY);
+                boolean isCacheExpired = (metadata == null || metadata.isExpired(CACHE_TTL_MS));
+
+                if (isCacheExpired) {
+                    Log.d(TAG, "Cache expired or empty, forcing API refresh");
+                    mainHandler.post(() -> callback.onCacheEmpty());
+                    fetchWorkspacesFromNetwork(callback, true);
+                    return;
+                }
+
+                // 2. Return from cache (still fresh)
                 List<WorkspaceEntity> cached = workspaceDao.getAll();
                 if (cached != null && !cached.isEmpty()) {
                     List<Workspace> cachedWorkspaces = WorkspaceEntityMapper.toDomainList(cached);
                     mainHandler.post(() -> callback.onSuccess(cachedWorkspaces));
-                    Log.d(TAG, "✓ Returned " + cached.size() + " workspaces from cache");
+
+                    long ageSeconds = metadata.getAgeInSeconds();
+                    Log.d(TAG, "✓ Cache hit: " + cached.size() + " workspaces (age: " +
+                          ageSeconds + "s, TTL: " + (CACHE_TTL_MS/1000) + "s)");
                 } else {
-                    // Cache is empty - notify caller
+                    // Metadata exists but no data - treat as empty
                     mainHandler.post(() -> callback.onCacheEmpty());
-                    Log.d(TAG, "Cache empty - will fetch from API");
+                    Log.d(TAG, "Cache metadata found but no data");
                 }
 
-                // 2. Fetch from network in background (500-1000ms)
-                fetchWorkspacesFromNetwork(callback, cached == null || cached.isEmpty());
+                // 3. Silent background refresh
+                fetchWorkspacesFromNetwork(callback, false);
+
             } catch (Exception e) {
                 Log.e(TAG, "Error in getWorkspaces", e);
                 mainHandler.post(() -> callback.onError(e));
@@ -101,7 +121,16 @@ public class WorkspaceRepositoryImplWithCache {
                                 List<WorkspaceEntity> entities =
                                     WorkspaceEntityMapper.toEntityList(workspaces);
                                 workspaceDao.insertAll(entities);
-                                Log.d(TAG, "✓ Cached " + workspaces.size() + " workspaces from network");
+
+                                // Update cache metadata with timestamp
+                                CacheMetadata metadata = new CacheMetadata(
+                                    CACHE_KEY,
+                                    System.currentTimeMillis(),
+                                    workspaces.size()
+                                );
+                                cacheMetadataDao.insert(metadata);
+
+                                Log.d(TAG, "✓ Cached " + workspaces.size() + " workspaces with timestamp");
                             } catch (Exception e) {
                                 Log.e(TAG, "Error caching workspaces", e);
                             }
@@ -155,6 +184,7 @@ public class WorkspaceRepositoryImplWithCache {
         executorService.execute(() -> {
             try {
                 workspaceDao.deleteAll();
+                cacheMetadataDao.deleteMetadata(CACHE_KEY); // ← FIXED: delete() → deleteMetadata()
                 Log.d(TAG, "✓ Workspace cache cleared");
             } catch (Exception e) {
                 Log.e(TAG, "Error clearing workspace cache", e);
@@ -186,4 +216,3 @@ public class WorkspaceRepositoryImplWithCache {
         void onError(Exception e);
     }
 }
-

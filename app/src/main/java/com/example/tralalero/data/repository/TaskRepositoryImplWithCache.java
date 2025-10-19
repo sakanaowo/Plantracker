@@ -3,7 +3,9 @@ package com.example.tralalero.data.repository;
 import android.util.Log;
 
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.data.local.database.dao.CacheMetadataDao;
 import com.example.tralalero.data.local.database.dao.TaskDao;
+import com.example.tralalero.data.local.database.entity.CacheMetadata;
 import com.example.tralalero.data.mapper.TaskEntityMapper;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.data.local.database.entity.TaskEntity;
@@ -11,33 +13,61 @@ import com.example.tralalero.data.local.database.entity.TaskEntity;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Task Repository with Room Database caching + TTL support
+ *
+ * @author Person 2
+ * @updated October 19, 2025 - Added TTL support
+ */
 public class TaskRepositoryImplWithCache {
     
     private static final String TAG = "TaskRepoCache";
-    
+    private static final long CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes (tasks change more frequently)
+
     private final TaskDao taskDao;
     private final ExecutorService executorService;
     private final TokenManager tokenManager;
-    
-    public TaskRepositoryImplWithCache(TaskDao taskDao, ExecutorService executorService, TokenManager tokenManager) {
+    private final CacheMetadataDao cacheMetadataDao;
+
+    public TaskRepositoryImplWithCache(
+            TaskDao taskDao,
+            ExecutorService executorService,
+            TokenManager tokenManager,
+            CacheMetadataDao cacheMetadataDao) {
         this.taskDao = taskDao;
         this.executorService = executorService;
         this.tokenManager = tokenManager;
+        this.cacheMetadataDao = cacheMetadataDao;
+        Log.d(TAG, "TaskRepositoryImplWithCache initialized with TTL support");
     }
     
     public void getAllTasks(TaskCallback callback) {
         executorService.execute(() -> {
             try {
                 String userId = tokenManager.getUserId();
-                
+                String cacheKey = "tasks_" + userId;
+
+                // Check cache metadata for TTL
+                CacheMetadata metadata = cacheMetadataDao.getMetadata(cacheKey);
+                boolean isCacheExpired = (metadata == null || metadata.isExpired(CACHE_TTL_MS));
+
+                if (isCacheExpired) {
+                    Log.d(TAG, "Task cache expired, forcing refresh");
+                    callback.onCacheEmpty();
+                    return;
+                }
+
+                // Return cache if fresh
                 List<TaskEntity> entities = taskDao.getAllByUserId(userId);
                 
                 if (entities != null && !entities.isEmpty()) {
-                    Log.d(TAG, "✓ Loaded " + entities.size() + " tasks from cache");
+                    long ageSeconds = metadata.getAgeInSeconds();
+                    Log.d(TAG, "✓ Cache hit: " + entities.size() + " tasks (age: " +
+                          ageSeconds + "s, TTL: " + (CACHE_TTL_MS/1000) + "s)");
                     List<Task> tasks = TaskEntityMapper.toDomainList(entities);
                     callback.onSuccess(tasks);
                 } else {
-                    Log.d(TAG, "Cache empty, need to fetch from API");
+                    Log.d(TAG, "Cache metadata found but no tasks");
                     callback.onCacheEmpty();
                 }
                 
@@ -51,9 +81,21 @@ public class TaskRepositoryImplWithCache {
     public void saveTasksToCache(List<Task> tasks) {
         executorService.execute(() -> {
             try {
+                String userId = tokenManager.getUserId();
+                String cacheKey = "tasks_" + userId;
+
                 List<TaskEntity> entities = TaskEntityMapper.toEntityList(tasks);
                 taskDao.insertAll(entities);
-                Log.d(TAG, "✓ Saved " + tasks.size() + " tasks to cache");
+
+                // Update metadata with timestamp
+                CacheMetadata metadata = new CacheMetadata(
+                    cacheKey,
+                    System.currentTimeMillis(),
+                    tasks.size()
+                );
+                cacheMetadataDao.insert(metadata);
+
+                Log.d(TAG, "✓ Saved " + tasks.size() + " tasks with timestamp");
             } catch (Exception e) {
                 Log.e(TAG, "Error saving tasks to cache", e);
             }
