@@ -4,13 +4,18 @@ package com.example.tralalero.core;
 import android.content.Context;
 import android.util.Log;
 
+import com.example.tralalero.App.App;
+import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.local.database.AppDatabase;
 import com.example.tralalero.data.local.database.dao.BoardDao;
 import com.example.tralalero.data.local.database.dao.ProjectDao;
 import com.example.tralalero.data.local.database.dao.TaskDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
+import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
+import com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache;
+import com.example.tralalero.network.ApiClient;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,19 +49,20 @@ public class DependencyProvider {
 
     // Cached Repositories
     private TaskRepositoryImplWithCache taskRepositoryWithCache;
+    private WorkspaceRepositoryImplWithCache workspaceRepositoryWithCache;
     
     // Executor for background operations
     private final ExecutorService executorService;
     
     // Token Manager
     private final TokenManager tokenManager;
-    
+
     /**
      * Private constructor - Singleton pattern
      */
     private DependencyProvider(Context context, TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        
+
         // Initialize Database
         this.database = AppDatabase.getInstance(context);
         Log.d(TAG, "✓ AppDatabase initialized");
@@ -133,6 +139,28 @@ public class DependencyProvider {
             Log.d(TAG, "✓ TaskRepositoryImplWithCache created");
         }
         return taskRepositoryWithCache;
+    }
+    
+    /**
+     * Get WorkspaceRepository with caching
+     * Lazy initialization - only created when needed
+     * 
+     * @author Person 1
+     */
+    public synchronized WorkspaceRepositoryImplWithCache getWorkspaceRepositoryWithCache() {
+        if (workspaceRepositoryWithCache == null) {
+            // Get WorkspaceApiService from ApiClient with App.authManager
+            WorkspaceApiService apiService = ApiClient.get(App.authManager)
+                .create(WorkspaceApiService.class);
+
+            workspaceRepositoryWithCache = new WorkspaceRepositoryImplWithCache(
+                apiService,          // ✅ WorkspaceApiService
+                workspaceDao,        // ✅ WorkspaceDao
+                executorService      // ✅ ExecutorService
+            );
+            Log.d(TAG, "✓ WorkspaceRepositoryImplWithCache created");
+        }
+        return workspaceRepositoryWithCache;
     }
     
     // TODO: Person 2 - Add more cached repositories
