@@ -8,6 +8,7 @@ import com.example.tralalero.data.local.database.dao.CacheMetadataDao;
 import com.example.tralalero.data.local.database.dao.WorkspaceDao;
 import com.example.tralalero.data.local.database.entity.CacheMetadata;
 import com.example.tralalero.data.local.database.entity.WorkspaceEntity;
+import com.example.tralalero.data.mapper.DtoToEntityMapper;
 import com.example.tralalero.data.mapper.WorkspaceEntityMapper;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.data.remote.dto.workspace.WorkspaceDTO;
@@ -27,7 +28,7 @@ import retrofit2.Response;
  *
  * @author Person 1
  * @date October 18, 2025
- * @updated October 19, 2025 - Added TTL support
+ * @updated October 19, 2025 - Added TTL support + DtoToEntityMapper for preserving API fields
  */
 public class WorkspaceRepositoryImplWithCache {
     private static final String TAG = "WorkspaceRepoCache";
@@ -113,13 +114,14 @@ public class WorkspaceRepositoryImplWithCache {
             public void onResponse(Call<List<WorkspaceDTO>> call, Response<List<WorkspaceDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     try {
-                        List<Workspace> workspaces = WorkspaceMapper.toDomainList(response.body());
+                        List<WorkspaceDTO> dtoList = response.body();
+                        List<Workspace> workspaces = WorkspaceMapper.toDomainList(dtoList);
 
-                        // Cache in background
+                        // FIXED: Cache using DtoToEntityMapper to preserve ownerId, type, timestamps
                         executorService.execute(() -> {
                             try {
                                 List<WorkspaceEntity> entities =
-                                    WorkspaceEntityMapper.toEntityList(workspaces);
+                                    DtoToEntityMapper.workspaceDtoListToEntityList(dtoList);
                                 workspaceDao.insertAll(entities);
 
                                 // Update cache metadata with timestamp
@@ -130,7 +132,7 @@ public class WorkspaceRepositoryImplWithCache {
                                 );
                                 cacheMetadataDao.insert(metadata);
 
-                                Log.d(TAG, "✓ Cached " + workspaces.size() + " workspaces with timestamp");
+                                Log.d(TAG, "✓ Cached " + workspaces.size() + " workspaces with full data and timestamp");
                             } catch (Exception e) {
                                 Log.e(TAG, "Error caching workspaces", e);
                             }

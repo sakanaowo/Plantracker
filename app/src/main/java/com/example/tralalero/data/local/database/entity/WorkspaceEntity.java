@@ -15,8 +15,15 @@ public class WorkspaceEntity {
     private String id;  // ✅ FIXED: Changed from int to String
 
     private String name;
-    private String description;
-    private String userId;
+    private String description;  // Keep for backward compatibility (optional field)
+
+    // FIXED: Renamed from userId to ownerId to match backend schema
+    private String ownerId;
+
+    // ADDED: type field for PERSONAL/TEAM workspace type (matches backend)
+    @NonNull
+    private String type;  // "PERSONAL" or "TEAM"
+
     private Date createdAt;
     private Date updatedAt;
     
@@ -24,12 +31,13 @@ public class WorkspaceEntity {
     }
     
     @Ignore
-    public WorkspaceEntity(@NonNull String id, String name, String description, String userId,
-                          Date createdAt, Date updatedAt) {
+    public WorkspaceEntity(@NonNull String id, String name, String description, String ownerId,
+                          @NonNull String type, Date createdAt, Date updatedAt) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.userId = userId;
+        this.ownerId = ownerId;
+        this.type = type;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -59,12 +67,23 @@ public class WorkspaceEntity {
         this.description = description;
     }
     
-    public String getUserId() {
-        return userId;
+    // FIXED: Renamed getter/setter from getUserId/setUserId to getOwnerId/setOwnerId
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    // ADDED: Getter/setter for type field
+    @NonNull
+    public String getType() {
+        return type;
     }
     
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setType(@NonNull String type) {
+        this.type = type;
     }
     
     public Date getCreatedAt() {

@@ -13,13 +13,13 @@ public class WorkspaceEntityMapper {
             return null;
         }
         
-        // Convert domain Workspace to Room entity
-        // Entity has different structure (description, userId, dates)
+        // FIXED: Updated to use ownerId and type fields
         return new WorkspaceEntity(
-            workspace.getId(),  // Direct String, no parsing
+            workspace.getId(),
             workspace.getName(),
-            null, // description - not in domain model
-            workspace.getOwnerId(), // userId -> ownerId
+            null, // description - not in domain model, keep for backward compatibility
+            workspace.getOwnerId(), // FIXED: Now correctly maps ownerId
+            workspace.getType() != null ? workspace.getType() : "TEAM", // FIXED: Map type field
             null, // createdAt - not in domain model
             null  // updatedAt - not in domain model
         );
@@ -30,12 +30,12 @@ public class WorkspaceEntityMapper {
             return null;
         }
         
-        // Convert Room entity to domain Workspace (4 parameters)
+        // FIXED: Updated to use ownerId and type from entity
         return new Workspace(
-            entity.getId(),  // Direct String
+            entity.getId(),
             entity.getName(),
-            "TEAM", // type - default to TEAM, not stored in entity
-            entity.getUserId() // ownerId
+            entity.getType(), // FIXED: Get type from entity
+            entity.getOwnerId() // FIXED: Get ownerId (was getUserId)
         );
     }
     

@@ -7,15 +7,13 @@ import java.util.List;
 
 /**
  * Mapper between Project domain model and ProjectEntity
- * CRITICAL: Maps all 6 fields including key and boardType
- * CRITICAL: Uses String IDs directly (no int conversion)
- * NOTE: boardType is String in entity, not enum
+ * UPDATED: Now handles issueSeq, createdAt, updatedAt fields
  */
 public class ProjectEntityMapper {
     
     /**
      * Convert domain Project to ProjectEntity
-     * Maps all 6 fields: id, workspaceId, name, description, key, boardType
+     * Maps all fields including new issueSeq and timestamps
      */
     public static ProjectEntity toEntity(Project project) {
         if (project == null) {
@@ -34,19 +32,26 @@ public class ProjectEntityMapper {
         // Set optional fields
         entity.setDescription(project.getDescription());
         
+        // ADDED: Set new fields (will be null/0 for existing projects from domain)
+        // These will be populated from API responses
+        entity.setIssueSeq(0); // Default value
+        entity.setCreatedAt(null); // Will be set from API
+        entity.setUpdatedAt(null); // Will be set from API
+
         return entity;
     }
     
     /**
      * Convert ProjectEntity to domain Project
-     * Maps all 6 fields: id, workspaceId, name, description, key, boardType
+     * NOTE: issueSeq and timestamps are stored in entity but not exposed in domain model
      */
     public static Project toDomain(ProjectEntity entity) {
         if (entity == null) {
             return null;
         }
         
-        // Create domain Project with all 6 fields
+        // Create domain Project with 6 main fields
+        // issueSeq and timestamps are cached but not part of domain model
         return new Project(
             entity.getId(),
             entity.getWorkspaceId(),

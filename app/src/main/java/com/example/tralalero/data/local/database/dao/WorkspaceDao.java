@@ -35,9 +35,10 @@ public interface WorkspaceDao {
     @Query("SELECT * FROM workspaces")
     List<WorkspaceEntity> getAll();
 
-    @Query("SELECT * FROM workspaces WHERE userId = :userId")
-    List<WorkspaceEntity> getAllByUserId(String userId);
-    
+    // FIXED: Changed userId to ownerId to match WorkspaceEntity field rename
+    @Query("SELECT * FROM workspaces WHERE ownerId = :ownerId")
+    List<WorkspaceEntity> getAllByOwnerId(String ownerId);
+
     @Query("SELECT COUNT(*) FROM workspaces")
     int getCount();
 }

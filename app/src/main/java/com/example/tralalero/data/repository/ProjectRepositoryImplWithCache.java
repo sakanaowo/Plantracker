@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.example.tralalero.data.local.database.dao.ProjectDao;
 import com.example.tralalero.data.local.database.entity.ProjectEntity;
+import com.example.tralalero.data.mapper.DtoToEntityMapper;
 import com.example.tralalero.data.mapper.ProjectEntityMapper;
 import com.example.tralalero.data.mapper.ProjectMapper;
 import com.example.tralalero.data.remote.api.ProjectApiService;
@@ -94,13 +95,14 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
             public void onResponse(Call<ProjectDTO> call, Response<ProjectDTO> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     try {
-                        Project project = ProjectMapper.toDomain(response.body());
-                        
-                        // Cache in background
+                        ProjectDTO dto = response.body();
+                        Project project = ProjectMapper.toDomain(dto);
+
+                        // FIXED: Cache using DtoToEntityMapper to preserve issueSeq, createdAt, updatedAt
                         executorService.execute(() -> {
                             try {
-                                projectDao.insertProject(ProjectEntityMapper.toEntity(project));
-                                Log.d(TAG, "✓ Cached project from network: " + projectId);
+                                projectDao.insertProject(DtoToEntityMapper.projectDtoToEntity(dto));
+                                Log.d(TAG, "✓ Cached project from network with full data: " + projectId);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error caching project", e);
                             }
@@ -164,7 +166,7 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
                     if (response.isSuccessful() && response.body() != null) {
                         try {
                             Project newProject = ProjectMapper.toDomain(response.body());
-                            
+
                             // Cache immediately
                             executorService.execute(() -> {
                                 try {
@@ -229,13 +231,14 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
                 public void onResponse(Call<ProjectDTO> call, Response<ProjectDTO> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         try {
-                            Project updatedProject = ProjectMapper.toDomain(response.body());
-                            
-                            // Update cache in background
+                            ProjectDTO responseDto = response.body();
+                            Project updatedProject = ProjectMapper.toDomain(responseDto);
+
+                            // FIXED: Update cache using DtoToEntityMapper to preserve issueSeq, createdAt, updatedAt
                             executorService.execute(() -> {
                                 try {
-                                    projectDao.updateProject(ProjectEntityMapper.toEntity(updatedProject));
-                                    Log.d(TAG, "✓ Updated cached project: " + projectId);
+                                    projectDao.updateProject(DtoToEntityMapper.projectDtoToEntity(responseDto));
+                                    Log.d(TAG, "✓ Updated cached project with full data: " + projectId);
                                 } catch (Exception e) {
                                     Log.e(TAG, "Error updating cache", e);
                                 }
@@ -347,7 +350,7 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
                     if (response.isSuccessful() && response.body() != null) {
                         try {
                             Project updatedProject = ProjectMapper.toDomain(response.body());
-                            
+
                             // Update cache
                             executorService.execute(() -> {
                                 try {
@@ -412,13 +415,14 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
                 public void onResponse(Call<ProjectDTO> call, Response<ProjectDTO> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         try {
-                            Project updatedProject = ProjectMapper.toDomain(response.body());
-                            
-                            // Update cache
+                            ProjectDTO responseDto = response.body();
+                            Project updatedProject = ProjectMapper.toDomain(responseDto);
+
+                            // FIXED: Update cache using DtoToEntityMapper
                             executorService.execute(() -> {
                                 try {
-                                    projectDao.updateProject(ProjectEntityMapper.toEntity(updatedProject));
-                                    Log.d(TAG, "✓ Updated board type in cache: " + projectId);
+                                    projectDao.updateProject(DtoToEntityMapper.projectDtoToEntity(responseDto));
+                                    Log.d(TAG, "✓ Updated board type in cache with full data: " + projectId);
                                 } catch (Exception e) {
                                     Log.e(TAG, "Error updating cache", e);
                                 }

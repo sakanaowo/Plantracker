@@ -29,9 +29,9 @@ import com.example.tralalero.data.local.database.entity.WorkspaceEntity;
         ProjectEntity.class,
         WorkspaceEntity.class,
         BoardEntity.class,
-        CacheMetadata.class  // ← ADDED for cache TTL tracking
+        CacheMetadata.class
     },
-    version = 4,  // ← INCREMENTED from 3 to 4
+    version = 5,  // ← INCREMENTED from 4 to 5 for schema changes
     exportSchema = false
 )
 @TypeConverters({DateConverter.class})
@@ -62,6 +62,32 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from version 4 to 5
+     * ISSUE #1 FIX: WorkspaceEntity - Rename userId to ownerId, add type field
+     * ISSUE #2 FIX: ProjectEntity - Add issueSeq, createdAt, updatedAt fields
+     */
+    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            // FIX ISSUE #1: WorkspaceEntity changes
+            // Step 1: Add new columns
+            database.execSQL("ALTER TABLE workspaces ADD COLUMN ownerId TEXT");
+            database.execSQL("ALTER TABLE workspaces ADD COLUMN type TEXT NOT NULL DEFAULT 'TEAM'");
+
+            // Step 2: Copy data from userId to ownerId
+            database.execSQL("UPDATE workspaces SET ownerId = userId");
+
+            // Note: Cannot drop column in SQLite, userId will remain but unused
+            // New code will use ownerId field instead
+
+            // FIX ISSUE #2: ProjectEntity changes
+            database.execSQL("ALTER TABLE projects ADD COLUMN issueSeq INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE projects ADD COLUMN createdAt INTEGER");
+            database.execSQL("ALTER TABLE projects ADD COLUMN updatedAt INTEGER");
+        }
+    };
+
     public static synchronized AppDatabase getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(
@@ -69,7 +95,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 AppDatabase.class,
                 DATABASE_NAME
             )
-            .addMigrations(MIGRATION_3_4)  // ← ADDED migration
+            .addMigrations(MIGRATION_3_4, MIGRATION_4_5)  // ← ADDED migration 4→5
             .fallbackToDestructiveMigration()
             .build();
         }
