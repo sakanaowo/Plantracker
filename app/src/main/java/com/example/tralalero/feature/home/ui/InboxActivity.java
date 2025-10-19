@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tralalero.R;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
+import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
@@ -180,17 +181,70 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             }
         });
     }
+    
+    /**
+     * Load all tasks with cache
+     * Cache-first approach: instant load from cache, then refresh from API
+     * 
+     * @author Person 2
+     */
     private void loadAllTasks() {
-        // TODO: For now, we need a way to get all tasks
-        // Option 1: Load tasks from a specific "Inbox" board
-        // Option 2: Implement GetAllTasksUseCase
-        // Option 3: Load tasks from default project/board
+        Log.d(TAG, "Loading inbox tasks with cache...");
+        final long startTime = System.currentTimeMillis();
         
-        // Placeholder: Load tasks from first board (will need proper implementation)
-        String defaultBoardId = "inbox-board-id"; // TODO: Get from preferences or API
-        taskViewModel.loadTasksByBoard(defaultBoardId);
-        Log.d(TAG, "Loading all inbox tasks");
+        App.dependencyProvider.getTaskRepositoryWithCache()
+            .getAllTasks(new TaskRepositoryImplWithCache.TaskCallback() {
+                @Override
+                public void onSuccess(List<Task> tasks) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    
+                    runOnUiThread(() -> {
+                        if (tasks != null && !tasks.isEmpty()) {
+                            taskAdapter.setTasks(tasks);
+                            recyclerView.setVisibility(View.VISIBLE);
+                            
+                            // Performance logging
+                            String message;
+                            if (duration < 100) {
+                                message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
+                                Log.i(TAG, "CACHE HIT: " + duration + "ms");
+                            } else {
+                                message = "🌐 API: " + duration + "ms (" + tasks.size() + " tasks)";
+                                Log.i(TAG, "API CALL: " + duration + "ms");
+                            }
+                            
+                            // Show performance toast
+                            Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
+                            
+                            Log.d(TAG, "Loaded " + tasks.size() + " tasks");
+                        } else {
+                            taskAdapter.setTasks(new ArrayList<>());
+                            recyclerView.setVisibility(View.GONE);
+                            Log.d(TAG, "No tasks found");
+                        }
+                    });
+                }
+                
+                @Override
+                public void onCacheEmpty() {
+                    runOnUiThread(() -> {
+                        Log.d(TAG, "Cache empty - first load, waiting for API...");
+                        // Loading indicator already shown in observeViewModel
+                    });
+                }
+                
+                @Override
+                public void onError(Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(InboxActivity.this, 
+                            "Error loading tasks: " + e.getMessage(), 
+                            Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Error loading tasks", e);
+                    });
+                }
+            });
     }
+    
     private void createTask(String title) {
         Task newTask = new Task(
             null,                    
