@@ -11,8 +11,10 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -49,6 +51,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private FirebaseUser firebaseUser;
     private TextView tvAvatarLetter;
     private ImageView imgAvatar;
+    private ImageButton btnAccountOptions;
     private Uri currentPhotoUri;
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
@@ -86,6 +89,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         TextView tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         imgAvatar = findViewById(R.id.imgAvatar);
+        btnAccountOptions = findViewById(R.id.btnAccountOptions);
 
         if (firebaseUser != null) {
             String email = firebaseUser.getEmail();
@@ -108,14 +112,24 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         FrameLayout avatarContainer = findViewById(R.id.avatarContainer);
         avatarContainer.setOnClickListener(v -> showImagePickerBottomSheet());
 
+        // Setup three dots menu icon
+        if (btnAccountOptions != null) {
+            Log.d(TAG, "Setting up click listener for btnAccountOptions");
+            btnAccountOptions.setOnClickListener(v -> {
+                Log.d(TAG, "btnAccountOptions CLICKED!");
+                showAccountOptionsMenu(v);
+            });
+        } else {
+            Log.e(TAG, "btnAccountOptions is NULL!");
+        }
+
         LinearLayout layoutSettings = findViewById(R.id.layoutSettings);
         layoutSettings.setOnClickListener(v -> {
             Intent intent = new Intent(AccountActivity.this, SettingsActivity.class);
             startActivity(intent);
         });
 
-        MaterialButton btnLogout = findViewById(R.id.btnLogout);
-        btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
+
 
         setupBottomNavigation(3);
 
@@ -345,36 +359,73 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             });
     }
 
-    private void showLogoutConfirmationDialog() {
-        new AlertDialog.Builder(this)
-            .setTitle("Logout")
-            .setMessage("Are you sure you want to logout?")
-            .setPositiveButton("Yes", (dialog, which) -> logout())
-            .setNegativeButton("No", null)
-            .show();
+    private void showAccountOptionsMenu(View anchor) {
+        Log.d(TAG, "showAccountOptionsMenu called");
+        try {
+            PopupMenu popup = new PopupMenu(this, anchor);
+            popup.getMenuInflater().inflate(R.menu.account_options_menu, popup.getMenu());
+
+            popup.setOnMenuItemClickListener(item -> {
+                Log.d(TAG, "Menu item clicked: " + item.getTitle());
+                int itemId = item.getItemId();
+                if (itemId == R.id.action_edit_profile) {
+                    Toast.makeText(this, "Edit Profile - Coming soon", Toast.LENGTH_SHORT).show();
+                    // TODO: Navigate to Edit Profile Activity
+                    return true;
+                } else if (itemId == R.id.action_logout) {
+                    showLogoutDialog();
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+            Log.d(TAG, "Popup menu shown successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in showAccountOptionsMenu", e);
+            Toast.makeText(this, "Menu error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
-    private void logout() {
-        Log.d(TAG, "Logout button clicked");
+    private void showLogoutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to logout?")
+                .setPositiveButton("Logout", (dialog, which) -> {
+                    Log.d(TAG, "User confirmed logout");
+                    performLogout();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 
+    private void performLogout() {
+        Log.d(TAG, "Performing logout...");
+
+        // Sign out from Firebase
         FirebaseAuth.getInstance().signOut();
-        Log.d(TAG, "✓ User signed out from Firebase");
 
-        tokenManager.clearAuthData();
-        Log.d(TAG, "✓ Auth data cleared");
+        // Clear auth manager
+        App.authManager.signOut();
+        Log.d(TAG, "✓ Auth cleared");
 
+        // Clear database cache
         App.dependencyProvider.clearAllCaches();
         Log.d(TAG, "✓ Database cache cleared");
 
+        // Reset dependency provider
         DependencyProvider.reset();
         Log.d(TAG, "✓ DependencyProvider reset");
 
-        Intent intent = new Intent(AccountActivity.this, LoginActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        Log.d(TAG, "✓ Navigated to LoginActivity");
+        // Clear token manager
+        tokenManager.clearAuthData();
+        Log.d(TAG, "✓ Token cleared");
 
-        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+        // Redirect to login
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
         Log.d(TAG, "✓ Logout complete");
     }
 }
