@@ -2,11 +2,13 @@ package com.example.tralalero.feature.account;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -18,7 +20,7 @@ import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.home.ui.BaseActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
-import com.google.android.material.button.MaterialButton;
+
 public class AccountActivity extends BaseActivity {
     private static final String TAG = "AccountActivity";
     private TextView tvName;
@@ -26,7 +28,8 @@ public class AccountActivity extends BaseActivity {
     private TextView tvEmail;
     private TextView tvAvatarLetter;
     private LinearLayout layoutSettings;
-    private MaterialButton btnLogout;
+    private ImageButton btnAccountOptions;
+
     private AuthViewModel authViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +53,22 @@ public class AccountActivity extends BaseActivity {
         tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         layoutSettings = findViewById(R.id.layoutSettings);
-        btnLogout = findViewById(R.id.btnLogout);
-        Log.d(TAG, "initViews - btnLogout: " + (btnLogout != null ? "FOUND" : "NULL"));
+        btnAccountOptions = findViewById(R.id.btnAccountOptions);
+
         Log.d(TAG, "initViews - layoutSettings: " + (layoutSettings != null ? "FOUND" : "NULL"));
+        Log.d(TAG, "initViews - btnAccountOptions: " + (btnAccountOptions != null ? "FOUND" : "NULL"));
+
+        // Test click immediately
+        if (btnAccountOptions != null) {
+            btnAccountOptions.post(() -> {
+                Toast.makeText(this, "Button found! Setting up click listener...", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Button visibility: " + btnAccountOptions.getVisibility());
+                Log.d(TAG, "Button clickable: " + btnAccountOptions.isClickable());
+                Log.d(TAG, "Button enabled: " + btnAccountOptions.isEnabled());
+            });
+        } else {
+            Toast.makeText(this, "ERROR: btnAccountOptions is NULL!", Toast.LENGTH_LONG).show();
+        }
     }
     private void setupViewModel() {
         authViewModel = new ViewModelProvider(
@@ -89,27 +105,65 @@ public class AccountActivity extends BaseActivity {
         });
     }
     private void setupClickListeners() {
-        if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> {
-                Toast.makeText(this, "LOGOUT BUTTON CLICKED!", Toast.LENGTH_LONG).show();
-                Log.d(TAG, "======== LOGOUT BUTTON CLICKED ========");
-                showLogoutDialog();
+        // Setup menu icon click listener
+        if (btnAccountOptions != null) {
+            Log.d(TAG, "Setting up click listener for btnAccountOptions");
+            btnAccountOptions.setOnClickListener(v -> {
+                Log.d(TAG, "btnAccountOptions CLICKED!");
+                try {
+                    showAccountOptionsMenu(v);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error showing menu", e);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             });
-            Log.d(TAG, "setupClickListeners: Logout button listener attached");
         } else {
-            Log.e(TAG, "setupClickListeners: btnLogout is NULL!");
+            Log.e(TAG, "btnAccountOptions is NULL!");
         }
+
         if (layoutSettings != null) {
             layoutSettings.setOnClickListener(v -> {
-                Toast.makeText(this, "SETTINGS CLICKED!", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "======== SETTINGS CLICKED ========");
-                showLogoutDialog();
+                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to Settings Activity
             });
         }
 
         // TODO: Add other click listeners for other options
         // layoutOfflineBoards, layoutBrowseTemplates, layoutShareFeedback, layoutHelp
     }
+
+    private void showAccountOptionsMenu(android.view.View anchor) {
+        Log.d(TAG, "showAccountOptionsMenu called");
+        try {
+            PopupMenu popup = new PopupMenu(this, anchor);
+            Log.d(TAG, "PopupMenu created");
+
+            popup.getMenuInflater().inflate(R.menu.account_options_menu, popup.getMenu());
+            Log.d(TAG, "Menu inflated, item count: " + popup.getMenu().size());
+
+            popup.setOnMenuItemClickListener(item -> {
+                Log.d(TAG, "Menu item clicked: " + item.getTitle());
+                int itemId = item.getItemId();
+                if (itemId == R.id.action_edit_profile) {
+                    Toast.makeText(this, "Edit Profile - Coming soon", Toast.LENGTH_SHORT).show();
+                    // TODO: Navigate to Edit Profile Activity
+                    return true;
+                } else if (itemId == R.id.action_logout) {
+                    showLogoutDialog();
+                    return true;
+                }
+                return false;
+            });
+
+            Log.d(TAG, "Showing popup menu...");
+            popup.show();
+            Log.d(TAG, "Popup menu shown successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in showAccountOptionsMenu", e);
+            Toast.makeText(this, "Menu error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void showLogoutDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Logout")
