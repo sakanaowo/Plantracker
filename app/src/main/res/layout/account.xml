@@ -57,9 +57,9 @@
                         android:id="@+id/avatarContainer"
                         android:layout_width="64dp"
                         android:layout_height="64dp"
-                        android:clickable="true"
-                        android:focusable="true">
-                        
+                        android:clickable="false"
+                        android:focusable="false">
+
                         <View
                             android:id="@+id/avatarCircle"
                             android:layout_width="64dp"
@@ -70,7 +70,7 @@
                             android:id="@+id/tvAvatarLetter"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:text="H"
+                            android:text="U"
                             android:textSize="32sp"
                             android:textStyle="bold"
                             android:textColor="@color/white"
@@ -90,7 +90,9 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
-                        android:layout_marginStart="16dp">
+                        android:layout_marginStart="16dp"
+                        android:clickable="false"
+                        android:focusable="false">
 
                         <TextView
                             android:id="@+id/tvName"
@@ -121,25 +123,29 @@
                     </LinearLayout>
 
                     <!-- Menu Icon -->
-                    <ImageView
-                        android:id="@+id/btnMenu"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                    <ImageButton
+                        android:id="@+id/btnAccountOptions"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:src="@drawable/three_dots_icon"
-                        android:contentDescription="Menu"
-                        app:tint="@color/on_surface_variant"/>
+                        android:contentDescription="Account Options"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:scaleType="centerInside"
+                        android:padding="12dp"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Workspaces Section Title -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/workspaces_title"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/on_surface"
-                android:paddingBottom="8dp"/>
+<!--            <TextView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="@string/workspaces_title"-->
+<!--                android:textSize="16sp"-->
+<!--                android:textStyle="bold"-->
+<!--                android:textColor="@color/on_surface"-->
+<!--                android:paddingBottom="8dp"/>-->
 
             <!-- General Section Title -->
             <TextView
@@ -332,32 +338,6 @@
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
-
-            <!-- Logout Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogout"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="80dp"
-                android:text="@string/logout"
-                android:textSize="16sp"
-                android:textColor="#D32F2F"
-                android:textStyle="bold"
-                android:minHeight="56dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:enabled="true"
-                app:icon="@drawable/ic_logout"
-                app:iconTint="#D32F2F"
-                app:iconGravity="start"
-                app:iconPadding="8dp"
-                app:strokeColor="#D32F2F"
-                app:strokeWidth="2dp"
-                app:cornerRadius="12dp"/>
 
         </LinearLayout>
     </ScrollView>
