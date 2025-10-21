@@ -29,7 +29,7 @@ import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.repository.ITaskRepository.RepositoryCallback;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.feature.home.ui.Home.project.TaskAdapter;
-import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
+import com.example.tralalero.feature.home.ui.Home.project.TaskDetailBottomSheet;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
@@ -54,11 +54,9 @@ import java.util.List;
  */
 public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "InboxActivity";
-
     public static final String ACTION_TASK_CREATED = "com.example.tralalero.TASK_CREATED";
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
-
     
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
@@ -517,42 +515,27 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
 
     private void showTaskDetailBottomSheet(Task task) {
-        // Open CardDetailActivity for editing task
-        Intent intent = new Intent(this, CardDetailActivity.class);
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
-        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, task.getBoardId());
-        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, task.getProjectId());
-        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
-        
-        // Pass board name - use task status as board identifier for Inbox
-        String boardName = task.getStatus() != null ? task.getStatus().name().replace("_", " ") : "All Tasks";
-        intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, boardName);
-        
-        // Pass task details
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_STATUS, task.getStatus() != null ? task.getStatus().name() : "TO_DO");
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_POSITION, task.getPosition());
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_ASSIGNEE_ID, task.getAssigneeId());
-        intent.putExtra(CardDetailActivity.EXTRA_TASK_CREATED_BY, task.getCreatedBy());
-        
-        startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
+        TaskDetailBottomSheet bottomSheet = TaskDetailBottomSheet.newInstance(task);
+        bottomSheet.setOnActionClickListener(new TaskDetailBottomSheet.OnActionClickListener() {
+            @Override
+            public void onAssignTask(Task task) {
+                handleAssignTask(task);
+            }
+            @Override
+            public void onMoveTask(Task task) {
+                handleMoveTask(task);
+            }
+            @Override
+            public void onAddComment(Task task) {
+                handleAddComment(task);
+            }
+            @Override
+            public void onDeleteTask(Task task) {
+                handleDeleteTask(task);
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "TaskDetailBottomSheet");
     }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        
-        if (resultCode == RESULT_OK && requestCode == REQUEST_CODE_EDIT_TASK) {
-            // Reload tasks after edit/delete
-            Log.d(TAG, "🔄 Reloading tasks after edit/delete");
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                loadAllTasks();
-            }, 500);
-        }
-    }
-    
     private void handleAssignTask(Task task) {
         android.widget.EditText input = new android.widget.EditText(this);
         input.setHint("Enter user ID");
