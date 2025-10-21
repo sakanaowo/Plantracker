@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,12 +10,12 @@
         android:id="@+id/scrollViewAccount"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:fillViewport="true"
         android:clipToPadding="false"
-        app:layout_constraintTop_toTopOf="parent"
+        android:fillViewport="true"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,11 +28,11 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:paddingBottom="16dp"
                 android:text="@string/account_title"
-                android:textSize="28sp"
-                android:textStyle="bold"
                 android:textColor="@color/on_surface"
-                android:paddingBottom="16dp"/>
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
             <!-- User Card -->
             <androidx.cardview.widget.CardView
@@ -41,16 +40,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@color/surface"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/surface">
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:padding="16dp">
 
                     <!-- Avatar Circle -->
                     <FrameLayout
@@ -64,113 +63,114 @@
                             android:id="@+id/avatarCircle"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:background="@drawable/bg_avatar_circle"/>
-                        
+                            android:background="@drawable/bg_avatar_circle" />
+
                         <TextView
                             android:id="@+id/tvAvatarLetter"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:gravity="center"
                             android:text="U"
-                            android:textSize="32sp"
-                            android:textStyle="bold"
                             android:textColor="@color/white"
-                            android:gravity="center"/>
-                            
+                            android:textSize="32sp"
+                            android:textStyle="bold" />
+
                         <ImageView
                             android:id="@+id/imgAvatar"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:scaleType="centerCrop"
-                            android:visibility="gone"/>
+                            android:visibility="gone" />
                     </FrameLayout>
 
                     <!-- User Info -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
                         android:layout_marginStart="16dp"
+                        android:layout_weight="1"
                         android:clickable="false"
-                        android:focusable="false">
+                        android:focusable="false"
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tvName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Username"
+                            android:textColor="@color/on_surface"
                             android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/on_surface"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvUsername"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             android:text="\@username"
-                            android:textSize="14sp"
                             android:textColor="@color/on_surface_variant"
-                            android:layout_marginTop="2dp"/>
+                            android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/tvEmail"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             android:text="example@gmail.com"
-                            android:textSize="14sp"
                             android:textColor="@color/on_surface_variant"
-                            android:layout_marginTop="2dp"/>
+                            android:textSize="14sp" />
                     </LinearLayout>
 
                     <!-- Menu Icon -->
+                    <!--TODO: remove 3 dot, add new profile settings below-->
                     <ImageButton
                         android:id="@+id/btnAccountOptions"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@drawable/three_dots_icon"
-                        android:contentDescription="Account Options"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
+                        android:contentDescription="Account Options"
                         android:focusable="true"
+                        android:padding="12dp"
                         android:scaleType="centerInside"
-                        android:padding="12dp"/>
+                        android:src="@drawable/three_dots_icon" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Workspaces Section Title -->
-<!--            <TextView-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="@string/workspaces_title"-->
-<!--                android:textSize="16sp"-->
-<!--                android:textStyle="bold"-->
-<!--                android:textColor="@color/on_surface"-->
-<!--                android:paddingBottom="8dp"/>-->
+            <!--            <TextView-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:text="@string/workspaces_title"-->
+            <!--                android:textSize="16sp"-->
+            <!--                android:textStyle="bold"-->
+            <!--                android:textColor="@color/on_surface"-->
+            <!--                android:paddingBottom="8dp"/>-->
 
             <!-- General Section Title -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/general_title"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/on_surface"
                 android:paddingTop="16dp"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="8dp"
+                android:text="@string/general_title"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <!-- General Options Card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/surface">
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
                     android:divider="@android:drawable/divider_horizontal_bright"
+                    android:orientation="vertical"
                     android:showDividers="middle">
 
                     <!-- Offline boards -->
@@ -178,163 +178,163 @@
                         android:id="@+id/layoutOfflineBoards"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_download"
-                            app:tint="@color/on_surface_variant"/>
-
+                            app:tint="@color/on_surface_variant" />
+                        <!--TODO: notification settings -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
-                            android:text="@string/offline_boards"
-                            android:textSize="16sp"
+                            android:text="@string/notification_settings"
                             android:textColor="@color/on_surface"
-                            android:layout_marginStart="16dp"/>
+                            android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginStart="56dp"/>
+                        android:layout_marginStart="56dp"
+                        android:background="@color/divider" />
 
                     <!-- Browse templates -->
                     <LinearLayout
                         android:id="@+id/layoutBrowseTemplates"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_template"
-                            app:tint="@color/on_surface_variant"/>
+                            app:tint="@color/on_surface_variant" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
                             android:text="@string/browse_templates"
-                            android:textSize="16sp"
                             android:textColor="@color/on_surface"
-                            android:layout_marginStart="16dp"/>
+                            android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginStart="56dp"/>
+                        android:layout_marginStart="56dp"
+                        android:background="@color/divider" />
 
                     <!-- Settings -->
                     <LinearLayout
                         android:id="@+id/layoutSettings"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/setting_icon"
-                            app:tint="@color/on_surface_variant"/>
+                            app:tint="@color/on_surface_variant" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
                             android:text="@string/settings"
-                            android:textSize="16sp"
                             android:textColor="@color/on_surface"
-                            android:layout_marginStart="16dp"/>
+                            android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginStart="56dp"/>
+                        android:layout_marginStart="56dp"
+                        android:background="@color/divider" />
 
                     <!-- Share feedback -->
                     <LinearLayout
                         android:id="@+id/layoutShareFeedback"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_megaphone"
-                            app:tint="@color/on_surface_variant"/>
+                            app:tint="@color/on_surface_variant" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
                             android:text="@string/share_feedback"
-                            android:textSize="16sp"
                             android:textColor="@color/on_surface"
-                            android:layout_marginStart="16dp"/>
+                            android:textSize="16sp" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginStart="56dp"/>
+                        android:layout_marginStart="56dp"
+                        android:background="@color/divider" />
 
                     <!-- Help -->
                     <LinearLayout
                         android:id="@+id/layoutHelp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_help"
-                            app:tint="@color/on_surface_variant"/>
+                            app:tint="@color/on_surface_variant" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
                             android:layout_weight="1"
                             android:text="@string/help"
-                            android:textSize="16sp"
                             android:textColor="@color/on_surface"
-                            android:layout_marginStart="16dp"/>
+                            android:textSize="16sp" />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -348,9 +348,9 @@
         android:name="com.example.tralalero.feature.home.ui.BottomNavigationFragment"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
