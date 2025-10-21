@@ -63,12 +63,16 @@ public class App extends Application {
     @Override
     public void onTerminate() {
         super.onTerminate();
-        Log.d(TAG, "App terminating, clearing caches...");
+        Log.d(TAG, "App terminating...");
         
-        if (dependencyProvider != null) {
-            dependencyProvider.clearAllCaches();
-            Log.d(TAG, "✓ All caches cleared");
-        }
+        // ✨ KEEP CACHE: Don't clear cache on app termination
+        // Room database persists across app restarts
+        // This allows instant data display when app reopens
+        // if (dependencyProvider != null) {
+        //     dependencyProvider.clearAllCaches();
+        //     Log.d(TAG, "✓ All caches cleared");
+        // }
+        Log.d(TAG, "✓ Cache persisted to disk");
     }
 
     private void initializeAppCheck() {

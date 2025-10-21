@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,7 +27,7 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.adapter.BoardAdapter;
 import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Task;
-import com.example.tralalero.feature.home.ui.Home.project.TaskCreateEditBottomSheet;
+import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
@@ -44,6 +46,10 @@ import java.util.Map;
 
 public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener {
     private static final String TAG = "ProjectActivity";
+    
+    // Request codes for CardDetailActivity
+    private static final int REQUEST_CODE_CREATE_TASK = 2001;
+    private static final int REQUEST_CODE_EDIT_TASK = 2002;
 
     private ProjectViewModel projectViewModel;
     private BoardViewModel boardViewModel;
@@ -62,6 +68,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private String workspaceName;
     private List<Board> boards = new ArrayList<>();
     private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
+    
+    // � Activity Result Launcher for InboxActivity
+    private ActivityResultLauncher<Intent> inboxActivityLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,11 +84,31 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         });
 
         getIntentData();
+        setupActivityResultLauncher();  // 📥 Setup result launcher
         setupViewModels();
         initViews();
         setupRecyclerView();
         observeViewModels();
         loadBoards();
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // No cleanup needed for ActivityResultLauncher
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 🔄 Reload all boards when returning from InboxActivity
+        // This ensures tasks created in InboxActivity appear here automatically
+        Log.d(TAG, "onResume: Reloading all boards to sync with InboxActivity changes");
+        
+        // Reload tasks for all currently loaded boards
+        for (Board board : boards) {
+            loadTasksForBoard(board.getId());
+        }
     }
 
     private void getIntentData() {
@@ -96,6 +125,33 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             Toast.makeText(this, "Error: No project ID", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+    
+    /**
+     * 📥 Setup Activity Result Launcher to receive task creation results from InboxActivity
+     * Modern way to handle activity results (replaces startActivityForResult)
+     */
+    private void setupActivityResultLauncher() {
+        inboxActivityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Intent data = result.getData();
+                    String taskId = data.getStringExtra("task_id");
+                    String boardId = data.getStringExtra("board_id");
+                    
+                    Log.d(TAG, "📥 Received result: Task created - taskId: " + taskId + ", boardId: " + boardId);
+                    
+                    if (boardId != null && taskId != null) {
+                        // Reload tasks for the affected board
+                        loadTasksForBoard(boardId);
+                        Toast.makeText(this, "✅ Task added to board!", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "✓ Reloaded tasks for board: " + boardId);
+                    }
+                }
+            }
+        );
+        Log.d(TAG, "📥 ActivityResultLauncher registered");
     }
 
     private void setupViewModels() {
@@ -254,69 +310,69 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     }
 
     private void showCreateTaskDialog(Board board) {
-        TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForCreate(
-                board.getId(), projectId
-        );
-
-        bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
-            @Override
-            public void onTaskCreated(Task newTask) {
-                Log.d(TAG, "Creating task: " + newTask.getTitle());
-                taskViewModel.createTask(newTask);
-
-                // FIX: Delay 1.5s and force reload
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Log.d(TAG, "🔄 Reloading tasks...");
-                    loadTasksForBoard(board.getId());
-                    Toast.makeText(ProjectActivity.this, "Task created!", Toast.LENGTH_SHORT).show();
-                }, 1500);
-            }
-
-            @Override
-            public void onTaskUpdated(Task task) {
-            }
-
-            @Override
-            public void onTaskDeleted(String taskId) {
-            }
-        });
-
-        bottomSheet.show(getSupportFragmentManager(), "CREATE_TASK");
+        // Open CardDetailActivity for creating new task
+        Intent intent = new Intent(this, CardDetailActivity.class);
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, board.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, false);
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, board.getName()); // Pass board name
+        
+        // Store board ID for later use in onActivityResult
+        intent.putExtra("board_id_for_reload", board.getId());
+        
+        startActivityForResult(intent, REQUEST_CODE_CREATE_TASK);
     }
 
     private void showTaskDetailBottomSheet(Task task, Board board) {
-        TaskCreateEditBottomSheet bottomSheet = TaskCreateEditBottomSheet.newInstanceForEdit(
-                task, board.getId(), projectId
-        );
+        // Open CardDetailActivity for editing task
+        Intent intent = new Intent(this, CardDetailActivity.class);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, board.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, board.getName()); // Pass board name
+        
+        // Pass task details
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_STATUS, task.getStatus() != null ? task.getStatus().name() : "TO_DO");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_POSITION, task.getPosition());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ASSIGNEE_ID, task.getAssigneeId());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_CREATED_BY, task.getCreatedBy());
+        
+        // Store board ID for later use in onActivityResult
+        intent.putExtra("board_id_for_reload", board.getId());
+        
+        startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
+    }
 
-        bottomSheet.setOnTaskActionListener(new TaskCreateEditBottomSheet.OnTaskActionListener() {
-            @Override
-            public void onTaskCreated(Task task) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_CODE_CREATE_TASK || requestCode == REQUEST_CODE_EDIT_TASK) {
+                // Get board ID from intent
+                final String boardIdForReload;
+                if (data != null) {
+                    boardIdForReload = data.getStringExtra("board_id_for_reload");
+                } else {
+                    boardIdForReload = null;
+                }
+                
+                // Reload tasks after creation/update/delete
+                if (boardIdForReload != null && !boardIdForReload.isEmpty()) {
+                    Log.d(TAG, "🔄 Reloading tasks for board: " + boardIdForReload);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        loadTasksForBoard(boardIdForReload);
+                    }, 500);
+                } else {
+                    // Reload all boards if we don't have specific board ID
+                    Log.d(TAG, "🔄 Reloading all boards");
+                    loadBoards();
+                }
             }
-
-            @Override
-            public void onTaskUpdated(Task updatedTask) {
-                Log.d(TAG, "Updating task: " + updatedTask.getId());
-                taskViewModel.updateTask(updatedTask.getId(), updatedTask);
-
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    loadTasksForBoard(board.getId());
-                    Toast.makeText(ProjectActivity.this, "Task updated!", Toast.LENGTH_SHORT).show();
-                }, 1500);
-            }
-
-            @Override
-            public void onTaskDeleted(String taskId) {
-                Log.d(TAG, "Deleting task: " + taskId);
-                taskViewModel.deleteTask(taskId);
-
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    loadTasksForBoard(board.getId());
-                    Toast.makeText(ProjectActivity.this, "Task deleted!", Toast.LENGTH_SHORT).show();
-                }, 1500);
-            }
-        });
-
-        bottomSheet.show(getSupportFragmentManager(), "EDIT_TASK");
+        }
     }
 }

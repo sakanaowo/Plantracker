@@ -76,6 +76,10 @@
             android:name=".feature.home.ui.Home.ProjectActivity"
             android:exported="false" />
         <activity
+            android:name=".feature.home.ui.Home.project.CardDetailActivity"
+            android:exported="false"
+            android:label="Task Details" />
+        <activity
             android:name=".feature.home.ui.ActivityTimer"
             android:exported="false" />
         <activity

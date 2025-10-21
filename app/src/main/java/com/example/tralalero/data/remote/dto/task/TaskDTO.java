@@ -32,7 +32,7 @@ public class TaskDTO {
     private String priority;
 
     @SerializedName("position")
-    private double position;
+    private Double position;  // Changed from double to Double to allow null values
 
     // Assignment
     @SerializedName(value = "assigneeId", alternate = {"assignee_id"})
@@ -149,11 +149,11 @@ public class TaskDTO {
         this.priority = priority;
     }
 
-    public double getPosition() {
+    public Double getPosition() {
         return position;
     }
 
-    public void setPosition(double position) {
+    public void setPosition(Double position) {
         this.position = position;
     }
 

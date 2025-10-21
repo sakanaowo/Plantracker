@@ -44,36 +44,36 @@ public class CreateTaskUseCase {
             callback.onError("Task cannot be null");
             return;
         }
-        
+
         // Validate required field: title
         if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
             callback.onError("Task title cannot be empty");
             return;
         }
-        
+
         // Validate required field: project_id
         if (task.getProjectId() == null || task.getProjectId().trim().isEmpty()) {
             callback.onError("Project ID is required");
             return;
         }
-        
+
         // Validate required field: board_id
         if (task.getBoardId() == null || task.getBoardId().trim().isEmpty()) {
             callback.onError("Board ID is required");
             return;
         }
-        
+
         // Validate UUID formats
         if (!isValidUUID(task.getProjectId())) {
             callback.onError("Invalid project ID format");
             return;
         }
-        
+
         if (!isValidUUID(task.getBoardId())) {
             callback.onError("Invalid board ID format");
             return;
         }
-        
+
         // Validate title length (reasonable limit)
         if (task.getTitle().length() > 255) {
             callback.onError("Task title cannot exceed 255 characters");
