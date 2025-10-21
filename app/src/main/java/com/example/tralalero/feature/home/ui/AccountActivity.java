@@ -60,7 +60,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         setupActivityResultLaunchers();
         TextView tvName = findViewById(R.id.tvName);
-        TextView tvUsername = findViewById(R.id.tvUsername);
         TextView tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         avatarCircle = findViewById(R.id.avatarCircle);
@@ -69,12 +68,10 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             String displayName = firebaseUser.getDisplayName();
             if (displayName != null && !displayName.isEmpty()) {
                 tvName.setText(displayName);
-                tvUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
                 tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
             } else if (email != null) {
                 String username = email.split("@")[0];
                 tvName.setText(username);
-                tvUsername.setText("@" + username);
                 tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
             }
             if (email != null) {

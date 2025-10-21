@@ -71,7 +71,7 @@ public class ApiClient {
         // ✅ FIXED: Create Gson with proper configuration
         Gson gson = new GsonBuilder()
                 .setLenient() // Allow lenient parsing
-                .serializeNulls() // Keep null values
+                // .serializeNulls() // ❌ REMOVED: Don't send null fields to backend
                 .create();
 
         return new Retrofit.Builder()

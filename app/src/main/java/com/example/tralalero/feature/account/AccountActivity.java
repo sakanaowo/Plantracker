@@ -46,7 +46,6 @@ public class AccountActivity extends BaseActivity {
     }
     private void initViews() {
         tvName = findViewById(R.id.tvName);
-        tvUsername = findViewById(R.id.tvUsername);
         tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         layoutSettings = findViewById(R.id.layoutSettings);

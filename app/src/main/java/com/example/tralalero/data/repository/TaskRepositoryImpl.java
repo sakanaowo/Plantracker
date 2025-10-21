@@ -15,6 +15,7 @@ import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.TaskComment;
 import com.example.tralalero.domain.repository.ITaskRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -71,23 +72,143 @@ public class TaskRepositoryImpl implements ITaskRepository {
         callback.onError("Get tasks by project not yet implemented in API");
     }
 
+    /**
+     * Get all quick tasks from user's default board (To Do board)
+     * Backend finds user's personal workspace, default project, and "To Do" board
+     * 
+     * @param callback Callback to receive list of quick tasks or error
+     */
+    @Override
+    public void getQuickTasks(RepositoryCallback<List<Task>> callback) {
+        android.util.Log.d("TaskRepositoryImpl", "Getting quick tasks from default board");
+        
+        apiService.getQuickTasks().enqueue(new Callback<List<TaskDTO>>() {
+            @Override
+            public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Task> tasks = new ArrayList<>();
+                    for (TaskDTO dto : response.body()) {
+                        tasks.add(TaskMapper.toDomain(dto));
+                    }
+                    android.util.Log.d("TaskRepositoryImpl", "✓ Loaded " + tasks.size() + " quick tasks");
+                    callback.onSuccess(tasks);
+                } else {
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (Exception e) {
+                        errorBody = e.getMessage();
+                    }
+                    android.util.Log.e("TaskRepositoryImpl", "Failed to get quick tasks: " + response.code());
+                    android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
+                    callback.onError("Failed to get quick tasks: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<TaskDTO>> call, Throwable t) {
+                android.util.Log.e("TaskRepositoryImpl", "Network error getting quick tasks", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
     @Override
     public void createTask(String boardId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDto(task);
-        dto.setBoardId(boardId);
+        // Use toDtoForCreate() which only sends required fields: projectId, boardId, title, assigneeId
+        TaskDTO dto = TaskMapper.toDtoForCreate(task);
+
+        // Debug logging
+        android.util.Log.d("TaskRepositoryImpl", "Creating task:");
+        android.util.Log.d("TaskRepositoryImpl", "  task.title: " + task.getTitle());
+        android.util.Log.d("TaskRepositoryImpl", "  task.projectId: " + task.getProjectId());
+        android.util.Log.d("TaskRepositoryImpl", "  task.boardId: " + task.getBoardId());
+        android.util.Log.d("TaskRepositoryImpl", "  task.position (original): " + task.getPosition());
+        android.util.Log.d("TaskRepositoryImpl", "  DTO.projectId: " + dto.getProjectId());
+        android.util.Log.d("TaskRepositoryImpl", "  DTO.boardId: " + dto.getBoardId());
+        android.util.Log.d("TaskRepositoryImpl", "  DTO.title: " + dto.getTitle());
+        android.util.Log.d("TaskRepositoryImpl", "  DTO.position: " + dto.getPosition());
 
         apiService.createTask(dto).enqueue(new Callback<TaskDTO>() {
             @Override
             public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("TaskRepositoryImpl", "✓ Task created successfully: " + response.body().getId());
                     callback.onSuccess(TaskMapper.toDomain(response.body()));
                 } else {
-                    callback.onError("Failed to create task: " + response.code());
+                    // Get error body for more details
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (Exception e) {
+                        errorBody = e.getMessage();
+                    }
+                    
+                    android.util.Log.e("TaskRepositoryImpl", "Failed to create task: " + response.code());
+                    android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
+                    android.util.Log.e("TaskRepositoryImpl", "Request URL: " + call.request().url());
+                    
+                    callback.onError("Failed to create task: " + response.code() + " - " + errorBody);
                 }
             }
 
             @Override
             public void onFailure(Call<TaskDTO> call, Throwable t) {
+                android.util.Log.e("TaskRepositoryImpl", "Network error creating task", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Create a quick task - automatically assigns to default project/board
+     * Backend finds user's personal workspace, default project, and "To Do" board
+     * 
+     * @param title Task title
+     * @param description Optional task description
+     * @param callback Callback to receive created task or error
+     */
+    public void createQuickTask(String title, String description, RepositoryCallback<Task> callback) {
+        java.util.Map<String, String> quickTaskData = new java.util.HashMap<>();
+        quickTaskData.put("title", title);
+        if (description != null && !description.isEmpty()) {
+            quickTaskData.put("description", description);
+        }
+
+        android.util.Log.d("TaskRepositoryImpl", "Creating quick task:");
+        android.util.Log.d("TaskRepositoryImpl", "  title: " + title);
+        android.util.Log.d("TaskRepositoryImpl", "  description: " + description);
+
+        apiService.createQuickTask(quickTaskData).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("TaskRepositoryImpl", "✓ Quick task created successfully: " + response.body().getId());
+                    callback.onSuccess(TaskMapper.toDomain(response.body()));
+                } else {
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (Exception e) {
+                        errorBody = e.getMessage();
+                    }
+                    
+                    android.util.Log.e("TaskRepositoryImpl", "Failed to create quick task: " + response.code());
+                    android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
+                    
+                    callback.onError("Failed to create quick task: " + response.code() + " - " + errorBody);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                android.util.Log.e("TaskRepositoryImpl", "Network error creating quick task", t);
                 callback.onError("Network error: " + t.getMessage());
             }
         });

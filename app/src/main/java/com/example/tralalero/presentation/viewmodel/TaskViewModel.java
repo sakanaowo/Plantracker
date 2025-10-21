@@ -119,6 +119,13 @@ public class TaskViewModel extends ViewModel {
     public LiveData<Task> getSelectedTask() {
         return selectedTaskLiveData;
     }
+    
+    /**
+     * Clear selected task to prevent re-triggering observers
+     */
+    public void clearSelectedTask() {
+        selectedTaskLiveData.setValue(null);
+    }
 
     public LiveData<List<TaskComment>> getComments() {
         return commentsLiveData;
