@@ -204,15 +204,27 @@ public class HomeActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
+
+        // Apply window insets properly - separate for title and navigation
+        View titleView = findViewById(R.id.tvTitle);
+        View bottomNav = findViewById(R.id.bottomNavigation);
+
+        ViewCompat.setOnApplyWindowInsetsListener(titleView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
+            return WindowInsetsCompat.CONSUMED;
         });
+
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, 0, 0, systemBars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+
         setupViewModels();
         observeWorkspaceViewModel();
         setupRecyclerView();
-        setupSwipeRefresh();  // ← ADDED: Setup pull-to-refresh
+        setupSwipeRefresh();
 
         // Use cached repository instead of ViewModel
         loadWorkspacesWithCache();  // Person 1: Cache-first approach
