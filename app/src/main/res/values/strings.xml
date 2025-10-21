@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Tralalero</string>
+
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
@@ -9,4 +10,44 @@
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
+    <string name="client_id">710677395196-0f5krq4gdk0hht5ahn2lsk3c1pr0oa25.apps.googleusercontent.com</string>
+
+    <!--change language-->
+    <string name="change_language_title">Language</string>
+
+    <!--untranslatable-->
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_japanese" translatable="false">日本の</string>
+    <string name="language_vietnamese" translatable="false">Tiếng Việt</string>
+
+    <string-array name="language_names">
+        <item>@string/language_english</item>
+        <item>@string/language_japanese</item>
+        <item>@string/language_vietnamese</item>
+    </string-array>
+
+    <string name="language_english_code" translatable="false">en</string>
+    <string name="language_japanese_code" translatable="false">ja</string>
+    <string name="language_vietnamese_code" translatable="false">vi</string>
+
+    <string-array name="language_codes">
+        <item>@string/language_english_code</item>
+        <item>@string/language_japanese_code</item>
+        <item>@string/language_vietnamese_code</item>
+    </string-array>
+
+    <!-- Account Screen -->
+    <string name="account_title">Account</string>
+    <string name="workspaces_title">Workspaces</string>
+    <string name="general_title">General</string>
+    <string name="notification_settings" translatable="false">Notification settings</string>
+    <string name="browse_templates">Browse templates</string>
+    <string name="settings">Settings</string>
+    <string name="share_feedback">Share feedback</string>
+    <string name="help">Help</string>
+    <string name="logout">Logout</string>
+    <string name="boards">Boards</string>
+    <string name="inbox">Inbox</string>
+    <string name="activity">Activity</string>
+    <string name="account">Account</string>
 </resources>

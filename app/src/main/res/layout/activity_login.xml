@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LoginActivity">
+    tools:context=".feature.auth.ui.login.LoginActivity">
 
     <ImageView
         android:id="@+id/imageViewBeginStar"
@@ -37,7 +37,9 @@
         android:layout_marginStart="32dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
+        android:background="@drawable/rounded_border"
         android:hint="Email"
+        android:paddingStart="16dp"
         android:inputType="textEmailAddress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -51,10 +53,24 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
         android:hint="Password"
+        android:paddingStart="16dp"
+        android:background="@drawable/rounded_border"
         android:inputType="textPassword"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextEmail" />
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/ib_ShowPassword"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintTop_toTopOf="@+id/editTextPassword"-->
+<!--        app:layout_constraintBottom_toBottomOf="@id/editTextPassword"-->
+<!--        app:layout_constraintEnd_toEndOf="@+id/editTextPassword"-->
+<!--        android:backgroundTint="@color/white"-->
+<!--        android:src="@drawable/eye"-->
+<!--        android:layout_marginEnd="16dp"-->
+<!--        />-->
 
     <Button
         android:id="@+id/buttonLogin"
@@ -63,6 +79,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="32dp"
+        android:backgroundTint="@color/black"
         android:text="Login"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -74,17 +91,85 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Forgot Password?"
+        android:textColor="@color/link_text_color"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="4dp"
         app:layout_constraintEnd_toEndOf="@+id/buttonLogin"
         app:layout_constraintTop_toBottomOf="@+id/buttonLogin" />
+
+    <!-- Separator "or" -->
+    <LinearLayout
+        android:id="@+id/separator"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewForgotPassword"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="center_vertical">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="or"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@android:color/darker_gray" />
+    </LinearLayout>
+
+    <!-- Continue with Google Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGoogleSignIn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="32dp"
+        app:layout_constraintTop_toBottomOf="@id/separator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:cornerRadius="8dp"
+        android:textColor="@android:color/black"
+        android:backgroundTint="@android:color/white"
+        app:strokeColor="@android:color/darker_gray"
+        app:strokeWidth="1dp"
+        android:text="Continue with Google"
+        android:textAllCaps="false"
+        app:icon="@drawable/img"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="@null"/>
 
     <TextView
         android:id="@+id/textViewSignUp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:text="Don't have an account? Sign Up"
+        android:textColor="@color/link_text_color"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewForgotPassword" />
+        app:layout_constraintTop_toBottomOf="@+id/btnGoogleSignIn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

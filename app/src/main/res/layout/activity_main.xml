@@ -105,7 +105,7 @@
             android:background="@android:color/darker_gray" />
     </LinearLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_google"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
