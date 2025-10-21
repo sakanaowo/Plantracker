@@ -13,6 +13,7 @@ import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 
 public interface AuthApi {
     @POST("users/local/signin")
@@ -27,7 +28,7 @@ public interface AuthApi {
     @GET("users/me")
     Call<UserDto> getMe();
 
-    @PATCH("users/me")
+    @PUT("users/me")
     Call<UserDto> updateProfile(@Body UpdateProfileRequest request);
 
     @DELETE("users/me")

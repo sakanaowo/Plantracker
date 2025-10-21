@@ -40,7 +40,7 @@
     <string name="account_title">Account</string>
     <string name="workspaces_title">Workspaces</string>
     <string name="general_title">General</string>
-    <string name="notification_settings">Notification settings</string>
+    <string name="notification_settings" translatable="false">Notification settings</string>
     <string name="browse_templates">Browse templates</string>
     <string name="settings">Settings</string>
     <string name="share_feedback">Share feedback</string>

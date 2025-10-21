@@ -57,6 +57,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private ActivityResultLauncher<Uri> cameraLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<String> storagePermissionLauncher;
+    private ActivityResultLauncher<Intent> editProfileLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +86,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         setupActivityResultLaunchers();
 
         TextView tvName = findViewById(R.id.tvName);
-        TextView tvUsername = findViewById(R.id.tvUsername);
         TextView tvEmail = findViewById(R.id.tvEmail);
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         imgAvatar = findViewById(R.id.imgAvatar);
@@ -96,12 +96,10 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             String displayName = firebaseUser.getDisplayName();
             if (displayName != null && !displayName.isEmpty()) {
                 tvName.setText(displayName);
-                tvUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
                 tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
             } else if (email != null) {
                 String username = email.split("@")[0];
                 tvName.setText(username);
-                tvUsername.setText("@" + username);
                 tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
             }
             if (email != null) {
@@ -155,6 +153,16 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void setupActivityResultLaunchers() {
+        editProfileLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    // Refresh profile data after edit
+                    refreshProfileUI();
+                }
+            }
+        );
+        
         galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -315,26 +323,19 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void syncProfileImageWithBackend(String avatarUrl) {
-        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
-        UpdateProfileRequest request = UpdateProfileRequest.withAvatar(avatarUrl);
-        authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
-            @Override
-            public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    UserDto user = response.body();
-                    Log.d(TAG, "Backend profile updated successfully");
-                    Toast.makeText(AccountActivity.this, "Profile photo updated!", Toast.LENGTH_SHORT).show();
-                    // TODO: Update UI to show new image
-                } else {
-                    Log.e(TAG, "Backend update failed: " + response.code());
-                    Toast.makeText(AccountActivity.this, "Profile updated in Firebase only", Toast.LENGTH_SHORT).show();
+        // Use the common updateBackendProfile method with null name to keep existing name
+        updateBackendProfile(null, avatarUrl);
+        
+        // Update UI immediately for better UX
+        runOnUiThread(() -> {
+            if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                // Show the uploaded image
+                tvAvatarLetter.setVisibility(View.GONE);
+                if (imgAvatar != null) {
+                    imgAvatar.setVisibility(View.VISIBLE);
+                    // Load image using Glide or similar (if available)
+                    // Glide.with(this).load(avatarUrl).circleCrop().into(imgAvatar);
                 }
-            }
-
-            @Override
-            public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
-                Log.e(TAG, "Backend sync failed", t);
-                Toast.makeText(AccountActivity.this, "Profile updated in Firebase only", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -369,8 +370,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 Log.d(TAG, "Menu item clicked: " + item.getTitle());
                 int itemId = item.getItemId();
                 if (itemId == R.id.action_edit_profile) {
-                    Toast.makeText(this, "Edit Profile - Coming soon", Toast.LENGTH_SHORT).show();
-                    // TODO: Navigate to Edit Profile Activity
+                    openEditProfileActivity();
                     return true;
                 } else if (itemId == R.id.action_logout) {
                     showLogoutDialog();
@@ -397,6 +397,154 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+    
+    private void openEditProfileActivity() {
+        Intent intent = new Intent(this, EditProfileActivity.class);
+        editProfileLauncher.launch(intent);
+    }
+    
+    private void refreshProfileUI() {
+        firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        
+        if (firebaseUser != null) {
+            TextView tvName = findViewById(R.id.tvName);
+            TextView tvEmail = findViewById(R.id.tvEmail);
+            
+            String displayName = firebaseUser.getDisplayName();
+            if (displayName != null && !displayName.isEmpty()) {
+                tvName.setText(displayName);
+                tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+            } else {
+                String email = firebaseUser.getEmail();
+                if (email != null) {
+                    String username = email.split("@")[0];
+                    tvName.setText(username);
+                    tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
+                }
+            }
+            
+            // Refresh avatar
+            Uri photoUrl = firebaseUser.getPhotoUrl();
+            if (photoUrl != null) {
+                // TODO: Load with Glide
+                // Glide.with(this).load(photoUrl).circleCrop().into(imgAvatar);
+                imgAvatar.setVisibility(View.VISIBLE);
+                tvAvatarLetter.setVisibility(View.GONE);
+            } else {
+                imgAvatar.setVisibility(View.GONE);
+                tvAvatarLetter.setVisibility(View.VISIBLE);
+            }
+            
+            Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showEditNameDialog() {
+        // Create a layout with TextInputLayout for Material Design
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_name, null);
+        com.google.android.material.textfield.TextInputEditText etName = 
+            dialogView.findViewById(R.id.etEditName);
+        
+        // Pre-fill with current name
+        if (firebaseUser != null && firebaseUser.getDisplayName() != null) {
+            etName.setText(firebaseUser.getDisplayName());
+            etName.setSelection(firebaseUser.getDisplayName().length()); // Move cursor to end
+        }
+        
+        new AlertDialog.Builder(this)
+                .setTitle("Edit Name")
+                .setView(dialogView)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String newName = etName.getText().toString().trim();
+                    if (!newName.isEmpty()) {
+                        updateProfileName(newName);
+                    } else {
+                        Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void updateProfileName(String newName) {
+        Log.d(TAG, "Updating profile name to: " + newName);
+        
+        // Show loading toast
+        Toast.makeText(this, "Updating name...", Toast.LENGTH_SHORT).show();
+        
+        // Step 1: Update Firebase profile
+        if (firebaseUser != null) {
+            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                    .setDisplayName(newName)
+                    .build();
+            
+            firebaseUser.updateProfile(profileUpdates)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "✓ Firebase profile updated");
+                        
+                        // Step 2: Update backend via API
+                        updateBackendProfile(newName, null);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Failed to update Firebase profile", e);
+                        Toast.makeText(this, "Failed to update name: " + e.getMessage(), 
+                            Toast.LENGTH_LONG).show();
+                    });
+        }
+    }
+
+    private void updateBackendProfile(String name, String avatarUrl) {
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl);
+        
+        authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
+            @Override
+            public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "✓ Backend profile updated successfully");
+                    
+                    // Update TokenManager with new name
+                    if (name != null) {
+                        tokenManager.saveAuthData(
+                            tokenManager.getFirebaseIdToken(),
+                            tokenManager.getUserId(),
+                            tokenManager.getUserEmail(),
+                            name
+                        );
+                    }
+                    
+                    // Refresh UI
+                    runOnUiThread(() -> {
+                        TextView tvName = findViewById(R.id.tvName);
+                        TextView tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
+                        
+                        if (name != null) {
+                            tvName.setText(name);
+                            tvAvatarLetter.setText(String.valueOf(name.charAt(0)).toUpperCase());
+                        }
+                        
+                        Toast.makeText(AccountActivity.this, 
+                            "✅ Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    Log.e(TAG, "Failed to update backend profile: " + response.code());
+                    runOnUiThread(() -> 
+                        Toast.makeText(AccountActivity.this, 
+                            "Failed to update profile on server", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
+                Log.e(TAG, "Network error updating backend profile", t);
+                runOnUiThread(() -> 
+                    Toast.makeText(AccountActivity.this, 
+                        "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show()
+                );
+            }
+        });
     }
 
     private void performLogout() {
