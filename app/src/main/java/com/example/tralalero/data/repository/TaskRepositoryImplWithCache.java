@@ -47,27 +47,26 @@ public class TaskRepositoryImplWithCache {
                 String userId = tokenManager.getUserId();
                 String cacheKey = "tasks_" + userId;
 
-                // Check cache metadata for TTL
-                CacheMetadata metadata = cacheMetadataDao.getMetadata(cacheKey);
-                boolean isCacheExpired = (metadata == null || metadata.isExpired(CACHE_TTL_MS));
-
-                if (isCacheExpired) {
-                    Log.d(TAG, "Task cache expired, forcing refresh");
-                    callback.onCacheEmpty();
-                    return;
-                }
-
-                // Return cache if fresh
+                // Always load from cache first (even if expired)
                 List<TaskEntity> entities = taskDao.getAllByUserId(userId);
                 
                 if (entities != null && !entities.isEmpty()) {
-                    long ageSeconds = metadata.getAgeInSeconds();
-                    Log.d(TAG, "✓ Cache hit: " + entities.size() + " tasks (age: " +
-                          ageSeconds + "s, TTL: " + (CACHE_TTL_MS/1000) + "s)");
+                    // Check cache metadata for TTL
+                    CacheMetadata metadata = cacheMetadataDao.getMetadata(cacheKey);
+                    boolean isCacheExpired = (metadata == null || metadata.isExpired(CACHE_TTL_MS));
+                    
+                    long ageSeconds = metadata != null ? metadata.getAgeInSeconds() : -1;
+                    
+                    if (isCacheExpired) {
+                        Log.d(TAG, "⚠️ Cache expired but returning data: " + entities.size() + " tasks (age: " + ageSeconds + "s)");
+                    } else {
+                        Log.d(TAG, "✓ Cache hit: " + entities.size() + " tasks (age: " + ageSeconds + "s, TTL: " + (CACHE_TTL_MS/1000) + "s)");
+                    }
+                    
                     List<Task> tasks = TaskEntityMapper.toDomainList(entities);
                     callback.onSuccess(tasks);
                 } else {
-                    Log.d(TAG, "Cache metadata found but no tasks");
+                    Log.d(TAG, "Cache empty - no tasks found");
                     callback.onCacheEmpty();
                 }
                 
@@ -126,9 +125,22 @@ public class TaskRepositoryImplWithCache {
     public void saveTaskToCache(Task task) {
         executorService.execute(() -> {
             try {
+                String userId = tokenManager.getUserId();
+                String cacheKey = "tasks_" + userId;
+                
                 TaskEntity entity = TaskEntityMapper.toEntity(task);
                 taskDao.insert(entity);
-                Log.d(TAG, "✓ Saved task " + task.getId() + " to cache");
+                
+                // Update cache metadata to keep cache fresh
+                int totalCount = taskDao.getAllByUserId(userId).size();
+                CacheMetadata metadata = new CacheMetadata(
+                    cacheKey,
+                    System.currentTimeMillis(),
+                    totalCount
+                );
+                cacheMetadataDao.insert(metadata);
+                
+                Log.d(TAG, "✓ Saved task " + task.getId() + " to cache (total: " + totalCount + ")");
             } catch (Exception e) {
                 Log.e(TAG, "Error saving task to cache", e);
             }

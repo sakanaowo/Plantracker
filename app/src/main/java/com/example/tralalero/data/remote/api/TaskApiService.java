@@ -25,6 +25,25 @@ public interface TaskApiService {
     @POST("tasks")
     Call<TaskDTO> createTask(@Body TaskDTO task);
 
+    /**
+     * Get all quick tasks from user's default board (To Do board)
+     * Backend will find user's personal workspace, default project, and "To Do" board
+     * 
+     * @return List of quick tasks
+     */
+    @GET("tasks/quick/defaults")
+    Call<List<TaskDTO>> getQuickTasks();
+
+    /**
+     * Create a quick task - automatically assigns to default project/board
+     * Backend will find user's personal workspace, default project, and "To Do" board
+     * 
+     * @param quickTaskData Map with "title" (required) and "description" (optional)
+     * @return Created task
+     */
+    @POST("tasks/quick")
+    Call<TaskDTO> createQuickTask(@Body java.util.Map<String, String> quickTaskData);
+
  
     @PATCH("tasks/{id}")
     Call<TaskDTO> updateTask(

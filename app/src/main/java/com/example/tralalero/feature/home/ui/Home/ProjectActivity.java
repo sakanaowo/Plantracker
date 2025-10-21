@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -62,6 +64,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private String workspaceName;
     private List<Board> boards = new ArrayList<>();
     private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
+    
+    // � Activity Result Launcher for InboxActivity
+    private ActivityResultLauncher<Intent> inboxActivityLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,11 +80,31 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         });
 
         getIntentData();
+        setupActivityResultLauncher();  // 📥 Setup result launcher
         setupViewModels();
         initViews();
         setupRecyclerView();
         observeViewModels();
         loadBoards();
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // No cleanup needed for ActivityResultLauncher
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 🔄 Reload all boards when returning from InboxActivity
+        // This ensures tasks created in InboxActivity appear here automatically
+        Log.d(TAG, "onResume: Reloading all boards to sync with InboxActivity changes");
+        
+        // Reload tasks for all currently loaded boards
+        for (Board board : boards) {
+            loadTasksForBoard(board.getId());
+        }
     }
 
     private void getIntentData() {
@@ -96,6 +121,33 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             Toast.makeText(this, "Error: No project ID", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+    
+    /**
+     * 📥 Setup Activity Result Launcher to receive task creation results from InboxActivity
+     * Modern way to handle activity results (replaces startActivityForResult)
+     */
+    private void setupActivityResultLauncher() {
+        inboxActivityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Intent data = result.getData();
+                    String taskId = data.getStringExtra("task_id");
+                    String boardId = data.getStringExtra("board_id");
+                    
+                    Log.d(TAG, "📥 Received result: Task created - taskId: " + taskId + ", boardId: " + boardId);
+                    
+                    if (boardId != null && taskId != null) {
+                        // Reload tasks for the affected board
+                        loadTasksForBoard(boardId);
+                        Toast.makeText(this, "✅ Task added to board!", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "✓ Reloaded tasks for board: " + boardId);
+                    }
+                }
+            }
+        );
+        Log.d(TAG, "📥 ActivityResultLauncher registered");
     }
 
     private void setupViewModels() {

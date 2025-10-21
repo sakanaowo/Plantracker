@@ -94,6 +94,33 @@ public class TaskMapper {
         return dto;
     }
     
+    /**
+     * Convert Task to TaskDTO for CREATE operation
+     * Only includes fields required by backend CreateTaskDto:
+     * - projectId (required)
+     * - boardId (required)
+     * - title (required)
+     * - assigneeId (optional)
+     */
+    public static TaskDTO toDtoForCreate(Task task) {
+        if (task == null) {
+            return null;
+        }
+        
+        TaskDTO dto = new TaskDTO();
+        // Only set REQUIRED fields for create
+        dto.setProjectId(task.getProjectId());
+        dto.setBoardId(task.getBoardId());
+        dto.setTitle(task.getTitle());
+        
+        // Optional field - only set if not null
+        if (task.getAssigneeId() != null && !task.getAssigneeId().isEmpty()) {
+            dto.setAssigneeId(task.getAssigneeId());
+        }
+        
+        return dto;
+    }
+    
     public static List<Task> toDomainList(List<TaskDTO> dtoList) {
         if (dtoList == null) {
             return null;

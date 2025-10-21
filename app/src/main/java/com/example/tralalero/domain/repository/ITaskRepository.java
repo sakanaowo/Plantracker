@@ -15,7 +15,25 @@ public interface ITaskRepository {
 
     void getTasksByProject(String projectId, RepositoryCallback<List<Task>> callback);
 
+    /**
+     * Get all quick tasks from user's default board (To Do board)
+     * Backend finds user's personal workspace, default project, and "To Do" board
+     * 
+     * @param callback Callback to receive list of quick tasks or error
+     */
+    void getQuickTasks(RepositoryCallback<List<Task>> callback);
+
     void createTask(String boardId, Task task, RepositoryCallback<Task> callback);
+
+    /**
+     * Create a quick task - automatically assigns to default project/board
+     * Backend finds user's personal workspace, default project, and "To Do" board
+     * 
+     * @param title Task title
+     * @param description Optional description (can be null or empty)
+     * @param callback Callback to receive created task or error
+     */
+    void createQuickTask(String title, String description, RepositoryCallback<Task> callback);
 
     void updateTask(String taskId, Task task, RepositoryCallback<Task> callback);
 

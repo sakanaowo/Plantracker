@@ -26,6 +26,7 @@ import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.repository.ITaskRepository;
+import com.example.tralalero.domain.repository.ITaskRepository.RepositoryCallback;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.feature.home.ui.Home.project.TaskAdapter;
 import com.example.tralalero.feature.home.ui.Home.project.TaskDetailBottomSheet;
@@ -53,6 +54,10 @@ import java.util.List;
  */
 public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "InboxActivity";
+    public static final String ACTION_TASK_CREATED = "com.example.tralalero.TASK_CREATED";
+    public static final String EXTRA_TASK_ID = "task_id";
+    public static final String EXTRA_BOARD_ID = "board_id";
+    
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
@@ -82,24 +87,43 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         setupBottomNavigation(1); 
         loadAllTasks();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reload tasks every time the activity becomes visible
+        // This ensures tasks persist when navigating back from other screens
+        Log.d(TAG, "onResume() - Reloading all tasks");
+        loadAllTasks();
+    }
+
     private void setupViewModel() {
+        // Use cache-enabled repository for ViewModel
+        // This ensures tasks created will be saved to local database
+        TaskRepositoryImplWithCache repositoryWithCache = 
+            App.dependencyProvider.getTaskRepositoryWithCache();
+        
+        // Create use cases with cache-enabled repository
+        // Note: We still need TaskRepositoryImpl for API-only operations
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
-        GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
-        GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
-        CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
-        UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(repository);
-        DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(repository);
-        AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(repository);
-        UnassignTaskUseCase unassignTaskUseCase = new UnassignTaskUseCase(repository);
-        MoveTaskToBoardUseCase moveTaskToBoardUseCase = new MoveTaskToBoardUseCase(repository);
-        UpdateTaskPositionUseCase updateTaskPositionUseCase = new UpdateTaskPositionUseCase(repository);
-        AddCommentUseCase addCommentUseCase = new AddCommentUseCase(repository);
-        GetTaskCommentsUseCase getTaskCommentsUseCase = new GetTaskCommentsUseCase(repository);
-        AddAttachmentUseCase addAttachmentUseCase = new AddAttachmentUseCase(repository);
-        GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
-        AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
-        GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
+        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
+        
+        GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(apiRepository);
+        GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(apiRepository);
+        CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(apiRepository);
+        UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(apiRepository);
+        DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(apiRepository);
+        AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(apiRepository);
+        UnassignTaskUseCase unassignTaskUseCase = new UnassignTaskUseCase(apiRepository);
+        MoveTaskToBoardUseCase moveTaskToBoardUseCase = new MoveTaskToBoardUseCase(apiRepository);
+        UpdateTaskPositionUseCase updateTaskPositionUseCase = new UpdateTaskPositionUseCase(apiRepository);
+        AddCommentUseCase addCommentUseCase = new AddCommentUseCase(apiRepository);
+        GetTaskCommentsUseCase getTaskCommentsUseCase = new GetTaskCommentsUseCase(apiRepository);
+        AddAttachmentUseCase addAttachmentUseCase = new AddAttachmentUseCase(apiRepository);
+        GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(apiRepository);
+        AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(apiRepository);
+        GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(apiRepository);
+        
         TaskViewModelFactory factory = new TaskViewModelFactory(
             getTaskByIdUseCase,
             getTasksByBoardUseCase,
@@ -118,7 +142,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             getTaskChecklistsUseCase
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
-        Log.d(TAG, "TaskViewModel initialized");
+        Log.d(TAG, "TaskViewModel initialized with cache-enabled repository");
     }
     private void initViews() {
         recyclerView = findViewById(R.id.recyclerViewInbox);
@@ -161,6 +185,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         });
     }
     private void observeViewModel() {
+        // 1. Observe all tasks list
         taskViewModel.getTasks().observe(this, tasks -> {
             if (tasks != null && !tasks.isEmpty()) {
                 taskAdapter.setTasks(tasks);
@@ -172,6 +197,63 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 Log.d(TAG, "No tasks found");
             }
         });
+
+        // chuyen task moi tao sang project activity de them vao board
+        // 2. Observe newly created task ✨
+        taskViewModel.getSelectedTask().observe(this, createdTask -> {
+            if (createdTask != null) {
+                Log.d(TAG, "New task created: " + createdTask.getTitle() + " (ID: " + createdTask.getId() + ")");
+                
+                // Save task to cache immediately (Room database)
+                App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(createdTask);
+                Log.d(TAG, "✓ Task saved to local database cache");
+                
+                // � Set result to return task info to ProjectActivity
+                if (createdTask.getId() != null && createdTask.getBoardId() != null) {
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra(EXTRA_TASK_ID, createdTask.getId());
+                    resultIntent.putExtra(EXTRA_BOARD_ID, createdTask.getBoardId());
+                    setResult(RESULT_OK, resultIntent);
+                    Log.d(TAG, "� Result set: Task " + createdTask.getId() + " on board " + createdTask.getBoardId());
+                }
+                
+                // Add new task to top of list immediately
+                List<Task> currentTasks = taskViewModel.getTasks().getValue();
+                if (currentTasks == null) {
+                    currentTasks = new ArrayList<>();
+                }
+                
+                // Check if task already exists (avoid duplicate)
+                boolean taskExists = false;
+                for (Task task : currentTasks) {
+                    if (task.getId() != null && task.getId().equals(createdTask.getId())) {
+                        taskExists = true;
+                        break;
+                    }
+                }
+                
+                if (!taskExists) {
+                    // Add to top of list
+                    List<Task> updatedTasks = new ArrayList<>();
+                    updatedTasks.add(createdTask);
+                    updatedTasks.addAll(currentTasks);
+                    
+                    taskAdapter.setTasks(updatedTasks);
+                    recyclerView.setVisibility(View.VISIBLE);
+                    
+                    // Scroll to top to show new task
+                    recyclerView.smoothScrollToPosition(0);
+                    
+                    Toast.makeText(this, "✅ Đã thêm task vào database: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "New task added to UI list: " + createdTask.getTitle());
+                }
+                
+                // Clear selected task to avoid re-triggering
+                taskViewModel.clearSelectedTask();
+            }
+        });
+        
+        // 3. Observe loading state
         taskViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading != null && isLoading) {
                 Log.d(TAG, "Loading tasks...");
@@ -181,9 +263,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 // TODO: Hide loading indicator
             }
         });
+        
+        // 4. Observe error state
         taskViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Error: " + error);
             }
         });
@@ -240,109 +324,196 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
 
     /**
-     * Load all tasks with cache
+     * Load all quick tasks with cache
      * Cache-first approach: instant load from cache, then refresh from API
+     * Uses backend's GET /api/tasks/quick/defaults endpoint
      * 
      * @author Person 2
      */
     private void loadAllTasks() {
-        Log.d(TAG, "Loading inbox tasks with cache...");
+        Log.d(TAG, "Loading quick tasks with cache...");
         final long startTime = System.currentTimeMillis();
         
+        // Step 1: Try loading from cache first (instant)
         App.dependencyProvider.getTaskRepositoryWithCache()
             .getAllTasks(new TaskRepositoryImplWithCache.TaskCallback() {
                 @Override
                 public void onSuccess(List<Task> tasks) {
                     long duration = System.currentTimeMillis() - startTime;
-                    
-                    runOnUiThread(() -> {
-                        // Stop refreshing indicator
-                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
 
+                    runOnUiThread(() -> {
                         if (tasks != null && !tasks.isEmpty()) {
                             taskAdapter.setTasks(tasks);
                             recyclerView.setVisibility(View.VISIBLE);
-                            
+
                             // Performance logging
-                            String message;
-                            if (duration < 100) {
-                                message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
-                                Log.i(TAG, "CACHE HIT: " + duration + "ms");
-                            } else {
-                                message = "🌐 API: " + duration + "ms (" + tasks.size() + " tasks)";
-                                Log.i(TAG, "API CALL: " + duration + "ms");
-                            }
-                            
-                            // Show performance toast
+                            String message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
                             Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
-                            
-                            Log.d(TAG, "Loaded " + tasks.size() + " tasks");
-                        } else {
-                            taskAdapter.setTasks(new ArrayList<>());
-                            recyclerView.setVisibility(View.GONE);
-                            Log.d(TAG, "No tasks found");
+                            Log.i(TAG, "CACHE HIT: " + duration + "ms, " + tasks.size() + " tasks");
                         }
                     });
+                    
+                    // Step 2: Always refresh from API in background
+                    loadQuickTasksFromApi();
                 }
-                
+
                 @Override
                 public void onCacheEmpty() {
                     runOnUiThread(() -> {
-                        Log.d(TAG, "Cache empty - first load, waiting for API...");
-                        // Loading indicator already shown in observeViewModel
+                        Log.d(TAG, "Cache empty - loading from API...");
                     });
+                    
+                    // Step 2: Load from API if cache is empty
+                    loadQuickTasksFromApi();
                 }
-                
+
                 @Override
                 public void onError(Exception e) {
                     runOnUiThread(() -> {
-                        // Stop refreshing on error
-                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
-
-                        Toast.makeText(InboxActivity.this,
-                            "Error loading tasks: " + e.getMessage(), 
-                            Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Error loading tasks", e);
+                        Log.e(TAG, "Cache error, loading from API...", e);
                     });
+                    
+                    // Step 2: Load from API on cache error
+                    loadQuickTasksFromApi();
                 }
             });
     }
     
-    private void createTask(String title) {
-        Task newTask = new Task(
-            null,                    
-            null,                    
-            "inbox-board-id",        
-            title,                   
-            "",                      
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            0.0,                     
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null,                    
-            null                     
-        );
-        taskViewModel.createTask(newTask);
-        Toast.makeText(this, "Đã thêm task: " + title, Toast.LENGTH_SHORT).show();
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            loadAllTasks();
-        }, 500);
+    /**
+     * Load quick tasks from backend API endpoint: GET /api/tasks/quick/defaults
+     * Backend automatically finds user's default board (To Do board)
+     * After loading, saves to cache for next time
+     */
+    private void loadQuickTasksFromApi() {
+        Log.d(TAG, "Fetching quick tasks from API...");
+        final long apiStartTime = System.currentTimeMillis();
+        
+        // Create API repository
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
+        
+        apiRepository.getQuickTasks(new RepositoryCallback<List<Task>>() {
+            @Override
+            public void onSuccess(List<Task> tasks) {
+                long apiDuration = System.currentTimeMillis() - apiStartTime;
+                
+                runOnUiThread(() -> {
+                    // Stop refreshing indicator
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+
+                    if (tasks != null && !tasks.isEmpty()) {
+                        taskAdapter.setTasks(tasks);
+                        recyclerView.setVisibility(View.VISIBLE);
+                        
+                        String message = "🌐 API: " + apiDuration + "ms (" + tasks.size() + " tasks)";
+                        Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
+                        Log.i(TAG, "API SUCCESS: " + apiDuration + "ms, " + tasks.size() + " quick tasks loaded");
+                        
+                        // Save to cache for next time
+                        App.dependencyProvider.getTaskRepositoryWithCache().saveTasksToCache(tasks);
+                        Log.d(TAG, "✓ Quick tasks saved to cache");
+                    } else {
+                        taskAdapter.setTasks(new ArrayList<>());
+                        recyclerView.setVisibility(View.GONE);
+                        Log.d(TAG, "No quick tasks found");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    // Stop refreshing on error
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+
+                    Toast.makeText(InboxActivity.this,
+                            "Failed to load quick tasks: " + error,
+                            Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "API ERROR: " + error);
+                });
+            }
+        });
+    };
+    
+        private void createTask(String title) {
+        Log.d(TAG, "Creating quick task: " + title);
+        
+        // Create TaskRepositoryImpl directly with API service
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(apiService);
+        
+        taskRepository.createQuickTask(title, "", new ITaskRepository.RepositoryCallback<Task>() {
+            @Override
+            public void onSuccess(Task result) {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "✓ Quick task created successfully");
+                    Log.d(TAG, "  ID: " + result.getId());
+                    Log.d(TAG, "  Title: " + result.getTitle());
+                    Log.d(TAG, "  Project: " + result.getProjectId());
+                    Log.d(TAG, "  Board: " + result.getBoardId());
+                    
+                    // Save to cache
+                    App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(result);
+                    Log.d(TAG, "✓ Task saved to cache");
+                    
+                    // Add task to RecyclerView immediately (optimistic UI update)
+                    List<Task> currentTasks = taskAdapter.getTasks();
+                    if (currentTasks == null) {
+                        currentTasks = new ArrayList<>();
+                    }
+                    
+                    // Check if task already exists (avoid duplicate)
+                    boolean taskExists = false;
+                    for (Task task : currentTasks) {
+                        if (task.getId() != null && task.getId().equals(result.getId())) {
+                            taskExists = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!taskExists) {
+                        // Add to top of list for immediate visibility
+                        List<Task> updatedTasks = new ArrayList<>();
+                        updatedTasks.add(result);
+                        updatedTasks.addAll(currentTasks);
+                        
+                        taskAdapter.setTasks(updatedTasks);
+                        recyclerView.setVisibility(View.VISIBLE);
+                        
+                        // Scroll to top to show new task
+                        recyclerView.smoothScrollToPosition(0);
+                        
+                        Log.d(TAG, "✓ Task added to RecyclerView immediately");
+                    }
+                    
+                    // Reload all tasks in background to ensure consistency
+                    loadAllTasks();
+                    
+                    // Show success message
+                    android.widget.Toast.makeText(InboxActivity.this, 
+                        "✓ Task created", 
+                        android.widget.Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Log.e(TAG, "Failed to create quick task: " + error);
+                    android.widget.Toast.makeText(InboxActivity.this, 
+                        "Error creating task: " + error, 
+                        android.widget.Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+        
+        Log.d(TAG, "Quick task creation request sent");
     }
+
     private void showTaskDetailBottomSheet(Task task) {
         TaskDetailBottomSheet bottomSheet = TaskDetailBottomSheet.newInstance(task);
         bottomSheet.setOnActionClickListener(new TaskDetailBottomSheet.OnActionClickListener() {

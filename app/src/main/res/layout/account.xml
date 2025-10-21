@@ -101,15 +101,6 @@
                             android:textColor="@color/on_surface"/>
 
                         <TextView
-                            android:id="@+id/tvUsername"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="\@huyonezeno"
-                            android:textSize="14sp"
-                            android:textColor="@color/on_surface_variant"
-                            android:layout_marginTop="2dp"/>
-
-                        <TextView
                             android:id="@+id/tvEmail"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
