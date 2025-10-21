@@ -51,12 +51,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         super.onCreate(savedInstanceState);
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Check authentication state when the activity becomes visible
+        // Check authentication state properly
         checkAuthenticationState();
     }
 

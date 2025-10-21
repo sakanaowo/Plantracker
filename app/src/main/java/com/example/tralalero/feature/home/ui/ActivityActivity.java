@@ -1,7 +1,6 @@
 package com.example.tralalero.feature.home.ui;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,23 +19,11 @@ public class ActivityActivity extends com.example.tralalero.feature.home.ui.Base
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_activity_notification);
-
-        // Apply window insets properly - separate for content and navigation
-        View titleView = findViewById(R.id.tvTitle);
-        View bottomNav = findViewById(R.id.bottomNavigation);
-
-        ViewCompat.setOnApplyWindowInsetsListener(titleView, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
-            return WindowInsetsCompat.CONSUMED;
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
         });
-
-        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(0, 0, 0, systemBars.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
-
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         ViewPager2 viewPager2 = findViewById(R.id.PrjViewPager2);
         ListFrmAdapter adapter = new ListFrmAdapter(this);
