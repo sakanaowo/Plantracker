@@ -28,8 +28,8 @@ public class ActivityTimer extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.card_detail);
-        tvTimer = findViewById(R.id.tvTimer);
-        btnPlay = findViewById(R.id.btnPlay);
+//        tvTimer = findViewById(R.id.tvTimer);
+//        btnPlay = findViewById(R.id.btnPlay);
         etDateStart = findViewById(R.id.etDateStart);
         etDueDate = findViewById(R.id.etDueDate);
         ivClose = findViewById(R.id.ivClose);
