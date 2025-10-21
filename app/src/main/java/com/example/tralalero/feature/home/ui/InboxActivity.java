@@ -74,11 +74,23 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.inbox_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
+
+        // Apply window insets properly - separate for toolbar and navigation
+        View toolbar = findViewById(R.id.topAppBar);
+        View bottomNav = findViewById(R.id.bottomNavigation);
+
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+            v.setPadding(0, systemBars.top, 0, 0);
+            return WindowInsetsCompat.CONSUMED;
         });
+
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, 0, 0, systemBars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+
         setupViewModel();
         initViews();
         setupRecyclerView();

@@ -8,6 +8,11 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- FCM Permissions - TEMPORARILY DISABLED -->
+    <!--
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    -->
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -27,7 +32,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".feature.auth.ui.login.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,7 +40,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".feature.auth.ui.login.LoginActivity"
+            android:name=".MainActivity"
             android:exported="false" />
         <activity
             android:name=".feature.auth.ui.signup.SignupActivity"
@@ -48,6 +53,9 @@
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.AccountActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.home.ui.EditProfileActivity"
             android:exported="false" />
         <activity
             android:name=".feature.home.ui.InboxActivity"
@@ -84,6 +92,31 @@
             android:name=".test.RepositoryTestActivity"
             android:exported="false"
             android:label="Repository Test" />
+
+        <!-- Firebase Cloud Messaging Service - TEMPORARILY DISABLED -->
+        <!--
+        <service
+            android:name=".service.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/primary" />
+
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="true" />
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="true" />
+        -->
 
         <provider
             android:name="androidx.core.content.FileProvider"
