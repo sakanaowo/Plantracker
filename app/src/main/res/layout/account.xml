@@ -80,7 +80,8 @@
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:scaleType="centerCrop"
-                            android:visibility="gone" />
+                            android:visibility="gone"
+                            android:contentDescription="Profile Avatar" />
                     </FrameLayout>
 
                     <!-- User Info -->

@@ -27,11 +27,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
+import com.example.tralalero.auth.remote.dto.UploadUrlRequest;
+import com.example.tralalero.auth.remote.dto.UploadUrlResponse;
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.core.SupabaseConfig;
 import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -45,7 +50,13 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 
 public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "EditProfileActivity";
@@ -151,38 +162,113 @@ public class EditProfileActivity extends AppCompatActivity {
     }
     
     private void loadCurrentProfile() {
-        if (firebaseUser != null) {
-            // Load name
-            String displayName = firebaseUser.getDisplayName();
-            if (displayName != null && !displayName.isEmpty()) {
-                etName.setText(displayName);
-                etUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
-                tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
-            }
-            
-            // Load email
-            String email = firebaseUser.getEmail();
-            if (email != null) {
-                etEmail.setText(email);
-                
-                // If no display name, use email username
-                if (displayName == null || displayName.isEmpty()) {
-                    String username = email.split("@")[0];
-                    etName.setText(username);
-                    etUsername.setText("@" + username);
-                    tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
+        if (firebaseUser == null) return;
+        
+        String email = firebaseUser.getEmail();
+        String displayName = firebaseUser.getDisplayName();
+        
+        // Set email (read-only)
+        if (email != null) {
+            etEmail.setText(email);
+        }
+        
+        // Set initial name from Firebase
+        if (displayName != null && !displayName.isEmpty()) {
+            etName.setText(displayName);
+            etUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
+            tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+        } else if (email != null) {
+            String username = email.split("@")[0];
+            etName.setText(username);
+            etUsername.setText("@" + username);
+            tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
+        }
+        
+        // Fetch full profile from backend to get avatar_url
+        fetchUserProfileFromBackend();
+    }
+    
+    private void fetchUserProfileFromBackend() {
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        
+        authApi.getMe().enqueue(new retrofit2.Callback<UserDto>() {
+            @Override
+            public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UserDto user = response.body();
+                    Log.d(TAG, "Fetched user profile from backend");
+                    
+                    // Update name if different from Firebase
+                    if (user.name != null && !user.name.isEmpty()) {
+                        etName.setText(user.name);
+                        etUsername.setText("@" + user.name.toLowerCase().replace(" ", ""));
+                        tvAvatarLetter.setText(String.valueOf(user.name.charAt(0)).toUpperCase());
+                    }
+                    
+                    // Load avatar from Supabase
+                    if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
+                        Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
+                        loadAvatarImage(user.avatarUrl);
+                    } else {
+                        Log.d(TAG, "No avatar URL found, showing letter");
+                    }
+                } else {
+                    Log.e(TAG, "Failed to fetch profile: " + response.code());
                 }
             }
             
-            // Load avatar if exists
-            Uri photoUrl = firebaseUser.getPhotoUrl();
-            if (photoUrl != null) {
-                // TODO: Load image with Glide
-                // Glide.with(this).load(photoUrl).circleCrop().into(imgAvatar);
-                imgAvatar.setVisibility(View.VISIBLE);
-                tvAvatarLetter.setVisibility(View.GONE);
+            @Override
+            public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
+                Log.e(TAG, "Network error fetching profile", t);
             }
-        }
+        });
+    }
+    
+    private void loadAvatarImage(String avatarUrl) {
+        Log.d(TAG, "loadAvatarImage called with URL: " + avatarUrl);
+        
+        // Show letter first as placeholder
+        tvAvatarLetter.setVisibility(View.VISIBLE);
+        imgAvatar.setVisibility(View.GONE);
+        
+        Glide.with(this)
+            .load(avatarUrl)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .circleCrop()
+            .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                @Override
+                public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, 
+                                          Object model, 
+                                          com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                          boolean isFirstResource) {
+                    Log.e(TAG, "Failed to load avatar image from: " + avatarUrl, e);
+                    if (e != null) {
+                        Log.e(TAG, "Glide error causes: ", e);
+                        for (Throwable cause : e.getRootCauses()) {
+                            Log.e(TAG, "Root cause: ", cause);
+                        }
+                    }
+                    // Keep showing letter avatar on error
+                    imgAvatar.setVisibility(View.GONE);
+                    tvAvatarLetter.setVisibility(View.VISIBLE);
+                    return true; // handled
+                }
+                
+                @Override
+                public boolean onResourceReady(android.graphics.drawable.Drawable resource, 
+                                             Object model, 
+                                             com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                             com.bumptech.glide.load.DataSource dataSource, 
+                                             boolean isFirstResource) {
+                    // Image loaded successfully, show it
+                    Log.d(TAG, "✓ Avatar loaded successfully from: " + avatarUrl);
+                    Log.d(TAG, "Data source: " + dataSource);
+                    imgAvatar.setVisibility(View.VISIBLE);
+                    tvAvatarLetter.setVisibility(View.GONE);
+                    return false; // let Glide handle displaying
+                }
+            })
+            .into(imgAvatar);
     }
     
     private void setupActivityResultLaunchers() {
@@ -312,38 +398,148 @@ public class EditProfileActivity extends AppCompatActivity {
         }
         
         showLoading(true);
-        Log.d(TAG, "Starting upload for user: " + firebaseUser.getUid());
+        Log.d(TAG, "Starting 2-step upload process for user: " + firebaseUser.getUid());
         
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference profileImageRef = storageRef.child("profile_images/" + firebaseUser.getUid() + ".jpg");
+        // Extract file name from URI
+        String fileName = getFileNameFromUri(imageUri);
+        Log.d(TAG, "File name: " + fileName);
         
-        profileImageRef.putFile(imageUri)
-            .addOnSuccessListener(taskSnapshot -> {
-                Log.d(TAG, "Upload successful, getting download URL...");
-                profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    Log.d(TAG, "Download URL obtained: " + uri.toString());
-                    newAvatarUrl = uri.toString();
-                    avatarChanged = true;
+        // Step 1: Request signed upload URL from backend
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        UploadUrlRequest request = new UploadUrlRequest(fileName);
+        
+        authApi.requestUploadUrl(request).enqueue(new retrofit2.Callback<UploadUrlResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<UploadUrlResponse> call, 
+                                 retrofit2.Response<UploadUrlResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UploadUrlResponse uploadData = response.body();
+                    Log.d(TAG, "✓ Step 1: Received signed URL");
+                    Log.d(TAG, "  Path: " + uploadData.path);
+                    Log.d(TAG, "  Signed URL: " + uploadData.signedUrl);
                     
-                    // Update UI preview
-                    tvAvatarLetter.setVisibility(View.GONE);
-                    imgAvatar.setVisibility(View.VISIBLE);
-                    // TODO: Load with Glide
-                    // Glide.with(this).load(uri).circleCrop().into(imgAvatar);
-                    
+                    // Step 2: Upload file to Supabase
+                    uploadFileToSupabase(imageUri, uploadData.signedUrl, uploadData.path);
+                } else {
+                    Log.e(TAG, "Failed to get upload URL: " + response.code());
                     showLoading(false);
-                    Toast.makeText(this, "Photo uploaded successfully", Toast.LENGTH_SHORT).show();
-                }).addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get download URL", e);
-                    showLoading(false);
-                    Toast.makeText(this, "Failed to get image URL", Toast.LENGTH_SHORT).show();
-                });
-            })
-            .addOnFailureListener(e -> {
-                Log.e(TAG, "Failed to upload image", e);
+                    Toast.makeText(EditProfileActivity.this, 
+                        "Failed to prepare upload", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<UploadUrlResponse> call, Throwable t) {
+                Log.e(TAG, "Network error requesting upload URL", t);
                 showLoading(false);
-                Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            });
+                Toast.makeText(EditProfileActivity.this, 
+                    "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = "avatar.jpg"; // default
+        
+        try {
+            // Try to get real file name
+            android.database.Cursor cursor = getContentResolver()
+                .query(uri, null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (nameIndex != -1) {
+                    fileName = cursor.getString(nameIndex);
+                }
+                cursor.close();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting file name", e);
+        }
+        
+        // Ensure it has extension
+        if (!fileName.contains(".")) {
+            fileName = fileName + ".jpg";
+        }
+        
+        return fileName;
+    }
+    
+    private void uploadFileToSupabase(Uri imageUri, String signedUrl, String storagePath) {
+        try {
+            // Get file input stream
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                showLoading(false);
+                Toast.makeText(this, "Cannot read file", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Read file to byte array
+            byte[] fileBytes = new byte[inputStream.available()];
+            inputStream.read(fileBytes);
+            inputStream.close();
+            
+            // Determine MIME type
+            String mimeType = getContentResolver().getType(imageUri);
+            if (mimeType == null) {
+                mimeType = "image/jpeg"; // default
+            }
+            Log.d(TAG, "MIME type: " + mimeType);
+            
+            // Create RequestBody
+            RequestBody requestBody = RequestBody.create(
+                MediaType.parse(mimeType), 
+                fileBytes
+            );
+            
+            // Step 2: PUT file to signed URL
+            AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+            authApi.uploadToSupabase(signedUrl, requestBody)
+                .enqueue(new retrofit2.Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<ResponseBody> call, 
+                                         retrofit2.Response<ResponseBody> response) {
+                        showLoading(false);
+                        
+                        if (response.isSuccessful()) {
+                            Log.d(TAG, "✓ Step 2: File uploaded to Supabase successfully");
+                            Log.d(TAG, "  Storage path: " + storagePath);
+                            
+                            // Construct public URL from storage path using config
+                            String publicUrl = SupabaseConfig.getPublicUrl(storagePath);
+                            Log.d(TAG, "  Public URL: " + publicUrl);
+                            
+                            // Save the full public URL (backend validates as URL)
+                            newAvatarUrl = publicUrl;
+                            avatarChanged = true;
+                            
+                            // Update UI preview - load image immediately
+                            runOnUiThread(() -> {
+                                loadAvatarImage(publicUrl);
+                                Toast.makeText(EditProfileActivity.this, 
+                                    "Photo uploaded successfully", Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            Log.e(TAG, "Failed to upload to Supabase: " + response.code());
+                            Toast.makeText(EditProfileActivity.this, 
+                                "Upload failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    
+                    @Override
+                    public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
+                        showLoading(false);
+                        Log.e(TAG, "Network error uploading to Supabase", t);
+                        Toast.makeText(EditProfileActivity.this, 
+                            "Upload error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+            
+        } catch (IOException e) {
+            showLoading(false);
+            Log.e(TAG, "Error reading file", e);
+            Toast.makeText(this, "Error reading file", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void removeProfilePhoto() {
@@ -394,25 +590,16 @@ public class EditProfileActivity extends AppCompatActivity {
         
         UserProfileChangeRequest.Builder builder = new UserProfileChangeRequest.Builder();
         
-        // Update name
+        // Update name only (avatar is now stored in Supabase, not Firebase)
         builder.setDisplayName(newName);
-        
-        // Update avatar if changed
-        if (avatarChanged) {
-            if (newAvatarUrl != null) {
-                builder.setPhotoUri(Uri.parse(newAvatarUrl));
-            } else {
-                builder.setPhotoUri(null);
-            }
-        }
         
         UserProfileChangeRequest profileUpdates = builder.build();
         
         firebaseUser.updateProfile(profileUpdates)
             .addOnSuccessListener(aVoid -> {
-                Log.d(TAG, "✓ Firebase profile updated");
+                Log.d(TAG, "✓ Firebase profile updated (name only)");
                 
-                // Step 2: Update backend
+                // Step 2: Update backend with both name and avatar path
                 updateBackendProfile(newName, avatarChanged ? newAvatarUrl : null);
             })
             .addOnFailureListener(e -> {
@@ -424,6 +611,10 @@ public class EditProfileActivity extends AppCompatActivity {
     }
     
     private void updateBackendProfile(String name, String avatarUrl) {
+        Log.d(TAG, "Updating backend profile:");
+        Log.d(TAG, "  Name: " + name);
+        Log.d(TAG, "  Avatar URL (public URL): " + avatarUrl);
+        
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
         UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl);
         
