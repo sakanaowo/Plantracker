@@ -19,8 +19,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
-        }
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")        }
         release {
             buildConfigField(
                 "String",
