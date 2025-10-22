@@ -70,6 +70,7 @@
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
                         android:visibility="gone"
+                        android:contentDescription="Profile Avatar"
                         tools:src="@drawable/acc_icon" />
 
                     <!-- Camera Icon Overlay -->

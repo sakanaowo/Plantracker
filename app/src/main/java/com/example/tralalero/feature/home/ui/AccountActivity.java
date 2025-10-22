@@ -26,6 +26,8 @@ import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.tralalero.App.App;
 import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.R;
@@ -105,6 +107,9 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             if (email != null) {
                 tvEmail.setText(email);
             }
+            
+            // Load avatar from backend
+            loadUserProfileFromBackend();
         }
 
         FrameLayout avatarContainer = findViewById(R.id.avatarContainer);
@@ -205,6 +210,8 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void showImagePickerBottomSheet() {
+        // NOTE: Recommend using EditProfileActivity instead for full Supabase integration
+        // This quick upload still uses Firebase Storage (legacy)
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_profile_image, null);
         bottomSheet.setContentView(view);
@@ -424,20 +431,96 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 }
             }
             
-            // Refresh avatar
-            Uri photoUrl = firebaseUser.getPhotoUrl();
-            if (photoUrl != null) {
-                // TODO: Load with Glide
-                // Glide.with(this).load(photoUrl).circleCrop().into(imgAvatar);
-                imgAvatar.setVisibility(View.VISIBLE);
-                tvAvatarLetter.setVisibility(View.GONE);
-            } else {
-                imgAvatar.setVisibility(View.GONE);
-                tvAvatarLetter.setVisibility(View.VISIBLE);
-            }
+            // Refresh avatar from backend
+            loadUserProfileFromBackend();
             
             Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    private void loadUserProfileFromBackend() {
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        
+        authApi.getMe().enqueue(new retrofit2.Callback<UserDto>() {
+            @Override
+            public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UserDto user = response.body();
+                    Log.d(TAG, "Loaded user profile from backend");
+                    
+                    // Update name if available
+                    if (user.name != null && !user.name.isEmpty()) {
+                        TextView tvName = findViewById(R.id.tvName);
+                        tvName.setText(user.name);
+                        tvAvatarLetter.setText(String.valueOf(user.name.charAt(0)).toUpperCase());
+                    }
+                    
+                    // Load avatar
+                    if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
+                        Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
+                        loadAvatarImage(user.avatarUrl);
+                    } else {
+                        Log.d(TAG, "No avatar URL, showing letter");
+                        imgAvatar.setVisibility(View.GONE);
+                        tvAvatarLetter.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    Log.e(TAG, "Failed to load profile: " + response.code());
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
+                Log.e(TAG, "Network error loading profile", t);
+            }
+        });
+    }
+    
+    private void loadAvatarImage(String avatarUrl) {
+        Log.d(TAG, "loadAvatarImage called with URL: " + avatarUrl);
+        
+        // Show letter first as placeholder
+        tvAvatarLetter.setVisibility(View.VISIBLE);
+        imgAvatar.setVisibility(View.GONE);
+        
+        Glide.with(this)
+            .load(avatarUrl)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .circleCrop()
+            .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                @Override
+                public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, 
+                                          Object model, 
+                                          com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                          boolean isFirstResource) {
+                    Log.e(TAG, "Failed to load avatar image from: " + avatarUrl, e);
+                    if (e != null) {
+                        Log.e(TAG, "Glide error causes: ", e);
+                        for (Throwable cause : e.getRootCauses()) {
+                            Log.e(TAG, "Root cause: ", cause);
+                        }
+                    }
+                    // Keep showing letter avatar on error
+                    imgAvatar.setVisibility(View.GONE);
+                    tvAvatarLetter.setVisibility(View.VISIBLE);
+                    return true; // handled
+                }
+                
+                @Override
+                public boolean onResourceReady(android.graphics.drawable.Drawable resource, 
+                                             Object model, 
+                                             com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                             com.bumptech.glide.load.DataSource dataSource, 
+                                             boolean isFirstResource) {
+                    // Image loaded successfully, show it
+                    Log.d(TAG, "✓ Avatar loaded successfully from: " + avatarUrl);
+                    Log.d(TAG, "Data source: " + dataSource);
+                    imgAvatar.setVisibility(View.VISIBLE);
+                    tvAvatarLetter.setVisibility(View.GONE);
+                    return false; // let Glide handle displaying
+                }
+            })
+            .into(imgAvatar);
     }
 
     private void showEditNameDialog() {
