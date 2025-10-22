@@ -7,7 +7,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -66,7 +65,6 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         RecyclerView taskRecycler;
         LinearLayout btnAddCard;
         TaskAdapter taskAdapter;
-        ItemTouchHelper itemTouchHelper;
 
         BoardViewHolder(View itemView) {
             super(itemView);
@@ -92,58 +90,109 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     listener.onTaskClick(task, board);
                 });
 
+                // ✅ Setup move up/down listeners
+                taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
+                    @Override
+                    public void onMoveUp(int position) {
+                        if (position > 0 && listener instanceof OnTaskPositionChangeListener) {
+                            Task movedTask = taskAdapter.getTaskAt(position);
+                            
+                            // ✅ Calculate position BEFORE swapping
+                            double newPosition = calculateNewPositionForMove(position, position - 1);
+                            
+                            // Swap in UI
+                            taskAdapter.moveItem(position, position - 1);
+                            
+                            // Notify listener to update backend with calculated position
+                            ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
+                                    movedTask, newPosition, board
+                            );
+                        }
+                    }
+
+                    @Override
+                    public void onMoveDown(int position) {
+                        if (position < taskAdapter.getItemCount() - 1 && listener instanceof OnTaskPositionChangeListener) {
+                            Task movedTask = taskAdapter.getTaskAt(position);
+                            
+                            // ✅ Calculate position BEFORE swapping
+                            double newPosition = calculateNewPositionForMove(position, position + 1);
+                            
+                            // Swap in UI
+                            taskAdapter.moveItem(position, position + 1);
+                            
+                            // Notify listener to update backend with calculated position
+                            ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
+                                    movedTask, newPosition, board
+                            );
+                        }
+                    }
+                    
+                    /**
+                     * Calculate new position when moving task from 'from' to 'to'
+                     * IMPORTANT: Call this BEFORE swapping items in list!
+                     */
+                    private double calculateNewPositionForMove(int fromPos, int toPos) {
+                        int taskCount = taskAdapter.getItemCount();
+                        
+                        if (taskCount <= 1) {
+                            return 1000.0;
+                        }
+                        
+                        // Moving to first position
+                        if (toPos == 0) {
+                            Task firstTask = taskAdapter.getTaskAt(0);
+                            if (firstTask != null) {
+                                return firstTask.getPosition() / 2.0;
+                            }
+                            return 500.0;
+                        }
+                        
+                        // Moving to last position
+                        if (toPos >= taskCount - 1) {
+                            Task lastTask = taskAdapter.getTaskAt(taskCount - 1);
+                            if (lastTask != null) {
+                                return lastTask.getPosition() + 1024.0;
+                            }
+                            return toPos * 1000.0;
+                        }
+                        
+                        // Moving to middle position
+                        // Need to find what will be prev/next AFTER the swap
+                        if (fromPos < toPos) {
+                            // Moving DOWN: will be between toPos and toPos+1
+                            Task prevTask = taskAdapter.getTaskAt(toPos);
+                            Task nextTask = taskAdapter.getTaskAt(toPos + 1);
+                            if (prevTask != null && nextTask != null) {
+                                double result = (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+                                android.util.Log.d("BoardAdapter", "Move DOWN: prev=" + prevTask.getPosition() + 
+                                    ", next=" + nextTask.getPosition() + ", new=" + result);
+                                return result;
+                            }
+                        } else {
+                            // Moving UP: will be between toPos-1 and toPos
+                            Task prevTask = taskAdapter.getTaskAt(toPos - 1);
+                            Task nextTask = taskAdapter.getTaskAt(toPos);
+                            if (prevTask != null && nextTask != null) {
+                                double result = (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+                                android.util.Log.d("BoardAdapter", "Move UP: prev=" + prevTask.getPosition() + 
+                                    ", next=" + nextTask.getPosition() + ", new=" + result);
+                                return result;
+                            }
+                        }
+                        
+                        return toPos * 1000.0;
+                    }
+                });
+
                 btnAddCard.setOnClickListener(v -> {
                     listener.onAddCardClick(board);
                 });
-
-                setupDragAndDrop(board, listener);
             }
-        }
-
-        private void setupDragAndDrop(Board board, OnBoardActionListener listener) {
-            ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
-                    ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0
-            ) {
-                @Override
-                public boolean onMove(@NonNull RecyclerView recyclerView,
-                                      @NonNull RecyclerView.ViewHolder viewHolder,
-                                      @NonNull RecyclerView.ViewHolder target) {
-                    int fromPosition = viewHolder.getAdapterPosition();
-                    int toPosition = target.getAdapterPosition();
-
-                    taskAdapter.moveItem(fromPosition, toPosition);
-
-                    if (listener instanceof OnTaskPositionChangeListener) {
-                        Task movedTask = taskAdapter.getTaskAt(toPosition);
-                        ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
-                                movedTask, toPosition, board
-                        );
-                    }
-
-                    return true;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                }
-
-                @Override
-                public boolean isLongPressDragEnabled() {
-                    return true;
-                }
-
-                @Override
-                public boolean isItemViewSwipeEnabled() {
-                    return false;
-                }
-            };
-
-            itemTouchHelper = new ItemTouchHelper(callback);
-            itemTouchHelper.attachToRecyclerView(taskRecycler);
         }
     }
 
     public interface OnTaskPositionChangeListener {
-        void onTaskPositionChanged(Task task, int newPosition, Board board);
+        void onTaskPositionChanged(Task task, double newPosition, Board board);
     }
 }

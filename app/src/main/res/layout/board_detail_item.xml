@@ -13,14 +13,18 @@
         android:layout_marginBottom="8dp"
         app:cardCornerRadius="4dp"
         app:cardElevation="1dp"
-        app:cardBackgroundColor="@android:color/white">
+        app:cardBackgroundColor="@android:color/white"
+        android:clickable="false"
+        android:focusable="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="10dp"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:clickable="false"
+            android:focusable="false">
 
             <!-- Checkbox - smaller -->
             <CheckBox
@@ -31,7 +35,9 @@
                 android:minHeight="0dp"
                 android:scaleX="0.75"
                 android:scaleY="0.75"
-                android:layout_marginEnd="6dp" />
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
             <!-- Task title -->
             <TextView
@@ -43,7 +49,46 @@
                 android:textSize="14sp"
                 android:textColor="@android:color/black"
                 android:maxLines="3"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:clickable="false"
+                android:focusable="false" />
+
+            <!-- Move buttons container -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp"
+                android:clickable="false"
+                android:focusable="false">
+
+                <!-- Move Up button -->
+                <ImageButton
+                    android:id="@+id/btnMoveUp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/arrow_up_float"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:scaleType="fitCenter"
+                    android:padding="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="Move task up" />
+
+                <!-- Move Down button -->
+                <ImageButton
+                    android:id="@+id/btnMoveDown"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/arrow_down_float"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:scaleType="fitCenter"
+                    android:padding="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="Move task down" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

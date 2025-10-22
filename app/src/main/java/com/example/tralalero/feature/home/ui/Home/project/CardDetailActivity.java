@@ -442,6 +442,32 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void deleteTask() {
         if (taskId != null && !taskId.isEmpty()) {
+            // ✅ FIX: Set selected task before deletion so ViewModel knows which board to reload
+            String status = getIntent().getStringExtra(EXTRA_TASK_STATUS);
+            double position = getIntent().getDoubleExtra(EXTRA_TASK_POSITION, 0);
+            String assigneeId = getIntent().getStringExtra(EXTRA_TASK_ASSIGNEE_ID);
+            String createdBy = getIntent().getStringExtra(EXTRA_TASK_CREATED_BY);
+            String title = etTaskTitle.getText().toString().trim();
+            String description = etDescription.getText().toString().trim();
+            
+            Task taskToDelete = new Task(
+                taskId,
+                projectId,
+                boardId,  // Important: contains boardId for reload
+                title,
+                description,
+                null,
+                null,
+                status != null ? Task.TaskStatus.valueOf(status) : Task.TaskStatus.TO_DO,
+                currentPriority,
+                position,
+                assigneeId,
+                createdBy,
+                null, null, null, null, null, null, null, null, null, null
+            );
+            
+            // Set selected task first, then delete
+            taskViewModel.setSelectedTask(taskToDelete);
             taskViewModel.deleteTask(taskId);
             Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show();
 

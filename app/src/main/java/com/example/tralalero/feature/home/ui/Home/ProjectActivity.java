@@ -246,16 +246,16 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     }
 
     // ✅ Implement OnTaskPositionChangeListener
-    public void onTaskPositionChanged(Task task, int newPosition, Board board) {
-        Log.d(TAG, "🔄 Task '" + task.getTitle() + "' moved to position " + newPosition);
-
-        // Calculate new position value (spacing of 1000 between items)
-        double positionValue = newPosition * 1000.0;
+    public void onTaskPositionChanged(Task task, double newPosition, Board board) {
+        Log.d(TAG, "🔄 Task '" + task.getTitle() + "' updating position to " + newPosition);
 
         // Update task position in backend
-        taskViewModel.updateTaskPosition(task.getId(), positionValue);
+        taskViewModel.updateTaskPosition(task.getId(), newPosition);
 
-        Toast.makeText(this, "Position updated", Toast.LENGTH_SHORT).show();
+        // ✅ Reload tasks for this board to get updated positions
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            loadTasksForBoard(board.getId());
+        }, 300);
     }
 
     private void observeViewModels() {

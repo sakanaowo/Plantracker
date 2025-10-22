@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.ItemTouchHelper;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -68,7 +67,6 @@ public class ListProject extends Fragment {
     private TextView emptyView;
     private TaskAdapter taskAdapter;
     private FloatingActionButton fabAddTask;
-    private ItemTouchHelper itemTouchHelper; // ✅ For drag & drop
 
     public static ListProject newInstance(String type, String projectId, String boardId) {
         ListProject fragment = new ListProject();
@@ -202,93 +200,97 @@ public class ListProject extends Fragment {
             Log.d(TAG, "Task clicked: " + task.getId());
         });
         
-        // ✅ Setup drag & drop listener
-        taskAdapter.setOnTaskDragListener((fromPosition, toPosition) -> {
-            Log.d(TAG, "Task moved from " + fromPosition + " to " + toPosition);
-            // TODO: Update task position in backend
-            Task movedTask = taskAdapter.getTaskAt(toPosition);
-            if (movedTask != null) {
-                // Calculate new position value
-                double newPosition = toPosition * 1000.0;
-                taskViewModel.updateTaskPosition(movedTask.getId(), newPosition);
-            }
-        });
-
-        recyclerView.setAdapter(taskAdapter);
-
-        // ✅ Setup ItemTouchHelper for drag & drop
-        setupDragAndDrop();
-    }
-
-    /**
-     * ✅ Setup drag and drop functionality
-     */
-    private void setupDragAndDrop() {
-        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
-                ItemTouchHelper.UP | ItemTouchHelper.DOWN, // Drag directions
-                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT // Swipe directions
-        ) {
+        // ✅ Setup move up/down button listeners
+        taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
             @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView,
-                                  @NonNull RecyclerView.ViewHolder viewHolder,
-                                  @NonNull RecyclerView.ViewHolder target) {
-                int fromPosition = viewHolder.getAdapterPosition();
-                int toPosition = target.getAdapterPosition();
-
-                // Move item in adapter
-                taskAdapter.moveItem(fromPosition, toPosition);
-                return true;
-            }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                // Optional: Handle swipe to delete
-                int position = viewHolder.getAdapterPosition();
-                Task task = taskAdapter.getTaskAt(position);
-
-                if (direction == ItemTouchHelper.LEFT || direction == ItemTouchHelper.RIGHT) {
-                    // Show confirmation dialog before delete
-                    showDeleteConfirmation(task);
+            public void onMoveUp(int position) {
+                if (position > 0) {
+                    moveTaskToPosition(position, position - 1);
                 }
             }
 
             @Override
-            public boolean isLongPressDragEnabled() {
-                return true; // Enable long press to drag
+            public void onMoveDown(int position) {
+                if (position < taskAdapter.getItemCount() - 1) {
+                    moveTaskToPosition(position, position + 1);
+                }
             }
+        });
 
-            @Override
-            public boolean isItemViewSwipeEnabled() {
-                return false; // Disable swipe to delete for now (can enable later)
-            }
-        };
-
-        itemTouchHelper = new ItemTouchHelper(callback);
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+        recyclerView.setAdapter(taskAdapter);
     }
 
     /**
-     * Show confirmation dialog before deleting task
+     * Move task from one position to another and update backend
      */
-    private void showDeleteConfirmation(Task task) {
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Delete Task")
-                .setMessage("Are you sure you want to delete \"" + task.getTitle() + "\"?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    Log.d(TAG, "Deleting task: " + task.getId());
-                    taskViewModel.deleteTask(task.getId());
-                    Toast.makeText(getContext(), "Task deleted", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    // Refresh list to restore the item
-                    taskAdapter.notifyDataSetChanged();
-                })
-                .setOnCancelListener(dialog -> {
-                    // Refresh list to restore the item
-                    taskAdapter.notifyDataSetChanged();
-                })
-                .show();
+    private void moveTaskToPosition(int fromPosition, int toPosition) {
+        Task movedTask = taskAdapter.getTaskAt(fromPosition);
+        if (movedTask == null) {
+            Log.e(TAG, "❌ Cannot move: task at position " + fromPosition + " is null");
+            return;
+        }
+
+        // Calculate new position value based on surrounding tasks
+        double newPosition = calculateNewPositionForMove(fromPosition, toPosition);
+        
+        Log.d(TAG, "Moving task '" + movedTask.getTitle() + "' from " + fromPosition + " to " + toPosition + 
+                   ", new position value: " + newPosition);
+
+        // Update UI immediately
+        taskAdapter.moveItem(fromPosition, toPosition);
+
+        // Update backend
+        taskViewModel.updateTaskPosition(movedTask.getId(), newPosition);
     }
+
+    /**
+     * Calculate new position when moving task from 'from' to 'to'
+     */
+    private double calculateNewPositionForMove(int fromPos, int toPos) {
+        int taskCount = taskAdapter.getItemCount();
+        
+        if (taskCount <= 1) {
+            return 1000.0;
+        }
+        
+        // Moving to first position
+        if (toPos == 0) {
+            Task firstTask = taskAdapter.getTaskAt(0);
+            if (firstTask != null) {
+                return firstTask.getPosition() / 2.0;
+            }
+            return 500.0;
+        }
+        
+        // Moving to last position
+        if (toPos >= taskCount - 1) {
+            Task lastTask = taskAdapter.getTaskAt(taskCount - 1);
+            if (lastTask != null) {
+                return lastTask.getPosition() + 1024.0;
+            }
+            return toPos * 1000.0;
+        }
+        
+        // Moving to middle position
+        if (fromPos < toPos) {
+            // Moving DOWN: will be between toPos and toPos+1
+            Task prevTask = taskAdapter.getTaskAt(toPos);
+            Task nextTask = taskAdapter.getTaskAt(toPos + 1);
+            if (prevTask != null && nextTask != null) {
+                return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+            }
+        } else {
+            // Moving UP: will be between toPos-1 and toPos
+            Task prevTask = taskAdapter.getTaskAt(toPos - 1);
+            Task nextTask = taskAdapter.getTaskAt(toPos);
+            if (prevTask != null && nextTask != null) {
+                return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+            }
+        }
+        
+        return toPos * 1000.0;
+    }
+
 
     private void observeViewModel() {
         // ✅ FIX: Observe tasks for THIS specific board only

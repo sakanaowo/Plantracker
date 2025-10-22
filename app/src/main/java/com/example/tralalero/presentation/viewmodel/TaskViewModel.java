@@ -121,6 +121,13 @@ public class TaskViewModel extends ViewModel {
     }
     
     /**
+     * Set selected task (used before deletion to know which board to reload)
+     */
+    public void setSelectedTask(Task task) {
+        selectedTaskLiveData.setValue(task);
+    }
+    
+    /**
      * Clear selected task to prevent re-triggering observers
      */
     public void clearSelectedTask() {
@@ -204,7 +211,10 @@ public class TaskViewModel extends ViewModel {
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
-                // Optionally reload board tasks
+                // ✅ FIX: Automatically reload board tasks after creating task
+                if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
+                    loadTasksByBoard(result.getBoardId());
+                }
             }
 
             @Override
@@ -224,6 +234,10 @@ public class TaskViewModel extends ViewModel {
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
+                // ✅ FIX: Automatically reload board tasks after updating task
+                if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
+                    loadTasksByBoard(result.getBoardId());
+                }
             }
 
             @Override
@@ -238,11 +252,20 @@ public class TaskViewModel extends ViewModel {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
+        // ✅ FIX: Need to get task first to know which board to reload
+        // Store the current selected task's board ID before deletion
+        Task currentTask = selectedTaskLiveData.getValue();
+        final String boardIdToReload = (currentTask != null) ? currentTask.getBoardId() : null;
+
         deleteTaskUseCase.execute(taskId, new DeleteTaskUseCase.Callback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(null);
+                // ✅ FIX: Reload board tasks after deletion
+                if (boardIdToReload != null && !boardIdToReload.isEmpty()) {
+                    loadTasksByBoard(boardIdToReload);
+                }
             }
 
             @Override
@@ -311,19 +334,21 @@ public class TaskViewModel extends ViewModel {
     }
 
     public void updateTaskPosition(String taskId, double newPosition) {
-        loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
         updateTaskPositionUseCase.execute(taskId, newPosition, new UpdateTaskPositionUseCase.Callback<Task>() {
             @Override
             public void onSuccess(Task result) {
-                loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
+                // ✅ Reload tasks to get updated positions from backend
+                // This is needed when using move buttons (not drag & drop)
+                if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
+                    loadTasksByBoard(result.getBoardId());
+                }
             }
 
             @Override
             public void onError(String error) {
-                loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
             }
         });
