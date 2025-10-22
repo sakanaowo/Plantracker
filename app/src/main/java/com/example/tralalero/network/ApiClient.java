@@ -57,10 +57,8 @@ public class ApiClient {
                 .writeTimeout(30, TimeUnit.SECONDS);
 
         if (authManager != null) {
-            // Add Firebase Interceptor to automatically add token to requests
             clientBuilder.addInterceptor(new FirebaseInterceptor(authManager));
 
-            // Add Firebase Authenticator to handle token refresh on 401/404 errors
             clientBuilder.authenticator(new FirebaseAuthenticator(authManager));
         }
 
@@ -70,8 +68,7 @@ public class ApiClient {
 
         // ✅ FIXED: Create Gson with proper configuration
         Gson gson = new GsonBuilder()
-                .setLenient() // Allow lenient parsing
-                // .serializeNulls() // ❌ REMOVED: Don't send null fields to backend
+                .setLenient()
                 .create();
 
         return new Retrofit.Builder()

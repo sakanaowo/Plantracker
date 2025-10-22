@@ -3,14 +3,10 @@ package com.example.tralalero.presentation.viewmodel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
-// Import domain models
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.TaskComment;
 import com.example.tralalero.domain.model.Attachment;
 import com.example.tralalero.domain.model.Checklist;
-
-// Import UseCases (15 UseCases)
 import com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase;
 import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
 import com.example.tralalero.domain.usecase.task.CreateTaskUseCase;
@@ -48,8 +44,6 @@ public class TaskViewModel extends ViewModel {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
-
-    // ✅ FIX: Store tasks per board instead of single shared LiveData
     private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Task> selectedTaskLiveData = new MutableLiveData<>();
@@ -93,13 +87,9 @@ public class TaskViewModel extends ViewModel {
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
     }
 
-    /**
-     * ✅ FIX: Get LiveData for specific board
-     * Each board now has its own LiveData to prevent data overwrite
-     */
     public LiveData<List<Task>> getTasksForBoard(String boardId) {
         if (boardId == null || boardId.isEmpty()) {
-            return tasksLiveData; // Return empty LiveData
+            return tasksLiveData; 
         }
 
         if (!tasksPerBoardMap.containsKey(boardId)) {
@@ -108,9 +98,6 @@ public class TaskViewModel extends ViewModel {
         return tasksPerBoardMap.get(boardId);
     }
 
-    /**
-     * @deprecated Use getTasksForBoard(boardId) instead
-     */
     @Deprecated
     public LiveData<List<Task>> getTasks() {
         return tasksLiveData;
@@ -119,17 +106,11 @@ public class TaskViewModel extends ViewModel {
     public LiveData<Task> getSelectedTask() {
         return selectedTaskLiveData;
     }
-    
-    /**
-     * Set selected task (used before deletion to know which board to reload)
-     */
+
     public void setSelectedTask(Task task) {
         selectedTaskLiveData.setValue(task);
     }
-    
-    /**
-     * Clear selected task to prevent re-triggering observers
-     */
+
     public void clearSelectedTask() {
         selectedTaskLiveData.setValue(null);
     }
@@ -181,7 +162,6 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(List<Task> result) {
                 loadingLiveData.setValue(false);
-                // ✅ FIX: Update specific board's LiveData instead of shared one
                 if (!tasksPerBoardMap.containsKey(boardId)) {
                     tasksPerBoardMap.put(boardId, new MutableLiveData<>());
                 }
@@ -189,8 +169,6 @@ public class TaskViewModel extends ViewModel {
                 if (boardLiveData != null) {
                     boardLiveData.setValue(result);
                 }
-
-                // Also update the deprecated shared LiveData for backward compatibility
                 tasksLiveData.setValue(result);
             }
 
@@ -211,7 +189,6 @@ public class TaskViewModel extends ViewModel {
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
-                // ✅ FIX: Automatically reload board tasks after creating task
                 if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
                     loadTasksByBoard(result.getBoardId());
                 }
@@ -234,7 +211,6 @@ public class TaskViewModel extends ViewModel {
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
-                // ✅ FIX: Automatically reload board tasks after updating task
                 if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
                     loadTasksByBoard(result.getBoardId());
                 }
@@ -251,9 +227,6 @@ public class TaskViewModel extends ViewModel {
     public void deleteTask(String taskId) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-
-        // ✅ FIX: Need to get task first to know which board to reload
-        // Store the current selected task's board ID before deletion
         Task currentTask = selectedTaskLiveData.getValue();
         final String boardIdToReload = (currentTask != null) ? currentTask.getBoardId() : null;
 
@@ -262,7 +235,6 @@ public class TaskViewModel extends ViewModel {
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(null);
-                // ✅ FIX: Reload board tasks after deletion
                 if (boardIdToReload != null && !boardIdToReload.isEmpty()) {
                     loadTasksByBoard(boardIdToReload);
                 }
@@ -340,8 +312,6 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(Task result) {
                 selectedTaskLiveData.setValue(result);
-                // ✅ Reload tasks to get updated positions from backend
-                // This is needed when using move buttons (not drag & drop)
                 if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
                     loadTasksByBoard(result.getBoardId());
                 }
@@ -362,7 +332,6 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(TaskComment result) {
                 loadingLiveData.setValue(false);
-                // Reload comments
                 loadTaskComments(taskId);
             }
 
@@ -401,7 +370,6 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(Attachment result) {
                 loadingLiveData.setValue(false);
-                // Reload attachments
                 loadTaskAttachments(taskId);
             }
 
@@ -440,7 +408,6 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(Checklist result) {
                 loadingLiveData.setValue(false);
-                // Reload checklists
                 loadTaskChecklists(taskId);
             }
 

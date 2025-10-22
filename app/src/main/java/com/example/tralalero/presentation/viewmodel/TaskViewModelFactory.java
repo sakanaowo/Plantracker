@@ -54,7 +54,6 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
             AddChecklistUseCase addChecklistUseCase,
             GetTaskChecklistsUseCase getTaskChecklistsUseCase
     ) {
-        // Gán tất cả 15 UseCases
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
         this.createTaskUseCase = createTaskUseCase;

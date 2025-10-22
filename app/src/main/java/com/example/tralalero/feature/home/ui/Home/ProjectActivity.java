@@ -118,10 +118,6 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         }
     }
 
-    /**
-     * 📥 Setup Activity Result Launcher to receive task creation results from InboxActivity
-     * Modern way to handle activity results (replaces startActivityForResult)
-     */
     private void setupActivityResultLauncher() {
         inboxActivityLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),

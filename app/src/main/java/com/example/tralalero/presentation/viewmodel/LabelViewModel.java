@@ -57,7 +57,6 @@ public class LabelViewModel extends ViewModel {
         return errorLiveData;
     }
 
-
     public void loadLabelsByWorkspace(String workspaceId) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -105,7 +104,6 @@ public class LabelViewModel extends ViewModel {
             public void onSuccess(Label result) {
                 loadingLiveData.setValue(false);
                 selectedLabelLiveData.setValue(result);
-                // Reload labels
                 loadLabelsByWorkspace(workspaceId);
             }
 
@@ -126,7 +124,6 @@ public class LabelViewModel extends ViewModel {
             public void onSuccess(Label result) {
                 loadingLiveData.setValue(false);
                 selectedLabelLiveData.setValue(result);
-                // Reload labels
                 loadLabelsByWorkspace(workspaceId);
             }
 
@@ -147,7 +144,6 @@ public class LabelViewModel extends ViewModel {
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 selectedLabelLiveData.setValue(null);
-                // Reload labels
                 loadLabelsByWorkspace(workspaceId);
             }
 

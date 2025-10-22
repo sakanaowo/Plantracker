@@ -40,30 +40,13 @@ import com.example.tralalero.domain.usecase.workspace.GetWorkspaceProjectsUseCas
 import com.example.tralalero.domain.usecase.workspace.GetWorkspacesUseCase;
 import com.example.tralalero.network.ApiClient;
 
-/**
- * Helper class to provide ViewModelFactories with dependencies injection.
- * Reduces boilerplate code when setting up ViewModels in Activities/Fragments.
- * 
- * Usage example:
- * <pre>
- * workspaceViewModel = new ViewModelProvider(this, 
- *     ViewModelFactoryProvider.provideWorkspaceViewModelFactory()
- * ).get(WorkspaceViewModel.class);
- * </pre>
- *
- * @author Người 2 - Phase 5
- * @date 14/10/2025
- */
 public class ViewModelFactoryProvider {
-    
+
     private static WorkspaceApiService workspaceApi;
     private static BoardApiService boardApi;
     private static ProjectApiService projectApi;
     private static TaskApiService taskApi;
-    
-    /**
-     * Initialize API services (lazy initialization)
-     */
+
     private static void initApis() {
         if (workspaceApi == null) {
             workspaceApi = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
@@ -78,15 +61,8 @@ public class ViewModelFactoryProvider {
             taskApi = ApiClient.get(App.authManager).create(TaskApiService.class);
         }
     }
-    
-    /**
-     * Provide AuthViewModelFactory with all dependencies
-     *
-     * @return AuthViewModelFactory instance ready to use
-     */
+
     public static AuthViewModelFactory provideAuthViewModelFactory() {
-        // AuthRepository không cần API service vì dùng Firebase
-        // Sử dụng App.getInstance() để lấy context
         IAuthRepository repository = new AuthRepositoryImpl(App.getInstance());
 
         return new AuthViewModelFactory(
@@ -98,16 +74,11 @@ public class ViewModelFactoryProvider {
         );
     }
 
-    /**
-     * Provide WorkspaceViewModelFactory with all dependencies
-     * 
-     * @return WorkspaceViewModelFactory instance ready to use
-     */
     public static WorkspaceViewModelFactory provideWorkspaceViewModelFactory() {
         initApis();
-        
+
         IWorkspaceRepository repository = new WorkspaceRepositoryImpl(workspaceApi);
-        
+
         return new WorkspaceViewModelFactory(
             new GetWorkspacesUseCase(repository),
             new GetWorkspaceByIdUseCase(repository),
@@ -116,17 +87,12 @@ public class ViewModelFactoryProvider {
             new GetWorkspaceBoardsUseCase(repository)
         );
     }
-    
-    /**
-     * Provide ProjectViewModelFactory with all dependencies
-     *
-     * @return ProjectViewModelFactory instance ready to use
-     */
+
     public static ProjectViewModelFactory provideProjectViewModelFactory() {
         initApis();
-        
+
         IProjectRepository repository = new ProjectRepositoryImpl(projectApi);
-        
+
         return new ProjectViewModelFactory(
             new GetProjectByIdUseCase(repository),
             new CreateProjectUseCase(repository),
@@ -136,21 +102,12 @@ public class ViewModelFactoryProvider {
             new UpdateProjectKeyUseCase(repository)
         );
     }
-    
-    /**
-     * Provide BoardViewModelFactory with all dependencies
-     *
-     * @return BoardViewModelFactory instance ready to use
-     */
+
     public static BoardViewModelFactory provideBoardViewModelFactory() {
         initApis();
-        
-        // BoardRepository needs BoardApiService
         IBoardRepository boardRepository = new BoardRepositoryImpl(boardApi);
-        
-        // GetBoardTasksUseCase needs TaskRepository
         ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi);
-        
+
         return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),
             new GetBoardsByProjectUseCase(boardRepository),
@@ -158,7 +115,7 @@ public class ViewModelFactoryProvider {
             new UpdateBoardUseCase(boardRepository),
             new DeleteBoardUseCase(boardRepository),
             new ReorderBoardsUseCase(boardRepository),
-            new GetBoardTasksUseCase(taskRepository) // Uses TaskRepository, not BoardRepository!
+            new GetBoardTasksUseCase(taskRepository) 
         );
     }
 }

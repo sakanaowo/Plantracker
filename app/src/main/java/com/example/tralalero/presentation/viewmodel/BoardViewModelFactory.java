@@ -12,13 +12,6 @@ import com.example.tralalero.domain.usecase.board.DeleteBoardUseCase;
 import com.example.tralalero.domain.usecase.board.ReorderBoardsUseCase;
 import com.example.tralalero.domain.usecase.board.GetBoardTasksUseCase;
 
-/**
- * Factory for creating BoardViewModel instances
- * Required by Android Architecture Components to inject dependencies
- *
- * @author Người 2
- * @date 14/10/2025
- */
 public class BoardViewModelFactory implements ViewModelProvider.Factory {
 
     private final GetBoardByIdUseCase getBoardByIdUseCase;
@@ -29,9 +22,6 @@ public class BoardViewModelFactory implements ViewModelProvider.Factory {
     private final ReorderBoardsUseCase reorderBoardsUseCase;
     private final GetBoardTasksUseCase getBoardTasksUseCase;
 
-    /**
-     * Constructor with all required UseCases
-     */
     public BoardViewModelFactory(
             GetBoardByIdUseCase getBoardByIdUseCase,
             GetBoardsByProjectUseCase getBoardsByProjectUseCase,

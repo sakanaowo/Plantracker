@@ -18,10 +18,7 @@ import com.example.tralalero.network.ApiClient;
 
 import java.util.List;
 
-/**
- * Activity để test các Repository
- * Sử dụng activity này để kiểm tra xem các Repository hoạt động đúng chưa
- */
+
 public class RepositoryTestActivity extends AppCompatActivity {
 
     private static final String TAG = "RepositoryTest";
@@ -29,7 +26,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
     private TextView tvLog;
     private ScrollView scrollView;
 
-    // Repositories
     private IWorkspaceRepository workspaceRepository;
     private IProjectRepository projectRepository;
     private IBoardRepository boardRepository;
@@ -59,7 +55,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
     }
 
     private void initRepositories() {
-        // Initialize API Services
         WorkspaceApiService workspaceApi = ApiClient.get().create(WorkspaceApiService.class);
         ProjectApiService projectApi = ApiClient.get().create(ProjectApiService.class);
         BoardApiService boardApi = ApiClient.get().create(BoardApiService.class);
@@ -70,7 +65,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
         EventApiService eventApi = ApiClient.get().create(EventApiService.class);
         TimerApiService timerApi = ApiClient.get().create(TimerApiService.class);
 
-        // Initialize Repositories
         workspaceRepository = new WorkspaceRepositoryImpl(workspaceApi);
         projectRepository = new ProjectRepositoryImpl(projectApi);
         boardRepository = new BoardRepositoryImpl(boardApi);
@@ -102,7 +96,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
         btnClearLog.setOnClickListener(v -> clearLog());
     }
 
-    // ========== TEST METHODS ==========
 
     private void testWorkspaceRepository() {
         log("\n=== Testing WorkspaceRepository ===");
@@ -118,7 +111,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
                     log("  → Workspace đầu tiên: " + first.getName());
                     log("  → ID: " + first.getId());
 
-                    // Test lấy projects của workspace đầu tiên
                     testGetProjects(first.getId());
                 }
             }
@@ -146,7 +138,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
                     log("  → Project đầu tiên: " + first.getName());
                     log("  → Key: " + first.getKey());
 
-                    // Test lấy boards của project đầu tiên
                     testGetBoards(first.getId());
                 }
             }
@@ -182,21 +173,18 @@ public class RepositoryTestActivity extends AppCompatActivity {
     private void testProjectRepository() {
         log("\n=== Testing ProjectRepository ===");
 
-        // Lấy workspace đầu tiên để test
         workspaceRepository.getWorkspaces(new IWorkspaceRepository.RepositoryCallback<List<Workspace>>() {
             @Override
             public void onSuccess(List<Workspace> workspaces) {
                 if (!workspaces.isEmpty()) {
                     String workspaceId = workspaces.get(0).getId();
 
-                    // Test lấy projects
                     workspaceRepository.getProjects(workspaceId, new IWorkspaceRepository.RepositoryCallback<List<Project>>() {
                         @Override
                         public void onSuccess(List<Project> projects) {
                             if (!projects.isEmpty()) {
                                 String projectId = projects.get(0).getId();
 
-                                // Test getProjectById
                                 projectRepository.getProjectById(projectId, new IProjectRepository.RepositoryCallback<Project>() {
                                     @Override
                                     public void onSuccess(Project result) {
@@ -234,7 +222,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
     private void testBoardRepository() {
         log("\n=== Testing BoardRepository ===");
 
-        // Lấy workspace -> project -> board đầu tiên
         workspaceRepository.getWorkspaces(new IWorkspaceRepository.RepositoryCallback<List<Workspace>>() {
             @Override
             public void onSuccess(List<Workspace> workspaces) {
@@ -294,7 +281,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
     private void testTaskRepository() {
         log("\n=== Testing TaskRepository ===");
 
-        // Lấy board đầu tiên để test
         workspaceRepository.getWorkspaces(new IWorkspaceRepository.RepositoryCallback<List<Workspace>>() {
             @Override
             public void onSuccess(List<Workspace> workspaces) {
@@ -360,14 +346,12 @@ public class RepositoryTestActivity extends AppCompatActivity {
     private void testNotificationRepository() {
         log("\n=== Testing NotificationRepository ===");
 
-        // Test getUnreadCount
         notificationRepository.getUnreadCount(new INotificationRepository.RepositoryCallback<Integer>() {
             @Override
             public void onSuccess(Integer result) {
                 log("✓ getUnreadCount: SUCCESS");
                 log("  → Số notification chưa đọc: " + result);
 
-                // Test getNotifications
                 testGetNotifications();
             }
 
@@ -410,7 +394,6 @@ public class RepositoryTestActivity extends AppCompatActivity {
     }
 
 
-    // ========== HELPER METHODS ==========
 
     private void log(String message) {
         Log.d(TAG, message);

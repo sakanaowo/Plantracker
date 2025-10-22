@@ -31,13 +31,6 @@ import com.google.android.material.button.MaterialButton;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-/**
- * Activity for creating and editing task details
- * Uses card_detail.xml layout
- * 
- * @author Modified from BottomSheet to Activity
- * @date October 20, 2025
- */
 public class CardDetailActivity extends AppCompatActivity {
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
@@ -245,9 +238,6 @@ public class CardDetailActivity extends AppCompatActivity {
         tvCommentsHeader.setOnClickListener(v -> toggleSection(llCommentsContainer));
     }
 
-    /**
-     * Toggle visibility of expandable section
-     */
     private void toggleSection(LinearLayout container) {
         if (container.getVisibility() == View.VISIBLE) {
             container.setVisibility(View.GONE);
@@ -369,11 +359,6 @@ public class CardDetailActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Show dialog to assign task to a user
-     * Option 1: Self-assign (for project owner)
-     * Option 2: Assign to member (disabled - under development)
-     */
     private void showAssignTaskDialog() {
         CharSequence[] options = {
             "Self-assign (Assign to me)",
@@ -398,9 +383,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Self-assign the task to current user (project owner)
-     */
     private void selfAssignTask() {
         if (taskId != null && !taskId.isEmpty()) {
             String currentUserId = App.tokenManager.getUserId();
@@ -444,9 +426,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Show dialog to add attachment
-     */
     private void showAddAttachmentDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter attachment URL");

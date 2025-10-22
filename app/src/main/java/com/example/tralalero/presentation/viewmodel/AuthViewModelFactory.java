@@ -10,29 +10,14 @@ import com.example.tralalero.domain.usecase.auth.LoginUseCase;
 import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
 import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 
-/**
- * Factory để tạo AuthViewModel với dependencies injection.
- * 
- * @author Người 1 - Phase 4
- * @date 14/10/2025
- */
 public class AuthViewModelFactory implements ViewModelProvider.Factory {
-    
+
     private final LoginUseCase loginUseCase;
     private final SignupUseCase signupUseCase;
     private final LogoutUseCase logoutUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final IsLoggedInUseCase isLoggedInUseCase;
-    
-    /**
-     * Constructor inject các UseCase dependencies.
-     * 
-     * @param loginUseCase UseCase xử lý login
-     * @param signupUseCase UseCase xử lý signup
-     * @param logoutUseCase UseCase xử lý logout
-     * @param getCurrentUserUseCase UseCase lấy thông tin user hiện tại
-     * @param isLoggedInUseCase UseCase check trạng thái login
-     */
+
     public AuthViewModelFactory(
             LoginUseCase loginUseCase,
             SignupUseCase signupUseCase,
@@ -46,7 +31,7 @@ public class AuthViewModelFactory implements ViewModelProvider.Factory {
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.isLoggedInUseCase = isLoggedInUseCase;
     }
-    
+
     @NonNull
     @Override
     @SuppressWarnings("unchecked")

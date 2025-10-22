@@ -10,29 +10,14 @@ import com.example.tralalero.domain.usecase.workspace.GetWorkspaceByIdUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceProjectsUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspacesUseCase;
 
-/**
- * Factory để tạo WorkspaceViewModel với dependencies injection.
- * 
- * @author Người 1 - Phase 4
- * @date 14/10/2025
- */
 public class WorkspaceViewModelFactory implements ViewModelProvider.Factory {
-    
+
     private final GetWorkspacesUseCase getWorkspacesUseCase;
     private final GetWorkspaceByIdUseCase getWorkspaceByIdUseCase;
     private final CreateWorkspaceUseCase createWorkspaceUseCase;
     private final GetWorkspaceProjectsUseCase getWorkspaceProjectsUseCase;
     private final GetWorkspaceBoardsUseCase getWorkspaceBoardsUseCase;
-    
-    /**
-     * Constructor inject các UseCase dependencies.
-     * 
-     * @param getWorkspacesUseCase UseCase lấy danh sách workspaces
-     * @param getWorkspaceByIdUseCase UseCase lấy workspace theo ID
-     * @param createWorkspaceUseCase UseCase tạo workspace mới
-     * @param getWorkspaceProjectsUseCase UseCase lấy projects trong workspace
-     * @param getWorkspaceBoardsUseCase UseCase lấy boards trong project
-     */
+
     public WorkspaceViewModelFactory(
             GetWorkspacesUseCase getWorkspacesUseCase,
             GetWorkspaceByIdUseCase getWorkspaceByIdUseCase,
@@ -46,7 +31,7 @@ public class WorkspaceViewModelFactory implements ViewModelProvider.Factory {
         this.getWorkspaceProjectsUseCase = getWorkspaceProjectsUseCase;
         this.getWorkspaceBoardsUseCase = getWorkspaceBoardsUseCase;
     }
-    
+
     @NonNull
     @Override
     @SuppressWarnings("unchecked")

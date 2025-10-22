@@ -38,30 +38,14 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * InboxActivity - Quick Access for all tasks
- * Integrates with TaskViewModel to display all tasks across projects
- * 
- * Features:
- * - Display all tasks in RecyclerView
- * - Quick add task functionality
- * - Task actions via TaskDetailBottomSheet
- * - Filter/Search capabilities (TODO)
- * 
- * @author Người 3
- * @date 15/10/2025
- * @updated October 19, 2025 - Added pull-to-refresh
- */
 public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "InboxActivity";
-    public static final String ACTION_TASK_CREATED = "com.example.tralalero.TASK_CREATED";
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
 
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
-    private TextView emptyView;
     private RelativeLayout notiLayout;
     private LinearLayout inboxQuickAccess;
     private TextInputEditText inboxAddCard;

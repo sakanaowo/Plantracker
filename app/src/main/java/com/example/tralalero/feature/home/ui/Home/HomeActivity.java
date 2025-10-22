@@ -78,12 +78,6 @@ public class HomeActivity extends BaseActivity {
         });
     }
 
-    /**
-     * Load workspaces with cache
-     * Cache-first approach: instant load from cache, then refresh from API
-     * 
-     * @author Person 1
-     */
     private void loadWorkspacesWithCache() {
         Log.d(TAG, "Loading workspaces with cache...");
         final long startTime = System.currentTimeMillis();
@@ -141,11 +135,6 @@ public class HomeActivity extends BaseActivity {
             });
     }
 
-    /**
-     * Setup pull-to-refresh functionality
-     *
-     * @author Minor Issues Fix - October 19, 2025
-     */
     private void setupSwipeRefresh() {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
@@ -161,10 +150,6 @@ public class HomeActivity extends BaseActivity {
         }
     }
 
-    /**
-     * Force refresh workspaces (bypass cache)
-     * Called by pull-to-refresh
-     */
     private void forceRefreshWorkspaces() {
         Log.d(TAG, "Force refreshing workspaces from API...");
         App.dependencyProvider.clearWorkspaceCache();

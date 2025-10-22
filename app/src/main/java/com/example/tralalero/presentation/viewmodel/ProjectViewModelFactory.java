@@ -11,13 +11,6 @@ import com.example.tralalero.domain.usecase.project.DeleteProjectUseCase;
 import com.example.tralalero.domain.usecase.project.SwitchBoardTypeUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
 
-/**
- * Factory for creating ProjectViewModel instances
- * Required by Android Architecture Components to inject dependencies
- *
- * @author Người 2
- * @date 14/10/2025
- */
 public class ProjectViewModelFactory implements ViewModelProvider.Factory {
 
     private final GetProjectByIdUseCase getProjectByIdUseCase;
@@ -27,9 +20,6 @@ public class ProjectViewModelFactory implements ViewModelProvider.Factory {
     private final SwitchBoardTypeUseCase switchBoardTypeUseCase;
     private final UpdateProjectKeyUseCase updateProjectKeyUseCase;
 
-    /**
-     * Constructor with all required UseCases
-     */
     public ProjectViewModelFactory(
             GetProjectByIdUseCase getProjectByIdUseCase,
             CreateProjectUseCase createProjectUseCase,
