@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -94,6 +95,9 @@ public class WorkspaceActivity extends HomeActivity {
         // Setup create board/project button
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
         btnCreateBoard.setOnClickListener(v -> showCreateProjectDialog());
+
+        // Setup back button to return to HomeActivity
+        setupBackButton();
 
         // Setup bottom navigation
         setupBottomNavigation(0);
@@ -290,6 +294,19 @@ public class WorkspaceActivity extends HomeActivity {
         );
 
         projectViewModel.createProject(workspaceId, newProject);
+    }
+
+    /**
+     * Setup back button to navigate to HomeActivity
+     */
+    private void setupBackButton() {
+        ImageView btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                // Return to HomeActivity
+                finish();
+            });
+        }
     }
 
     /**
