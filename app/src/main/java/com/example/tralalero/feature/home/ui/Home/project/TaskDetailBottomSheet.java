@@ -72,7 +72,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     }
     private void initViews(View view) {
         ivClose = view.findViewById(R.id.ivClose);
-//        rbTaskTitle = view.findViewById(R.id.rbTaskTitle);
         etDescription = view.findViewById(R.id.etDescription);
         etDateStart = view.findViewById(R.id.etDateStart);
         etDueDate = view.findViewById(R.id.etDueDate);
@@ -120,7 +119,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             etDescription.setText(args.getString(ARG_TASK_DESCRIPTION, "No description"));
         }
         if (etDateStart != null) {
-            // For now, use created date or leave empty
             etDateStart.setText(""); // TODO: Add start date if available
         }
         if (etDueDate != null) {

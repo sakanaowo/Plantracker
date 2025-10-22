@@ -37,6 +37,8 @@
         </LinearLayout>
 
         <!-- Task RecyclerView -->
+
+        <!-- Add card button -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/taskRecycler"
             android:layout_width="match_parent"
@@ -45,7 +47,6 @@
             android:scrollbars="vertical"
             tools:listitem="@layout/board_detail_item" />
 
-        <!-- Add card button -->
         <LinearLayout
             android:id="@+id/btnAddCard"
             android:layout_width="match_parent"

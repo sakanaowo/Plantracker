@@ -44,10 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener {
+public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener, BoardAdapter.OnTaskBoardChangeListener {
     private static final String TAG = "ProjectActivity";
-    
-    // Request codes for CardDetailActivity
     private static final int REQUEST_CODE_CREATE_TASK = 2001;
     private static final int REQUEST_CODE_EDIT_TASK = 2002;
 
@@ -68,8 +66,6 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private String workspaceName;
     private List<Board> boards = new ArrayList<>();
     private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
-    
-    // � Activity Result Launcher for InboxActivity
     private ActivityResultLauncher<Intent> inboxActivityLauncher;
 
     @Override
@@ -91,21 +87,16 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         observeViewModels();
         loadBoards();
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // No cleanup needed for ActivityResultLauncher
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
-        // 🔄 Reload all boards when returning from InboxActivity
-        // This ensures tasks created in InboxActivity appear here automatically
         Log.d(TAG, "onResume: Reloading all boards to sync with InboxActivity changes");
-        
-        // Reload tasks for all currently loaded boards
         for (Board board : boards) {
             loadTasksForBoard(board.getId());
         }
@@ -126,7 +117,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             finish();
         }
     }
-    
+
     /**
      * 📥 Setup Activity Result Launcher to receive task creation results from InboxActivity
      * Modern way to handle activity results (replaces startActivityForResult)
@@ -139,11 +130,10 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                     Intent data = result.getData();
                     String taskId = data.getStringExtra("task_id");
                     String boardId = data.getStringExtra("board_id");
-                    
+
                     Log.d(TAG, "📥 Received result: Task created - taskId: " + taskId + ", boardId: " + boardId);
-                    
+
                     if (boardId != null && taskId != null) {
-                        // Reload tasks for the affected board
                         loadTasksForBoard(boardId);
                         Toast.makeText(this, "✅ Task added to board!", Toast.LENGTH_SHORT).show();
                         Log.d(TAG, "✓ Reloaded tasks for board: " + boardId);
@@ -227,8 +217,6 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
 
         boardsRecyclerView.setAdapter(boardAdapter);
     }
-
-    // ✅ Implement OnBoardActionListener methods
     public void onAddCardClick(Board board) {
         showCreateTaskDialog(board);
     }
@@ -244,15 +232,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     public List<Task> getTasksForBoard(String boardId) {
         return tasksPerBoard.get(boardId);
     }
-
-    // ✅ Implement OnTaskPositionChangeListener
     public void onTaskPositionChanged(Task task, double newPosition, Board board) {
         Log.d(TAG, "🔄 Task '" + task.getTitle() + "' updating position to " + newPosition);
-
-        // Update task position in backend
         taskViewModel.updateTaskPosition(task.getId(), newPosition);
-
-        // ✅ Reload tasks for this board to get updated positions
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             loadTasksForBoard(board.getId());
         }, 300);
@@ -295,7 +277,6 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     }
 
     private void loadTasksForBoard(String boardId) {
-        // FIX: Remove old observer first to prevent multiple observers
         taskViewModel.getTasksForBoard(boardId).removeObservers(this);
 
         taskViewModel.getTasksForBoard(boardId).observe(this, tasks -> {
@@ -310,29 +291,23 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     }
 
     private void showCreateTaskDialog(Board board) {
-        // Open CardDetailActivity for creating new task
         Intent intent = new Intent(this, CardDetailActivity.class);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, board.getId());
         intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
         intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, false);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, board.getName()); // Pass board name
-        
-        // Store board ID for later use in onActivityResult
         intent.putExtra("board_id_for_reload", board.getId());
-        
+
         startActivityForResult(intent, REQUEST_CODE_CREATE_TASK);
     }
 
     private void showTaskDetailBottomSheet(Task task, Board board) {
-        // Open CardDetailActivity for editing task
         Intent intent = new Intent(this, CardDetailActivity.class);
         intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, board.getId());
         intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
         intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, board.getName()); // Pass board name
-        
-        // Pass task details
         intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
@@ -340,39 +315,78 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         intent.putExtra(CardDetailActivity.EXTRA_TASK_POSITION, task.getPosition());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_ASSIGNEE_ID, task.getAssigneeId());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_CREATED_BY, task.getCreatedBy());
-        
-        // Store board ID for later use in onActivityResult
         intent.putExtra("board_id_for_reload", board.getId());
-        
+
         startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        
+
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_CODE_CREATE_TASK || requestCode == REQUEST_CODE_EDIT_TASK) {
-                // Get board ID from intent
                 final String boardIdForReload;
                 if (data != null) {
                     boardIdForReload = data.getStringExtra("board_id_for_reload");
                 } else {
                     boardIdForReload = null;
                 }
-                
-                // Reload tasks after creation/update/delete
                 if (boardIdForReload != null && !boardIdForReload.isEmpty()) {
                     Log.d(TAG, "🔄 Reloading tasks for board: " + boardIdForReload);
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
                         loadTasksForBoard(boardIdForReload);
                     }, 500);
                 } else {
-                    // Reload all boards if we don't have specific board ID
                     Log.d(TAG, "🔄 Reloading all boards");
                     loadBoards();
                 }
             }
         }
+    }
+
+    @Override
+    public void onMoveTaskToBoard(Task task, Board currentBoard, int direction) {
+        Log.d(TAG, "onMoveTaskToBoard: task=" + task.getTitle() + ", currentBoard=" + currentBoard.getName() + ", direction=" + direction);
+        int currentBoardIndex = -1;
+        for (int i = 0; i < boards.size(); i++) {
+            if (boards.get(i).getId().equals(currentBoard.getId())) {
+                currentBoardIndex = i;
+                break;
+            }
+        }
+
+        if (currentBoardIndex == -1) {
+            Log.e(TAG, "Current board not found in boards list");
+            Toast.makeText(this, "Error: Board not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int targetBoardIndex = currentBoardIndex + direction;
+        if (targetBoardIndex < 0) {
+            Toast.makeText(this, "Cannot move left - already at first board", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (targetBoardIndex >= boards.size()) {
+            Toast.makeText(this, "Cannot move right - already at last board", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Board targetBoard = boards.get(targetBoardIndex);
+
+        Log.d(TAG, "Moving task '" + task.getTitle() + "' from '" + currentBoard.getName() + "' to '" + targetBoard.getName() + "'");
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+        taskViewModel.moveTaskToBoard(task.getId(), targetBoard.getId(), 0.0);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            loadTasksForBoard(currentBoard.getId());
+            loadTasksForBoard(targetBoard.getId());
+
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            Toast.makeText(this, "Moved to " + targetBoard.getName(), Toast.LENGTH_SHORT).show();
+        }, 500);
     }
 }

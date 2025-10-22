@@ -28,8 +28,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     }
 
     public interface OnTaskMoveListener {
-        void onMoveUp(int position);
-        void onMoveDown(int position);
+        void onMoveLeft(Task task, int position);
+        void onMoveRight(Task task, int position);
     }
 
     public TaskAdapter(List<Task> taskList) {
@@ -95,15 +95,15 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     static class ViewHolder extends RecyclerView.ViewHolder {
         CheckBox checkBox;
         TextView tvTaskTitle;
-        ImageButton btnMoveUp;
-        ImageButton btnMoveDown;
+        ImageButton btnMoveLeft;
+        ImageButton btnMoveRight;
 
         ViewHolder(View itemView) {
             super(itemView);
             checkBox = itemView.findViewById(R.id.checkBoxTask);
             tvTaskTitle = itemView.findViewById(R.id.tvTaskTitle);
-            btnMoveUp = itemView.findViewById(R.id.btnMoveUp);
-            btnMoveDown = itemView.findViewById(R.id.btnMoveDown);
+            btnMoveLeft = itemView.findViewById(R.id.btnMoveLeft);
+            btnMoveRight = itemView.findViewById(R.id.btnMoveRight);
         }
 
         void bind(Task task, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
@@ -128,45 +128,41 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
                 v.setClickable(true);
             });
             
-            // ✅ Setup move up button with logging
-            btnMoveUp.setVisibility(View.VISIBLE);
-            btnMoveUp.setEnabled(!isFirst);
-            btnMoveUp.setAlpha(isFirst ? 0.3f : 1.0f);
-            btnMoveUp.setClickable(true);
-            btnMoveUp.setFocusable(true);
-            btnMoveUp.setOnClickListener(v -> {
-                Log.d(TAG, "btnMoveUp clicked at position " + getAdapterPosition() + ", isFirst=" + isFirst);
-                if (moveListener != null && !isFirst) {
+            // Setup move left button
+            btnMoveLeft.setVisibility(View.VISIBLE);
+            btnMoveLeft.setClickable(true);
+            btnMoveLeft.setFocusable(true);
+            btnMoveLeft.setOnClickListener(v -> {
+                Log.d(TAG, "btnMoveLeft clicked at position " + getAdapterPosition());
+                if (moveListener != null) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        Log.d(TAG, "Calling moveListener.onMoveUp(" + position + ")");
-                        moveListener.onMoveUp(position);
+                        Log.d(TAG, "Calling moveListener.onMoveLeft(" + position + ")");
+                        moveListener.onMoveLeft(task, position);
                     } else {
                         Log.w(TAG, "Position is NO_POSITION, cannot move");
                     }
                 } else {
-                    Log.w(TAG, "Cannot move up: moveListener=" + moveListener + ", isFirst=" + isFirst);
+                    Log.w(TAG, "Cannot move left: moveListener is null");
                 }
             });
             
-            // ✅ Setup move down button with logging
-            btnMoveDown.setVisibility(View.VISIBLE);
-            btnMoveDown.setEnabled(!isLast);
-            btnMoveDown.setAlpha(isLast ? 0.3f : 1.0f);
-            btnMoveDown.setClickable(true);
-            btnMoveDown.setFocusable(true);
-            btnMoveDown.setOnClickListener(v -> {
-                Log.d(TAG, "btnMoveDown clicked at position " + getAdapterPosition() + ", isLast=" + isLast);
-                if (moveListener != null && !isLast) {
+            // Setup move right button
+            btnMoveRight.setVisibility(View.VISIBLE);
+            btnMoveRight.setClickable(true);
+            btnMoveRight.setFocusable(true);
+            btnMoveRight.setOnClickListener(v -> {
+                Log.d(TAG, "btnMoveRight clicked at position " + getAdapterPosition());
+                if (moveListener != null) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        Log.d(TAG, "Calling moveListener.onMoveDown(" + position + ")");
-                        moveListener.onMoveDown(position);
+                        Log.d(TAG, "Calling moveListener.onMoveRight(" + position + ")");
+                        moveListener.onMoveRight(task, position);
                     } else {
                         Log.w(TAG, "Position is NO_POSITION, cannot move");
                     }
                 } else {
-                    Log.w(TAG, "Cannot move down: moveListener=" + moveListener + ", isLast=" + isLast);
+                    Log.w(TAG, "Cannot move right: moveListener is null");
                 }
             });
         }

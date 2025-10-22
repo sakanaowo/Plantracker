@@ -51,6 +51,20 @@ public interface TaskApiService {
         @Body TaskDTO task
     );
 
+    /**
+     * Move task to another board
+     * Backend: POST /api/tasks/:id/move
+     * 
+     * @param taskId Task ID to move
+     * @param moveData Map with "toBoardId", optional "beforeId", "afterId"
+     * @return Updated task
+     */
+    @POST("tasks/{id}/move")
+    Call<TaskDTO> moveTaskToBoard(
+        @Path("id") String taskId,
+        @Body java.util.Map<String, Object> moveData
+    );
+
  
     @DELETE("tasks/{id}")
     Call<Void> deleteTask(@Path("id") String taskId);

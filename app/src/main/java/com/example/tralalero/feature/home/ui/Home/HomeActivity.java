@@ -77,7 +77,7 @@ public class HomeActivity extends BaseActivity {
             }
         });
     }
-    
+
     /**
      * Load workspaces with cache
      * Cache-first approach: instant load from cache, then refresh from API
@@ -87,23 +87,20 @@ public class HomeActivity extends BaseActivity {
     private void loadWorkspacesWithCache() {
         Log.d(TAG, "Loading workspaces with cache...");
         final long startTime = System.currentTimeMillis();
-        
+
         App.dependencyProvider.getWorkspaceRepositoryWithCache()
             .getWorkspaces(new WorkspaceRepositoryImplWithCache.WorkspaceCallback() {
                 @Override
                 public void onSuccess(List<Workspace> workspaces) {
                     long duration = System.currentTimeMillis() - startTime;
-                    
+
                     runOnUiThread(() -> {
-                        // Stop refreshing indicator
                         if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                             swipeRefreshLayout.setRefreshing(false);
                         }
 
                         if (workspaces != null && !workspaces.isEmpty()) {
                             homeAdapter.setWorkspaceList(workspaces);
-                            
-                            // Performance logging
                             String message;
                             if (duration < 100) {
                                 message = "⚡ Cache: " + duration + "ms (" + workspaces.size() + " workspaces)";
@@ -112,29 +109,25 @@ public class HomeActivity extends BaseActivity {
                                 message = "🌐 API: " + duration + "ms (" + workspaces.size() + " workspaces)";
                                 Log.i(TAG, "API CALL: " + duration + "ms");
                             }
-                            
-                            // Optional: Show toast for demo
                             Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
                         } else {
                             Log.d(TAG, "No workspaces found");
                         }
                     });
                 }
-                
+
                 @Override
                 public void onCacheEmpty() {
                     Log.d(TAG, "Cache empty, falling back to API...");
                     runOnUiThread(() -> {
-                        // Fall back to ViewModel when cache is empty
                         workspaceViewModel.loadWorkspaces();
                     });
                 }
-                
+
                 @Override
                 public void onError(Exception e) {
                     Log.e(TAG, "Cache error: " + e.getMessage());
                     runOnUiThread(() -> {
-                        // Stop refreshing on error
                         if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                             swipeRefreshLayout.setRefreshing(false);
                         }
@@ -142,13 +135,12 @@ public class HomeActivity extends BaseActivity {
                         Toast.makeText(HomeActivity.this,
                             "Error loading from cache, trying API...", 
                             Toast.LENGTH_SHORT).show();
-                        // Fall back to ViewModel on cache error
                         workspaceViewModel.loadWorkspaces();
                     });
                 }
             });
     }
-    
+
     /**
      * Setup pull-to-refresh functionality
      *
@@ -158,13 +150,10 @@ public class HomeActivity extends BaseActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         if (swipeRefreshLayout != null) {
-            // Configure refresh colors
             swipeRefreshLayout.setColorSchemeResources(
                 R.color.colorPrimary,
                 R.color.colorAccent
             );
-
-            // Set refresh listener
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "User triggered pull-to-refresh");
                 forceRefreshWorkspaces();
@@ -178,19 +167,11 @@ public class HomeActivity extends BaseActivity {
      */
     private void forceRefreshWorkspaces() {
         Log.d(TAG, "Force refreshing workspaces from API...");
-
-        // Clear cache first
         App.dependencyProvider.clearWorkspaceCache();
-
-        // Show refreshing indicator
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setRefreshing(true);
         }
-
-        // Load from API directly (cache empty will trigger API call)
         loadWorkspacesWithCache();
-
-        // Timeout after 5 seconds max
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -204,8 +185,6 @@ public class HomeActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-
-        // Apply window insets properly - separate for title and navigation
         View titleView = findViewById(R.id.tvTitle);
         View bottomNav = findViewById(R.id.bottomNavigation);
 
@@ -225,10 +204,8 @@ public class HomeActivity extends BaseActivity {
         observeWorkspaceViewModel();
         setupRecyclerView();
         setupSwipeRefresh();
-
-        // Use cached repository instead of ViewModel
         loadWorkspacesWithCache();  // Person 1: Cache-first approach
-        
+
         setupTestRepositoryButton();
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
@@ -271,16 +248,8 @@ public class HomeActivity extends BaseActivity {
     private void setupTestRepositoryButton() {
         FloatingActionButton fabTest = findViewById(R.id.fabTestRepository);
         if (fabTest != null) {
-            // ẨN nút test repository trong production
             fabTest.setVisibility(View.GONE);
 
-            // Comment out click listener vì nút đã ẩn
-            /*
-            fabTest.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, RepositoryTestActivity.class);
-                startActivity(intent);
-            });
-            */
             fabTest.setVisibility(View.GONE);
         }
     }

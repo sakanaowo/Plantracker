@@ -60,8 +60,6 @@ import okhttp3.ResponseBody;
 
 public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "EditProfileActivity";
-    
-    // Views
     private MaterialToolbar toolbar;
     private FrameLayout avatarContainer;
     private TextView tvAvatarLetter;
@@ -72,17 +70,11 @@ public class EditProfileActivity extends AppCompatActivity {
     private MaterialButton btnSave;
     private MaterialButton btnCancel;
     private FrameLayout loadingOverlay;
-    
-    // Firebase & Auth
     private FirebaseUser firebaseUser;
     private TokenManager tokenManager;
-    
-    // Image handling
     private Uri currentPhotoUri;
     private String newAvatarUrl;
     private boolean avatarChanged = false;
-    
-    // Activity Result Launchers
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
@@ -93,22 +85,20 @@ public class EditProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_edit_profile);
-        
-        // Apply window insets
         View rootView = findViewById(android.R.id.content);
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(0, systemBars.top, 0, systemBars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
-        
+
         initViews();
         setupActivityResultLaunchers();
         setupToolbar();
         setupClickListeners();
         loadCurrentProfile();
     }
-    
+
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         avatarContainer = findViewById(R.id.avatarContainer);
@@ -120,59 +110,46 @@ public class EditProfileActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSave);
         btnCancel = findViewById(R.id.btnCancel);
         loadingOverlay = findViewById(R.id.loadingOverlay);
-        
+
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         tokenManager = new TokenManager(this);
     }
-    
+
     private void setupToolbar() {
         toolbar.setNavigationOnClickListener(v -> finish());
     }
-    
+
     private void setupClickListeners() {
-        // Avatar click - show image picker
         avatarContainer.setOnClickListener(v -> showImagePickerBottomSheet());
-        
-        // Name text changed - update username preview
         etName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String name = s.toString().trim();
                 if (!name.isEmpty()) {
                     String username = "@" + name.toLowerCase().replace(" ", "");
                     etUsername.setText(username);
-                    
-                    // Update avatar letter
                     tvAvatarLetter.setText(String.valueOf(name.charAt(0)).toUpperCase());
                 }
             }
-            
+
             @Override
             public void afterTextChanged(Editable s) {}
         });
-        
-        // Save button
         btnSave.setOnClickListener(v -> saveProfile());
-        
-        // Cancel button
         btnCancel.setOnClickListener(v -> finish());
     }
-    
+
     private void loadCurrentProfile() {
         if (firebaseUser == null) return;
-        
+
         String email = firebaseUser.getEmail();
         String displayName = firebaseUser.getDisplayName();
-        
-        // Set email (read-only)
         if (email != null) {
             etEmail.setText(email);
         }
-        
-        // Set initial name from Firebase
         if (displayName != null && !displayName.isEmpty()) {
             etName.setText(displayName);
             etUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
@@ -183,29 +160,23 @@ public class EditProfileActivity extends AppCompatActivity {
             etUsername.setText("@" + username);
             tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
         }
-        
-        // Fetch full profile from backend to get avatar_url
         fetchUserProfileFromBackend();
     }
-    
+
     private void fetchUserProfileFromBackend() {
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
-        
+
         authApi.getMe().enqueue(new retrofit2.Callback<UserDto>() {
             @Override
             public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     UserDto user = response.body();
                     Log.d(TAG, "Fetched user profile from backend");
-                    
-                    // Update name if different from Firebase
                     if (user.name != null && !user.name.isEmpty()) {
                         etName.setText(user.name);
                         etUsername.setText("@" + user.name.toLowerCase().replace(" ", ""));
                         tvAvatarLetter.setText(String.valueOf(user.name.charAt(0)).toUpperCase());
                     }
-                    
-                    // Load avatar from Supabase
                     if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
                         Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
                         loadAvatarImage(user.avatarUrl);
@@ -216,21 +187,19 @@ public class EditProfileActivity extends AppCompatActivity {
                     Log.e(TAG, "Failed to fetch profile: " + response.code());
                 }
             }
-            
+
             @Override
             public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
                 Log.e(TAG, "Network error fetching profile", t);
             }
         });
     }
-    
+
     private void loadAvatarImage(String avatarUrl) {
         Log.d(TAG, "loadAvatarImage called with URL: " + avatarUrl);
-        
-        // Show letter first as placeholder
         tvAvatarLetter.setVisibility(View.VISIBLE);
         imgAvatar.setVisibility(View.GONE);
-        
+
         Glide.with(this)
             .load(avatarUrl)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -248,19 +217,17 @@ public class EditProfileActivity extends AppCompatActivity {
                             Log.e(TAG, "Root cause: ", cause);
                         }
                     }
-                    // Keep showing letter avatar on error
                     imgAvatar.setVisibility(View.GONE);
                     tvAvatarLetter.setVisibility(View.VISIBLE);
                     return true; // handled
                 }
-                
+
                 @Override
                 public boolean onResourceReady(android.graphics.drawable.Drawable resource, 
                                              Object model, 
                                              com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
                                              com.bumptech.glide.load.DataSource dataSource, 
                                              boolean isFirstResource) {
-                    // Image loaded successfully, show it
                     Log.d(TAG, "✓ Avatar loaded successfully from: " + avatarUrl);
                     Log.d(TAG, "Data source: " + dataSource);
                     imgAvatar.setVisibility(View.VISIBLE);
@@ -270,7 +237,7 @@ public class EditProfileActivity extends AppCompatActivity {
             })
             .into(imgAvatar);
     }
-    
+
     private void setupActivityResultLaunchers() {
         galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -283,7 +250,7 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
             }
         );
-        
+
         cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.TakePicture(),
             success -> {
@@ -292,7 +259,7 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
             }
         );
-        
+
         cameraPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -303,7 +270,7 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
             }
         );
-        
+
         storagePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -315,32 +282,32 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         );
     }
-    
+
     private void showImagePickerBottomSheet() {
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_profile_image, null);
         bottomSheet.setContentView(view);
-        
+
         view.findViewById(R.id.layoutTakePhoto).setOnClickListener(v -> {
             bottomSheet.dismiss();
             checkCameraPermissionAndOpen();
         });
-        
+
         view.findViewById(R.id.layoutChooseGallery).setOnClickListener(v -> {
             bottomSheet.dismiss();
             checkStoragePermissionAndOpen();
         });
-        
+
         view.findViewById(R.id.layoutRemovePhoto).setOnClickListener(v -> {
             bottomSheet.dismiss();
             removeProfilePhoto();
         });
-        
+
         view.findViewById(R.id.btnCancel).setOnClickListener(v -> bottomSheet.dismiss());
-        
+
         bottomSheet.show();
     }
-    
+
     private void checkCameraPermissionAndOpen() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -349,7 +316,7 @@ public class EditProfileActivity extends AppCompatActivity {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
     }
-    
+
     private void checkStoragePermissionAndOpen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
@@ -367,7 +334,7 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         }
     }
-    
+
     private void openCamera() {
         try {
             File photoFile = createImageFile();
@@ -379,35 +346,31 @@ public class EditProfileActivity extends AppCompatActivity {
             Toast.makeText(this, "Error opening camera", Toast.LENGTH_SHORT).show();
         }
     }
-    
+
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryLauncher.launch(intent);
     }
-    
+
     private File createImageFile() throws IOException {
         String imageFileName = "profile_" + System.currentTimeMillis();
         File storageDir = getExternalFilesDir(null);
         return File.createTempFile(imageFileName, ".jpg", storageDir);
     }
-    
+
     private void uploadImageToFirebase(Uri imageUri) {
         if (firebaseUser == null) {
             Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         showLoading(true);
         Log.d(TAG, "Starting 2-step upload process for user: " + firebaseUser.getUid());
-        
-        // Extract file name from URI
         String fileName = getFileNameFromUri(imageUri);
         Log.d(TAG, "File name: " + fileName);
-        
-        // Step 1: Request signed upload URL from backend
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
         UploadUrlRequest request = new UploadUrlRequest(fileName);
-        
+
         authApi.requestUploadUrl(request).enqueue(new retrofit2.Callback<UploadUrlResponse>() {
             @Override
             public void onResponse(retrofit2.Call<UploadUrlResponse> call, 
@@ -417,8 +380,6 @@ public class EditProfileActivity extends AppCompatActivity {
                     Log.d(TAG, "✓ Step 1: Received signed URL");
                     Log.d(TAG, "  Path: " + uploadData.path);
                     Log.d(TAG, "  Signed URL: " + uploadData.signedUrl);
-                    
-                    // Step 2: Upload file to Supabase
                     uploadFileToSupabase(imageUri, uploadData.signedUrl, uploadData.path);
                 } else {
                     Log.e(TAG, "Failed to get upload URL: " + response.code());
@@ -427,7 +388,7 @@ public class EditProfileActivity extends AppCompatActivity {
                         "Failed to prepare upload", Toast.LENGTH_SHORT).show();
                 }
             }
-            
+
             @Override
             public void onFailure(retrofit2.Call<UploadUrlResponse> call, Throwable t) {
                 Log.e(TAG, "Network error requesting upload URL", t);
@@ -437,12 +398,11 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         });
     }
-    
+
     private String getFileNameFromUri(Uri uri) {
         String fileName = "avatar.jpg"; // default
-        
+
         try {
-            // Try to get real file name
             android.database.Cursor cursor = getContentResolver()
                 .query(uri, null, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
@@ -455,44 +415,33 @@ public class EditProfileActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error getting file name", e);
         }
-        
-        // Ensure it has extension
         if (!fileName.contains(".")) {
             fileName = fileName + ".jpg";
         }
-        
+
         return fileName;
     }
-    
+
     private void uploadFileToSupabase(Uri imageUri, String signedUrl, String storagePath) {
         try {
-            // Get file input stream
             InputStream inputStream = getContentResolver().openInputStream(imageUri);
             if (inputStream == null) {
                 showLoading(false);
                 Toast.makeText(this, "Cannot read file", Toast.LENGTH_SHORT).show();
                 return;
             }
-            
-            // Read file to byte array
             byte[] fileBytes = new byte[inputStream.available()];
             inputStream.read(fileBytes);
             inputStream.close();
-            
-            // Determine MIME type
             String mimeType = getContentResolver().getType(imageUri);
             if (mimeType == null) {
                 mimeType = "image/jpeg"; // default
             }
             Log.d(TAG, "MIME type: " + mimeType);
-            
-            // Create RequestBody
             RequestBody requestBody = RequestBody.create(
                 MediaType.parse(mimeType), 
                 fileBytes
             );
-            
-            // Step 2: PUT file to signed URL
             AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
             authApi.uploadToSupabase(signedUrl, requestBody)
                 .enqueue(new retrofit2.Callback<ResponseBody>() {
@@ -500,20 +449,14 @@ public class EditProfileActivity extends AppCompatActivity {
                     public void onResponse(retrofit2.Call<ResponseBody> call, 
                                          retrofit2.Response<ResponseBody> response) {
                         showLoading(false);
-                        
+
                         if (response.isSuccessful()) {
                             Log.d(TAG, "✓ Step 2: File uploaded to Supabase successfully");
                             Log.d(TAG, "  Storage path: " + storagePath);
-                            
-                            // Construct public URL from storage path using config
                             String publicUrl = SupabaseConfig.getPublicUrl(storagePath);
                             Log.d(TAG, "  Public URL: " + publicUrl);
-                            
-                            // Save the full public URL (backend validates as URL)
                             newAvatarUrl = publicUrl;
                             avatarChanged = true;
-                            
-                            // Update UI preview - load image immediately
                             runOnUiThread(() -> {
                                 loadAvatarImage(publicUrl);
                                 Toast.makeText(EditProfileActivity.this, 
@@ -525,7 +468,7 @@ public class EditProfileActivity extends AppCompatActivity {
                                 "Upload failed", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    
+
                     @Override
                     public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
                         showLoading(false);
@@ -534,72 +477,62 @@ public class EditProfileActivity extends AppCompatActivity {
                             "Upload error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
-            
+
         } catch (IOException e) {
             showLoading(false);
             Log.e(TAG, "Error reading file", e);
             Toast.makeText(this, "Error reading file", Toast.LENGTH_SHORT).show();
         }
     }
-    
+
     private void removeProfilePhoto() {
         newAvatarUrl = null;
         avatarChanged = true;
-        
+
         tvAvatarLetter.setVisibility(View.VISIBLE);
         imgAvatar.setVisibility(View.GONE);
-        
+
         Toast.makeText(this, "Photo will be removed when you save", Toast.LENGTH_SHORT).show();
     }
-    
+
     private void saveProfile() {
         String newName = etName.getText().toString().trim();
-        
-        // Validation
         if (newName.isEmpty()) {
             Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
             etName.requestFocus();
             return;
         }
-        
+
         if (newName.length() > 100) {
             Toast.makeText(this, "Name is too long (max 100 characters)", Toast.LENGTH_SHORT).show();
             etName.requestFocus();
             return;
         }
-        
-        // Check if anything changed
         String currentName = firebaseUser != null ? firebaseUser.getDisplayName() : "";
         if (newName.equals(currentName) && !avatarChanged) {
             Toast.makeText(this, "No changes to save", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         showLoading(true);
-        
-        // Step 1: Update Firebase profile
         updateFirebaseProfile(newName);
     }
-    
+
     private void updateFirebaseProfile(String newName) {
         if (firebaseUser == null) {
             showLoading(false);
             Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         UserProfileChangeRequest.Builder builder = new UserProfileChangeRequest.Builder();
-        
-        // Update name only (avatar is now stored in Supabase, not Firebase)
         builder.setDisplayName(newName);
-        
+
         UserProfileChangeRequest profileUpdates = builder.build();
-        
+
         firebaseUser.updateProfile(profileUpdates)
             .addOnSuccessListener(aVoid -> {
                 Log.d(TAG, "✓ Firebase profile updated (name only)");
-                
-                // Step 2: Update backend with both name and avatar path
                 updateBackendProfile(newName, avatarChanged ? newAvatarUrl : null);
             })
             .addOnFailureListener(e -> {
@@ -609,24 +542,22 @@ public class EditProfileActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             });
     }
-    
+
     private void updateBackendProfile(String name, String avatarUrl) {
         Log.d(TAG, "Updating backend profile:");
         Log.d(TAG, "  Name: " + name);
         Log.d(TAG, "  Avatar URL (public URL): " + avatarUrl);
-        
+
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
         UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl);
-        
+
         authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
             @Override
             public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
                 showLoading(false);
-                
+
                 if (response.isSuccessful() && response.body() != null) {
                     Log.d(TAG, "✓ Backend profile updated successfully");
-                    
-                    // Update TokenManager
                     if (name != null) {
                         tokenManager.saveAuthData(
                             tokenManager.getFirebaseIdToken(),
@@ -635,11 +566,9 @@ public class EditProfileActivity extends AppCompatActivity {
                             name
                         );
                     }
-                    
+
                     Toast.makeText(EditProfileActivity.this, 
                         "✅ Profile updated successfully!", Toast.LENGTH_SHORT).show();
-                    
-                    // Return to previous screen with result
                     setResult(RESULT_OK);
                     finish();
                 } else {
@@ -648,7 +577,7 @@ public class EditProfileActivity extends AppCompatActivity {
                         "Failed to update profile on server", Toast.LENGTH_SHORT).show();
                 }
             }
-            
+
             @Override
             public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
                 showLoading(false);
@@ -658,7 +587,7 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         });
     }
-    
+
     private void showLoading(boolean show) {
         loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
         btnSave.setEnabled(!show);

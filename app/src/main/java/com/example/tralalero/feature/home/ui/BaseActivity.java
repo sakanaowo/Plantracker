@@ -15,10 +15,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
     }
 
-    /**
-     * Gọi method này AFTER setContentView() trong onCreate của Activity con
-     * @param selectedPosition vị trí tab được highlight (0-3)
-     */
     protected void setupBottomNavigation(int selectedPosition) {
         bottomNav = (com.example.tralalero.feature.home.ui.BottomNavigationFragment)
                 getSupportFragmentManager().findFragmentById(R.id.bottomNavigation);

@@ -57,7 +57,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     public static final String ACTION_TASK_CREATED = "com.example.tralalero.TASK_CREATED";
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
-    
+
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
@@ -72,8 +72,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.inbox_main);
-
-        // Apply window insets properly - separate for toolbar and navigation
         View toolbar = findViewById(R.id.topAppBar);
         View bottomNav = findViewById(R.id.bottomNavigation);
 
@@ -103,23 +101,16 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload tasks every time the activity becomes visible
-        // This ensures tasks persist when navigating back from other screens
         Log.d(TAG, "onResume() - Reloading all tasks");
         loadAllTasks();
     }
 
     private void setupViewModel() {
-        // Use cache-enabled repository for ViewModel
-        // This ensures tasks created will be saved to local database
         TaskRepositoryImplWithCache repositoryWithCache = 
             App.dependencyProvider.getTaskRepositoryWithCache();
-        
-        // Create use cases with cache-enabled repository
-        // Note: We still need TaskRepositoryImpl for API-only operations
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
-        
+
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(apiRepository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(apiRepository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(apiRepository);
@@ -135,7 +126,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(apiRepository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(apiRepository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(apiRepository);
-        
+
         TaskViewModelFactory factory = new TaskViewModelFactory(
             getTaskByIdUseCase,
             getTasksByBoardUseCase,
@@ -161,9 +152,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         notiLayout = findViewById(R.id.notificationLayout);
         inboxQuickAccess = findViewById(R.id.inboxQuickAccess);
         inboxAddCard = findViewById(R.id.inboxAddCard);
-        
+
         // TODO: Add empty view to inbox_main.xml
-        // emptyView = findViewById(R.id.tvEmptyInbox);
     }
     private void setupRecyclerView() {
         taskAdapter = new TaskAdapter(task -> {
@@ -197,7 +187,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         });
     }
     private void observeViewModel() {
-        // 1. Observe all tasks list
         taskViewModel.getTasks().observe(this, tasks -> {
             if (tasks != null && !tasks.isEmpty()) {
                 taskAdapter.setTasks(tasks);
@@ -209,18 +198,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 Log.d(TAG, "No tasks found");
             }
         });
-
-        // chuyen task moi tao sang project activity de them vao board
-        // 2. Observe newly created task ✨
         taskViewModel.getSelectedTask().observe(this, createdTask -> {
             if (createdTask != null) {
                 Log.d(TAG, "New task created: " + createdTask.getTitle() + " (ID: " + createdTask.getId() + ")");
-                
-                // Save task to cache immediately (Room database)
                 App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(createdTask);
                 Log.d(TAG, "✓ Task saved to local database cache");
-                
-                // � Set result to return task info to ProjectActivity
                 if (createdTask.getId() != null && createdTask.getBoardId() != null) {
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra(EXTRA_TASK_ID, createdTask.getId());
@@ -228,14 +210,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     setResult(RESULT_OK, resultIntent);
                     Log.d(TAG, "� Result set: Task " + createdTask.getId() + " on board " + createdTask.getBoardId());
                 }
-                
-                // Add new task to top of list immediately
                 List<Task> currentTasks = taskViewModel.getTasks().getValue();
                 if (currentTasks == null) {
                     currentTasks = new ArrayList<>();
                 }
-                
-                // Check if task already exists (avoid duplicate)
                 boolean taskExists = false;
                 for (Task task : currentTasks) {
                     if (task.getId() != null && task.getId().equals(createdTask.getId())) {
@@ -243,29 +221,22 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                         break;
                     }
                 }
-                
+
                 if (!taskExists) {
-                    // Add to top of list
                     List<Task> updatedTasks = new ArrayList<>();
                     updatedTasks.add(createdTask);
                     updatedTasks.addAll(currentTasks);
-                    
+
                     taskAdapter.setTasks(updatedTasks);
                     recyclerView.setVisibility(View.VISIBLE);
-                    
-                    // Scroll to top to show new task
                     recyclerView.smoothScrollToPosition(0);
-                    
+
                     Toast.makeText(this, "✅ Đã thêm task vào database: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "New task added to UI list: " + createdTask.getTitle());
                 }
-                
-                // Clear selected task to avoid re-triggering
                 taskViewModel.clearSelectedTask();
             }
         });
-        
-        // 3. Observe loading state
         taskViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading != null && isLoading) {
                 Log.d(TAG, "Loading tasks...");
@@ -275,8 +246,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 // TODO: Hide loading indicator
             }
         });
-        
-        // 4. Observe error state
         taskViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_LONG).show();
@@ -284,23 +253,15 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             }
         });
     }
-    
-    /**
-     * Setup pull-to-refresh functionality
-     *
-     * @author Minor Issues Fix - October 19, 2025
-     */
+
     private void setupSwipeRefresh() {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         if (swipeRefreshLayout != null) {
-            // Configure refresh colors
             swipeRefreshLayout.setColorSchemeResources(
                 R.color.colorPrimary,
                 R.color.colorAccent
             );
-
-            // Set refresh listener
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "User triggered pull-to-refresh for tasks");
                 forceRefreshTasks();
@@ -308,25 +269,13 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         }
     }
 
-    /**
-     * Force refresh tasks (bypass cache)
-     * Called by pull-to-refresh
-     */
     private void forceRefreshTasks() {
         Log.d(TAG, "Force refreshing tasks from API...");
-
-        // Clear task cache
         App.dependencyProvider.clearTaskCache();
-
-        // Show refreshing indicator
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setRefreshing(true);
         }
-
-        // Reload tasks (will fetch from API)
         loadAllTasks();
-
-        // Timeout after 5 seconds
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -335,18 +284,9 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         }, 5000);
     }
 
-    /**
-     * Load all quick tasks with cache
-     * Cache-first approach: instant load from cache, then refresh from API
-     * Uses backend's GET /api/tasks/quick/defaults endpoint
-     * 
-     * @author Person 2
-     */
     private void loadAllTasks() {
         Log.d(TAG, "Loading quick tasks with cache...");
         final long startTime = System.currentTimeMillis();
-        
-        // Step 1: Try loading from cache first (instant)
         App.dependencyProvider.getTaskRepositoryWithCache()
             .getAllTasks(new TaskRepositoryImplWithCache.TaskCallback() {
                 @Override
@@ -357,15 +297,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                         if (tasks != null && !tasks.isEmpty()) {
                             taskAdapter.setTasks(tasks);
                             recyclerView.setVisibility(View.VISIBLE);
-
-                            // Performance logging
                             String message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
                             Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
                             Log.i(TAG, "CACHE HIT: " + duration + "ms, " + tasks.size() + " tasks");
                         }
                     });
-                    
-                    // Step 2: Always refresh from API in background
                     loadQuickTasksFromApi();
                 }
 
@@ -374,8 +310,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     runOnUiThread(() -> {
                         Log.d(TAG, "Cache empty - loading from API...");
                     });
-                    
-                    // Step 2: Load from API if cache is empty
                     loadQuickTasksFromApi();
                 }
 
@@ -384,33 +318,23 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     runOnUiThread(() -> {
                         Log.e(TAG, "Cache error, loading from API...", e);
                     });
-                    
-                    // Step 2: Load from API on cache error
                     loadQuickTasksFromApi();
                 }
             });
     }
-    
-    /**
-     * Load quick tasks from backend API endpoint: GET /api/tasks/quick/defaults
-     * Backend automatically finds user's default board (To Do board)
-     * After loading, saves to cache for next time
-     */
+
     private void loadQuickTasksFromApi() {
         Log.d(TAG, "Fetching quick tasks from API...");
         final long apiStartTime = System.currentTimeMillis();
-        
-        // Create API repository
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
-        
+
         apiRepository.getQuickTasks(new RepositoryCallback<List<Task>>() {
             @Override
             public void onSuccess(List<Task> tasks) {
                 long apiDuration = System.currentTimeMillis() - apiStartTime;
-                
+
                 runOnUiThread(() -> {
-                    // Stop refreshing indicator
                     if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                         swipeRefreshLayout.setRefreshing(false);
                     }
@@ -418,12 +342,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     if (tasks != null && !tasks.isEmpty()) {
                         taskAdapter.setTasks(tasks);
                         recyclerView.setVisibility(View.VISIBLE);
-                        
+
                         String message = "🌐 API: " + apiDuration + "ms (" + tasks.size() + " tasks)";
                         Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
                         Log.i(TAG, "API SUCCESS: " + apiDuration + "ms, " + tasks.size() + " quick tasks loaded");
-                        
-                        // Save to cache for next time
                         App.dependencyProvider.getTaskRepositoryWithCache().saveTasksToCache(tasks);
                         Log.d(TAG, "✓ Quick tasks saved to cache");
                     } else {
@@ -437,7 +359,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
-                    // Stop refreshing on error
                     if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                         swipeRefreshLayout.setRefreshing(false);
                     }
@@ -450,14 +371,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             }
         });
     };
-    
+
         private void createTask(String title) {
         Log.d(TAG, "Creating quick task: " + title);
-        
-        // Create TaskRepositoryImpl directly with API service
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
         ITaskRepository taskRepository = new TaskRepositoryImpl(apiService);
-        
+
         taskRepository.createQuickTask(title, "", new ITaskRepository.RepositoryCallback<Task>() {
             @Override
             public void onSuccess(Task result) {
@@ -467,18 +386,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     Log.d(TAG, "  Title: " + result.getTitle());
                     Log.d(TAG, "  Project: " + result.getProjectId());
                     Log.d(TAG, "  Board: " + result.getBoardId());
-                    
-                    // Save to cache
                     App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(result);
                     Log.d(TAG, "✓ Task saved to cache");
-                    
-                    // Add task to RecyclerView immediately (optimistic UI update)
                     List<Task> currentTasks = taskAdapter.getTasks();
                     if (currentTasks == null) {
                         currentTasks = new ArrayList<>();
                     }
-                    
-                    // Check if task already exists (avoid duplicate)
                     boolean taskExists = false;
                     for (Task task : currentTasks) {
                         if (task.getId() != null && task.getId().equals(result.getId())) {
@@ -486,26 +399,19 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                             break;
                         }
                     }
-                    
+
                     if (!taskExists) {
-                        // Add to top of list for immediate visibility
                         List<Task> updatedTasks = new ArrayList<>();
                         updatedTasks.add(result);
                         updatedTasks.addAll(currentTasks);
-                        
+
                         taskAdapter.setTasks(updatedTasks);
                         recyclerView.setVisibility(View.VISIBLE);
-                        
-                        // Scroll to top to show new task
                         recyclerView.smoothScrollToPosition(0);
-                        
+
                         Log.d(TAG, "✓ Task added to RecyclerView immediately");
                     }
-                    
-                    // Reload all tasks in background to ensure consistency
                     loadAllTasks();
-                    
-                    // Show success message
                     android.widget.Toast.makeText(InboxActivity.this, 
                         "✓ Task created", 
                         android.widget.Toast.LENGTH_SHORT).show();
@@ -522,7 +428,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 });
             }
         });
-        
+
         Log.d(TAG, "Quick task creation request sent");
     }
 

@@ -256,11 +256,13 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void moveTaskToBoard(String taskId, String targetBoardId, double position, RepositoryCallback<Task> callback) {
-        TaskDTO dto = new TaskDTO();
-        dto.setBoardId(targetBoardId);
-        dto.setPosition(position);
+        // Use dedicated move endpoint: POST /api/tasks/:id/move
+        java.util.Map<String, Object> moveData = new java.util.HashMap<>();
+        moveData.put("toBoardId", targetBoardId);
+        // Backend will calculate position automatically, but we can pass it for future use
+        moveData.put("position", position);
 
-        apiService.updateTask(taskId, dto).enqueue(new Callback<TaskDTO>() {
+        apiService.moveTaskToBoard(taskId, moveData).enqueue(new Callback<TaskDTO>() {
             @Override
             public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
                 if (response.isSuccessful() && response.body() != null) {

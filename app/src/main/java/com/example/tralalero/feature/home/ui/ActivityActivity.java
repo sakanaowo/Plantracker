@@ -20,8 +20,6 @@ public class ActivityActivity extends com.example.tralalero.feature.home.ui.Base
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_activity_notification);
-
-        // Apply window insets properly - separate for content and navigation
         View titleView = findViewById(R.id.tvTitle);
         View bottomNav = findViewById(R.id.bottomNavigation);
 

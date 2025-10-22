@@ -66,8 +66,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.account);
-
-        // Apply window insets properly - only to ScrollView, not navigation bar
         View scrollView = findViewById(R.id.scrollViewAccount);
         View bottomNav = findViewById(R.id.bottomNavigation);
 
@@ -107,15 +105,11 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             if (email != null) {
                 tvEmail.setText(email);
             }
-            
-            // Load avatar from backend
             loadUserProfileFromBackend();
         }
 
         FrameLayout avatarContainer = findViewById(R.id.avatarContainer);
         avatarContainer.setOnClickListener(v -> showImagePickerBottomSheet());
-
-        // Setup three dots menu icon
         if (btnAccountOptions != null) {
             Log.d(TAG, "Setting up click listener for btnAccountOptions");
             btnAccountOptions.setOnClickListener(v -> {
@@ -131,8 +125,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             Intent intent = new Intent(AccountActivity.this, SettingsActivity.class);
             startActivity(intent);
         });
-
-
 
         setupBottomNavigation(3);
 
@@ -162,12 +154,11 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == Activity.RESULT_OK) {
-                    // Refresh profile data after edit
                     refreshProfileUI();
                 }
             }
         );
-        
+
         galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -210,8 +201,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void showImagePickerBottomSheet() {
-        // NOTE: Recommend using EditProfileActivity instead for full Supabase integration
-        // This quick upload still uses Firebase Storage (legacy)
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_profile_image, null);
         bottomSheet.setContentView(view);
@@ -330,18 +319,12 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void syncProfileImageWithBackend(String avatarUrl) {
-        // Use the common updateBackendProfile method with null name to keep existing name
         updateBackendProfile(null, avatarUrl);
-        
-        // Update UI immediately for better UX
         runOnUiThread(() -> {
             if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                // Show the uploaded image
                 tvAvatarLetter.setVisibility(View.GONE);
                 if (imgAvatar != null) {
                     imgAvatar.setVisibility(View.VISIBLE);
-                    // Load image using Glide or similar (if available)
-                    // Glide.with(this).load(avatarUrl).circleCrop().into(imgAvatar);
                 }
             }
         });
@@ -405,19 +388,19 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-    
+
     private void openEditProfileActivity() {
         Intent intent = new Intent(this, EditProfileActivity.class);
         editProfileLauncher.launch(intent);
     }
-    
+
     private void refreshProfileUI() {
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        
+
         if (firebaseUser != null) {
             TextView tvName = findViewById(R.id.tvName);
             TextView tvEmail = findViewById(R.id.tvEmail);
-            
+
             String displayName = firebaseUser.getDisplayName();
             if (displayName != null && !displayName.isEmpty()) {
                 tvName.setText(displayName);
@@ -430,32 +413,26 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                     tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
                 }
             }
-            
-            // Refresh avatar from backend
             loadUserProfileFromBackend();
-            
+
             Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
         }
     }
-    
+
     private void loadUserProfileFromBackend() {
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
-        
+
         authApi.getMe().enqueue(new retrofit2.Callback<UserDto>() {
             @Override
             public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     UserDto user = response.body();
                     Log.d(TAG, "Loaded user profile from backend");
-                    
-                    // Update name if available
                     if (user.name != null && !user.name.isEmpty()) {
                         TextView tvName = findViewById(R.id.tvName);
                         tvName.setText(user.name);
                         tvAvatarLetter.setText(String.valueOf(user.name.charAt(0)).toUpperCase());
                     }
-                    
-                    // Load avatar
                     if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
                         Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
                         loadAvatarImage(user.avatarUrl);
@@ -468,21 +445,19 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                     Log.e(TAG, "Failed to load profile: " + response.code());
                 }
             }
-            
+
             @Override
             public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
                 Log.e(TAG, "Network error loading profile", t);
             }
         });
     }
-    
+
     private void loadAvatarImage(String avatarUrl) {
         Log.d(TAG, "loadAvatarImage called with URL: " + avatarUrl);
-        
-        // Show letter first as placeholder
         tvAvatarLetter.setVisibility(View.VISIBLE);
         imgAvatar.setVisibility(View.GONE);
-        
+
         Glide.with(this)
             .load(avatarUrl)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -500,19 +475,17 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                             Log.e(TAG, "Root cause: ", cause);
                         }
                     }
-                    // Keep showing letter avatar on error
                     imgAvatar.setVisibility(View.GONE);
                     tvAvatarLetter.setVisibility(View.VISIBLE);
                     return true; // handled
                 }
-                
+
                 @Override
                 public boolean onResourceReady(android.graphics.drawable.Drawable resource, 
                                              Object model, 
                                              com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
                                              com.bumptech.glide.load.DataSource dataSource, 
                                              boolean isFirstResource) {
-                    // Image loaded successfully, show it
                     Log.d(TAG, "✓ Avatar loaded successfully from: " + avatarUrl);
                     Log.d(TAG, "Data source: " + dataSource);
                     imgAvatar.setVisibility(View.VISIBLE);
@@ -524,17 +497,14 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void showEditNameDialog() {
-        // Create a layout with TextInputLayout for Material Design
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_name, null);
         com.google.android.material.textfield.TextInputEditText etName = 
             dialogView.findViewById(R.id.etEditName);
-        
-        // Pre-fill with current name
         if (firebaseUser != null && firebaseUser.getDisplayName() != null) {
             etName.setText(firebaseUser.getDisplayName());
             etName.setSelection(firebaseUser.getDisplayName().length()); // Move cursor to end
         }
-        
+
         new AlertDialog.Builder(this)
                 .setTitle("Edit Name")
                 .setView(dialogView)
@@ -552,21 +522,15 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
 
     private void updateProfileName(String newName) {
         Log.d(TAG, "Updating profile name to: " + newName);
-        
-        // Show loading toast
         Toast.makeText(this, "Updating name...", Toast.LENGTH_SHORT).show();
-        
-        // Step 1: Update Firebase profile
         if (firebaseUser != null) {
             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                     .setDisplayName(newName)
                     .build();
-            
+
             firebaseUser.updateProfile(profileUpdates)
                     .addOnSuccessListener(aVoid -> {
                         Log.d(TAG, "✓ Firebase profile updated");
-                        
-                        // Step 2: Update backend via API
                         updateBackendProfile(newName, null);
                     })
                     .addOnFailureListener(e -> {
@@ -580,14 +544,12 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private void updateBackendProfile(String name, String avatarUrl) {
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
         UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl);
-        
+
         authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
             @Override
             public void onResponse(retrofit2.Call<UserDto> call, retrofit2.Response<UserDto> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     Log.d(TAG, "✓ Backend profile updated successfully");
-                    
-                    // Update TokenManager with new name
                     if (name != null) {
                         tokenManager.saveAuthData(
                             tokenManager.getFirebaseIdToken(),
@@ -596,17 +558,15 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                             name
                         );
                     }
-                    
-                    // Refresh UI
                     runOnUiThread(() -> {
                         TextView tvName = findViewById(R.id.tvName);
                         TextView tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
-                        
+
                         if (name != null) {
                             tvName.setText(name);
                             tvAvatarLetter.setText(String.valueOf(name.charAt(0)).toUpperCase());
                         }
-                        
+
                         Toast.makeText(AccountActivity.this, 
                             "✅ Profile updated successfully!", Toast.LENGTH_SHORT).show();
                     });
@@ -618,7 +578,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
                     );
                 }
             }
-            
+
             @Override
             public void onFailure(retrofit2.Call<UserDto> call, Throwable t) {
                 Log.e(TAG, "Network error updating backend profile", t);
@@ -632,27 +592,15 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
 
     private void performLogout() {
         Log.d(TAG, "Performing logout...");
-
-        // Sign out from Firebase
         FirebaseAuth.getInstance().signOut();
-
-        // Clear auth manager
         App.authManager.signOut();
         Log.d(TAG, "✓ Auth cleared");
-
-        // Clear database cache
         App.dependencyProvider.clearAllCaches();
         Log.d(TAG, "✓ Database cache cleared");
-
-        // Reset dependency provider
         DependencyProvider.reset();
         Log.d(TAG, "✓ DependencyProvider reset");
-
-        // Clear token manager
         tokenManager.clearAuthData();
         Log.d(TAG, "✓ Token cleared");
-
-        // Redirect to login
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

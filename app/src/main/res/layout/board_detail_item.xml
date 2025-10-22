@@ -57,36 +57,36 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:layout_marginStart="8dp"
                 android:clickable="false"
                 android:focusable="false">
 
-                <!-- Move Up button -->
+                <!-- Move Left button -->
                 <ImageButton
-                    android:id="@+id/btnMoveUp"
+                    android:id="@+id/btnMoveLeft"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@android:drawable/arrow_up_float"
+                    android:src="@android:drawable/ic_media_previous"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:scaleType="fitCenter"
                     android:padding="6dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:contentDescription="Move task up" />
+                    android:contentDescription="Move task to previous board" />
 
-                <!-- Move Down button -->
+                <!-- Move Right button -->
                 <ImageButton
-                    android:id="@+id/btnMoveDown"
+                    android:id="@+id/btnMoveRight"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@android:drawable/arrow_down_float"
+                    android:src="@android:drawable/ic_media_next"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:scaleType="fitCenter"
                     android:padding="6dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:contentDescription="Move task down" />
+                    android:contentDescription="Move task to next board" />
 
             </LinearLayout>
 

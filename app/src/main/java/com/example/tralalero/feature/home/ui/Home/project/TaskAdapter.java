@@ -24,11 +24,11 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         this.tasks = tasks != null ? tasks : new ArrayList<>();
         notifyDataSetChanged();
     }
-    
+
     public List<Task> getTasks() {
         return new ArrayList<>(tasks);  // Return a copy to avoid external modifications
     }
-    
+
     @NonNull
     @Override
     public TaskViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

@@ -35,7 +35,6 @@ public class ListFragment extends Fragment {
             type = getArguments().getString(ARG_TYPE);
         }
 //      TODO : lấy dữ liệu từ api
-        // ví dụ dữ liệu test
         List<String> data = new ArrayList<>();
         switch (type) {
             case "All":

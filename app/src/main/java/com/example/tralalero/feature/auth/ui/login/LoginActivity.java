@@ -51,8 +51,6 @@ public class LoginActivity extends AppCompatActivity {
     private TextView textViewForgotPassword;
     private TextView textViewSignUp;
     private AuthViewModel authViewModel;
-
-    // Google Sign-In
     private GoogleSignInClient googleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private TokenManager tokenManager;
@@ -67,11 +65,7 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        // Initialize TokenManager
         tokenManager = new TokenManager(this);
-
-        // Setup Google Sign-In
         setupGoogleSignIn();
         setupGoogleSignInLauncher();
 
@@ -207,9 +201,6 @@ public class LoginActivity extends AppCompatActivity {
         }
         authViewModel.login(email, password);
     }
-
-    // ========== Google Sign-In Methods ==========
-
     private void setupGoogleSignIn() {
         String clientId = getString(R.string.client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

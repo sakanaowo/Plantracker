@@ -90,41 +90,21 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     listener.onTaskClick(task, board);
                 });
 
-                // ✅ Setup move up/down listeners
+                // Setup move left/right listeners
                 taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
                     @Override
-                    public void onMoveUp(int position) {
-                        if (position > 0 && listener instanceof OnTaskPositionChangeListener) {
-                            Task movedTask = taskAdapter.getTaskAt(position);
-                            
-                            // ✅ Calculate position BEFORE swapping
-                            double newPosition = calculateNewPositionForMove(position, position - 1);
-                            
-                            // Swap in UI
-                            taskAdapter.moveItem(position, position - 1);
-                            
-                            // Notify listener to update backend with calculated position
-                            ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
-                                    movedTask, newPosition, board
-                            );
+                    public void onMoveLeft(Task task, int position) {
+                        // Move task to previous board (left)
+                        if (listener instanceof OnTaskBoardChangeListener) {
+                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, -1);
                         }
                     }
 
                     @Override
-                    public void onMoveDown(int position) {
-                        if (position < taskAdapter.getItemCount() - 1 && listener instanceof OnTaskPositionChangeListener) {
-                            Task movedTask = taskAdapter.getTaskAt(position);
-                            
-                            // ✅ Calculate position BEFORE swapping
-                            double newPosition = calculateNewPositionForMove(position, position + 1);
-                            
-                            // Swap in UI
-                            taskAdapter.moveItem(position, position + 1);
-                            
-                            // Notify listener to update backend with calculated position
-                            ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(
-                                    movedTask, newPosition, board
-                            );
+                    public void onMoveRight(Task task, int position) {
+                        // Move task to next board (right)
+                        if (listener instanceof OnTaskBoardChangeListener) {
+                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, +1);
                         }
                     }
                     
@@ -194,5 +174,15 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
 
     public interface OnTaskPositionChangeListener {
         void onTaskPositionChanged(Task task, double newPosition, Board board);
+    }
+
+    public interface OnTaskBoardChangeListener {
+        /**
+         * Move task to adjacent board
+         * @param task The task to move
+         * @param currentBoard The current board containing the task
+         * @param direction -1 for left (previous board), +1 for right (next board)
+         */
+        void onMoveTaskToBoard(Task task, Board currentBoard, int direction);
     }
 }
