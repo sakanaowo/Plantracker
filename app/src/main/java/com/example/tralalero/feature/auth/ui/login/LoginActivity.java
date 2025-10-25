@@ -285,12 +285,19 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FirebaseAuthResponse response, String token) {
                 Log.d(TAG, "Backend authentication successful: " + response.message);
+                
+                // Save both Firebase UID and internal UUID
+                String internalUserId = response.getUser() != null ? response.getUser().getId() : null;
+                
                 tokenManager.saveAuthData(
                         token,
                         firebaseUser.getUid(),
                         firebaseUser.getEmail(),
-                        firebaseUser.getDisplayName()
+                        firebaseUser.getDisplayName(),
+                        internalUserId  // Internal UUID from backend
                 );
+                
+                Log.d(TAG, "Saved internal user ID: " + internalUserId);
                 navigateToHome(firebaseUser);
             }
 

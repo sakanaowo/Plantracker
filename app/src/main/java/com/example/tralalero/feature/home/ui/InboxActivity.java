@@ -49,7 +49,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     private RelativeLayout notiLayout;
     private LinearLayout inboxQuickAccess;
     private TextInputEditText inboxAddCard;
-    private SwipeRefreshLayout swipeRefreshLayout;  // ← ADDED
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private View loadingView;
+    private View emptyView;
+    private boolean isInitialLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,8 +139,9 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         notiLayout = findViewById(R.id.notificationLayout);
         inboxQuickAccess = findViewById(R.id.inboxQuickAccess);
         inboxAddCard = findViewById(R.id.inboxAddCard);
-
-        // TODO: Add empty view to inbox_main.xml
+        loadingView = findViewById(R.id.loadingView);
+        emptyView = findViewById(R.id.emptyView);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
     }
     private void setupRecyclerView() {
         taskAdapter = new TaskAdapter(task -> {
@@ -174,11 +178,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         taskViewModel.getTasks().observe(this, tasks -> {
             if (tasks != null && !tasks.isEmpty()) {
                 taskAdapter.setTasks(tasks);
-                recyclerView.setVisibility(View.VISIBLE);
+                showContent();
                 Log.d(TAG, "Tasks loaded: " + tasks.size());
             } else {
                 taskAdapter.setTasks(new ArrayList<>());
-                recyclerView.setVisibility(View.GONE);
+                showEmpty();
                 Log.d(TAG, "No tasks found");
             }
         });
@@ -212,7 +216,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     updatedTasks.addAll(currentTasks);
 
                     taskAdapter.setTasks(updatedTasks);
-                    recyclerView.setVisibility(View.VISIBLE);
+                    showContent();
                     recyclerView.smoothScrollToPosition(0);
 
                     Toast.makeText(this, "✅ Đã thêm task vào database: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
@@ -224,10 +228,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         taskViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading != null && isLoading) {
                 Log.d(TAG, "Loading tasks...");
-                // TODO: Show loading indicator
             } else {
                 Log.d(TAG, "Loading complete");
-                // TODO: Hide loading indicator
             }
         });
         taskViewModel.getError().observe(this, error -> {
@@ -248,14 +250,37 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "User triggered pull-to-refresh for tasks");
+                isInitialLoad = false;  // Not initial load anymore
                 forceRefreshTasks();
             });
         }
+    }
+    
+    private void showLoading() {
+        swipeRefreshLayout.setVisibility(View.GONE);
+        emptyView.setVisibility(View.GONE);
+        loadingView.setVisibility(View.VISIBLE);
+        Log.d(TAG, "Showing loading view");
+    }
+    
+    private void showContent() {
+        loadingView.setVisibility(View.GONE);
+        emptyView.setVisibility(View.GONE);
+        swipeRefreshLayout.setVisibility(View.VISIBLE);
+        Log.d(TAG, "Showing content");
+    }
+    
+    private void showEmpty() {
+        loadingView.setVisibility(View.GONE);
+        swipeRefreshLayout.setVisibility(View.GONE);
+        emptyView.setVisibility(View.VISIBLE);
+        Log.d(TAG, "Showing empty view");
     }
 
     private void forceRefreshTasks() {
         Log.d(TAG, "Force refreshing tasks from API...");
         App.dependencyProvider.clearTaskCache();
+        isInitialLoad = false;  // Not initial load
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setRefreshing(true);
         }
@@ -269,6 +294,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
 
     private void loadAllTasks() {
+        // Show loading only if no cache and initial load
+        if (isInitialLoad) {
+            showLoading();
+        }
+        
         Log.d(TAG, "Loading quick tasks with cache...");
         final long startTime = System.currentTimeMillis();
         App.dependencyProvider.getTaskRepositoryWithCache()
@@ -280,7 +310,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                     runOnUiThread(() -> {
                         if (tasks != null && !tasks.isEmpty()) {
                             taskAdapter.setTasks(tasks);
-                            recyclerView.setVisibility(View.VISIBLE);
+                            showContent();
                             String message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
                             Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
                             Log.i(TAG, "CACHE HIT: " + duration + "ms, " + tasks.size() + " tasks");
@@ -293,6 +323,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 public void onCacheEmpty() {
                     runOnUiThread(() -> {
                         Log.d(TAG, "Cache empty - loading from API...");
+                        // Keep showing loading since cache is empty
                     });
                     loadQuickTasksFromApi();
                 }
@@ -325,7 +356,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
 
                     if (tasks != null && !tasks.isEmpty()) {
                         taskAdapter.setTasks(tasks);
-                        recyclerView.setVisibility(View.VISIBLE);
+                        showContent();
 
                         String message = "🌐 API: " + apiDuration + "ms (" + tasks.size() + " tasks)";
                         Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
@@ -334,9 +365,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                         Log.d(TAG, "✓ Quick tasks saved to cache");
                     } else {
                         taskAdapter.setTasks(new ArrayList<>());
-                        recyclerView.setVisibility(View.GONE);
+                        showEmpty();
                         Log.d(TAG, "No quick tasks found");
                     }
+                    
+                    isInitialLoad = false;  // Initial load complete
                 });
             }
 
@@ -347,10 +380,17 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                         swipeRefreshLayout.setRefreshing(false);
                     }
 
+                    // Show empty view on error if no tasks loaded
+                    if (taskAdapter.getTasks().isEmpty()) {
+                        showEmpty();
+                    }
+
                     Toast.makeText(InboxActivity.this,
                             "Failed to load quick tasks: " + error,
                             Toast.LENGTH_LONG).show();
                     Log.e(TAG, "API ERROR: " + error);
+                    
+                    isInitialLoad = false;  // Initial load complete (even with error)
                 });
             }
         });
@@ -390,7 +430,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                         updatedTasks.addAll(currentTasks);
 
                         taskAdapter.setTasks(updatedTasks);
-                        recyclerView.setVisibility(View.VISIBLE);
+                        showContent();
                         recyclerView.smoothScrollToPosition(0);
 
                         Log.d(TAG, "✓ Task added to RecyclerView immediately");
@@ -434,6 +474,14 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             @Override
             public void onDeleteTask(Task task) {
                 handleDeleteTask(task);
+            }
+            @Override
+            public void onUpdateStartDate(Task task, java.util.Date startDate) {
+                handleUpdateStartDate(task, startDate);
+            }
+            @Override
+            public void onUpdateDueDate(Task task, java.util.Date dueDate) {
+                handleUpdateDueDate(task, dueDate);
             }
         });
         bottomSheet.show(getSupportFragmentManager(), "TaskDetailBottomSheet");
@@ -524,6 +572,92 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+    
+    private void handleUpdateStartDate(Task task, java.util.Date startDate) {
+        Log.d(TAG, "handleUpdateStartDate: " + task.getId() + " -> " + startDate);
+        
+        // Create updated task with new start date
+        Task updatedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            task.getBoardId(),
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            task.getPosition(),
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            startDate,  // Updated start date
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt()
+        );
+        
+        // Update via ViewModel
+        taskViewModel.updateTask(task.getId(), updatedTask);
+        
+        // Save to cache
+        App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
+        
+        // Reload after delay
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            loadAllTasks();
+        }, 1000);
+        
+        Toast.makeText(this, "Start date updated", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void handleUpdateDueDate(Task task, java.util.Date dueDate) {
+        Log.d(TAG, "handleUpdateDueDate: " + task.getId() + " -> " + dueDate);
+        
+        // Create updated task with new due date
+        Task updatedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            task.getBoardId(),
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            task.getPosition(),
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            dueDate,  // Updated due date
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt()
+        );
+        
+        // Update via ViewModel
+        taskViewModel.updateTask(task.getId(), updatedTask);
+        
+        // Save to cache
+        App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
+        
+        // Reload after delay
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            loadAllTasks();
+        }, 1000);
+        
+        Toast.makeText(this, "Due date updated", Toast.LENGTH_SHORT).show();
     }
 }
 
