@@ -373,7 +373,7 @@
                 android:id="@+id/tvTodolistHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Todolist"
+                android:text="Check list"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:textColor="@android:color/black"
