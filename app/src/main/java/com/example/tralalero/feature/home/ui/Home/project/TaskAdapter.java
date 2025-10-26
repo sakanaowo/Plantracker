@@ -19,6 +19,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
     private OnTaskClickListener listener;
     public interface OnTaskClickListener {
         void onTaskClick(Task task);
+        void onTaskCompleted(Task task);
     }
     public TaskAdapter(OnTaskClickListener listener) {
         this.listener = listener;
@@ -60,7 +61,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             tvTaskName = itemView.findViewById(R.id.tvTaskName);
             tvTaskDescription = itemView.findViewById(R.id.tvTaskDescription);
             tvTaskTime = itemView.findViewById(R.id.tvTaskTime);
-            btnTime = itemView.findViewById(R.id.btnTime);
+//            btnTime = itemView.findViewById(R.id.btnTime);
             
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
@@ -78,11 +79,15 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                     if (isChecked) {
                         tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                         tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                        
+                        // Notify listener to move task to Done board
+                        if (listener != null) {
+                            listener.onTaskCompleted(task);
+                        }
                     } else {
                         tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
                         tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
                     }
-                    // TODO: Update task completion status in backend
                 }
             });
         }

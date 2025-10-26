@@ -144,8 +144,16 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
     }
     private void setupRecyclerView() {
-        taskAdapter = new TaskAdapter(task -> {
-            showTaskDetailBottomSheet(task);
+        taskAdapter = new TaskAdapter(new TaskAdapter.OnTaskClickListener() {
+            @Override
+            public void onTaskClick(Task task) {
+                showTaskDetailBottomSheet(task);
+            }
+            
+            @Override
+            public void onTaskCompleted(Task task) {
+                handleTaskCompleted(task);
+            }
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(taskAdapter);
@@ -658,6 +666,126 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         }, 1000);
         
         Toast.makeText(this, "Due date updated", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void handleTaskCompleted(Task task) {
+        Log.d(TAG, "handleTaskCompleted: " + task.getId() + " - Moving to Done (attempting board move)");
+
+        // Optimistically remove from UI for fast feedback
+        List<Task> currentTasks = taskAdapter.getTasks();
+        List<Task> updatedTasks = new ArrayList<>();
+        for (Task t : currentTasks) {
+            if (!t.getId().equals(task.getId())) {
+                updatedTasks.add(t);
+            }
+        }
+        taskAdapter.setTasks(updatedTasks);
+        if (updatedTasks.isEmpty()) {
+            showEmpty();
+        }
+
+        // Try to find the project's "Done" board and move the task there.
+        String projectId = task.getProjectId();
+        if (projectId == null || projectId.isEmpty()) {
+            // Fallback: just update status if no project information
+            Log.w(TAG, "No projectId for task " + task.getId() + ", falling back to status update");
+            Task updatedTask = new Task(
+                    task.getId(),
+                    task.getProjectId(),
+                    task.getBoardId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.getIssueKey(),
+                    task.getType(),
+                    Task.TaskStatus.DONE,
+                    task.getPriority(),
+                    task.getPosition(),
+                    task.getAssigneeId(),
+                    task.getCreatedBy(),
+                    task.getSprintId(),
+                    task.getEpicId(),
+                    task.getParentTaskId(),
+                    task.getStartAt(),
+                    task.getDueAt(),
+                    task.getStoryPoints(),
+                    task.getOriginalEstimateSec(),
+                    task.getRemainingEstimateSec(),
+                    task.getCreatedAt(),
+                    task.getUpdatedAt()
+            );
+            taskViewModel.updateTask(task.getId(), updatedTask);
+            App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
+            Toast.makeText(this, "✓ Task marked done (no project)", Toast.LENGTH_SHORT).show();
+            new Handler(Looper.getMainLooper()).postDelayed(this::loadAllTasks, 1500);
+            return;
+        }
+
+        // Create BoardViewModel to query project boards
+        com.example.tralalero.presentation.viewmodel.BoardViewModel boardViewModel =
+                new androidx.lifecycle.ViewModelProvider(this,
+                        com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider.provideBoardViewModelFactory())
+                        .get(com.example.tralalero.presentation.viewmodel.BoardViewModel.class);
+
+        // Observe boards once to find the Done board
+        androidx.lifecycle.Observer<java.util.List<com.example.tralalero.domain.model.Board>> boardsObserver = new androidx.lifecycle.Observer<java.util.List<com.example.tralalero.domain.model.Board>>() {
+            @Override
+            public void onChanged(java.util.List<com.example.tralalero.domain.model.Board> boards) {
+                if (boards == null) return;
+
+                com.example.tralalero.domain.model.Board doneBoard = null;
+                for (com.example.tralalero.domain.model.Board b : boards) {
+                    if (b == null || b.getName() == null) continue;
+                    if (b.getName().equalsIgnoreCase("done") || b.getName().equalsIgnoreCase("DONE")) {
+                        doneBoard = b;
+                        break;
+                    }
+                }
+
+                if (doneBoard != null) {
+                    Log.d(TAG, "Found Done board: " + doneBoard.getId() + " - moving task");
+                    taskViewModel.moveTaskToBoard(task.getId(), doneBoard.getId(), 0);
+                } else {
+                    Log.w(TAG, "Done board not found for project " + projectId + ", falling back to status update");
+                    // Fallback: update status only
+                    Task updatedTask = new Task(
+                            task.getId(),
+                            task.getProjectId(),
+                            task.getBoardId(),
+                            task.getTitle(),
+                            task.getDescription(),
+                            task.getIssueKey(),
+                            task.getType(),
+                            Task.TaskStatus.DONE,
+                            task.getPriority(),
+                            task.getPosition(),
+                            task.getAssigneeId(),
+                            task.getCreatedBy(),
+                            task.getSprintId(),
+                            task.getEpicId(),
+                            task.getParentTaskId(),
+                            task.getStartAt(),
+                            task.getDueAt(),
+                            task.getStoryPoints(),
+                            task.getOriginalEstimateSec(),
+                            task.getRemainingEstimateSec(),
+                            task.getCreatedAt(),
+                            task.getUpdatedAt()
+                    );
+                    taskViewModel.updateTask(task.getId(), updatedTask);
+                    App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
+                }
+
+                // Remove observer after one update
+                boardViewModel.getProjectBoards().removeObserver(this);
+
+                // Reload inbox after a short delay to re-sync with backend
+                new Handler(Looper.getMainLooper()).postDelayed(() -> loadAllTasks(), 1200);
+                Toast.makeText(InboxActivity.this, "✓ Task moved to Done", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        boardViewModel.getProjectBoards().observe(this, boardsObserver);
+        boardViewModel.loadBoardsByProject(projectId);
     }
 }
 
