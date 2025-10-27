@@ -1,19 +1,13 @@
 package com.example.tralalero.feature.home.ui;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.viewpager2.widget.ViewPager2;
-import com.example.tralalero.MainActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.tralalero.R;
-import com.example.tralalero.feature.home.ui.Activity.ListFrmAdapter;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
 public class ActivityActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,23 +29,10 @@ public class ActivityActivity extends com.example.tralalero.feature.home.ui.Base
             return WindowInsetsCompat.CONSUMED;
         });
 
-        TabLayout tabLayout = findViewById(R.id.tabLayout);
-        ViewPager2 viewPager2 = findViewById(R.id.PrjViewPager2);
-        ListFrmAdapter adapter = new ListFrmAdapter(this);
-        viewPager2.setAdapter(adapter);
-        new TabLayoutMediator(tabLayout, viewPager2, (tab, position) -> {
-            switch (position) {
-                case 0:
-                    tab.setText("All");
-                    break;
-                case 1:
-                    tab.setText("Mentions");
-                    break;
-                case 2:
-                    tab.setText("Unread");
-                    break;
-            }
-        }).attach();
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        // TODO: Setup adapter with data from API
+        
         setupBottomNavigation(2); 
     }
 }

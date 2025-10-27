@@ -385,13 +385,17 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void selfAssignTask() {
         if (taskId != null && !taskId.isEmpty()) {
-            String currentUserId = App.tokenManager.getUserId();
+            // Use internal UUID for backend API (not Firebase UID)
+            String internalUserId = App.tokenManager.getInternalUserId();
+            
+            android.util.Log.d("CardDetailActivity", "Self-assign - TaskId: " + taskId);
+            android.util.Log.d("CardDetailActivity", "Internal UserId: " + internalUserId);
 
-            if (currentUserId != null && !currentUserId.isEmpty()) {
-                taskViewModel.assignTask(taskId, currentUserId);
+            if (internalUserId != null && !internalUserId.isEmpty()) {
+                taskViewModel.assignTask(taskId, internalUserId);
                 Toast.makeText(this, "Task assigned to you", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Unable to get current user ID. Please sign in again.", 
+                Toast.makeText(this, "Unable to get user ID. Please sign out and sign in again.", 
                         Toast.LENGTH_SHORT).show();
             }
         } else {

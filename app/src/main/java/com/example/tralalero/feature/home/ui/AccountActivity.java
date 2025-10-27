@@ -137,16 +137,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         layoutBrowseTemplates.setOnClickListener(v -> {
             // TODO: Implement browse templates
         });
-
-        LinearLayout layoutShareFeedback = findViewById(R.id.layoutShareFeedback);
-        layoutShareFeedback.setOnClickListener(v -> {
-            // TODO: Implement share feedback
-        });
-
-        LinearLayout layoutHelp = findViewById(R.id.layoutHelp);
-        layoutHelp.setOnClickListener(v -> {
-            // TODO: Implement help
-        });
     }
 
     private void setupActivityResultLaunchers() {

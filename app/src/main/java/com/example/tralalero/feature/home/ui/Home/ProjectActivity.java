@@ -198,9 +198,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
 //        }
 
         backButton.setOnClickListener(v -> {
-            Intent intent = new Intent(ProjectActivity.this, WorkspaceActivity.class);
-            intent.putExtra("WORKSPACE_ID", workspaceId);
-            startActivity(intent);
+            // Just finish() to return to previous WorkspaceActivity (don't create new one)
             finish();
         });
         
