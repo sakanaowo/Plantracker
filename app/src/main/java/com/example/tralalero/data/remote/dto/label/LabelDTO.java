@@ -6,14 +6,17 @@ public class LabelDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspaceId")
-    private String workspaceId;
+    @SerializedName("projectId")  // Changed from workspaceId to projectId
+    private String projectId;
 
     @SerializedName("name")
     private String name;
 
     @SerializedName("color")
     private String color;
+
+    @SerializedName("taskCount")
+    private Integer taskCount;
 
     @SerializedName("createdAt")
     private String createdAt;
@@ -29,12 +32,23 @@ public class LabelDTO {
         this.id = id;
     }
 
-    public String getWorkspaceId() {
-        return workspaceId;
+    public String getProjectId() {  // Changed from getWorkspaceId to getProjectId
+        return projectId;
     }
 
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    // Keep for backwards compatibility (deprecated)
+    @Deprecated
+    public String getWorkspaceId() {
+        return projectId;
+    }
+
+    @Deprecated
     public void setWorkspaceId(String workspaceId) {
-        this.workspaceId = workspaceId;
+        this.projectId = workspaceId;
     }
 
     public String getName() {
@@ -51,6 +65,14 @@ public class LabelDTO {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public Integer getTaskCount() {
+        return taskCount;
+    }
+
+    public void setTaskCount(Integer taskCount) {
+        this.taskCount = taskCount;
     }
 
     public String getCreatedAt() {

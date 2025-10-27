@@ -50,6 +50,7 @@ public class TaskViewModel extends ViewModel {
     private final MutableLiveData<List<TaskComment>> commentsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Attachment>> attachmentsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Checklist>> checklistsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<com.example.tralalero.domain.model.ChecklistItem>> checklistItemsLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
 
@@ -125,6 +126,10 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<List<Checklist>> getChecklists() {
         return checklistsLiveData;
+    }
+
+    public LiveData<List<com.example.tralalero.domain.model.ChecklistItem>> getChecklistItems() {
+        return checklistItemsLiveData;
     }
 
     public LiveData<Boolean> isLoading() {
@@ -440,6 +445,150 @@ public class TaskViewModel extends ViewModel {
 
     public void clearError() {
         errorLiveData.setValue(null);
+    }
+
+    // ===== ChecklistItem Methods =====
+    
+    public void loadChecklistItems(String taskId) {
+        // TODO: Implement API call when backend supports checklist items endpoints
+        // For now, return empty list or mock data
+        loadingLiveData.setValue(true);
+        
+        // Mock implementation - replace with actual API call
+        new Thread(() -> {
+            try {
+                // Simulate network delay
+                Thread.sleep(500);
+                
+                // TODO: Call API to get checklist items
+                // List<ChecklistItem> items = getChecklistItemsUseCase.execute(taskId);
+                
+                // For now, return empty list
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> items = new java.util.ArrayList<>();
+                
+                checklistItemsLiveData.postValue(items);
+                loadingLiveData.postValue(false);
+            } catch (Exception e) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to load checklist items: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    public void addChecklistItem(String taskId, com.example.tralalero.domain.model.ChecklistItem item) {
+        // TODO: Implement API call when backend supports checklist items endpoints
+        loadingLiveData.setValue(true);
+        
+        new Thread(() -> {
+            try {
+                // Simulate network delay
+                Thread.sleep(500);
+                
+                // TODO: Call API to add checklist item
+                // ChecklistItem newItem = addChecklistItemUseCase.execute(taskId, item);
+                
+                // For now, add to current list
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
+                    checklistItemsLiveData.getValue();
+                if (currentItems == null) {
+                    currentItems = new java.util.ArrayList<>();
+                }
+                
+                // Create new item with generated ID
+                com.example.tralalero.domain.model.ChecklistItem newItem = 
+                    new com.example.tralalero.domain.model.ChecklistItem(
+                        java.util.UUID.randomUUID().toString(),
+                        taskId,
+                        item.getContent(),
+                        false,
+                        currentItems.size(),
+                        new java.util.Date()
+                    );
+                
+                currentItems.add(newItem);
+                checklistItemsLiveData.postValue(currentItems);
+                loadingLiveData.postValue(false);
+            } catch (Exception e) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to add checklist item: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    public void updateChecklistItem(String taskId, String itemId, boolean isDone) {
+        // TODO: Implement API call when backend supports checklist items endpoints
+        loadingLiveData.setValue(true);
+        
+        new Thread(() -> {
+            try {
+                // Simulate network delay
+                Thread.sleep(300);
+                
+                // TODO: Call API to update checklist item
+                // updateChecklistItemUseCase.execute(taskId, itemId, isDone);
+                
+                // For now, update in current list
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
+                    checklistItemsLiveData.getValue();
+                if (currentItems != null) {
+                    java.util.List<com.example.tralalero.domain.model.ChecklistItem> updatedItems = 
+                        new java.util.ArrayList<>();
+                    for (com.example.tralalero.domain.model.ChecklistItem item : currentItems) {
+                        if (item.getId().equals(itemId)) {
+                            // Create updated item
+                            updatedItems.add(new com.example.tralalero.domain.model.ChecklistItem(
+                                item.getId(),
+                                item.getChecklistId(),
+                                item.getContent(),
+                                isDone,
+                                item.getPosition(),
+                                item.getCreatedAt()
+                            ));
+                        } else {
+                            updatedItems.add(item);
+                        }
+                    }
+                    checklistItemsLiveData.postValue(updatedItems);
+                }
+                loadingLiveData.postValue(false);
+            } catch (Exception e) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to update checklist item: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    public void deleteChecklistItem(String taskId, String itemId) {
+        // TODO: Implement API call when backend supports checklist items endpoints
+        loadingLiveData.setValue(true);
+        
+        new Thread(() -> {
+            try {
+                // Simulate network delay
+                Thread.sleep(300);
+                
+                // TODO: Call API to delete checklist item
+                // deleteChecklistItemUseCase.execute(taskId, itemId);
+                
+                // For now, remove from current list
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
+                    checklistItemsLiveData.getValue();
+                if (currentItems != null) {
+                    java.util.List<com.example.tralalero.domain.model.ChecklistItem> updatedItems = 
+                        new java.util.ArrayList<>();
+                    for (com.example.tralalero.domain.model.ChecklistItem item : currentItems) {
+                        if (!item.getId().equals(itemId)) {
+                            updatedItems.add(item);
+                        }
+                    }
+                    checklistItemsLiveData.postValue(updatedItems);
+                }
+                loadingLiveData.postValue(false);
+            } catch (Exception e) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to delete checklist item: " + e.getMessage());
+            }
+        }).start();
     }
 
     @Override

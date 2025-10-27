@@ -31,6 +31,7 @@ public class AttachmentMapper {
             dto.id,
             dto.taskId,
             dto.url,
+            dto.fileName,
             dto.mimeType,
             dto.size,
             dto.uploadedBy,
@@ -47,6 +48,7 @@ public class AttachmentMapper {
         dto.id = attachment.getId();
         dto.taskId = attachment.getTaskId();
         dto.url = attachment.getUrl();
+        dto.fileName = attachment.getFileName();
         dto.mimeType = attachment.getMimeType();
         dto.size = attachment.getSize();
         dto.uploadedBy = attachment.getUploadedBy();

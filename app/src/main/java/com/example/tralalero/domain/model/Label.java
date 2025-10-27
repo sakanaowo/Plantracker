@@ -1,14 +1,16 @@
 package com.example.tralalero.domain.model;
 
-public class Label {
+import java.io.Serializable;
+
+public class Label implements Serializable {
     private final String id;
-    private final String workspaceId;
+    private final String projectId;  // Changed from workspaceId to projectId
     private final String name;
     private final String color; 
 
-    public Label(String id, String workspaceId, String name, String color) {
+    public Label(String id, String projectId, String name, String color) {
         this.id = id;
-        this.workspaceId = workspaceId;
+        this.projectId = projectId;
         this.name = name;
         this.color = color;
     }
@@ -17,8 +19,14 @@ public class Label {
         return id;
     }
 
+    public String getProjectId() {  // Changed from getWorkspaceId to getProjectId
+        return projectId;
+    }
+
+    // Keep getWorkspaceId for backwards compatibility (deprecated)
+    @Deprecated
     public String getWorkspaceId() {
-        return workspaceId;
+        return projectId;
     }
 
     public String getName() {

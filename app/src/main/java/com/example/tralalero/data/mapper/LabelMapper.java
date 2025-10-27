@@ -15,7 +15,7 @@ public class LabelMapper {
         
         return new Label(
             dto.getId(),
-            dto.getWorkspaceId(),
+            dto.getProjectId(),  // Changed from getWorkspaceId to getProjectId
             dto.getName(),
             dto.getColor()
         );
@@ -28,7 +28,7 @@ public class LabelMapper {
         
         LabelDTO dto = new LabelDTO();
         dto.setId(label.getId());
-        dto.setWorkspaceId(label.getWorkspaceId());
+        dto.setProjectId(label.getProjectId());  // Changed from setWorkspaceId to setProjectId
         dto.setName(label.getName());
         dto.setColor(label.getColor());
         
