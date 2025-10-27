@@ -9,4 +9,10 @@
     </style>
 
     <style name="Theme.Tralalero" parent="Base.Theme.Tralalero" />
+    
+    <!-- Circle Image View -->
+    <style name="CircleImageView">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

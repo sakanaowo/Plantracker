@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -187,13 +188,14 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         progressBar = findViewById(R.id.progressBar);
         tvProjectName = findViewById(R.id.tvProjectName);
         tvWorkspaceName = findViewById(R.id.tvWorkspaceName);
+        ImageView ivProjectMenu = findViewById(R.id.ivProjectMenu);
 
         if (projectName != null && !projectName.isEmpty()) {
             tvProjectName.setText(projectName);
         }
-        if (workspaceName != null && !workspaceName.isEmpty()) {
-            tvWorkspaceName.setText(workspaceName);
-        }
+//        if (workspaceName != null && !workspaceName.isEmpty()) {
+//            tvWorkspaceName.setText(workspaceName);
+//        }
 
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(ProjectActivity.this, WorkspaceActivity.class);
@@ -201,6 +203,17 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             startActivity(intent);
             finish();
         });
+        
+        // Click vào icon 3 chấm để mở Project Menu
+        ivProjectMenu.setOnClickListener(v -> {
+            showProjectMenu();
+        });
+    }
+    
+    private void showProjectMenu() {
+        com.example.tralalero.feature.home.ui.Home.project.ProjectMenuBottomSheet bottomSheet = 
+            com.example.tralalero.feature.home.ui.Home.project.ProjectMenuBottomSheet.newInstance(projectId, projectName);
+        bottomSheet.show(getSupportFragmentManager(), "ProjectMenuBottomSheet");
     }
 
     private void setupRecyclerView() {
