@@ -142,17 +142,21 @@ public class App extends Application {
         wsManager = new NotificationWebSocketManager();
         Log.d(TAG, "✓ WebSocket Manager initialized");
         
-        // Setup callback (will be used by DEV 2's UI Manager)
+        // Setup callback - DEV 2: Show in-app notification UI
         wsManager.setOnNotificationReceivedListener(notification -> {
             Log.d(TAG, "📬 Notification received: " + notification.getTitle());
-            // TODO: DEV 2 will add UI handling here
-            // NotificationUIManager.handleInAppNotification(this, notification);
+            // DEV 2: Call NotificationUIManager to show Snackbar
+            com.example.tralalero.ui.NotificationUIManager.handleInAppNotification(this, notification);
         });
         
         // Register lifecycle observer
         AppLifecycleObserver lifecycleObserver = new AppLifecycleObserver(this, wsManager);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
         Log.d(TAG, "✓ Lifecycle Observer registered");
+        
+        // DEV 2: Register Activity Tracker for in-app notifications
+        registerActivityLifecycleCallbacks(new com.example.tralalero.util.ActivityTracker());
+        Log.d(TAG, "✓ Activity Tracker registered");
     }
     
     /**
