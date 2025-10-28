@@ -6,16 +6,18 @@ public class Attachment {
     private final String id;
     private final String taskId;
     private final String url;
+    private final String fileName;
     private final String mimeType;
     private final Integer size;
     private final String uploadedBy; 
     private final Date createdAt;
 
-    public Attachment(String id, String taskId, String url, String mimeType,
-                      Integer size, String uploadedBy, Date createdAt) {
+    public Attachment(String id, String taskId, String url, String fileName,
+                      String mimeType, Integer size, String uploadedBy, Date createdAt) {
         this.id = id;
         this.taskId = taskId;
         this.url = url;
+        this.fileName = fileName;
         this.mimeType = mimeType;
         this.size = size;
         this.uploadedBy = uploadedBy;
@@ -25,6 +27,7 @@ public class Attachment {
     public String getId() { return id; }
     public String getTaskId() { return taskId; }
     public String getUrl() { return url; }
+    public String getFileName() { return fileName; }
     public String getMimeType() { return mimeType; }
     public Integer getSize() { return size; }
     public String getUploadedBy() { return uploadedBy; }

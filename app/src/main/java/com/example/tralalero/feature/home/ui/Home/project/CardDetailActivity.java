@@ -1,10 +1,12 @@
 package com.example.tralalero.feature.home.ui.Home.project;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -15,11 +17,16 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
 import com.example.tralalero.App.App;
+import com.example.tralalero.adapter.AttachmentAdapter;
+import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
+import com.example.tralalero.domain.model.Label;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
@@ -29,6 +36,8 @@ import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class CardDetailActivity extends AppCompatActivity {
@@ -50,6 +59,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private String projectId;
     private boolean isEditMode;
     private TaskViewModel taskViewModel;
+    private com.example.tralalero.presentation.viewmodel.LabelViewModel labelViewModel;
     private ImageView ivClose;
     private EditText etTaskTitle; // Changed from RadioButton to EditText
     private TextView tvBoardName; // NEW: Display board name
@@ -57,21 +67,32 @@ public class CardDetailActivity extends AppCompatActivity {
     private MaterialButton btnAddAttachment;
     private MaterialButton btnAddComment;
     private MaterialButton btnDeleteTask;
-    private MaterialButton btnConfirm; // NEW: Confirm button
+    private MaterialButton btnConfirm;
     private EditText etDescription;
     private EditText etDateStart;
     private EditText etDueDate;
-    private TextView tvTodolistHeader;
-    private LinearLayout llTodolistContainer;
-    private TextView tvAttachmentHeader;
-    private LinearLayout llAttachmentContainer;
-    private TextView tvCommentsHeader;
-    private LinearLayout llCommentsContainer;
-    private TextView tvNoComments;
     private MaterialButton btnLowPriority;
     private MaterialButton btnMediumPriority;
     private MaterialButton btnHighPriority;
     private Task.TaskPriority currentPriority = Task.TaskPriority.MEDIUM;
+    
+    // RecyclerViews and Adapters
+    private RecyclerView rvAttachments;
+    private RecyclerView rvComments;
+    private RecyclerView rvChecklist;
+    private TextView tvNoAttachments;
+    private TextView tvNoChecklist;
+    private AttachmentAdapter attachmentAdapter;
+    private CommentAdapter commentAdapter;
+    private ChecklistAdapter checklistAdapter;
+    private ImageView ivAddChecklist;
+    private LinearLayout labelLayout;
+    private HorizontalScrollView scrollViewLabels;
+    private LinearLayout layoutSelectedLabels;
+    private TextView tvNoLabels;
+    private List<Label> selectedLabels = new ArrayList<>();
+
+    TextView tvNoComments;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -108,17 +129,102 @@ public class CardDetailActivity extends AppCompatActivity {
         btnAddAttachment = findViewById(R.id.btnAddAttachment);
         btnAddComment = findViewById(R.id.btnAddComment);
         btnDeleteTask = findViewById(R.id.btnDeleteTask);
-        btnConfirm = findViewById(R.id.btnConfirm); // NEW: Confirm button
+        btnConfirm = findViewById(R.id.btnConfirm);
         etDescription = findViewById(R.id.etDescription);
         etDateStart = findViewById(R.id.etDateStart);
         etDueDate = findViewById(R.id.etDueDate);
-        tvTodolistHeader = findViewById(R.id.tvTodolistHeader);
-        llTodolistContainer = findViewById(R.id.llTodolistContainer);
-        tvAttachmentHeader = findViewById(R.id.tvAttachmentHeader);
-        llAttachmentContainer = findViewById(R.id.llAttachmentContainer);
-        tvCommentsHeader = findViewById(R.id.tvCommentsHeader);
-        llCommentsContainer = findViewById(R.id.llCommentsContainer);
+        
+        // RecyclerViews
+        rvAttachments = findViewById(R.id.rvAttachments);
+        rvComments = findViewById(R.id.rvComments);
+        rvChecklist = findViewById(R.id.rvChecklist);
+        tvNoAttachments = findViewById(R.id.tvNoAttachments);
         tvNoComments = findViewById(R.id.tvNoComments);
+        tvNoChecklist = findViewById(R.id.tvNoChecklist);
+        ivAddChecklist = findViewById(R.id.ivAddChecklist);
+        labelLayout = findViewById(R.id.labelLayout);
+        scrollViewLabels = findViewById(R.id.scrollViewLabels);
+        layoutSelectedLabels = findViewById(R.id.layoutSelectedLabels);
+        tvNoLabels = findViewById(R.id.tvNoLabels);
+        
+        // Setup RecyclerViews
+        setupRecyclerViews();
+    }
+    
+    private void setupRecyclerViews() {
+        // Setup Attachments RecyclerView
+        rvAttachments.setLayoutManager(new LinearLayoutManager(this));
+        attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
+            @Override
+            public void onDownloadClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Implement download functionality
+                Toast.makeText(CardDetailActivity.this, "Download: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onDeleteClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Implement delete attachment
+                Toast.makeText(CardDetailActivity.this, "Delete attachment", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAttachmentClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Open/View attachment
+                Toast.makeText(CardDetailActivity.this, "View: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
+            }
+        });
+        rvAttachments.setAdapter(attachmentAdapter);
+        
+        // Setup Comments RecyclerView
+        rvComments.setLayoutManager(new LinearLayoutManager(this));
+        commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
+            @Override
+            public void onOptionsClick(com.example.tralalero.domain.model.TaskComment comment, int position) {
+                // TODO: Show edit/delete options
+                Toast.makeText(CardDetailActivity.this, "Comment options", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCommentClick(com.example.tralalero.domain.model.TaskComment comment) {
+                // Optional: Handle comment click
+            }
+        });
+        rvComments.setAdapter(commentAdapter);
+        
+        // Setup Checklist RecyclerView
+        rvChecklist.setLayoutManager(new LinearLayoutManager(this));
+        checklistAdapter = new ChecklistAdapter(new ChecklistAdapter.OnChecklistItemListener() {
+            @Override
+            public void onCheckboxChanged(com.example.tralalero.domain.model.ChecklistItem item, boolean isChecked) {
+                // TODO: Update checklist item status
+                if (isEditMode && taskId != null) {
+                    taskViewModel.updateChecklistItem(taskId, item.getId(), isChecked);
+                }
+            }
+
+            @Override
+            public void onDeleteClick(com.example.tralalero.domain.model.ChecklistItem item) {
+                // TODO: Delete checklist item
+                if (isEditMode && taskId != null) {
+                    taskViewModel.deleteChecklistItem(taskId, item.getId());
+                }
+            }
+
+            @Override
+            public void onItemClick(com.example.tralalero.domain.model.ChecklistItem item) {
+                // Optional: Edit checklist item
+                Toast.makeText(CardDetailActivity.this, "Edit: " + item.getContent(), Toast.LENGTH_SHORT).show();
+            }
+        });
+        rvChecklist.setAdapter(checklistAdapter);
+        
+        // Set initial state - show placeholders, hide RecyclerViews
+        rvAttachments.setVisibility(View.GONE);
+        tvNoAttachments.setVisibility(View.VISIBLE);
+        rvComments.setVisibility(View.GONE);
+        tvNoComments.setVisibility(View.VISIBLE);
+        rvChecklist.setVisibility(View.GONE);
+        tvNoChecklist.setVisibility(View.VISIBLE);
     }
 
     private void setupViewModel() {
@@ -157,7 +263,65 @@ public class CardDetailActivity extends AppCompatActivity {
                 getTaskChecklistsUseCase
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
+        
+        // Initialize LabelViewModel
+        setupLabelViewModel();
+        
         observeViewModel();
+    }
+    
+    private void setupLabelViewModel() {
+        com.example.tralalero.data.remote.api.LabelApiService labelApiService = 
+            ApiClient.get(App.authManager).create(com.example.tralalero.data.remote.api.LabelApiService.class);
+        com.example.tralalero.domain.repository.ILabelRepository labelRepository = 
+            new com.example.tralalero.data.repository.LabelRepositoryImpl(labelApiService);
+        
+        com.example.tralalero.domain.usecase.label.GetLabelsByWorkspaceUseCase getLabelsByWorkspaceUseCase = 
+            new com.example.tralalero.domain.usecase.label.GetLabelsByWorkspaceUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.GetLabelsByProjectUseCase getLabelsByProjectUseCase = 
+            new com.example.tralalero.domain.usecase.label.GetLabelsByProjectUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.GetLabelByIdUseCase getLabelByIdUseCase = 
+            new com.example.tralalero.domain.usecase.label.GetLabelByIdUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.CreateLabelUseCase createLabelUseCase = 
+            new com.example.tralalero.domain.usecase.label.CreateLabelUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.CreateLabelInProjectUseCase createLabelInProjectUseCase = 
+            new com.example.tralalero.domain.usecase.label.CreateLabelInProjectUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.UpdateLabelUseCase updateLabelUseCase = 
+            new com.example.tralalero.domain.usecase.label.UpdateLabelUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.DeleteLabelUseCase deleteLabelUseCase = 
+            new com.example.tralalero.domain.usecase.label.DeleteLabelUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.GetTaskLabelsUseCase getTaskLabelsUseCase = 
+            new com.example.tralalero.domain.usecase.label.GetTaskLabelsUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.AssignLabelToTaskUseCase assignLabelToTaskUseCase = 
+            new com.example.tralalero.domain.usecase.label.AssignLabelToTaskUseCase(labelRepository);
+        com.example.tralalero.domain.usecase.label.RemoveLabelFromTaskUseCase removeLabelFromTaskUseCase = 
+            new com.example.tralalero.domain.usecase.label.RemoveLabelFromTaskUseCase(labelRepository);
+        
+        com.example.tralalero.presentation.viewmodel.LabelViewModelFactory labelFactory = 
+            new com.example.tralalero.presentation.viewmodel.LabelViewModelFactory(
+                getLabelsByWorkspaceUseCase,
+                getLabelsByProjectUseCase,
+                getLabelByIdUseCase,
+                createLabelUseCase,
+                createLabelInProjectUseCase,
+                updateLabelUseCase,
+                deleteLabelUseCase,
+                getTaskLabelsUseCase,
+                assignLabelToTaskUseCase,
+                removeLabelFromTaskUseCase
+            );
+        
+        labelViewModel = new ViewModelProvider(this, labelFactory)
+            .get(com.example.tralalero.presentation.viewmodel.LabelViewModel.class);
+        
+        // Observe task labels
+        labelViewModel.getTaskLabels().observe(this, labels -> {
+            if (labels != null) {
+                selectedLabels.clear();
+                selectedLabels.addAll(labels);
+                displaySelectedLabels();
+            }
+        });
     }
 
     private void observeViewModel() {
@@ -167,11 +331,43 @@ public class CardDetailActivity extends AppCompatActivity {
                 taskViewModel.clearError();
             }
         });
+        
+        // Observe comments
         taskViewModel.getComments().observe(this, comments -> {
+            android.util.Log.d("CardDetail", "Comments received: " + (comments != null ? comments.size() : "null"));
             if (comments != null && !comments.isEmpty()) {
-                displayComments(comments);
+                commentAdapter.setComments(comments);
+                rvComments.setVisibility(View.VISIBLE);
+                tvNoComments.setVisibility(View.GONE);
             } else {
+                rvComments.setVisibility(View.GONE);
                 tvNoComments.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        // Observe attachments
+        taskViewModel.getAttachments().observe(this, attachments -> {
+            android.util.Log.d("CardDetail", "Attachments received: " + (attachments != null ? attachments.size() : "null"));
+            if (attachments != null && !attachments.isEmpty()) {
+                attachmentAdapter.setAttachments(attachments);
+                rvAttachments.setVisibility(View.VISIBLE);
+                tvNoAttachments.setVisibility(View.GONE);
+            } else {
+                rvAttachments.setVisibility(View.GONE);
+                tvNoAttachments.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        // Observe checklist items
+        taskViewModel.getChecklistItems().observe(this, checklistItems -> {
+            android.util.Log.d("CardDetail", "Checklist items received: " + (checklistItems != null ? checklistItems.size() : "null"));
+            if (checklistItems != null && !checklistItems.isEmpty()) {
+                checklistAdapter.setChecklistItems(checklistItems);
+                rvChecklist.setVisibility(View.VISIBLE);
+                tvNoChecklist.setVisibility(View.GONE);
+            } else {
+                rvChecklist.setVisibility(View.GONE);
+                tvNoChecklist.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -204,7 +400,41 @@ public class CardDetailActivity extends AppCompatActivity {
         } else {
             tvBoardName.setVisibility(View.GONE);
         }
+        
+        // Load attachments and comments if in edit mode
         if (isEditMode && taskId != null && !taskId.isEmpty()) {
+            loadTaskAttachments();
+            loadTaskComments();
+            loadChecklistItems();
+            loadTaskLabels();
+        }
+        
+        // Display selected labels (initial state)
+        displaySelectedLabels();
+    }
+    
+    private void loadTaskAttachments() {
+        if (taskId != null && !taskId.isEmpty()) {
+            taskViewModel.loadTaskAttachments(taskId);
+        }
+    }
+    
+    private void loadTaskComments() {
+        if (taskId != null && !taskId.isEmpty()) {
+            taskViewModel.loadTaskComments(taskId);
+        }
+    }
+    
+    private void loadChecklistItems() {
+        if (taskId != null && !taskId.isEmpty()) {
+            taskViewModel.loadChecklistItems(taskId);
+        }
+    }
+    
+    private void loadTaskLabels() {
+        // Load task labels from API via ViewModel
+        if (taskId != null && !taskId.isEmpty() && labelViewModel != null) {
+            labelViewModel.loadTaskLabels(taskId);
         }
     }
 
@@ -221,6 +451,12 @@ public class CardDetailActivity extends AppCompatActivity {
         btnAddComment.setOnClickListener(v -> {
             showAddCommentDialog();
         });
+        ivAddChecklist.setOnClickListener(v -> {
+            showAddChecklistDialog();
+        });
+        labelLayout.setOnClickListener(v -> {
+            showLabelSelectionDialog();
+        });
         btnDeleteTask.setOnClickListener(v -> {
             showDeleteConfirmation();
         });
@@ -233,17 +469,6 @@ public class CardDetailActivity extends AppCompatActivity {
         });
         etDateStart.setOnClickListener(v -> showDatePickerDialog(true));
         etDueDate.setOnClickListener(v -> showDatePickerDialog(false));
-        tvTodolistHeader.setOnClickListener(v -> toggleSection(llTodolistContainer));
-        tvAttachmentHeader.setOnClickListener(v -> toggleSection(llAttachmentContainer));
-        tvCommentsHeader.setOnClickListener(v -> toggleSection(llCommentsContainer));
-    }
-
-    private void toggleSection(LinearLayout container) {
-        if (container.getVisibility() == View.VISIBLE) {
-            container.setVisibility(View.GONE);
-        } else {
-            container.setVisibility(View.VISIBLE);
-        }
     }
 
     private void createTask() {
@@ -434,6 +659,7 @@ public class CardDetailActivity extends AppCompatActivity {
         EditText input = new EditText(this);
         input.setHint("Enter attachment URL");
         input.setPadding(50, 20, 50, 20);
+        input.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Add Attachment")
@@ -442,14 +668,70 @@ public class CardDetailActivity extends AppCompatActivity {
                 .setPositiveButton("Add", (dialog, which) -> {
                     String attachmentUrl = input.getText().toString().trim();
                     if (!attachmentUrl.isEmpty() && taskId != null) {
-                        // TODO: Call addAttachment use case when implemented
-                        Toast.makeText(this, "Attachment added: " + attachmentUrl, Toast.LENGTH_SHORT).show();
+                        // Create attachment object
+                        String fileName = extractFileNameFromUrl(attachmentUrl);
+                        String mimeType = getMimeTypeFromUrl(attachmentUrl);
+                        
+                        com.example.tralalero.domain.model.Attachment attachment = 
+                            new com.example.tralalero.domain.model.Attachment(
+                                null, // id (backend will generate)
+                                taskId,
+                                attachmentUrl,
+                                fileName,
+                                mimeType,
+                                null, // size (unknown for URL)
+                                null, // uploadedBy (backend will set)
+                                new java.util.Date() // createdAt
+                            );
+                        
+                        // Add via ViewModel
+                        taskViewModel.addAttachment(taskId, attachment);
                     } else {
                         Toast.makeText(this, "Please enter a valid URL", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+    
+    // Helper method to extract filename from URL
+    private String extractFileNameFromUrl(String url) {
+        try {
+            String[] parts = url.split("/");
+            String fileName = parts[parts.length - 1];
+            // Remove query parameters
+            if (fileName.contains("?")) {
+                fileName = fileName.substring(0, fileName.indexOf("?"));
+            }
+            return fileName.isEmpty() ? "attachment" : fileName;
+        } catch (Exception e) {
+            return "attachment";
+        }
+    }
+    
+    // Helper method to guess MIME type from URL extension
+    private String getMimeTypeFromUrl(String url) {
+        String lowerUrl = url.toLowerCase();
+        if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (lowerUrl.endsWith(".png")) {
+            return "image/png";
+        } else if (lowerUrl.endsWith(".gif")) {
+            return "image/gif";
+        } else if (lowerUrl.endsWith(".pdf")) {
+            return "application/pdf";
+        } else if (lowerUrl.endsWith(".doc") || lowerUrl.endsWith(".docx")) {
+            return "application/msword";
+        } else if (lowerUrl.endsWith(".xls") || lowerUrl.endsWith(".xlsx")) {
+            return "application/vnd.ms-excel";
+        } else if (lowerUrl.endsWith(".zip")) {
+            return "application/zip";
+        } else if (lowerUrl.endsWith(".mp4")) {
+            return "video/mp4";
+        } else if (lowerUrl.endsWith(".mp3")) {
+            return "audio/mpeg";
+        }
+        return "application/octet-stream";
     }
 
     private void showAddCommentDialog() {
@@ -483,76 +765,129 @@ public class CardDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void displayComments(java.util.List<com.example.tralalero.domain.model.TaskComment> comments) {
-        llCommentsContainer.removeAllViews();
+    private void showAddChecklistDialog() {
+        EditText input = new EditText(this);
+        input.setHint("Enter checklist item");
+        input.setPadding(50, 20, 50, 20);
+        input.setMaxLines(2);
 
-        if (comments == null || comments.isEmpty()) {
-            tvNoComments.setVisibility(View.VISIBLE);
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Add Checklist Item")
+                .setMessage("What needs to be done?")
+                .setView(input)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String content = input.getText().toString().trim();
+                    if (!content.isEmpty() && taskId != null) {
+                        com.example.tralalero.domain.model.ChecklistItem checklistItem = 
+                                new com.example.tralalero.domain.model.ChecklistItem(
+                                    "", // id (backend will generate)
+                                    taskId, // checklistId = taskId
+                                    content,
+                                    false, // isDone - default to false
+                                    0.0, // position (backend will handle)
+                                    null // createdAt (backend will set)
+                                );
+                        taskViewModel.addChecklistItem(taskId, checklistItem);
+                        Toast.makeText(this, "Checklist item added", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Please enter checklist content", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showLabelSelectionDialog() {
+        if (!isEditMode || taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        tvNoComments.setVisibility(View.GONE);
-        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        for (com.example.tralalero.domain.model.TaskComment comment : comments) {
-            LinearLayout commentItem = new LinearLayout(this);
-            commentItem.setOrientation(LinearLayout.VERTICAL);
-            commentItem.setPadding(16, 12, 16, 12);
-            commentItem.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
-
-            LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            itemParams.setMargins(0, 0, 0, 8);
-            commentItem.setLayoutParams(itemParams);
-            LinearLayout headerLayout = new LinearLayout(this);
-            headerLayout.setOrientation(LinearLayout.HORIZONTAL);
-            headerLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            ));
-            ImageView userIcon = new ImageView(this);
-            userIcon.setImageResource(R.drawable.acc_icon);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(20, 20);
-            iconParams.setMargins(0, 0, 8, 0);
-            userIcon.setLayoutParams(iconParams);
-            headerLayout.addView(userIcon);
-            TextView tvUserName = new TextView(this);
-            String userName = comment.getUserId() != null ? comment.getUserId() : "Unknown User";
-            tvUserName.setText(userName);
-            tvUserName.setTextSize(12);
-            tvUserName.setTextColor(getResources().getColor(android.R.color.black));
-            tvUserName.setTypeface(null, android.graphics.Typeface.BOLD);
-            LinearLayout.LayoutParams userParams = new LinearLayout.LayoutParams(
-                    0,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    1.0f
-            );
-            tvUserName.setLayoutParams(userParams);
-            headerLayout.addView(tvUserName);
-            TextView tvTimestamp = new TextView(this);
-            if (comment.getCreatedAt() != null) {
-                tvTimestamp.setText(dateFormatter.format(comment.getCreatedAt()));
-            } else {
-                tvTimestamp.setText("Just now");
-            }
-            tvTimestamp.setTextSize(10);
-            tvTimestamp.setTextColor(getResources().getColor(android.R.color.darker_gray));
-            headerLayout.addView(tvTimestamp);
-
-            commentItem.addView(headerLayout);
-            TextView tvCommentText = new TextView(this);
-            tvCommentText.setTextSize(12);
-            tvCommentText.setTextColor(getResources().getColor(android.R.color.black));
-            LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            textParams.setMargins(28, 8, 0, 0);  // Indent under user icon
-            tvCommentText.setLayoutParams(textParams);
-            commentItem.addView(tvCommentText);
-            llCommentsContainer.addView(commentItem);
+        android.util.Log.d("CardDetailActivity", "Opening label dialog - projectId: " + projectId + ", taskId: " + taskId);
+        
+        // Get currently selected label IDs
+        List<String> selectedLabelIds = new ArrayList<>();
+        for (Label label : selectedLabels) {
+            selectedLabelIds.add(label.getId());
         }
+
+        LabelSelectionBottomSheet dialog = LabelSelectionBottomSheet.newInstance(
+                projectId, 
+                taskId, 
+                selectedLabelIds
+        );
+        
+        dialog.setOnLabelsUpdatedListener(() -> {
+            // Reload task labels from backend to ensure sync
+            if (labelViewModel != null && taskId != null) {
+                labelViewModel.loadTaskLabels(taskId);
+            }
+        });
+        
+        dialog.show(getSupportFragmentManager(), "LabelSelectionBottomSheet");
+    }
+
+    private void displaySelectedLabels() {
+        layoutSelectedLabels.removeAllViews();
+
+        if (selectedLabels.isEmpty()) {
+            scrollViewLabels.setVisibility(View.GONE);
+            tvNoLabels.setVisibility(View.VISIBLE);
+        } else {
+            scrollViewLabels.setVisibility(View.VISIBLE);
+            tvNoLabels.setVisibility(View.GONE);
+
+            for (Label label : selectedLabels) {
+                View labelChip = createLabelChip(label);
+                layoutSelectedLabels.addView(labelChip);
+            }
+        }
+    }
+
+    private View createLabelChip(Label label) {
+        // Create a colored chip for the label
+        TextView chip = new TextView(this);
+        chip.setText(label.getName() != null && !label.getName().isEmpty() 
+            ? label.getName() 
+            : "");
+        
+        // Set padding
+        int padding = (int) (8 * getResources().getDisplayMetrics().density);
+        chip.setPadding(padding * 2, padding, padding * 2, padding);
+        
+        // Set margin
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(padding / 2, 0, padding / 2, 0);
+        chip.setLayoutParams(params);
+        
+        chip.setTextSize(14);
+        chip.setMaxLines(1);
+        
+        // Create rounded background with color
+        try {
+            android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+            drawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            drawable.setCornerRadius(4 * getResources().getDisplayMetrics().density);
+            drawable.setColor(Color.parseColor(label.getColor()));
+            chip.setBackground(drawable);
+            
+            // Determine text color based on background brightness
+            int color = Color.parseColor(label.getColor());
+            int brightness = (Color.red(color) * 299 + Color.green(color) * 587 + Color.blue(color) * 114) / 1000;
+            chip.setTextColor(brightness > 128 ? Color.BLACK : Color.WHITE);
+        } catch (Exception e) {
+            android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+            drawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            drawable.setCornerRadius(4 * getResources().getDisplayMetrics().density);
+            drawable.setColor(Color.GRAY);
+            chip.setBackground(drawable);
+            chip.setTextColor(Color.WHITE);
+        }
+        
+        return chip;
     }
 
     private void showDatePickerDialog(boolean isStartDate) {

@@ -325,171 +325,170 @@
 <!--            </com.google.android.material.card.MaterialCardView>-->
         </LinearLayout>
 
-        <!-- Members Section -->
         <LinearLayout
-            android:id="@+id/sectionMembers"
+            android:id="@+id/labelLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="16dp"
-            android:visibility="gone">
+            android:paddingBottom="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_label"
+                android:scaleType="fitCenter"
+                />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Members"
-                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:text="Labels"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="14sp"
                 android:textColor="@android:color/black"
-                android:drawableStart="@drawable/acc_icon"
-                android:drawablePadding="8dp"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginStart="8dp"/>
 
-            <!-- Members list will be populated dynamically -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvMembers"
-                android:layout_width="match_parent"
+        </LinearLayout>
+
+        <!-- Selected Labels Display -->
+        <HorizontalScrollView
+            android:id="@+id/scrollViewLabels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/layoutSelectedLabels"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:visibility="gone"/>
+                android:padding="4dp"/>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/tvNoLabels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No labels"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"
+            android:visibility="gone"/>
+
+        <!-- Checklist Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="8dp">
 
             <TextView
-                android:id="@+id/tvNoMembers"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="No members assigned"
-                android:textSize="12sp"
-                android:textColor="#888888"
-                android:padding="8dp"/>
+                android:layout_weight="1"
+                android:text="Checklist"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"/>
+
+            <ImageView
+                android:id="@+id/ivAddChecklist"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/add_ic"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="fitCenter"
+                android:contentDescription="Add checklist item"/>
         </LinearLayout>
 
-        <!-- Todolist Section -->
-        <LinearLayout
-            android:id="@+id/sectionTodolist"
+        <!-- RecyclerView for Checklist -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvChecklist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="16dp"
-            android:visibility="gone">
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"/>
 
-            <TextView
-                android:id="@+id/tvTodolistHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Check list"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
-
-            <!-- Todolist items - expandable -->
-            <LinearLayout
-                android:id="@+id/llTodolistContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No todolist items"
-                    android:textSize="12sp"
-                    android:textColor="#888888"/>
-            </LinearLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvNoChecklist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No checklist items"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"/>
 
         <!-- Attachment Section -->
-        <LinearLayout
-            android:id="@+id/sectionAttachment"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Attachment"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="8dp"/>
+
+        <!-- RecyclerView for Attachments -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAttachments"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="8dp"
-            android:visibility="gone">
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"/>
 
-            <TextView
-                android:id="@+id/tvAttachmentHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Attachment"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
-
-            <!-- Attachment items - expandable -->
-            <LinearLayout
-                android:id="@+id/llAttachmentContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No attachments"
-                    android:textSize="12sp"
-                    android:textColor="#888888"/>
-            </LinearLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvNoAttachments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No attachments"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"/>
 
         <!-- Comments Section -->
-        <LinearLayout
-            android:id="@+id/sectionComments"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Comments"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="8dp"/>
+
+        <!-- RecyclerView for Comments -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvComments"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="8dp"
-            android:visibility="gone">
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"/>
 
-            <TextView
-                android:id="@+id/tvCommentsHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Comments"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
-
-            <!-- Comments container - expandable, will be populated dynamically -->
-            <LinearLayout
-                android:id="@+id/llCommentsContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
-
-                <!-- No comments placeholder -->
-                <TextView
-                    android:id="@+id/tvNoComments"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No comments yet"
-                    android:textSize="12sp"
-                    android:textColor="#888888"
-                    android:padding="8dp"
-                    android:gravity="center"/>
-            </LinearLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvNoComments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No comments yet"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"/>
 
         <!-- Confirm Button -->
         <com.google.android.material.button.MaterialButton
@@ -498,7 +497,7 @@
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="16dp"
-            android:text="Add Card"
+            android:text="Save Changes"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"

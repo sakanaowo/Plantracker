@@ -9,6 +9,9 @@ public class AttachmentDTO {
     @SerializedName("url")
     public String url;
 
+    @SerializedName("file_name")
+    public String fileName;
+
     @SerializedName("mime_type")
     public String mimeType; 
 
