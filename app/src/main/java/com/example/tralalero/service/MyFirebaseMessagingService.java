@@ -69,12 +69,26 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      * This method is called when:
      * - App is in foreground
      * - App is in background (only if notification has data payload)
+     * 
+     * DEV 1: Check if app is foreground - skip FCM if WebSocket is handling it
      */
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
         Log.d(TAG, "From: " + remoteMessage.getFrom());
+        
+        // DEV 1: Check if app is in foreground (WebSocket active)
+        SharedPreferences prefs = getSharedPreferences("notification_prefs", MODE_PRIVATE);
+        boolean showFCM = prefs.getBoolean("show_fcm_notifications", true);
+        
+        if (!showFCM) {
+            // App is foreground - WebSocket already handled this notification
+            Log.d(TAG, "⚠️ App foreground, skipping FCM notification (WebSocket handled it)");
+            return;
+        }
+        
+        Log.d(TAG, "✅ App background, showing FCM notification");
 
         // Check if message contains data payload
         if (!remoteMessage.getData().isEmpty()) {

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.preference.PreferenceManager;
 import androidx.work.Constraints;
 import androidx.work.ExistingWorkPolicy;
@@ -16,6 +17,8 @@ import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.core.DependencyProvider;
+import com.example.tralalero.service.AppLifecycleObserver;
+import com.example.tralalero.service.NotificationWebSocketManager;
 import com.example.tralalero.sync.StartupSyncWorker;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.FirebaseAppCheck;
@@ -28,6 +31,9 @@ public class App extends Application {
     public static AuthManager authManager;
     public static TokenManager tokenManager;
     public static DependencyProvider dependencyProvider;
+    
+    // WebSocket Manager for real-time notifications (DEV 1)
+    private NotificationWebSocketManager wsManager;
 
     @Override
     public void onCreate() {
@@ -47,6 +53,9 @@ public class App extends Application {
         
         dependencyProvider = DependencyProvider.getInstance(this, tokenManager);
         Log.d(TAG, "✓ DependencyProvider initialized with Database");
+        
+        // Initialize WebSocket Manager (DEV 1)
+        initializeWebSocket();
 
         OneTimeWorkRequest syncWork =
                 new OneTimeWorkRequest.Builder(StartupSyncWorker.class)
@@ -123,5 +132,34 @@ public class App extends Application {
 
     public static App getInstance() {
         return instance;
+    }
+    
+    /**
+     * Initialize WebSocket Manager and Lifecycle Observer (DEV 1)
+     */
+    private void initializeWebSocket() {
+        // Create WebSocket Manager
+        wsManager = new NotificationWebSocketManager();
+        Log.d(TAG, "✓ WebSocket Manager initialized");
+        
+        // Setup callback (will be used by DEV 2's UI Manager)
+        wsManager.setOnNotificationReceivedListener(notification -> {
+            Log.d(TAG, "📬 Notification received: " + notification.getTitle());
+            // TODO: DEV 2 will add UI handling here
+            // NotificationUIManager.handleInAppNotification(this, notification);
+        });
+        
+        // Register lifecycle observer
+        AppLifecycleObserver lifecycleObserver = new AppLifecycleObserver(this, wsManager);
+        ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
+        Log.d(TAG, "✓ Lifecycle Observer registered");
+    }
+    
+    /**
+     * Get WebSocket Manager instance
+     * Used by DEV 2 to access WebSocket functionality
+     */
+    public NotificationWebSocketManager getWebSocketManager() {
+        return wsManager;
     }
 }
