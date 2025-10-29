@@ -430,66 +430,6 @@
             android:padding="8dp"
             android:gravity="center"/>
 
-        <!-- Attachment Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Attachment"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="@android:color/black"
-            android:layout_marginTop="16dp"
-            android:paddingBottom="8dp"/>
-
-        <!-- RecyclerView for Attachments -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvAttachments"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:nestedScrollingEnabled="false"
-            android:visibility="gone"/>
-
-        <TextView
-            android:id="@+id/tvNoAttachments"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="No attachments"
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:padding="8dp"
-            android:gravity="center"/>
-
-        <!-- Comments Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Comments"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="@android:color/black"
-            android:layout_marginTop="16dp"
-            android:paddingBottom="8dp"/>
-
-        <!-- RecyclerView for Comments -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvComments"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:nestedScrollingEnabled="false"
-            android:visibility="gone"/>
-
-        <TextView
-            android:id="@+id/tvNoComments"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="No comments yet"
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:padding="8dp"
-            android:gravity="center"/>
-
         <!-- Confirm Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"

@@ -22,8 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
 import com.example.tralalero.App.App;
-import com.example.tralalero.adapter.AttachmentAdapter;
-import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.model.Label;
@@ -77,13 +75,8 @@ public class CardDetailActivity extends AppCompatActivity {
     private Task.TaskPriority currentPriority = Task.TaskPriority.MEDIUM;
     
     // RecyclerViews and Adapters
-    private RecyclerView rvAttachments;
-    private RecyclerView rvComments;
     private RecyclerView rvChecklist;
-    private TextView tvNoAttachments;
     private TextView tvNoChecklist;
-    private AttachmentAdapter attachmentAdapter;
-    private CommentAdapter commentAdapter;
     private ChecklistAdapter checklistAdapter;
     private ImageView ivAddChecklist;
     private LinearLayout labelLayout;
@@ -91,8 +84,6 @@ public class CardDetailActivity extends AppCompatActivity {
     private LinearLayout layoutSelectedLabels;
     private TextView tvNoLabels;
     private List<Label> selectedLabels = new ArrayList<>();
-
-    TextView tvNoComments;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -148,11 +139,7 @@ public class CardDetailActivity extends AppCompatActivity {
         etDueDate = findViewById(R.id.etDueDate);
         
         // RecyclerViews
-        rvAttachments = findViewById(R.id.rvAttachments);
-        rvComments = findViewById(R.id.rvComments);
         rvChecklist = findViewById(R.id.rvChecklist);
-        tvNoAttachments = findViewById(R.id.tvNoAttachments);
-        tvNoComments = findViewById(R.id.tvNoComments);
         tvNoChecklist = findViewById(R.id.tvNoChecklist);
         ivAddChecklist = findViewById(R.id.ivAddChecklist);
         labelLayout = findViewById(R.id.labelLayout);
@@ -165,45 +152,6 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     private void setupRecyclerViews() {
-        // Setup Attachments RecyclerView
-        rvAttachments.setLayoutManager(new LinearLayoutManager(this));
-        attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
-            @Override
-            public void onDownloadClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement download functionality
-                Toast.makeText(CardDetailActivity.this, "Download: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onDeleteClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement delete attachment
-                Toast.makeText(CardDetailActivity.this, "Delete attachment", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onAttachmentClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Open/View attachment
-                Toast.makeText(CardDetailActivity.this, "View: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-        });
-        rvAttachments.setAdapter(attachmentAdapter);
-        
-        // Setup Comments RecyclerView
-        rvComments.setLayoutManager(new LinearLayoutManager(this));
-        commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
-            @Override
-            public void onOptionsClick(com.example.tralalero.domain.model.TaskComment comment, int position) {
-                // TODO: Show edit/delete options
-                Toast.makeText(CardDetailActivity.this, "Comment options", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onCommentClick(com.example.tralalero.domain.model.TaskComment comment) {
-                // Optional: Handle comment click
-            }
-        });
-        rvComments.setAdapter(commentAdapter);
-        
         // Setup Checklist RecyclerView
         rvChecklist.setLayoutManager(new LinearLayoutManager(this));
         checklistAdapter = new ChecklistAdapter(new ChecklistAdapter.OnChecklistItemListener() {
@@ -232,10 +180,6 @@ public class CardDetailActivity extends AppCompatActivity {
         rvChecklist.setAdapter(checklistAdapter);
         
         // Set initial state - show placeholders, hide RecyclerViews
-        rvAttachments.setVisibility(View.GONE);
-        tvNoAttachments.setVisibility(View.VISIBLE);
-        rvComments.setVisibility(View.GONE);
-        tvNoComments.setVisibility(View.VISIBLE);
         rvChecklist.setVisibility(View.GONE);
         tvNoChecklist.setVisibility(View.VISIBLE);
     }
@@ -346,32 +290,6 @@ public class CardDetailActivity extends AppCompatActivity {
             }
         });
         
-        // Observe comments
-        taskViewModel.getComments().observe(this, comments -> {
-            android.util.Log.d("CardDetail", "Comments received: " + (comments != null ? comments.size() : "null"));
-            if (comments != null && !comments.isEmpty()) {
-                commentAdapter.setComments(comments);
-                rvComments.setVisibility(View.VISIBLE);
-                tvNoComments.setVisibility(View.GONE);
-            } else {
-                rvComments.setVisibility(View.GONE);
-                tvNoComments.setVisibility(View.VISIBLE);
-            }
-        });
-        
-        // Observe attachments
-        taskViewModel.getAttachments().observe(this, attachments -> {
-            android.util.Log.d("CardDetail", "Attachments received: " + (attachments != null ? attachments.size() : "null"));
-            if (attachments != null && !attachments.isEmpty()) {
-                attachmentAdapter.setAttachments(attachments);
-                rvAttachments.setVisibility(View.VISIBLE);
-                tvNoAttachments.setVisibility(View.GONE);
-            } else {
-                rvAttachments.setVisibility(View.GONE);
-                tvNoAttachments.setVisibility(View.VISIBLE);
-            }
-        });
-        
         // Observe checklist items
         taskViewModel.getChecklistItems().observe(this, checklistItems -> {
             android.util.Log.d("CardDetail", "🎨 UI Observer triggered");
@@ -467,10 +385,10 @@ public class CardDetailActivity extends AppCompatActivity {
             showAssignTaskDialog();
         });
         btnAddAttachment.setOnClickListener(v -> {
-            showAddAttachmentDialog();
+            openAttachmentsBottomSheet();
         });
         btnAddComment.setOnClickListener(v -> {
-            showAddCommentDialog();
+            openCommentsBottomSheet();
         });
         ivAddChecklist.setOnClickListener(v -> {
             showAddChecklistDialog();
@@ -676,116 +594,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showAddAttachmentDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter attachment URL");
-        input.setPadding(50, 20, 50, 20);
-        input.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Add Attachment")
-                .setMessage("Add attachment URL:")
-                .setView(input)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String attachmentUrl = input.getText().toString().trim();
-                    if (!attachmentUrl.isEmpty() && taskId != null) {
-                        // Create attachment object
-                        String fileName = extractFileNameFromUrl(attachmentUrl);
-                        String mimeType = getMimeTypeFromUrl(attachmentUrl);
-                        
-                        com.example.tralalero.domain.model.Attachment attachment = 
-                            new com.example.tralalero.domain.model.Attachment(
-                                null, // id (backend will generate)
-                                taskId,
-                                attachmentUrl,
-                                fileName,
-                                mimeType,
-                                null, // size (unknown for URL)
-                                null, // uploadedBy (backend will set)
-                                new java.util.Date() // createdAt
-                            );
-                        
-                        // Add via ViewModel
-                        taskViewModel.addAttachment(taskId, attachment);
-                    } else {
-                        Toast.makeText(this, "Please enter a valid URL", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-    
-    // Helper method to extract filename from URL
-    private String extractFileNameFromUrl(String url) {
-        try {
-            String[] parts = url.split("/");
-            String fileName = parts[parts.length - 1];
-            // Remove query parameters
-            if (fileName.contains("?")) {
-                fileName = fileName.substring(0, fileName.indexOf("?"));
-            }
-            return fileName.isEmpty() ? "attachment" : fileName;
-        } catch (Exception e) {
-            return "attachment";
-        }
-    }
-    
-    // Helper method to guess MIME type from URL extension
-    private String getMimeTypeFromUrl(String url) {
-        String lowerUrl = url.toLowerCase();
-        if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
-            return "image/jpeg";
-        } else if (lowerUrl.endsWith(".png")) {
-            return "image/png";
-        } else if (lowerUrl.endsWith(".gif")) {
-            return "image/gif";
-        } else if (lowerUrl.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lowerUrl.endsWith(".doc") || lowerUrl.endsWith(".docx")) {
-            return "application/msword";
-        } else if (lowerUrl.endsWith(".xls") || lowerUrl.endsWith(".xlsx")) {
-            return "application/vnd.ms-excel";
-        } else if (lowerUrl.endsWith(".zip")) {
-            return "application/zip";
-        } else if (lowerUrl.endsWith(".mp4")) {
-            return "video/mp4";
-        } else if (lowerUrl.endsWith(".mp3")) {
-            return "audio/mpeg";
-        }
-        return "application/octet-stream";
-    }
-
-    private void showAddCommentDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter your comment");
-        input.setPadding(50, 20, 50, 20);
-        input.setMinLines(3);
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Add Comment")
-                .setMessage("Write a comment:")
-                .setView(input)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String commentText = input.getText().toString().trim();
-                    if (!commentText.isEmpty() && taskId != null) {
-                        com.example.tralalero.domain.model.TaskComment comment = 
-                                new com.example.tralalero.domain.model.TaskComment(
-                                    "", // id (backend will generate)
-                                    taskId,
-                                    null, // userId (backend will get from auth)
-                                    commentText,
-                                    null // createdAt (backend will set)
-                                );
-                        taskViewModel.addComment(taskId, comment);
-                        Toast.makeText(this, "Comment added", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
     private void showAddChecklistDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter checklist item");
@@ -932,5 +740,35 @@ public class CardDetailActivity extends AppCompatActivity {
         );
 
         datePickerDialog.show();
+    }
+
+    /**
+     * Open Comments BottomSheet to view and add comments
+     */
+    private void openCommentsBottomSheet() {
+        if (!isEditMode || taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        com.example.tralalero.feature.task.comments.CommentsFragment commentsFragment = 
+            com.example.tralalero.feature.task.comments.CommentsFragment.newInstance(taskId);
+        
+        commentsFragment.show(getSupportFragmentManager(), "CommentsBottomSheet");
+    }
+
+    /**
+     * Open Attachments BottomSheet to view and upload files
+     */
+    private void openAttachmentsBottomSheet() {
+        if (!isEditMode || taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        com.example.tralalero.feature.task.attachments.AttachmentsFragment attachmentsFragment = 
+            com.example.tralalero.feature.task.attachments.AttachmentsFragment.newInstance(taskId);
+        
+        attachmentsFragment.show(getSupportFragmentManager(), "AttachmentsBottomSheet");
     }
 }
