@@ -7,6 +7,7 @@ import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListItemDTO;
 import com.example.tralalero.data.remote.dto.ChecklistDTO;
 import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
 import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
 import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
 
@@ -106,7 +107,7 @@ public interface TaskApiService {
     @POST("tasks/{id}/checklists")
     Call<ChecklistDTO> addTaskChecklist(
         @Path("id") String taskId,
-        @Body CheckListDTO checklist
+        @Body CreateChecklistDTO checklist
     );
 
     /**

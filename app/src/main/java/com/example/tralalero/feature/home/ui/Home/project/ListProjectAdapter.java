@@ -96,7 +96,8 @@ public class ListProjectAdapter extends FragmentStateAdapter {
                 addAttachmentUseCase,
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
-                getTaskChecklistsUseCase
+                getTaskChecklistsUseCase,
+                repository
         );
         taskViewModel = new ViewModelProvider(activity, factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");

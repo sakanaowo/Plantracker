@@ -10,19 +10,22 @@ public class ChecklistItemDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("checklist_id")
+    // Backend returns camelCase "checklistId", not snake_case "checklist_id"
+    @SerializedName("checklistId")
     private String checklistId;
 
     @SerializedName("content")
     private String content;
 
-    @SerializedName("is_done")
+    // Backend returns camelCase "isDone", not snake_case "is_done"
+    @SerializedName("isDone")
     private boolean isDone;
 
     @SerializedName("position")
     private double position;
 
-    @SerializedName("created_at")
+    // Backend returns camelCase "createdAt", not snake_case "created_at"
+    @SerializedName("createdAt")
     private String createdAt;
 
     public ChecklistItemDTO() {

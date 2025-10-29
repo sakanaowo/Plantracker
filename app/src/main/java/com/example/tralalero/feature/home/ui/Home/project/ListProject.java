@@ -150,7 +150,8 @@ public class ListProject extends Fragment {
             addAttachmentUseCase,
             getTaskAttachmentsUseCase,
             addChecklistUseCase,
-            getTaskChecklistsUseCase
+            getTaskChecklistsUseCase,
+            repository
         );
         taskViewModel = new ViewModelProvider(requireActivity(), factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");

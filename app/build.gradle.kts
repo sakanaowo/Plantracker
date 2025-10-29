@@ -20,7 +20,8 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
-            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
+            // Temporarily disabled for easier log reading
+            // buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
         }
         release {
             buildConfigField(

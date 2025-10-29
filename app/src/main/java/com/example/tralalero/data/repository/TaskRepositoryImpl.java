@@ -10,7 +10,9 @@ import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.ChecklistDTO;
 import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
 import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
 import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
 import com.example.tralalero.domain.model.Attachment;
@@ -80,13 +82,13 @@ public class TaskRepositoryImpl implements ITaskRepository {
     /**
      * Get all quick tasks from user's default board (To Do board)
      * Backend finds user's personal workspace, default project, and "To Do" board
-     * 
+     *
      * @param callback Callback to receive list of quick tasks or error
      */
     @Override
     public void getQuickTasks(RepositoryCallback<List<Task>> callback) {
         android.util.Log.d("TaskRepositoryImpl", "Getting quick tasks from default board");
-        
+
         apiService.getQuickTasks().enqueue(new Callback<List<TaskDTO>>() {
             @Override
             public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
@@ -152,11 +154,11 @@ public class TaskRepositoryImpl implements ITaskRepository {
                     } catch (Exception e) {
                         errorBody = e.getMessage();
                     }
-                    
+
                     android.util.Log.e("TaskRepositoryImpl", "Failed to create task: " + response.code());
                     android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
                     android.util.Log.e("TaskRepositoryImpl", "Request URL: " + call.request().url());
-                    
+
                     callback.onError("Failed to create task: " + response.code() + " - " + errorBody);
                 }
             }
@@ -172,10 +174,10 @@ public class TaskRepositoryImpl implements ITaskRepository {
     /**
      * Create a quick task - automatically assigns to default project/board
      * Backend finds user's personal workspace, default project, and "To Do" board
-     * 
-     * @param title Task title
+     *
+     * @param title       Task title
      * @param description Optional task description
-     * @param callback Callback to receive created task or error
+     * @param callback    Callback to receive created task or error
      */
     public void createQuickTask(String title, String description, RepositoryCallback<Task> callback) {
         java.util.Map<String, String> quickTaskData = new java.util.HashMap<>();
@@ -203,10 +205,10 @@ public class TaskRepositoryImpl implements ITaskRepository {
                     } catch (Exception e) {
                         errorBody = e.getMessage();
                     }
-                    
+
                     android.util.Log.e("TaskRepositoryImpl", "Failed to create quick task: " + response.code());
                     android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
-                    
+
                     callback.onError("Failed to create quick task: " + response.code() + " - " + errorBody);
                 }
             }
@@ -447,18 +449,52 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void getChecklists(String taskId, RepositoryCallback<List<Checklist>> callback) {
-        apiService.getTaskChecklists(taskId).enqueue(new Callback<List<CheckListDTO>>() {
+        android.util.Log.d("TaskRepository", "🌐 GET /tasks/" + taskId + "/checklists");
+        
+        apiService.getTaskChecklists(taskId).enqueue(new Callback<List<com.example.tralalero.data.remote.dto.ChecklistDTO>>() {
             @Override
-            public void onResponse(Call<List<CheckListDTO>> call, Response<List<CheckListDTO>> response) {
+            public void onResponse(Call<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> call, 
+                                 Response<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(ChecklistMapper.toDomainList(response.body()));
+                    android.util.Log.d("TaskRepository", "✅ " + response.body().size() + " checklists");
+                    
+                    // Convert ChecklistDTO list to Checklist domain models
+                    List<Checklist> checklists = new ArrayList<>();
+                    for (com.example.tralalero.data.remote.dto.ChecklistDTO dto : response.body()) {
+                        // Extract items from each checklist
+                        android.util.Log.d("TaskRepository", "  📋 Checklist ID: " + dto.getId() + ", Title: " + dto.getTitle());
+                        android.util.Log.d("TaskRepository", "  🔍 checklistItems null? " + (dto.getChecklistItems() == null));
+                        
+                        List<com.example.tralalero.domain.model.ChecklistItem> items = new ArrayList<>();
+                        if (dto.getChecklistItems() != null) {
+                            android.util.Log.d("TaskRepository", "  📋 " + dto.getTitle() + ": " + dto.getChecklistItems().size() + " items");
+                            for (com.example.tralalero.data.remote.dto.ChecklistItemDTO itemDto : dto.getChecklistItems()) {
+                                android.util.Log.d("TaskRepository", "    ✔️ Item: " + itemDto.getContent() + " (done: " + itemDto.isDone() + ")");
+                                items.add(ChecklistItemMapper.toDomain(itemDto));
+                            }
+                        } else {
+                            android.util.Log.d("TaskRepository", "  ⚠️ checklistItems is NULL for checklist: " + dto.getTitle());
+                        }
+                        
+                        // Create Checklist domain model
+                        Checklist checklist = new Checklist(
+                            dto.getId(),
+                            dto.getTaskId(),
+                            dto.getTitle(),
+                            null, // createdAt - parse if needed
+                            items
+                        );
+                        checklists.add(checklist);
+                    }
+                    callback.onSuccess(checklists);
                 } else {
                     callback.onError("Failed to fetch checklists: " + response.code());
                 }
             }
 
             @Override
-            public void onFailure(Call<List<CheckListDTO>> call, Throwable t) {
+            public void onFailure(Call<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> call, Throwable t) {
+                android.util.Log.e("TaskRepository", "❌ Network Error: " + t.getMessage());
                 callback.onError("Network error: " + t.getMessage());
             }
         });
@@ -466,7 +502,41 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addChecklist(String taskId, Checklist checklist, RepositoryCallback<Checklist> callback) {
-        callback.onError("Add checklist not yet implemented in API");
+        CreateChecklistDTO dto = new CreateChecklistDTO(checklist.getTitle());
+        
+        apiService.addTaskChecklist(taskId, dto).enqueue(new Callback<ChecklistDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistDTO> call, Response<ChecklistDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistDTO checklistDTO = response.body();
+                    
+                    // Convert to domain model
+                    List<ChecklistItem> items = new ArrayList<>();
+                    if (checklistDTO.getChecklistItems() != null) {
+                        for (ChecklistItemDTO itemDto : checklistDTO.getChecklistItems()) {
+                            items.add(ChecklistItemMapper.toDomain(itemDto));
+                        }
+                    }
+                    
+                    Checklist newChecklist = new Checklist(
+                        checklistDTO.getId(),
+                        checklistDTO.getTaskId(),
+                        checklistDTO.getTitle(),
+                        null,
+                        items
+                    );
+                    
+                    callback.onSuccess(newChecklist);
+                } else {
+                    callback.onError("Failed to create checklist: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistDTO> call, Throwable t) {
+                callback.onError("Failed to create checklist: " + t.getMessage());
+            }
+        });
     }
 
     @Override
@@ -491,7 +561,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
     @Override
     public void addChecklistItem(String checklistId, ChecklistItem item, RepositoryCallback<ChecklistItem> callback) {
         CreateChecklistItemDTO dto = new CreateChecklistItemDTO(item.getContent());
-        
+
         apiService.createChecklistItem(checklistId, dto).enqueue(new Callback<ChecklistItemDTO>() {
             @Override
             public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
@@ -513,7 +583,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
     @Override
     public void updateChecklistItemContent(String itemId, String content, RepositoryCallback<ChecklistItem> callback) {
         UpdateChecklistItemDTO dto = new UpdateChecklistItemDTO(content);
-        
+
         apiService.updateChecklistItem(itemId, dto).enqueue(new Callback<ChecklistItemDTO>() {
             @Override
             public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {

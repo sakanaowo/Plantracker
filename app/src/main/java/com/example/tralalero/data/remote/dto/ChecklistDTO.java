@@ -11,16 +11,19 @@ public class ChecklistDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("task_id")
+    // Backend returns camelCase "taskId", not snake_case "task_id"
+    @SerializedName("taskId")
     private String taskId;
 
     @SerializedName("title")
     private String title;
 
-    @SerializedName("created_at")
+    // Backend returns camelCase "createdAt", not snake_case "created_at"
+    @SerializedName("createdAt")
     private String createdAt;
 
-    @SerializedName("checklist_items")
+    // Backend returns camelCase "checklistItems", not snake_case "checklist_items"
+    @SerializedName("checklistItems")
     private List<ChecklistItemDTO> checklistItems;
 
     public ChecklistDTO() {

@@ -22,6 +22,7 @@ import com.example.tralalero.domain.usecase.task.AddAttachmentUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase;
+import com.example.tralalero.domain.repository.ITaskRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ public class TaskViewModel extends ViewModel {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
+    private final ITaskRepository repository; // For checklist item operations
     private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Task> selectedTaskLiveData = new MutableLiveData<>();
@@ -69,7 +71,8 @@ public class TaskViewModel extends ViewModel {
             AddAttachmentUseCase addAttachmentUseCase,
             GetTaskAttachmentsUseCase getTaskAttachmentsUseCase,
             AddChecklistUseCase addChecklistUseCase,
-            GetTaskChecklistsUseCase getTaskChecklistsUseCase
+            GetTaskChecklistsUseCase getTaskChecklistsUseCase,
+            ITaskRepository repository // Add repository for checklist item operations
     ) {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
@@ -86,6 +89,7 @@ public class TaskViewModel extends ViewModel {
         this.getTaskAttachmentsUseCase = getTaskAttachmentsUseCase;
         this.addChecklistUseCase = addChecklistUseCase;
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
+        this.repository = repository;
     }
 
     public LiveData<List<Task>> getTasksForBoard(String boardId) {
@@ -450,29 +454,43 @@ public class TaskViewModel extends ViewModel {
     // ===== ChecklistItem Methods =====
     
     public void loadChecklistItems(String taskId) {
-        // TODO: Implement API call when backend supports checklist items endpoints
-        // For now, return empty list or mock data
         loadingLiveData.setValue(true);
         
-        // Mock implementation - replace with actual API call
-        new Thread(() -> {
-            try {
-                // Simulate network delay
-                Thread.sleep(500);
+        android.util.Log.d("TaskViewModel", "🔍 Loading checklist items for task: " + taskId);
+        
+        // Load checklists and extract all items
+        repository.getChecklists(taskId, new ITaskRepository.RepositoryCallback<List<com.example.tralalero.domain.model.Checklist>>() {
+            @Override
+            public void onSuccess(List<com.example.tralalero.domain.model.Checklist> checklists) {
+                android.util.Log.d("TaskViewModel", "✅ Received " + (checklists != null ? checklists.size() : 0) + " checklists");
                 
-                // TODO: Call API to get checklist items
-                // List<ChecklistItem> items = getChecklistItemsUseCase.execute(taskId);
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> allItems = new java.util.ArrayList<>();
                 
-                // For now, return empty list
-                java.util.List<com.example.tralalero.domain.model.ChecklistItem> items = new java.util.ArrayList<>();
+                // Collect all items from all checklists
+                if (checklists != null) {
+                    for (com.example.tralalero.domain.model.Checklist checklist : checklists) {
+                        android.util.Log.d("TaskViewModel", "📋 Checklist: " + checklist.getTitle() + 
+                            " has " + (checklist.getItems() != null ? checklist.getItems().size() : 0) + " items");
+                        
+                        if (checklist.getItems() != null) {
+                            allItems.addAll(checklist.getItems());
+                        }
+                    }
+                }
                 
-                checklistItemsLiveData.postValue(items);
+                android.util.Log.d("TaskViewModel", "📊 Total items collected: " + allItems.size());
+                
+                checklistItemsLiveData.postValue(allItems);
                 loadingLiveData.postValue(false);
-            } catch (Exception e) {
-                loadingLiveData.postValue(false);
-                errorLiveData.postValue("Failed to load checklist items: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("TaskViewModel", "❌ Failed to load checklist items: " + error);
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to load checklist items: " + error);
+            }
+        });
     }
     
     public void addChecklistItem(String taskId, com.example.tralalero.domain.model.ChecklistItem item) {

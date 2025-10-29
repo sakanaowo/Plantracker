@@ -19,6 +19,7 @@ import com.example.tralalero.domain.usecase.task.MoveTaskToBoardUseCase;
 import com.example.tralalero.domain.usecase.task.UnassignTaskUseCase;
 import com.example.tralalero.domain.usecase.task.UpdateTaskPositionUseCase;
 import com.example.tralalero.domain.usecase.task.UpdateTaskUseCase;
+import com.example.tralalero.domain.repository.ITaskRepository;
 
 public class TaskViewModelFactory implements ViewModelProvider.Factory {
     private final GetTaskByIdUseCase getTaskByIdUseCase;
@@ -36,6 +37,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
+    private final ITaskRepository repository; // For checklist item operations
 
     public TaskViewModelFactory(
             GetTaskByIdUseCase getTaskByIdUseCase,
@@ -52,7 +54,8 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
             AddAttachmentUseCase addAttachmentUseCase,
             GetTaskAttachmentsUseCase getTaskAttachmentsUseCase,
             AddChecklistUseCase addChecklistUseCase,
-            GetTaskChecklistsUseCase getTaskChecklistsUseCase
+            GetTaskChecklistsUseCase getTaskChecklistsUseCase,
+            ITaskRepository repository
     ) {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
@@ -69,6 +72,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
         this.getTaskAttachmentsUseCase = getTaskAttachmentsUseCase;
         this.addChecklistUseCase = addChecklistUseCase;
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
+        this.repository = repository;
     }
 
     @NonNull
@@ -90,7 +94,8 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
                     addAttachmentUseCase,
                     getTaskAttachmentsUseCase,
                     addChecklistUseCase,
-                    getTaskChecklistsUseCase
+                    getTaskChecklistsUseCase,
+                    repository
             );
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());

@@ -129,7 +129,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             addAttachmentUseCase,
             getTaskAttachmentsUseCase,
             addChecklistUseCase,
-            getTaskChecklistsUseCase
+            getTaskChecklistsUseCase,
+            apiRepository
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized with cache-enabled repository");

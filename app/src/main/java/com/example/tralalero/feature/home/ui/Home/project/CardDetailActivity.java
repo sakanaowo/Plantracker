@@ -273,7 +273,8 @@ public class CardDetailActivity extends AppCompatActivity {
                 addAttachmentUseCase,
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
-                getTaskChecklistsUseCase
+                getTaskChecklistsUseCase,
+                repository
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
         
@@ -373,12 +374,19 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Observe checklist items
         taskViewModel.getChecklistItems().observe(this, checklistItems -> {
-            android.util.Log.d("CardDetail", "Checklist items received: " + (checklistItems != null ? checklistItems.size() : "null"));
+            android.util.Log.d("CardDetail", "🎨 UI Observer triggered");
+            android.util.Log.d("CardDetail", "  📊 Received " + (checklistItems != null ? checklistItems.size() : 0) + " items");
+            
             if (checklistItems != null && !checklistItems.isEmpty()) {
+                android.util.Log.d("CardDetail", "  ✅ Showing RecyclerView with " + checklistItems.size() + " items");
+                for (int i = 0; i < Math.min(checklistItems.size(), 5); i++) {
+                    android.util.Log.d("CardDetail", "    Item " + i + ": " + checklistItems.get(i).getContent());
+                }
                 checklistAdapter.setChecklistItems(checklistItems);
                 rvChecklist.setVisibility(View.VISIBLE);
                 tvNoChecklist.setVisibility(View.GONE);
             } else {
+                android.util.Log.d("CardDetail", "  ❌ Showing empty state (items null or empty)");
                 rvChecklist.setVisibility(View.GONE);
                 tvNoChecklist.setVisibility(View.VISIBLE);
             }

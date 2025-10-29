@@ -174,7 +174,8 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                 updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
                 unassignTaskUseCase, moveTaskToBoardUseCase, updateTaskPositionUseCase,
                 addCommentUseCase, getTaskCommentsUseCase, addAttachmentUseCase,
-                getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase
+                getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase,
+                repository
         );
 
         taskViewModel = new ViewModelProvider(this, taskFactory).get(TaskViewModel.class);

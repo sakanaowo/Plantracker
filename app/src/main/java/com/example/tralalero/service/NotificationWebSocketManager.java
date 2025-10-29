@@ -89,6 +89,11 @@ public class NotificationWebSocketManager {
      * @param token JWT token for authentication
      */
     public void connect(String token) {
+        // TEMPORARILY DISABLED - For easier log reading during debugging
+        Log.d(TAG, "⏸️ WebSocket connection disabled for debugging");
+        return;
+        
+        /* COMMENTED OUT FOR DEBUGGING
         if (isConnected) {
             Log.d(TAG, "Already connected to WebSocket");
             return;
@@ -103,7 +108,9 @@ public class NotificationWebSocketManager {
         shouldReconnect = true;
         reconnectAttempts = 0;
         
-        String wsUrl = BuildConfig.WS_URL;
+        // Temporarily disabled for easier log reading
+        // String wsUrl = BuildConfig.WS_URL;
+        String wsUrl = "ws://10.0.2.2:3000/notifications"; // Hardcoded for now
         Log.d(TAG, "🔄 Connecting to WebSocket: " + wsUrl);
         
         Request request = new Request.Builder()
@@ -112,6 +119,7 @@ public class NotificationWebSocketManager {
                 .build();
         
         webSocket = client.newWebSocket(request, webSocketListener);
+        */
     }
     
     /**
