@@ -6,43 +6,43 @@ public class ActivityLogDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("workspace_id")
+    @SerializedName("workspaceId")
     private String workspaceId;
 
-    @SerializedName("project_id")
+    @SerializedName("projectId")
     private String projectId;
 
-    @SerializedName("board_id")
+    @SerializedName("boardId")
     private String boardId;
 
-    @SerializedName("task_id")
+    @SerializedName("taskId")
     private String taskId;
 
-    @SerializedName("user_id")
+    @SerializedName("userId")
     private String userId;
 
     @SerializedName("action")
     private String action;
 
-    @SerializedName("entity_type")
+    @SerializedName("entityType")
     private String entityType;
 
-    @SerializedName("entity_id")
+    @SerializedName("entityId")
     private String entityId;
 
-    @SerializedName("entity_name")
+    @SerializedName("entityName")
     private String entityName;
 
-    @SerializedName("old_value")
+    @SerializedName("oldValue")
     private Object oldValue;
 
-    @SerializedName("new_value")
+    @SerializedName("newValue")
     private Object newValue;
 
     @SerializedName("metadata")
     private Object metadata;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     private String createdAt;
 
     @SerializedName("users")
@@ -55,7 +55,7 @@ public class ActivityLogDTO {
         @SerializedName("name")
         private String name;
 
-        @SerializedName("avatar_url")
+        @SerializedName("avatarUrl")
         private String avatarUrl;
 
         public String getId() {

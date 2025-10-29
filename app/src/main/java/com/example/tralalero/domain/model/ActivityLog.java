@@ -75,6 +75,10 @@ public class ActivityLog {
     }
 
     private String formatAction(String action, String entityType) {
+        if (action == null) {
+            return "performed an action";
+        }
+        
         switch (action) {
             case "CREATED":
                 return "created " + formatEntityType(entityType);
@@ -104,6 +108,10 @@ public class ActivityLog {
     }
 
     private String formatEntityType(String entityType) {
+        if (entityType == null) {
+            return "item";
+        }
+        
         switch (entityType) {
             case "TASK":
                 return "task";
