@@ -2,6 +2,7 @@ package com.example.tralalero.data.repository;
 
 import com.example.tralalero.data.mapper.AttachmentMapper;
 import com.example.tralalero.data.mapper.ChecklistMapper;
+import com.example.tralalero.data.mapper.ChecklistItemMapper;
 import com.example.tralalero.data.mapper.TaskCommentMapper;
 import com.example.tralalero.data.mapper.TaskMapper;
 import com.example.tralalero.data.remote.api.TaskApiService;
@@ -9,8 +10,12 @@ import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
 import com.example.tralalero.domain.model.Attachment;
 import com.example.tralalero.domain.model.Checklist;
+import com.example.tralalero.domain.model.ChecklistItem;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.TaskComment;
 import com.example.tralalero.domain.repository.ITaskRepository;
@@ -477,6 +482,93 @@ public class TaskRepositoryImpl implements ITaskRepository {
     @Override
     public void addLabel(String taskId, String labelId, RepositoryCallback<Void> callback) {
         callback.onError("Add label not yet implemented in API");
+    }
+
+    // ============================================================================
+    // CHECKLIST ITEM OPERATIONS
+    // ============================================================================
+
+    @Override
+    public void addChecklistItem(String checklistId, ChecklistItem item, RepositoryCallback<ChecklistItem> callback) {
+        CreateChecklistItemDTO dto = new CreateChecklistItemDTO(item.getContent());
+        
+        apiService.createChecklistItem(checklistId, dto).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem newItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(newItem);
+                } else {
+                    callback.onError("Failed to create checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void updateChecklistItemContent(String itemId, String content, RepositoryCallback<ChecklistItem> callback) {
+        UpdateChecklistItemDTO dto = new UpdateChecklistItemDTO(content);
+        
+        apiService.updateChecklistItem(itemId, dto).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem updatedItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(updatedItem);
+                } else {
+                    callback.onError("Failed to update checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void toggleChecklistItem(String itemId, RepositoryCallback<ChecklistItem> callback) {
+        apiService.toggleChecklistItem(itemId).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem updatedItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(updatedItem);
+                } else {
+                    callback.onError("Failed to toggle checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void deleteChecklistItem(String itemId, RepositoryCallback<Void> callback) {
+        apiService.deleteChecklistItem(itemId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to delete checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override

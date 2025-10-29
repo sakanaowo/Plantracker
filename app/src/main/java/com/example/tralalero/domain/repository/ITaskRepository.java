@@ -69,6 +69,15 @@ public interface ITaskRepository {
 
     void deleteChecklist(String checklistId, RepositoryCallback<Void> callback);
 
+    // Checklist Item operations
+    void addChecklistItem(String checklistId, com.example.tralalero.domain.model.ChecklistItem item, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void updateChecklistItemContent(String itemId, String content, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void toggleChecklistItem(String itemId, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void deleteChecklistItem(String itemId, RepositoryCallback<Void> callback);
+
     void addLabel(String taskId, String labelId, RepositoryCallback<Void> callback);
 
     void removeLabel(String taskId, String labelId, RepositoryCallback<Void> callback);

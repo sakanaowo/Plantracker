@@ -5,6 +5,10 @@ import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
 import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListItemDTO;
+import com.example.tralalero.data.remote.dto.ChecklistDTO;
+import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
 
 import java.util.List;
 
@@ -93,20 +97,53 @@ public interface TaskApiService {
 
 
     @GET("tasks/{id}/checklists")
-    Call<List<CheckListDTO>> getTaskChecklists(@Path("id") String taskId);
+    Call<List<ChecklistDTO>> getTaskChecklists(@Path("id") String taskId);
 
- 
+    /**
+     * Create a new checklist for a task
+     * POST /tasks/:taskId/checklists
+     */
     @POST("tasks/{id}/checklists")
-    Call<CheckListDTO> addTaskChecklist(
+    Call<ChecklistDTO> addTaskChecklist(
         @Path("id") String taskId,
         @Body CheckListDTO checklist
     );
 
+    /**
+     * Create a new checklist item
+     * POST /checklists/:id/items
+     */
+    @POST("checklists/{id}/items")
+    Call<ChecklistItemDTO> createChecklistItem(
+        @Path("id") String checklistId,
+        @Body CreateChecklistItemDTO itemDto
+    );
 
-    @PATCH("checklists/{checklistId}/items/{itemId}")
-    Call<CheckListItemDTO> updateChecklistItem(
-        @Path("checklistId") String checklistId,
-        @Path("itemId") String itemId,
-        @Body CheckListItemDTO item
+    /**
+     * Update checklist item content
+     * PATCH /checklist-items/:id
+     */
+    @PATCH("checklist-items/{id}")
+    Call<ChecklistItemDTO> updateChecklistItem(
+        @Path("id") String itemId,
+        @Body UpdateChecklistItemDTO itemDto
+    );
+
+    /**
+     * Toggle checklist item done/undone
+     * PATCH /checklist-items/:id/toggle
+     */
+    @PATCH("checklist-items/{id}/toggle")
+    Call<ChecklistItemDTO> toggleChecklistItem(
+        @Path("id") String itemId
+    );
+
+    /**
+     * Delete a checklist item
+     * DELETE /checklist-items/:id
+     */
+    @DELETE("checklist-items/{id}")
+    Call<Void> deleteChecklistItem(
+        @Path("id") String itemId
     );
 }

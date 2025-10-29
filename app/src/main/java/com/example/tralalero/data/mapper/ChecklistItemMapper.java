@@ -1,6 +1,7 @@
 package com.example.tralalero.data.mapper;
 
 import com.example.tralalero.data.remote.dto.task.CheckListItemDTO;
+import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
 import com.example.tralalero.domain.model.ChecklistItem;
 
 import java.text.ParseException;
@@ -21,6 +22,26 @@ public class ChecklistItemMapper {
     }
     
     public static ChecklistItem toDomain(CheckListItemDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        
+        Date createdAt = parseDate(dto.getCreatedAt());
+        
+        return new ChecklistItem(
+            dto.getId(),
+            dto.getChecklistId(),
+            dto.getContent(),
+            dto.isDone(),
+            dto.getPosition(),
+            createdAt
+        );
+    }
+    
+    /**
+     * Convert new ChecklistItemDTO (from checklist endpoints) to domain model
+     */
+    public static ChecklistItem toDomain(ChecklistItemDTO dto) {
         if (dto == null) {
             return null;
         }

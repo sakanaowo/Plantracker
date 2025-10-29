@@ -111,6 +111,19 @@ public class CardDetailActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Reload data when returning to this activity
+        if (isEditMode && taskId != null && !taskId.isEmpty()) {
+            loadTaskAttachments();
+            loadTaskComments();
+            loadChecklistItems();  // CRITICAL - Reload checklist items!
+            loadTaskLabels();
+        }
+    }
+
     private void getIntentData() {
         if (getIntent() != null) {
             taskId = getIntent().getStringExtra(EXTRA_TASK_ID);
