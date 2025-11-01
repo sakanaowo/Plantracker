@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 public class TaskRepositoryImplWithCache {
     
     private static final String TAG = "TaskRepoCache";
-    private static final long CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes (tasks change more frequently)
+    private static final long CACHE_TTL_MS = 5 * 60 * 1000; // 3 minutes (tasks change more frequently)
 
     private final TaskDao taskDao;
     private final ExecutorService executorService;

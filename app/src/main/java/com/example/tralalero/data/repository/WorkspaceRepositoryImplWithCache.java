@@ -32,7 +32,7 @@ import retrofit2.Response;
  */
 public class WorkspaceRepositoryImplWithCache {
     private static final String TAG = "WorkspaceRepoCache";
-    private static final long CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    private static final long CACHE_TTL_MS = 10 * 60 * 1000; // 5 minutes
     private static final String CACHE_KEY = "workspaces";
 
     private final WorkspaceApiService apiService;

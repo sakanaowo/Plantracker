@@ -194,9 +194,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         if (projectName != null && !projectName.isEmpty()) {
             tvProjectName.setText(projectName);
         }
-//        if (workspaceName != null && !workspaceName.isEmpty()) {
-//            tvWorkspaceName.setText(workspaceName);
-//        }
+        
+        // Hide workspace name TextView
+        tvWorkspaceName.setVisibility(View.GONE);
 
         backButton.setOnClickListener(v -> {
             // Just finish() to return to previous WorkspaceActivity (don't create new one)
