@@ -39,6 +39,9 @@ import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -587,7 +590,37 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     }
 
     private void performLogout() {
-        Log.d(TAG, "Performing logout...");
+        Log.d(TAG, "=== PERFORMING LOGOUT ===");
+        
+        // 1. Sign out from Google Sign-In FIRST
+        try {
+            String clientId = getString(R.string.client_id);
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(clientId)
+                    .requestEmail()
+                    .build();
+            GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(this, gso);
+            
+            Log.d(TAG, "Signing out from Google...");
+            googleSignInClient.signOut().addOnCompleteListener(this, task -> {
+                if (task.isSuccessful()) {
+                    Log.d(TAG, "✅ Google sign-out SUCCESSFUL");
+                } else {
+                    Log.e(TAG, "❌ Google sign-out FAILED", task.getException());
+                }
+                
+                // 2. Continue with Firebase and other cleanup
+                continueLogout();
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Exception during Google sign-out", e);
+            // Continue logout even if Google sign-out fails
+            continueLogout();
+        }
+    }
+    
+    private void continueLogout() {
+        Log.d(TAG, "Continuing logout: Firebase and cache cleanup");
         FirebaseAuth.getInstance().signOut();
         App.authManager.signOut();
         Log.d(TAG, "✓ Auth cleared");
@@ -601,6 +634,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
-        Log.d(TAG, "✓ Logout complete");
+        Log.d(TAG, "✓ Logout complete, navigating to Login");
     }
 }
