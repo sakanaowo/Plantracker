@@ -49,7 +49,7 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
             String lowerQuery = query.toLowerCase().trim();
             for (ProjectMember member : members) {
                 if (member.getName().toLowerCase().contains(lowerQuery) ||
-                    member.getEmail().toLowerCase().contains(lowerQuery)) {
+                        member.getEmail().toLowerCase().contains(lowerQuery)) {
                     filteredMembers.add(member);
                 }
             }
@@ -99,25 +99,25 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
             tvName.setText(member.getName());
             tvEmail.setText(member.getEmail());
             tvRole.setText(member.getRole());
-            
+
             // Show initials
             tvInitials.setText(member.getInitials());
-            
+
             // TODO: Load avatar image using Glide/Picasso if needed
             // For now, just show initials
             ivAvatar.setVisibility(View.GONE);
             tvInitials.setVisibility(View.VISIBLE);
-            
+
             // Show selected indicator
             ivSelected.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-            
+
             // Set role color
             if ("ADMIN".equals(member.getRole())) {
                 tvRole.setTextColor(itemView.getContext().getColor(android.R.color.holo_orange_dark));
             } else {
                 tvRole.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
             }
-            
+
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onMemberClick(member);
