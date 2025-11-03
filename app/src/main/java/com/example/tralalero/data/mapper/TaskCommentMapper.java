@@ -27,13 +27,36 @@ public class TaskCommentMapper {
         
         Date createdAt = parseDate(dto.getCreatedAt());
         
-        return new TaskComment(
+        // Extract user info from users field
+        String userName = null;
+        String userAvatarUrl = null;
+        
+        // Add debug logging
+        android.util.Log.d("TaskCommentMapper", "=== Mapping DTO to Domain ===");
+        android.util.Log.d("TaskCommentMapper", "DTO userId: " + dto.getUserId());
+        android.util.Log.d("TaskCommentMapper", "DTO users field: " + dto.getUsers());
+        
+        if (dto.getUsers() != null) {
+            userName = dto.getUsers().getName();
+            userAvatarUrl = dto.getUsers().getAvatarUrl();
+            android.util.Log.d("TaskCommentMapper", "Extracted userName: " + userName);
+            android.util.Log.d("TaskCommentMapper", "Extracted userAvatarUrl: " + userAvatarUrl);
+        } else {
+            android.util.Log.d("TaskCommentMapper", "DTO users field is null");
+        }
+        
+        TaskComment comment = new TaskComment(
             dto.getId(),
             dto.getTaskId(),
             dto.getUserId(),
             dto.getBody(),
-            createdAt
+            createdAt,
+            userName,
+            userAvatarUrl
         );
+        
+        android.util.Log.d("TaskCommentMapper", "Created TaskComment with userName: " + comment.getUserName());
+        return comment;
     }
     
     public static TaskCommentDTO toDto(TaskComment comment) {

@@ -48,8 +48,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private ImageButton btnClose, btnShare, btnStar, btnVisibility, btnCopy, btnMore;
     private RecyclerView rvMembers, rvActivity;
     private MaterialButton btnInvite;
-    private SwitchMaterial switchCompletedStatus;
-    private View layoutAbout, layoutArchiveComplete, layoutPowerUps, layoutPinToHome, layoutSynced;
+    private View layoutAbout, layoutArchiveComplete, layoutSynced;
     
     private MemberAdapter memberAdapter;
     private ActivityAdapter activityAdapter;
@@ -105,12 +104,9 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         rvMembers = view.findViewById(R.id.rvMembers);
         rvActivity = view.findViewById(R.id.rvActivity);
         btnInvite = view.findViewById(R.id.btnInvite);
-        switchCompletedStatus = view.findViewById(R.id.switchCompletedStatus);
-        
+
         layoutAbout = view.findViewById(R.id.layoutAbout);
         layoutArchiveComplete = view.findViewById(R.id.layoutArchiveComplete);
-        layoutPowerUps = view.findViewById(R.id.layoutPowerUps);
-        layoutPinToHome = view.findViewById(R.id.layoutPinToHome);
         layoutSynced = view.findViewById(R.id.layoutSynced);
         
         if (projectName != null) {
@@ -152,25 +148,12 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             showInviteDialog();
         });
         
-        switchCompletedStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            String action = isChecked ? "enabled" : "disabled";
-            addActivityLog(action + " showing complete status on " + projectName);
-        });
-        
         layoutAbout.setOnClickListener(v -> {
             openAboutBoard();
         });
         
         layoutArchiveComplete.setOnClickListener(v -> {
             Toast.makeText(getContext(), "Archive completed cards", Toast.LENGTH_SHORT).show();
-        });
-        
-        layoutPowerUps.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Add Power-Ups", Toast.LENGTH_SHORT).show();
-        });
-        
-        layoutPinToHome.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Pin to home screen", Toast.LENGTH_SHORT).show();
         });
         
         layoutSynced.setOnClickListener(v -> {
@@ -462,8 +445,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private void loadActivityLogs() {
         // Load activity logs (hardcoded for now - giống như trong ảnh)
         List<ActivityLog> activities = new ArrayList<>();
-        activities.add(new ActivityLog("BA", "B22DCVT028 Nguyen Thai Anh added Checklist to Test card 2", "Oct 2 at 10:52 AM"));
-        activities.add(new ActivityLog("BA", "B22DCVT028 Nguyen Thai Anh added Test card 2 to Test list", "Oct 1 at 8:58 PM"));
+        // TODO: add logic to load real data from API
         activityAdapter.setActivities(activities);
     }
     

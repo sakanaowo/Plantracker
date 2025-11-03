@@ -59,7 +59,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/ic_download"
             android:scaleType="centerInside"
             android:contentDescription="Download"
             app:tint="#2196F3"/>
@@ -70,7 +70,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/trash_icon"
+            android:src="@drawable/ic_close"
             android:scaleType="centerInside"
             android:contentDescription="Delete"
             app:tint="#F44336"/>

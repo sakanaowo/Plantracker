@@ -240,36 +240,7 @@
             android:background="#091E4221"/>
 
         <!-- Completed Status Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/checkbox_on_background"
-                app:tint="#5E6C84"
-                android:layout_marginEnd="12dp"/>
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Completed status on card fronts"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switchCompletedStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                app:thumbTint="@android:color/white"
-                app:trackTint="#4CAF50"/>
-        </LinearLayout>
 
         <!-- Divider -->
         <View
@@ -309,70 +280,13 @@
             android:layout_height="8dp"
             android:background="#091E4221"/>
 
-        <!-- Power-Ups Section -->
-        <LinearLayout
-            android:id="@+id/layoutPowerUps"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_extension"
-                app:tint="#5E6C84"
-                android:layout_marginEnd="12dp"/>
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Power-Ups"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Add"
-                android:textSize="14sp"
-                android:textColor="#0079BF"
-                android:fontFamily="sans-serif-medium"/>
-        </LinearLayout>
 
         <!-- Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="8dp"
             android:background="#091E4221"/>
-
-        <!-- Pin to Home Section -->
-        <LinearLayout
-            android:id="@+id/layoutPinToHome"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_pin"
-                app:tint="#5E6C84"
-                android:layout_marginEnd="12dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pin to home screen"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
-        </LinearLayout>
 
         <!-- Divider -->
         <View

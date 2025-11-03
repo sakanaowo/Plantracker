@@ -22,6 +22,10 @@ import com.example.tralalero.domain.usecase.task.AddAttachmentUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase;
+import com.example.tralalero.domain.usecase.task.UpdateCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase;
+import com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase;
 import com.example.tralalero.domain.repository.ITaskRepository;
 
 import java.util.HashMap;
@@ -45,6 +49,10 @@ public class TaskViewModel extends ViewModel {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
+    private final UpdateCommentUseCase updateCommentUseCase;
+    private final DeleteCommentUseCase deleteCommentUseCase;
+    private final DeleteAttachmentUseCase deleteAttachmentUseCase;
+    private final GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase;
     private final ITaskRepository repository; // For checklist item operations
     private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
@@ -72,6 +80,10 @@ public class TaskViewModel extends ViewModel {
             GetTaskAttachmentsUseCase getTaskAttachmentsUseCase,
             AddChecklistUseCase addChecklistUseCase,
             GetTaskChecklistsUseCase getTaskChecklistsUseCase,
+            UpdateCommentUseCase updateCommentUseCase,
+            DeleteCommentUseCase deleteCommentUseCase,
+            DeleteAttachmentUseCase deleteAttachmentUseCase,
+            GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase,
             ITaskRepository repository // Add repository for checklist item operations
     ) {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
@@ -89,6 +101,10 @@ public class TaskViewModel extends ViewModel {
         this.getTaskAttachmentsUseCase = getTaskAttachmentsUseCase;
         this.addChecklistUseCase = addChecklistUseCase;
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
+        this.updateCommentUseCase = updateCommentUseCase;
+        this.deleteCommentUseCase = deleteCommentUseCase;
+        this.deleteAttachmentUseCase = deleteAttachmentUseCase;
+        this.getAttachmentViewUrlUseCase = getAttachmentViewUrlUseCase;
         this.repository = repository;
     }
 
@@ -407,6 +423,94 @@ public class TaskViewModel extends ViewModel {
                 errorLiveData.setValue(error);
             }
         });
+    }
+
+    public void updateComment(String commentId, String body) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        updateCommentUseCase.execute(commentId, body, new UpdateCommentUseCase.Callback<TaskComment>() {
+            @Override
+            public void onSuccess(TaskComment result) {
+                loadingLiveData.setValue(false);
+                // Refresh comments to show updated content
+                if (result != null && result.getTaskId() != null) {
+                    loadTaskComments(result.getTaskId());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void deleteComment(String commentId, String taskId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        deleteCommentUseCase.execute(commentId, new DeleteCommentUseCase.Callback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                loadingLiveData.setValue(false);
+                // Refresh comments to remove deleted comment
+                loadTaskComments(taskId);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void deleteAttachment(String attachmentId, String taskId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        deleteAttachmentUseCase.execute(attachmentId, new DeleteAttachmentUseCase.Callback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                loadingLiveData.setValue(false);
+                // Refresh attachments to remove deleted attachment
+                loadTaskAttachments(taskId);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void getAttachmentViewUrl(String attachmentId, AttachmentViewUrlCallback callback) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        getAttachmentViewUrlUseCase.execute(attachmentId, new GetAttachmentViewUrlUseCase.Callback<String>() {
+            @Override
+            public void onSuccess(String viewUrl) {
+                loadingLiveData.setValue(false);
+                callback.onSuccess(viewUrl);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+                callback.onError(error);
+            }
+        });
+    }
+
+    // Callback interface for attachment view URL
+    public interface AttachmentViewUrlCallback {
+        void onSuccess(String viewUrl);
+        void onError(String error);
     }
 
     public void addChecklist(String taskId, Checklist checklist) {

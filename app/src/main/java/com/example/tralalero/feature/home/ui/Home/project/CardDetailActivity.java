@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
@@ -16,6 +17,8 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +27,10 @@ import com.example.tralalero.R;
 import com.example.tralalero.App.App;
 import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.UserApiService;
+import com.example.tralalero.feature.task.attachments.AttachmentUploader;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.model.Label;
@@ -77,13 +84,8 @@ public class CardDetailActivity extends AppCompatActivity {
     private Task.TaskPriority currentPriority = Task.TaskPriority.MEDIUM;
     
     // RecyclerViews and Adapters
-    private RecyclerView rvAttachments;
-    private RecyclerView rvComments;
     private RecyclerView rvChecklist;
-    private TextView tvNoAttachments;
     private TextView tvNoChecklist;
-    private AttachmentAdapter attachmentAdapter;
-    private CommentAdapter commentAdapter;
     private ChecklistAdapter checklistAdapter;
     private ImageView ivAddChecklist;
     private LinearLayout labelLayout;
@@ -91,13 +93,38 @@ public class CardDetailActivity extends AppCompatActivity {
     private LinearLayout layoutSelectedLabels;
     private TextView tvNoLabels;
     private List<Label> selectedLabels = new ArrayList<>();
-
-    TextView tvNoComments;
+    
+    // Comments and Attachments
+    private RecyclerView rvComments;
+    private RecyclerView rvAttachments;
+    private TextView tvNoComments;
+    private TextView tvNoAttachments;
+    private CommentAdapter commentAdapter;
+    private AttachmentAdapter attachmentAdapter;
+    private ImageView ivAddAttachment;
+    private LinearLayout layoutCommentInput;
+    private EditText etNewComment;
+    private ImageButton btnSendComment;
+    private AttachmentUploader attachmentUploader;
+    private ActivityResultLauncher<String> filePickerLauncher;
+    private UserApiService userApiService;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.card_detail);
+        
+        // Setup file picker launcher
+        filePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            result -> {
+                if (result != null && taskId != null) {
+                    android.util.Log.d("CardDetail", "File selected, starting upload for taskId: " + taskId);
+                    uploadFile(result);
+                }
+            }
+        );
+        
         getIntentData();
         initViews();
         setupViewModel();
@@ -148,11 +175,7 @@ public class CardDetailActivity extends AppCompatActivity {
         etDueDate = findViewById(R.id.etDueDate);
         
         // RecyclerViews
-        rvAttachments = findViewById(R.id.rvAttachments);
-        rvComments = findViewById(R.id.rvComments);
         rvChecklist = findViewById(R.id.rvChecklist);
-        tvNoAttachments = findViewById(R.id.tvNoAttachments);
-        tvNoComments = findViewById(R.id.tvNoComments);
         tvNoChecklist = findViewById(R.id.tvNoChecklist);
         ivAddChecklist = findViewById(R.id.ivAddChecklist);
         labelLayout = findViewById(R.id.labelLayout);
@@ -160,50 +183,29 @@ public class CardDetailActivity extends AppCompatActivity {
         layoutSelectedLabels = findViewById(R.id.layoutSelectedLabels);
         tvNoLabels = findViewById(R.id.tvNoLabels);
         
+        // Comments and Attachments
+        rvComments = findViewById(R.id.rvComments);
+        rvAttachments = findViewById(R.id.rvAttachments);
+        tvNoComments = findViewById(R.id.tvNoComments);
+        tvNoAttachments = findViewById(R.id.tvNoAttachments);
+        ivAddAttachment = findViewById(R.id.ivAddAttachment);
+        layoutCommentInput = findViewById(R.id.layoutCommentInput);
+        etNewComment = findViewById(R.id.etNewComment);
+        btnSendComment = findViewById(R.id.btnSendComment);
+        
+        // Test buttons (temporary)
+        Button btnTestComment = findViewById(R.id.btnTestComment);
+        Button btnTestAttachment = findViewById(R.id.btnTestAttachment);
+        LinearLayout llTestButtons = findViewById(R.id.llTestButtons);
+        
+        // Show test buttons for debugging
+        llTestButtons.setVisibility(View.VISIBLE);
+        
         // Setup RecyclerViews
         setupRecyclerViews();
     }
     
     private void setupRecyclerViews() {
-        // Setup Attachments RecyclerView
-        rvAttachments.setLayoutManager(new LinearLayoutManager(this));
-        attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
-            @Override
-            public void onDownloadClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement download functionality
-                Toast.makeText(CardDetailActivity.this, "Download: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onDeleteClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement delete attachment
-                Toast.makeText(CardDetailActivity.this, "Delete attachment", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onAttachmentClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Open/View attachment
-                Toast.makeText(CardDetailActivity.this, "View: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-        });
-        rvAttachments.setAdapter(attachmentAdapter);
-        
-        // Setup Comments RecyclerView
-        rvComments.setLayoutManager(new LinearLayoutManager(this));
-        commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
-            @Override
-            public void onOptionsClick(com.example.tralalero.domain.model.TaskComment comment, int position) {
-                // TODO: Show edit/delete options
-                Toast.makeText(CardDetailActivity.this, "Comment options", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onCommentClick(com.example.tralalero.domain.model.TaskComment comment) {
-                // Optional: Handle comment click
-            }
-        });
-        rvComments.setAdapter(commentAdapter);
-        
         // Setup Checklist RecyclerView
         rvChecklist.setLayoutManager(new LinearLayoutManager(this));
         checklistAdapter = new ChecklistAdapter(new ChecklistAdapter.OnChecklistItemListener() {
@@ -231,18 +233,52 @@ public class CardDetailActivity extends AppCompatActivity {
         });
         rvChecklist.setAdapter(checklistAdapter);
         
+        // Setup Comments RecyclerView
+        rvComments.setLayoutManager(new LinearLayoutManager(this));
+        // CommentAdapter will be initialized in setupViewModel() after userApiService is available
+        
+        // Setup Attachments RecyclerView
+        rvAttachments.setLayoutManager(new LinearLayoutManager(this));
+        attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
+            @Override
+            public void onDownloadClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Download attachment
+                downloadAttachment(attachment);
+            }
+
+            @Override
+            public void onDeleteClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Delete attachment
+                deleteAttachment(attachment);
+            }
+
+            @Override
+            public void onAttachmentClick(com.example.tralalero.domain.model.Attachment attachment) {
+                // TODO: Open attachment
+                openAttachment(attachment);
+            }
+        });
+        rvAttachments.setAdapter(attachmentAdapter);
+        
         // Set initial state - show placeholders, hide RecyclerViews
-        rvAttachments.setVisibility(View.GONE);
-        tvNoAttachments.setVisibility(View.VISIBLE);
-        rvComments.setVisibility(View.GONE);
-        tvNoComments.setVisibility(View.VISIBLE);
         rvChecklist.setVisibility(View.GONE);
         tvNoChecklist.setVisibility(View.VISIBLE);
+        
+        // Comments and Attachments are always visible (no toggle)
+        // Show "No items" text initially, RecyclerViews will show when data loads
+        rvComments.setVisibility(View.GONE);
+        tvNoComments.setVisibility(View.VISIBLE);
+        rvAttachments.setVisibility(View.GONE);
+        tvNoAttachments.setVisibility(View.VISIBLE);
     }
 
     private void setupViewModel() {
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        UserApiService userApiService = ApiClient.get(App.authManager).create(UserApiService.class);
+        this.userApiService = userApiService; // Store reference for CommentAdapter
+        ITaskRepository repository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
@@ -258,6 +294,10 @@ public class CardDetailActivity extends AppCompatActivity {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(repository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(repository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(repository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(repository);
         TaskViewModelFactory factory = new TaskViewModelFactory(
                 getTaskByIdUseCase,
                 getTasksByBoardUseCase,
@@ -274,14 +314,40 @@ public class CardDetailActivity extends AppCompatActivity {
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
                 getTaskChecklistsUseCase,
+                updateCommentUseCase,
+                deleteCommentUseCase,
+                deleteAttachmentUseCase,
+                getAttachmentViewUrlUseCase,
                 repository
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
+        
+        // Setup AttachmentUploader
+        attachmentUploader = new AttachmentUploader(attachmentApiService, this);
+        
+        // Initialize CommentAdapter now that userApiService is available
+        setupCommentAdapter();
         
         // Initialize LabelViewModel
         setupLabelViewModel();
         
         observeViewModel();
+    }
+    
+    private void setupCommentAdapter() {
+        commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
+            @Override
+            public void onOptionsClick(com.example.tralalero.domain.model.TaskComment comment, int position) {
+                // TODO: Show edit/delete options
+                showCommentOptionsDialog(comment, position);
+            }
+
+            @Override
+            public void onCommentClick(com.example.tralalero.domain.model.TaskComment comment) {
+                // Optional: Handle comment click
+            }
+        }, userApiService);
+        rvComments.setAdapter(commentAdapter);
     }
     
     private void setupLabelViewModel() {
@@ -346,32 +412,6 @@ public class CardDetailActivity extends AppCompatActivity {
             }
         });
         
-        // Observe comments
-        taskViewModel.getComments().observe(this, comments -> {
-            android.util.Log.d("CardDetail", "Comments received: " + (comments != null ? comments.size() : "null"));
-            if (comments != null && !comments.isEmpty()) {
-                commentAdapter.setComments(comments);
-                rvComments.setVisibility(View.VISIBLE);
-                tvNoComments.setVisibility(View.GONE);
-            } else {
-                rvComments.setVisibility(View.GONE);
-                tvNoComments.setVisibility(View.VISIBLE);
-            }
-        });
-        
-        // Observe attachments
-        taskViewModel.getAttachments().observe(this, attachments -> {
-            android.util.Log.d("CardDetail", "Attachments received: " + (attachments != null ? attachments.size() : "null"));
-            if (attachments != null && !attachments.isEmpty()) {
-                attachmentAdapter.setAttachments(attachments);
-                rvAttachments.setVisibility(View.VISIBLE);
-                tvNoAttachments.setVisibility(View.GONE);
-            } else {
-                rvAttachments.setVisibility(View.GONE);
-                tvNoAttachments.setVisibility(View.VISIBLE);
-            }
-        });
-        
         // Observe checklist items
         taskViewModel.getChecklistItems().observe(this, checklistItems -> {
             android.util.Log.d("CardDetail", "🎨 UI Observer triggered");
@@ -389,6 +429,38 @@ public class CardDetailActivity extends AppCompatActivity {
                 android.util.Log.d("CardDetail", "  ❌ Showing empty state (items null or empty)");
                 rvChecklist.setVisibility(View.GONE);
                 tvNoChecklist.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        // Observe comments
+        taskViewModel.getComments().observe(this, comments -> {
+            android.util.Log.d("CardDetail", "Comments observer triggered - count: " + (comments != null ? comments.size() : 0));
+            if (comments != null && !comments.isEmpty()) {
+                android.util.Log.d("CardDetail", "Setting " + comments.size() + " comments to adapter");
+                commentAdapter.setComments(comments);
+                rvComments.setVisibility(View.VISIBLE);
+                tvNoComments.setVisibility(View.GONE);
+                android.util.Log.d("CardDetail", "Comments RecyclerView made visible");
+            } else {
+                android.util.Log.d("CardDetail", "No comments - showing empty state");
+                rvComments.setVisibility(View.GONE);
+                tvNoComments.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        // Observe attachments
+        taskViewModel.getAttachments().observe(this, attachments -> {
+            android.util.Log.d("CardDetail", "Attachments observer triggered - count: " + (attachments != null ? attachments.size() : 0));
+            if (attachments != null && !attachments.isEmpty()) {
+                android.util.Log.d("CardDetail", "Setting " + attachments.size() + " attachments to adapter");
+                attachmentAdapter.setAttachments(attachments);
+                rvAttachments.setVisibility(View.VISIBLE);
+                tvNoAttachments.setVisibility(View.GONE);
+                android.util.Log.d("CardDetail", "Attachments RecyclerView made visible");
+            } else {
+                android.util.Log.d("CardDetail", "No attachments - showing empty state");
+                rvAttachments.setVisibility(View.GONE);
+                tvNoAttachments.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -434,15 +506,22 @@ public class CardDetailActivity extends AppCompatActivity {
         displaySelectedLabels();
     }
     
+    
     private void loadTaskAttachments() {
         if (taskId != null && !taskId.isEmpty()) {
+            android.util.Log.d("CardDetail", "Loading attachments for taskId: " + taskId);
             taskViewModel.loadTaskAttachments(taskId);
+        } else {
+            android.util.Log.e("CardDetail", "Cannot load attachments - taskId is null or empty");
         }
     }
     
     private void loadTaskComments() {
         if (taskId != null && !taskId.isEmpty()) {
+            android.util.Log.d("CardDetail", "Loading comments for taskId: " + taskId);
             taskViewModel.loadTaskComments(taskId);
+        } else {
+            android.util.Log.e("CardDetail", "Cannot load comments - taskId is null or empty");
         }
     }
     
@@ -467,13 +546,39 @@ public class CardDetailActivity extends AppCompatActivity {
             showAssignTaskDialog();
         });
         btnAddAttachment.setOnClickListener(v -> {
-            showAddAttachmentDialog();
+            // Direct file picker - no toggle needed
+            android.util.Log.d("CardDetail", "btnAddAttachment clicked - isEditMode: " + isEditMode + ", taskId: " + taskId);
+            if (!isEditMode || taskId == null || taskId.isEmpty()) {
+                Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            pickFile();
         });
         btnAddComment.setOnClickListener(v -> {
-            showAddCommentDialog();
+            // Focus on comment input - no toggle needed
+            if (!isEditMode || taskId == null || taskId.isEmpty()) {
+                Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            etNewComment.requestFocus();
         });
         ivAddChecklist.setOnClickListener(v -> {
             showAddChecklistDialog();
+        });
+        
+        // Add attachment button
+        ivAddAttachment.setOnClickListener(v -> {
+            android.util.Log.d("CardDetail", "ivAddAttachment clicked - isEditMode: " + isEditMode + ", taskId: " + taskId);
+            if (!isEditMode || taskId == null || taskId.isEmpty()) {
+                Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            pickFile();
+        });
+        
+        // Send comment button
+        btnSendComment.setOnClickListener(v -> {
+            addComment();
         });
         labelLayout.setOnClickListener(v -> {
             showLabelSelectionDialog();
@@ -490,6 +595,64 @@ public class CardDetailActivity extends AppCompatActivity {
         });
         etDateStart.setOnClickListener(v -> showDatePickerDialog(true));
         etDueDate.setOnClickListener(v -> showDatePickerDialog(false));
+        
+        // Test button listeners
+        Button btnTestComment = findViewById(R.id.btnTestComment);
+        Button btnTestAttachment = findViewById(R.id.btnTestAttachment);
+        
+        btnTestComment.setOnClickListener(v -> addTestComment());
+        btnTestAttachment.setOnClickListener(v -> addTestAttachment());
+    }
+    
+    /**
+     * Add test comment for debugging
+     */
+    private void addTestComment() {
+        java.util.List<com.example.tralalero.domain.model.TaskComment> testComments = new java.util.ArrayList<>();
+        testComments.add(new com.example.tralalero.domain.model.TaskComment(
+            "test-comment-" + System.currentTimeMillis(), 
+            taskId, 
+            "test-user", 
+            "This is a test comment with options button. Click ⋮ to test edit/delete.",
+            new java.util.Date()
+        ));
+        
+        if (commentAdapter.getItemCount() == 0) {
+            commentAdapter.setComments(testComments);
+            rvComments.setVisibility(View.VISIBLE);
+            tvNoComments.setVisibility(View.GONE);
+        } else {
+            commentAdapter.addComment(testComments.get(0));
+        }
+        
+        Toast.makeText(this, "Test comment added", Toast.LENGTH_SHORT).show();
+    }
+    
+    /**
+     * Add test attachment for debugging
+     */
+    private void addTestAttachment() {
+        java.util.List<com.example.tralalero.domain.model.Attachment> testAttachments = new java.util.ArrayList<>();
+        testAttachments.add(new com.example.tralalero.domain.model.Attachment(
+            "test-attachment-" + System.currentTimeMillis(),
+            taskId,
+            "https://example.com/test-file.jpg",
+            "test-image.jpg",
+            "image/jpeg",
+            1024000,  // 1MB
+            "test-user",
+            new java.util.Date()
+        ));
+        
+        if (attachmentAdapter.getItemCount() == 0) {
+            attachmentAdapter.setAttachments(testAttachments);
+            rvAttachments.setVisibility(View.VISIBLE);
+            tvNoAttachments.setVisibility(View.GONE);
+        } else {
+            attachmentAdapter.addAttachment(testAttachments.get(0));
+        }
+        
+        Toast.makeText(this, "Test attachment added", Toast.LENGTH_SHORT).show();
     }
 
     private void createTask() {
@@ -676,116 +839,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showAddAttachmentDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter attachment URL");
-        input.setPadding(50, 20, 50, 20);
-        input.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Add Attachment")
-                .setMessage("Add attachment URL:")
-                .setView(input)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String attachmentUrl = input.getText().toString().trim();
-                    if (!attachmentUrl.isEmpty() && taskId != null) {
-                        // Create attachment object
-                        String fileName = extractFileNameFromUrl(attachmentUrl);
-                        String mimeType = getMimeTypeFromUrl(attachmentUrl);
-                        
-                        com.example.tralalero.domain.model.Attachment attachment = 
-                            new com.example.tralalero.domain.model.Attachment(
-                                null, // id (backend will generate)
-                                taskId,
-                                attachmentUrl,
-                                fileName,
-                                mimeType,
-                                null, // size (unknown for URL)
-                                null, // uploadedBy (backend will set)
-                                new java.util.Date() // createdAt
-                            );
-                        
-                        // Add via ViewModel
-                        taskViewModel.addAttachment(taskId, attachment);
-                    } else {
-                        Toast.makeText(this, "Please enter a valid URL", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-    
-    // Helper method to extract filename from URL
-    private String extractFileNameFromUrl(String url) {
-        try {
-            String[] parts = url.split("/");
-            String fileName = parts[parts.length - 1];
-            // Remove query parameters
-            if (fileName.contains("?")) {
-                fileName = fileName.substring(0, fileName.indexOf("?"));
-            }
-            return fileName.isEmpty() ? "attachment" : fileName;
-        } catch (Exception e) {
-            return "attachment";
-        }
-    }
-    
-    // Helper method to guess MIME type from URL extension
-    private String getMimeTypeFromUrl(String url) {
-        String lowerUrl = url.toLowerCase();
-        if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
-            return "image/jpeg";
-        } else if (lowerUrl.endsWith(".png")) {
-            return "image/png";
-        } else if (lowerUrl.endsWith(".gif")) {
-            return "image/gif";
-        } else if (lowerUrl.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lowerUrl.endsWith(".doc") || lowerUrl.endsWith(".docx")) {
-            return "application/msword";
-        } else if (lowerUrl.endsWith(".xls") || lowerUrl.endsWith(".xlsx")) {
-            return "application/vnd.ms-excel";
-        } else if (lowerUrl.endsWith(".zip")) {
-            return "application/zip";
-        } else if (lowerUrl.endsWith(".mp4")) {
-            return "video/mp4";
-        } else if (lowerUrl.endsWith(".mp3")) {
-            return "audio/mpeg";
-        }
-        return "application/octet-stream";
-    }
-
-    private void showAddCommentDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter your comment");
-        input.setPadding(50, 20, 50, 20);
-        input.setMinLines(3);
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Add Comment")
-                .setMessage("Write a comment:")
-                .setView(input)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String commentText = input.getText().toString().trim();
-                    if (!commentText.isEmpty() && taskId != null) {
-                        com.example.tralalero.domain.model.TaskComment comment = 
-                                new com.example.tralalero.domain.model.TaskComment(
-                                    "", // id (backend will generate)
-                                    taskId,
-                                    null, // userId (backend will get from auth)
-                                    commentText,
-                                    null // createdAt (backend will set)
-                                );
-                        taskViewModel.addComment(taskId, comment);
-                        Toast.makeText(this, "Comment added", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
     private void showAddChecklistDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter checklist item");
@@ -932,5 +985,500 @@ public class CardDetailActivity extends AppCompatActivity {
         );
 
         datePickerDialog.show();
+    }
+
+    /**
+     * Add Comment
+     */
+    private void addComment() {
+        String text = etNewComment.getText().toString().trim();
+        android.util.Log.d("CardDetail", "addComment called with text: '" + text + "'");
+        
+        if (text.isEmpty()) {
+            Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (taskId != null) {
+            android.util.Log.d("CardDetail", "Creating comment for taskId: " + taskId);
+            com.example.tralalero.domain.model.TaskComment comment = 
+                new com.example.tralalero.domain.model.TaskComment("", taskId, null, text, null);
+            taskViewModel.addComment(taskId, comment);
+            etNewComment.setText("");
+            Toast.makeText(this, "Comment added", Toast.LENGTH_SHORT).show();
+        } else {
+            android.util.Log.e("CardDetail", "Cannot add comment - taskId is null");
+        }
+    }
+
+    /**
+     * Show Comment Options Dialog (Edit/Delete)
+     */
+    private void showCommentOptionsDialog(com.example.tralalero.domain.model.TaskComment comment, int position) {
+        String[] options = {"Edit", "Delete"};
+        
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Comment Options")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0: // Edit
+                            showEditCommentDialog(comment);
+                            break;
+                        case 1: // Delete
+                            showDeleteCommentConfirmation(comment);
+                            break;
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    /**
+     * Show Edit Comment Dialog
+     */
+    private void showEditCommentDialog(com.example.tralalero.domain.model.TaskComment comment) {
+        EditText editText = new EditText(this);
+        editText.setText(comment.getBody());
+        editText.setSelection(comment.getBody().length()); // Move cursor to end
+        editText.setMinLines(2);
+        editText.setMaxLines(6);
+        editText.setPadding(50, 20, 50, 20);
+        
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Edit Comment")
+                .setView(editText)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String newText = editText.getText().toString().trim();
+                    if (!newText.isEmpty()) {
+                        updateComment(comment, newText);
+                    } else {
+                        Toast.makeText(this, "Comment cannot be empty", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        
+        // Show keyboard
+        editText.requestFocus();
+    }
+    
+    /**
+     * Show Delete Comment Confirmation
+     */
+    private void showDeleteCommentConfirmation(com.example.tralalero.domain.model.TaskComment comment) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Comment")
+                .setMessage("Are you sure you want to delete this comment?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    deleteComment(comment);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    /**
+     * Update Comment
+     */
+    private void updateComment(com.example.tralalero.domain.model.TaskComment comment, String newText) {
+        android.util.Log.d("CardDetail", "Updating comment: " + comment.getId() + " with new text: " + newText);
+        
+        // Check if this is a test comment (starts with "test-comment-")
+        if (comment.getId().startsWith("test-comment-")) {
+            // Handle test comment update locally
+            updateTestComment(comment, newText);
+            return;
+        }
+        
+        // Create updated comment
+        com.example.tralalero.domain.model.TaskComment updatedComment = 
+            new com.example.tralalero.domain.model.TaskComment(
+                comment.getId(),
+                comment.getTaskId(),
+                comment.getUserId(),
+                newText,
+                comment.getCreatedAt()
+            );
+        
+        // Call ViewModel update method
+        taskViewModel.updateComment(comment.getId(), newText);
+    }
+    
+    /**
+     * Delete Comment
+     */
+    private void deleteComment(com.example.tralalero.domain.model.TaskComment comment) {
+        android.util.Log.d("CardDetail", "Deleting comment: " + comment.getId());
+        
+        // Check if this is a test comment (starts with "test-comment-")
+        if (comment.getId().startsWith("test-comment-")) {
+            // Handle test comment deletion locally
+            deleteTestComment(comment);
+            return;
+        }
+        
+        // Call ViewModel delete method
+        taskViewModel.deleteComment(comment.getId(), taskId);
+    }
+    
+    /**
+     * Update test comment locally
+     */
+    private void updateTestComment(com.example.tralalero.domain.model.TaskComment comment, String newText) {
+        // Find the comment in current adapter data and update it
+        java.util.List<com.example.tralalero.domain.model.TaskComment> currentComments = getCurrentComments();
+        for (int i = 0; i < currentComments.size(); i++) {
+            if (currentComments.get(i).getId().equals(comment.getId())) {
+                // Create updated comment
+                com.example.tralalero.domain.model.TaskComment updatedComment = 
+                    new com.example.tralalero.domain.model.TaskComment(
+                        comment.getId(),
+                        comment.getTaskId(),
+                        comment.getUserId(),
+                        newText,
+                        comment.getCreatedAt()
+                    );
+                commentAdapter.updateComment(i, updatedComment);
+                Toast.makeText(this, "Test comment updated locally", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+    }
+    
+    /**
+     * Delete test comment locally
+     */
+    private void deleteTestComment(com.example.tralalero.domain.model.TaskComment comment) {
+        // Find the comment in current adapter data and remove it
+        java.util.List<com.example.tralalero.domain.model.TaskComment> currentComments = getCurrentComments();
+        for (int i = 0; i < currentComments.size(); i++) {
+            if (currentComments.get(i).getId().equals(comment.getId())) {
+                commentAdapter.removeComment(i);
+                Toast.makeText(this, "Test comment deleted locally", Toast.LENGTH_SHORT).show();
+                
+                // Show "no comments" if list is empty
+                if (commentAdapter.getItemCount() == 0) {
+                    rvComments.setVisibility(View.GONE);
+                    tvNoComments.setVisibility(View.VISIBLE);
+                }
+                return;
+            }
+        }
+    }
+    
+    /**
+     * Get current comments from adapter
+     */
+    private java.util.List<com.example.tralalero.domain.model.TaskComment> getCurrentComments() {
+        return commentAdapter.getComments();
+    }
+
+    /**
+     * Pick File for Upload
+     */
+    private void pickFile() {
+        android.util.Log.d("CardDetail", "pickFile() called - launching file picker");
+        filePickerLauncher.launch("*/*");
+    }
+
+    /**
+     * Download Attachment
+     */
+    private void downloadAttachment(com.example.tralalero.domain.model.Attachment attachment) {
+        android.util.Log.d("CardDetail", "Downloading attachment: " + attachment.getFileName());
+        
+        // Check if filename is null
+        String originalFileName = attachment.getFileName();
+        final String fileName = (originalFileName == null || originalFileName.isEmpty()) 
+            ? "download_" + System.currentTimeMillis() 
+            : originalFileName;
+        
+        // Get the full URL - need to call backend to get signed URL first
+        getAttachmentViewUrl(attachment, (signedUrl) -> {
+            if (signedUrl != null && !signedUrl.isEmpty()) {
+                performDownload(signedUrl, fileName);
+            } else {
+                Toast.makeText(this, "Failed to get download URL", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Get signed URL for attachment viewing/downloading
+     */
+    private void getAttachmentViewUrl(com.example.tralalero.domain.model.Attachment attachment, 
+                                     java.util.function.Consumer<String> callback) {
+        // Call ViewModel to get signed URL
+        taskViewModel.getAttachmentViewUrl(attachment.getId(), new TaskViewModel.AttachmentViewUrlCallback() {
+            @Override
+            public void onSuccess(String viewUrl) {
+                callback.accept(viewUrl);
+            }
+            
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("CardDetail", "Failed to get attachment view URL: " + error);
+                Toast.makeText(CardDetailActivity.this, "Failed to get download URL: " + error, Toast.LENGTH_SHORT).show();
+                callback.accept(null);
+            }
+        });
+    }
+
+    // TODO : check
+    /**
+     * Perform actual download with signed URL
+     */
+    private void performDownload(String signedUrl, String fileName) {
+        try {
+            // Create download manager request
+            android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(
+                android.net.Uri.parse(signedUrl)
+            );
+            
+            request.setDestinationInExternalPublicDir(
+                android.os.Environment.DIRECTORY_DOWNLOADS, 
+                fileName
+            );
+            
+            request.setNotificationVisibility(
+                android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            );
+            
+            request.setTitle("Downloading " + fileName);
+            request.setDescription("Downloading attachment from PlantTracker");
+            
+            // Get download manager and enqueue
+            android.app.DownloadManager downloadManager = 
+                (android.app.DownloadManager) getSystemService(android.content.Context.DOWNLOAD_SERVICE);
+            
+            if (downloadManager != null) {
+                downloadManager.enqueue(request);
+                Toast.makeText(this, "Downloading " + fileName, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Download service not available", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("CardDetail", "Download error: " + e.getMessage());
+            Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Delete Attachment
+     */
+    private void deleteAttachment(com.example.tralalero.domain.model.Attachment attachment) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Attachment")
+                .setMessage("Are you sure you want to delete '" + attachment.getFileName() + "'?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    performDeleteAttachment(attachment);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    /**
+     * Perform actual attachment deletion
+     */
+    private void performDeleteAttachment(com.example.tralalero.domain.model.Attachment attachment) {
+        android.util.Log.d("CardDetail", "Deleting attachment: " + attachment.getId());
+        
+        // Check if this is a test attachment (starts with "test-attachment-")
+        if (attachment.getId().startsWith("test-attachment-")) {
+            // Handle test attachment deletion locally
+            deleteTestAttachment(attachment);
+            return;
+        }
+        
+        // Call ViewModel delete method
+        taskViewModel.deleteAttachment(attachment.getId(), taskId);
+    }
+    
+    /**
+     * Delete test attachment locally
+     */
+    private void deleteTestAttachment(com.example.tralalero.domain.model.Attachment attachment) {
+        // Find the attachment in current adapter data and remove it
+        java.util.List<com.example.tralalero.domain.model.Attachment> currentAttachments = getCurrentAttachments();
+        for (int i = 0; i < currentAttachments.size(); i++) {
+            if (currentAttachments.get(i).getId().equals(attachment.getId())) {
+                attachmentAdapter.removeAttachment(i);
+                Toast.makeText(this, "Test attachment deleted locally", Toast.LENGTH_SHORT).show();
+                
+                // Show "no attachments" if list is empty
+                if (attachmentAdapter.getItemCount() == 0) {
+                    rvAttachments.setVisibility(View.GONE);
+                    tvNoAttachments.setVisibility(View.VISIBLE);
+                }
+                return;
+            }
+        }
+    }
+    
+    /**
+     * Get current attachments from adapter
+     */
+    private java.util.List<com.example.tralalero.domain.model.Attachment> getCurrentAttachments() {
+        return attachmentAdapter.getAttachments();
+    }
+
+    /**
+     * Open Attachment
+     */
+    private void openAttachment(com.example.tralalero.domain.model.Attachment attachment) {
+        android.util.Log.d("CardDetail", "Opening attachment: " + attachment.getFileName());
+        
+        // Check if fileName is null
+        final String fileName = attachment.getFileName();
+        if (fileName == null || fileName.isEmpty()) {
+            Toast.makeText(this, "Invalid file name", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get signed URL for viewing
+        getAttachmentViewUrl(attachment, (signedUrl) -> {
+            if (signedUrl != null && !signedUrl.isEmpty()) {
+                openWithIntent(signedUrl, fileName);
+            } else {
+                Toast.makeText(this, "Cannot open file - backend integration needed", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Open file with Intent using signed URL
+     */
+    private void openWithIntent(String signedUrl, String fileName) {
+        try {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            android.net.Uri uri = android.net.Uri.parse(signedUrl);
+            
+            // Determine MIME type based on file extension
+            String mimeType = getMimeType(fileName);
+            intent.setDataAndType(uri, mimeType);
+            intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            
+            // Try to start the intent
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            } else {
+                // No app can handle this file type, offer to download instead
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("No App Found")
+                        .setMessage("No app found to open this file type. Would you like to download it instead?")
+                        .setPositiveButton("Download", (dialog, which) -> 
+                            performDownload(signedUrl, fileName))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("CardDetail", "Error opening attachment: " + e.getMessage());
+            Toast.makeText(this, "Error opening file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Get MIME type based on file extension
+     */
+    private String getMimeType(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "*/*";
+        }
+        
+        int lastDot = fileName.lastIndexOf('.');
+        if (lastDot <= 0 || lastDot >= fileName.length() - 1) {
+            return "*/*";
+        }
+        
+        String extension = fileName.substring(lastDot + 1).toLowerCase();
+        
+        switch (extension) {
+            case "pdf":
+                return "application/pdf";
+            case "doc":
+            case "docx":
+                return "application/msword";
+            case "xls":
+            case "xlsx":
+                return "application/vnd.ms-excel";
+            case "ppt":
+            case "pptx":
+                return "application/vnd.ms-powerpoint";
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            case "mp4":
+                return "video/mp4";
+            case "mp3":
+                return "audio/mp3";
+            case "txt":
+                return "text/plain";
+            case "zip":
+                return "application/zip";
+            default:
+                return "*/*";
+        }
+    }
+    
+    /**
+     * Upload file using AttachmentUploader
+     */
+    private void uploadFile(android.net.Uri uri) {
+        if (attachmentUploader == null) {
+            android.util.Log.e("CardDetail", "AttachmentUploader is null");
+            Toast.makeText(this, "Upload service not initialized", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        attachmentUploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
+            @Override
+            public void onProgress(int percent) {
+                android.util.Log.d("CardDetail", "Upload progress: " + percent + "%");
+                runOnUiThread(() -> {
+                    // TODO: Show progress bar UI
+                    // For now just log progress
+                });
+            }
+
+            @Override
+            public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
+                android.util.Log.d("CardDetail", "Upload success! File: " + attachmentDTO.fileName);
+                runOnUiThread(() -> {
+                    // Map DTO to domain model
+                    com.example.tralalero.domain.model.Attachment attachment = 
+                        new com.example.tralalero.domain.model.Attachment(
+                            attachmentDTO.id,
+                            taskId,
+                            attachmentDTO.url != null ? attachmentDTO.url : "",
+                            attachmentDTO.fileName,
+                            attachmentDTO.mimeType,
+                            attachmentDTO.size,
+                            null,
+                            new java.util.Date()
+                        );
+                    
+                    // Add to ViewModel and reload list
+                    taskViewModel.addAttachment(taskId, attachment);
+                    loadTaskAttachments(); // Reload to refresh UI
+                    
+                    Toast.makeText(CardDetailActivity.this, 
+                        "File uploaded successfully!", 
+                        Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("CardDetail", "Upload error: " + error);
+                runOnUiThread(() -> {
+                    Toast.makeText(CardDetailActivity.this, 
+                        "Upload failed: " + error, 
+                        Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 }
