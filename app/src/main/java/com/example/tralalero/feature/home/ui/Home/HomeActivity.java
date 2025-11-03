@@ -1,7 +1,10 @@
 package com.example.tralalero.feature.home.ui.Home;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,6 +53,15 @@ public class HomeActivity extends BaseActivity {
     private static final String TAG = "HomeActivity";
     private WorkspaceViewModel workspaceViewModel;
     private AuthViewModel authViewModel;
+    
+    // Broadcast receiver for workspace updates
+    private BroadcastReceiver workspaceUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "Received WORKSPACE_UPDATED broadcast");
+            forceRefreshWorkspaces();
+        }
+    };
 
     // FCM Permission Launcher (Android 13+)
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -211,6 +223,11 @@ public class HomeActivity extends BaseActivity {
         setupRecyclerView();
         setupSwipeRefresh();
         loadWorkspacesWithCache();  // Person 1: Cache-first approach
+        
+        // Register broadcast receiver for workspace updates
+        androidx.localbroadcastmanager.content.LocalBroadcastManager
+                .getInstance(this)
+                .registerReceiver(workspaceUpdateReceiver, new IntentFilter("WORKSPACE_UPDATED"));
 
         setupTestRepositoryButton();
         setupNotificationPermission(); // Request notification permission
@@ -307,5 +324,14 @@ public class HomeActivity extends BaseActivity {
                 Toast.makeText(HomeActivity.this, "Không thể lấy FCM token", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Unregister broadcast receiver
+        androidx.localbroadcastmanager.content.LocalBroadcastManager
+                .getInstance(this)
+                .unregisterReceiver(workspaceUpdateReceiver);
     }
 }

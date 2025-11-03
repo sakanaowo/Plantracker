@@ -1,5 +1,6 @@
 package com.example.tralalero.feature.home.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -63,6 +64,14 @@ public class ActivityActivity extends BaseActivity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ActivityLogAdapter(this);
+        
+        // Set invitation click listener
+        adapter.setOnInvitationClickListener(log -> {
+            // Navigate to InvitationsActivity to respond
+            Intent intent = new Intent(this, com.example.tralalero.feature.invitations.InvitationsActivity.class);
+            startActivity(intent);
+        });
+        
         recyclerView.setAdapter(adapter);
 
         // Initialize API service with authentication

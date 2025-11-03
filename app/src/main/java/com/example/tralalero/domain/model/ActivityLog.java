@@ -86,6 +86,12 @@ public class ActivityLog {
                 return "updated " + formatEntityType(entityType);
             case "DELETED":
                 return "deleted " + formatEntityType(entityType);
+            case "ADDED":
+                // Special handling for MEMBERSHIP invitations
+                if ("MEMBERSHIP".equals(entityType)) {
+                    return "invited you to join";
+                }
+                return "added " + formatEntityType(entityType);
             case "COMMENTED":
                 return "commented on";
             case "ASSIGNED":
@@ -127,6 +133,8 @@ public class ActivityLog {
                 return "label";
             case "ATTACHMENT":
                 return "attachment";
+            case "MEMBERSHIP":
+                return ""; // Empty string for "invited you to join [project name]"
             default:
                 return entityType.toLowerCase();
         }

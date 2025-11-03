@@ -22,7 +22,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
+import com.example.tralalero.data.repository.ActivityLogRepositoryImpl;
 import com.example.tralalero.data.repository.MemberRepositoryImpl;
+import com.example.tralalero.domain.repository.IActivityLogRepository;
 import com.example.tralalero.domain.repository.IMemberRepository;
 import com.example.tralalero.feature.project.members.InviteMemberDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -43,6 +45,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private String currentVisibility = "WORKSPACE"; // PRIVATE, WORKSPACE, PUBLIC
     
     private IMemberRepository memberRepository;
+    private IActivityLogRepository activityLogRepository;
     
     private TextView tvMenuTitle;
     private ImageButton btnClose, btnShare, btnStar, btnVisibility, btnCopy, btnMore;
@@ -90,6 +93,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     
     private void initRepository() {
         memberRepository = new MemberRepositoryImpl(getContext());
+        activityLogRepository = new ActivityLogRepositoryImpl(getContext());
     }
 
     private void initViews(View view) {
@@ -443,10 +447,36 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
     
     private void loadActivityLogs() {
-        // Load activity logs (hardcoded for now - giống như trong ảnh)
-        List<ActivityLog> activities = new ArrayList<>();
-        // TODO: add logic to load real data from API
-        activityAdapter.setActivities(activities);
+        if (activityLogRepository != null && projectId != null) {
+            activityLogRepository.getProjectActivityLogs(projectId, 20, 
+                new IActivityLogRepository.RepositoryCallback<List<com.example.tralalero.domain.model.ActivityLog>>() {
+                @Override
+                public void onSuccess(List<com.example.tralalero.domain.model.ActivityLog> logs) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (activityAdapter != null) {
+                                activityAdapter.setActivities(logs);
+                            }
+                        });
+                    }
+                }
+                
+                @Override
+                public void onError(String error) {
+                    // Silent fail - just show empty list
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (activityAdapter != null) {
+                                activityAdapter.setActivities(new ArrayList<>());
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            // Fallback if no repository
+            activityAdapter.setActivities(new ArrayList<>());
+        }
     }
     
     private String getInitials(String name) {
@@ -469,10 +499,8 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
     
     private void addActivityLog(String action) {
-        if (activityAdapter != null) {
-            ActivityLog newLog = new ActivityLog("TK", "TI Ks " + action, "Just now");
-            activityAdapter.addActivity(newLog);
-        }
+        // Activity logs are now loaded from API, not added manually
+        // This method is deprecated
     }
 
     static class UIMember {
@@ -484,18 +512,6 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             this.initials = initials;
             this.name = name;
             this.isAdmin = isAdmin;
-        }
-    }
-
-    static class ActivityLog {
-        String avatar;
-        String text;
-        String time;
-
-        ActivityLog(String avatar, String text, String time) {
-            this.avatar = avatar;
-            this.text = text;
-            this.time = time;
         }
     }
 
@@ -539,14 +555,14 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
 
     static class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
-        private List<ActivityLog> activities = new ArrayList<>();
+        private List<com.example.tralalero.domain.model.ActivityLog> activities = new ArrayList<>();
 
-        void setActivities(List<ActivityLog> activities) {
+        void setActivities(List<com.example.tralalero.domain.model.ActivityLog> activities) {
             this.activities = activities;
             notifyDataSetChanged();
         }
         
-        void addActivity(ActivityLog activity) {
+        void addActivity(com.example.tralalero.domain.model.ActivityLog activity) {
             activities.add(0, activity);
             notifyItemInserted(0);
         }
@@ -560,36 +576,24 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            ActivityLog activity = activities.get(position);
-            holder.tvActivityAvatar.setText(activity.avatar);
+            com.example.tralalero.domain.model.ActivityLog activity = activities.get(position);
             
-            String fullText = activity.text;
+            // Use user initials for avatar
+            holder.tvActivityAvatar.setText(activity.getUserInitials());
+            
+            // Use formatted message from domain model
+            String fullText = activity.getFormattedMessage();
             SpannableString spannableString = new SpannableString(fullText);
             
-            // Bold username (first part before "added")
-            int addedIndex = fullText.indexOf(" added");
-            if (addedIndex != -1) {
+            // Bold username (first word/part)
+            String userName = activity.getUserName();
+            if (userName != null && fullText.startsWith(userName)) {
                 spannableString.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 
-                    0, addedIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            
-            // Bold card/item names (text between "added" and "to")
-            int toIndex = fullText.indexOf(" to ", addedIndex);
-            if (addedIndex != -1 && toIndex != -1) {
-                int startBold = addedIndex + 7; // " added ".length()
-                spannableString.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 
-                    startBold, toIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            
-            // Bold target name (text after "to" until end or next word)
-            if (toIndex != -1) {
-                int startTarget = toIndex + 4; // " to ".length()
-                spannableString.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 
-                    startTarget, fullText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    0, userName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             
             holder.tvActivityText.setText(spannableString);
-            holder.tvActivityTime.setText(activity.time);
+            holder.tvActivityTime.setText(activity.getFormattedTime());
         }
 
         @Override

@@ -27,9 +27,18 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
 
     private List<ActivityLog> activityLogs = new ArrayList<>();
     private Context context;
+    private OnInvitationClickListener invitationClickListener;
+
+    public interface OnInvitationClickListener {
+        void onInvitationClick(ActivityLog log);
+    }
 
     public ActivityLogAdapter(Context context) {
         this.context = context;
+    }
+
+    public void setOnInvitationClickListener(OnInvitationClickListener listener) {
+        this.invitationClickListener = listener;
     }
 
     public void setActivityLogs(List<ActivityLog> activityLogs) {
@@ -79,6 +88,24 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
         public void bind(ActivityLog log) {
             if (log == null) {
                 return;
+            }
+            
+            // Check if this is an invitation
+            boolean isInvitation = "ADDED".equals(log.getAction()) && "MEMBERSHIP".equals(log.getEntityType());
+            
+            // Set click listener for invitations
+            if (isInvitation) {
+                itemView.setOnClickListener(v -> {
+                    if (invitationClickListener != null) {
+                        invitationClickListener.onInvitationClick(log);
+                    }
+                });
+                itemView.setClickable(true);
+                itemView.setFocusable(true);
+            } else {
+                itemView.setOnClickListener(null);
+                itemView.setClickable(false);
+                itemView.setFocusable(false);
             }
             
             // Set activity message

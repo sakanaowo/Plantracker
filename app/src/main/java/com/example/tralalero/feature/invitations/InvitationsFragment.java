@@ -1,5 +1,6 @@
 package com.example.tralalero.feature.invitations;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -109,6 +110,13 @@ public class InvitationsFragment extends Fragment {
                     getActivity().runOnUiThread(() -> {
                         showLoading(false);
                         Toast.makeText(getContext(), "Invitation accepted! Welcome to " + invitation.getProjectName(), Toast.LENGTH_SHORT).show();
+                        
+                        // Broadcast event to reload workspaces in HomeActivity
+                        Intent intent = new Intent("WORKSPACE_UPDATED");
+                        androidx.localbroadcastmanager.content.LocalBroadcastManager
+                                .getInstance(requireContext())
+                                .sendBroadcast(intent);
+                        
                         // Reload invitations
                         loadInvitations();
                     });

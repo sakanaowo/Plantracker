@@ -114,10 +114,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String type = remoteMessage.getData().get("type");
         String title = remoteMessage.getData().get("title");
         String message = remoteMessage.getData().get("message");
+        
+        Log.d(TAG, "=== HANDLING DATA MESSAGE ===");
+        Log.d(TAG, "Type: " + type);
+        Log.d(TAG, "Title: " + title);
+        Log.d(TAG, "Message: " + message);
 
         // Handle different notification types
         if (type != null) {
             switch (type) {
+                case "PROJECT_INVITE":
+                    Log.d(TAG, "📨 Project invite notification received");
+                    sendNotification(title, message);
+                    break;
                 case "task_assigned":
                 case "task_updated":
                 case "task_completed":

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/rootView" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+
+    <!-- Toolbar / Header -->
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+        <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="?attr/actionBarSize" android:background="?attr/colorPrimary">
+
+            <ImageButton android:id="@+id/btnBack" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_back" android:contentDescription="Back" android:padding="8dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Invitations" android:textSize="20sp" android:textColor="@android:color/white" android:layout_marginStart="16dp" android:textStyle="bold" />
+        </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Fragment Container -->
+    <FrameLayout android:id="@+id/fragmentContainer" android:layout_width="match_parent" android:layout_height="match_parent" />
+
+</LinearLayout>
