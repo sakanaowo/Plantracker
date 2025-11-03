@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:background="@android:color/white"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -430,6 +431,154 @@
             android:padding="8dp"
             android:gravity="center"/>
 
+        <!-- Comments Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Comments"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"/>
+        </LinearLayout>
+
+        <!-- Comments Input -->
+        <LinearLayout
+            android:id="@+id/layoutCommentInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/etNewComment"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:hint="Write a comment..."
+                android:minLines="2"
+                android:maxLines="4"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+
+            <ImageButton
+                android:id="@+id/btnSendComment"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/add_ic"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Send comment"/>
+        </LinearLayout>
+
+        <!-- RecyclerView for Comments -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvComments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:nestedScrollingEnabled="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:maxHeight="400dp"/>
+
+        <TextView
+            android:id="@+id/tvNoComments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No comments yet"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"/>
+
+        <!-- Attachments Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Attachments"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"/>
+
+            <ImageView
+                android:id="@+id/ivAddAttachment"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/add_ic"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="fitCenter"
+                android:contentDescription="Add attachment"/>
+        </LinearLayout>
+
+        <!-- RecyclerView for Attachments -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAttachments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:nestedScrollingEnabled="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:maxHeight="400dp"/>
+
+        <TextView
+            android:id="@+id/tvNoAttachments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No attachments yet"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:padding="8dp"
+            android:gravity="center"/>
+
+        <!-- Test Functions (Temporary) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:id="@+id/llTestButtons">
+            
+            <Button
+                android:id="@+id/btnTestComment"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Test Comment"
+                android:layout_marginEnd="4dp"
+                android:textSize="12sp"/>
+                
+            <Button
+                android:id="@+id/btnTestAttachment"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Test Attachment"
+                android:layout_marginStart="4dp"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
         <!-- Confirm Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
@@ -444,4 +593,4 @@
             app:cornerRadius="8dp"
             app:backgroundTint="#4CAF50" />
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

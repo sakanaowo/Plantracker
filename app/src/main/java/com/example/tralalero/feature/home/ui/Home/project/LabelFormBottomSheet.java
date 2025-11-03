@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 
 public class LabelFormBottomSheet extends BottomSheetDialogFragment {
+    private static final String TAG = "LabelFormBottomSheet";
 
     private static final String ARG_LABEL = "label";
     private static final String ARG_PROJECT_ID = "project_id";
@@ -94,14 +96,23 @@ public class LabelFormBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void setupColorPicker() {
+        Log.d(TAG, "setupColorPicker: selectedColor=" + selectedColor);
+        
         colorPickerAdapter = new ColorPickerAdapter(color -> {
+            Log.d(TAG, "Color selected from adapter: " + color);
             selectedColor = color;
             updatePreview();
         });
 
-        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 5);
+        // Set default selected color
+        colorPickerAdapter.setSelectedColor(selectedColor);
+
+        // Use 6 columns for 18 colors (3 rows)
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 6);
         rvColorPicker.setLayoutManager(layoutManager);
         rvColorPicker.setAdapter(colorPickerAdapter);
+        
+        Log.d(TAG, "ColorPicker setup complete");
     }
 
     private void setupListeners() {

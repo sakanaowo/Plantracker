@@ -4,6 +4,8 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.data.repository.BoardRepositoryImpl;
@@ -106,7 +108,9 @@ public class ViewModelFactoryProvider {
     public static BoardViewModelFactory provideBoardViewModelFactory() {
         initApis();
         IBoardRepository boardRepository = new BoardRepositoryImpl(boardApi);
-        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi);
+        CommentApiService commentApi = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApi = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi, commentApi, attachmentApi);
 
         return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),

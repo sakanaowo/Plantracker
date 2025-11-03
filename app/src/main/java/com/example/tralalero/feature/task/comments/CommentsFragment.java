@@ -19,6 +19,9 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
+import com.example.tralalero.data.remote.api.UserApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.model.TaskComment;
 import com.example.tralalero.domain.repository.ITaskRepository;
@@ -50,6 +53,7 @@ public class CommentsFragment extends BottomSheetDialogFragment {
     private String taskId;
     private TaskViewModel taskViewModel;
     private CommentAdapter adapter;
+    private UserApiService userApiService;
 
     public static CommentsFragment newInstance(String taskId) {
         CommentsFragment f = new CommentsFragment();
@@ -80,24 +84,16 @@ public class CommentsFragment extends BottomSheetDialogFragment {
         RecyclerView rv = view.findViewById(R.id.rvCommentsFragment);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
-            @Override
-            public void onOptionsClick(TaskComment comment, int position) {
-                // For now show a tiny placeholder (edit/delete can be wired later)
-            }
-
-            @Override
-            public void onCommentClick(TaskComment comment) {
-                // no-op
-            }
-        });
-        rv.setAdapter(adapter);
+        // CommentAdapter will be initialized in setupViewModel() after userApiService is available
 
         EditText etComment = view.findViewById(R.id.etNewComment);
         Button btnAdd = view.findViewById(R.id.btnAddCommentFragment);
         TextView tvEmpty = view.findViewById(R.id.tvNoCommentsFragment);
 
         setupViewModel();
+        
+        // Setup adapter after ViewModel is ready
+        setupCommentAdapter(rv);
 
         // Observe
         taskViewModel.getComments().observe(getViewLifecycleOwner(), comments -> {
@@ -128,7 +124,11 @@ public class CommentsFragment extends BottomSheetDialogFragment {
 
     private void setupViewModel() {
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        UserApiService userApiService = ApiClient.get(App.authManager).create(UserApiService.class);
+        this.userApiService = userApiService; // Store reference for CommentAdapter
+        ITaskRepository repository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
 
         // Only create the use-cases we need for comments (others required by factory kept minimal)
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
@@ -146,6 +146,10 @@ public class CommentsFragment extends BottomSheetDialogFragment {
         com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase(repository);
         com.example.tralalero.domain.usecase.task.AddChecklistUseCase addChecklistUseCase = new com.example.tralalero.domain.usecase.task.AddChecklistUseCase(repository);
         com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase getTaskChecklistsUseCase = new com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase(repository);
+        com.example.tralalero.domain.usecase.task.UpdateCommentUseCase updateCommentUseCase = new com.example.tralalero.domain.usecase.task.UpdateCommentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.DeleteCommentUseCase deleteCommentUseCase = new com.example.tralalero.domain.usecase.task.DeleteCommentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase deleteAttachmentUseCase = new com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase(repository);
 
         TaskViewModelFactory factory = new TaskViewModelFactory(
                 getTaskByIdUseCase,
@@ -163,9 +167,29 @@ public class CommentsFragment extends BottomSheetDialogFragment {
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
                 getTaskChecklistsUseCase,
+                updateCommentUseCase,
+                deleteCommentUseCase,
+                deleteAttachmentUseCase,
+                getAttachmentViewUrlUseCase,
                 repository
         );
 
-        taskViewModel = new ViewModelProvider(requireActivity(), factory).get(TaskViewModel.class);
+        taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
+    }
+    
+    private void setupCommentAdapter(RecyclerView rv) {
+        adapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
+            @Override
+            public void onOptionsClick(TaskComment comment, int position) {
+                // For now show a tiny placeholder (edit/delete can be wired later)
+            }
+
+            @Override
+            public void onCommentClick(TaskComment comment) {
+                // no-op
+            }
+        }, userApiService);
+        rv.setAdapter(adapter);
     }
 }
+

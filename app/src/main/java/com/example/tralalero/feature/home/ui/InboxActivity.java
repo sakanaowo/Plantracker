@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.tralalero.R;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
 import com.example.tralalero.domain.model.Task;
@@ -96,7 +98,9 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         TaskRepositoryImplWithCache repositoryWithCache = 
             App.dependencyProvider.getTaskRepositoryWithCache();
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
 
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(apiRepository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(apiRepository);
@@ -113,6 +117,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(apiRepository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(apiRepository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(apiRepository);
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(apiRepository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(apiRepository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(apiRepository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(apiRepository);
 
         TaskViewModelFactory factory = new TaskViewModelFactory(
             getTaskByIdUseCase,
@@ -130,6 +138,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             getTaskAttachmentsUseCase,
             addChecklistUseCase,
             getTaskChecklistsUseCase,
+            updateCommentUseCase,
+            deleteCommentUseCase,
+            deleteAttachmentUseCase,
+            getAttachmentViewUrlUseCase,
             apiRepository
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
@@ -351,7 +363,9 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         Log.d(TAG, "Fetching quick tasks from API...");
         final long apiStartTime = System.currentTimeMillis();
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
 
         apiRepository.getQuickTasks(new RepositoryCallback<List<Task>>() {
             @Override
@@ -408,7 +422,9 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         private void createTask(String title) {
         Log.d(TAG, "Creating quick task: " + title);
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository taskRepository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
 
         taskRepository.createQuickTask(title, "", new ITaskRepository.RepositoryCallback<Task>() {
             @Override

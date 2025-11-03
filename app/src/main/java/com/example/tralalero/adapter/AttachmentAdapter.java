@@ -46,16 +46,23 @@ public class AttachmentAdapter extends RecyclerView.Adapter<AttachmentAdapter.Vi
     
     @Override
     public int getItemCount() {
+        android.util.Log.d("AttachmentAdapter", "getItemCount() returning: " + attachments.size());
         return attachments.size();
     }
     
     public void setAttachments(List<Attachment> attachments) {
         this.attachments = attachments != null ? attachments : new ArrayList<>();
+        android.util.Log.d("AttachmentAdapter", "setAttachments called with " + this.attachments.size() + " items");
         notifyDataSetChanged();
+    }
+    
+    public List<Attachment> getAttachments() {
+        return new ArrayList<>(attachments); // Return copy to prevent external modification
     }
     
     public void addAttachment(Attachment attachment) {
         attachments.add(0, attachment); // Add to top
+        android.util.Log.d("AttachmentAdapter", "addAttachment called, new size: " + attachments.size());
         notifyItemInserted(0);
     }
     
@@ -125,33 +132,14 @@ public class AttachmentAdapter extends RecyclerView.Adapter<AttachmentAdapter.Vi
             int iconResId;
             
             if (attachment.isImage()) {
-                iconResId = R.drawable.image_icon; // Create this icon or use default
+                iconResId = R.drawable.ic_image;
             } else if (attachment.isPdf()) {
-                iconResId = R.drawable.pdf_icon; // Create this icon
+                iconResId = R.drawable.ic_file;
             } else if (attachment.isDocument()) {
-                iconResId = R.drawable.document_icon; // Create this icon
+                iconResId = R.drawable.ic_file;
             } else {
-                String extension = attachment.getFileExtension();
-                switch (extension) {
-                    case "zip":
-                    case "rar":
-                    case "7z":
-                        iconResId = R.drawable.archive_icon;
-                        break;
-                    case "mp4":
-                    case "avi":
-                    case "mov":
-                        iconResId = R.drawable.video_icon;
-                        break;
-                    case "mp3":
-                    case "wav":
-                    case "flac":
-                        iconResId = R.drawable.audio_icon;
-                        break;
-                    default:
-                        iconResId = R.drawable.file_icon; // Generic file icon
-                        break;
-                }
+                // Use generic file icon for all other types
+                iconResId = R.drawable.ic_file;
             }
             
             ivFileIcon.setImageResource(iconResId);

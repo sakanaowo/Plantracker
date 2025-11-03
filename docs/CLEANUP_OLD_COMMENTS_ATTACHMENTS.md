@@ -5,6 +5,7 @@
 ### **Removed from CardDetailActivity.java**
 
 #### **1. Field Declarations (Lines ~80-91)**
+
 ```java
 // ❌ REMOVED - Old inline RecyclerViews
 private RecyclerView rvAttachments;
@@ -20,6 +21,7 @@ private CommentAdapter commentAdapter;
 ---
 
 #### **2. findViewById Bindings (Lines ~151-157)**
+
 ```java
 // ❌ REMOVED
 rvAttachments = findViewById(R.id.rvAttachments);
@@ -33,6 +35,7 @@ tvNoComments = findViewById(R.id.tvNoComments);
 ---
 
 #### **3. RecyclerView Setup Code (Lines ~169-205)**
+
 ```java
 // ❌ REMOVED - Old attachment RecyclerView setup
 rvAttachments.setLayoutManager(new LinearLayoutManager(this));
@@ -46,7 +49,7 @@ attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClic
 });
 rvAttachments.setAdapter(attachmentAdapter);
 
-// ❌ REMOVED - Old comment RecyclerView setup  
+// ❌ REMOVED - Old comment RecyclerView setup
 rvComments.setLayoutManager(new LinearLayoutManager(this));
 commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
     @Override
@@ -62,6 +65,7 @@ rvComments.setAdapter(commentAdapter);
 ---
 
 #### **4. Initial Visibility Setup (Lines ~235-237)**
+
 ```java
 // ❌ REMOVED
 rvAttachments.setVisibility(View.GONE);
@@ -75,6 +79,7 @@ tvNoComments.setVisibility(View.VISIBLE);
 ---
 
 #### **5. ViewModel Observers (Lines ~349-372)**
+
 ```java
 // ❌ REMOVED - Old comments observer
 taskViewModel.getComments().observe(this, comments -> {
@@ -110,6 +115,7 @@ taskViewModel.getAttachments().observe(this, attachments -> {
 #### **6. Old Dialog Methods (Lines ~679-787)**
 
 **Removed `showAddAttachmentDialog()`**:
+
 ```java
 // ❌ REMOVED - Old attachment URL input dialog
 private void showAddAttachmentDialog() {
@@ -122,13 +128,15 @@ private void showAddAttachmentDialog() {
 ```
 
 **Removed helper methods**:
+
 ```java
 // ❌ REMOVED
 private String extractFileNameFromUrl(String url) { ... }
 private String getMimeTypeFromUrl(String url) { ... }
 ```
 
-**Why**: 
+**Why**:
+
 - Old method used URL input (not file upload)
 - New method uses **AttachmentsFragment** with file picker + 2-step signed upload
 - More secure and proper file handling
@@ -136,6 +144,7 @@ private String getMimeTypeFromUrl(String url) { ... }
 ---
 
 **Removed `showAddCommentDialog()`**:
+
 ```java
 // ❌ REMOVED - Old comment input dialog
 private void showAddCommentDialog() {
@@ -152,6 +161,7 @@ private void showAddCommentDialog() {
 ---
 
 #### **7. Unused Imports**
+
 ```java
 // ❌ REMOVED
 import com.example.tralalero.adapter.AttachmentAdapter;
@@ -165,6 +175,7 @@ import com.example.tralalero.adapter.CommentAdapter;
 ## ✅ What Remains (Still Used)
 
 ### **Button Click Listeners** (Now open BottomSheets):
+
 ```java
 // ✅ KEPT - Modified to open BottomSheets
 btnAddComment.setOnClickListener(v -> openCommentsBottomSheet());
@@ -172,6 +183,7 @@ btnAddAttachment.setOnClickListener(v -> openAttachmentsBottomSheet());
 ```
 
 ### **New BottomSheet Methods**:
+
 ```java
 // ✅ NEW - Replace old dialogs
 private void openCommentsBottomSheet() {
@@ -198,6 +210,7 @@ private void openAttachmentsBottomSheet() {
 ## 📊 Before vs After Comparison
 
 ### **Before (Old Approach)**:
+
 ```
 CardDetailActivity
 │
@@ -215,6 +228,7 @@ CardDetailActivity
 ```
 
 **Problems**:
+
 - ❌ No file upload (only URL input)
 - ❌ Simple AlertDialog UI
 - ❌ No edit/delete for comments
@@ -225,6 +239,7 @@ CardDetailActivity
 ---
 
 ### **After (New Approach - BottomSheet)**:
+
 ```
 CardDetailActivity
 │
@@ -237,7 +252,7 @@ CardDetailActivity
 │           ├── @mentions detection
 │           └── Shared TaskViewModel
 │
-└── Button "Add Attachment"  
+└── Button "Add Attachment"
     └── OnClick → openAttachmentsBottomSheet()
         └── AttachmentsFragment (BottomSheetDialogFragment)
             ├── RecyclerView (all files)
@@ -249,6 +264,7 @@ CardDetailActivity
 ```
 
 **Benefits**:
+
 - ✅ Real file upload with file picker
 - ✅ 2-step signed upload (backend → Firebase Storage)
 - ✅ Full-featured UI with Material Design
@@ -264,6 +280,7 @@ CardDetailActivity
 ## 🎯 Code Statistics
 
 ### **Lines Removed**:
+
 - Field declarations: ~12 lines
 - findViewById bindings: ~5 lines
 - RecyclerView setup: ~45 lines
@@ -276,6 +293,7 @@ CardDetailActivity
 **Total: ~238 lines removed** ✂️
 
 ### **Lines Added** (in previous commits):
+
 - CommentsFragment.java: ~202 lines
 - AttachmentsFragment.java: ~202 lines
 - fragment_comments.xml: ~100 lines
@@ -291,6 +309,7 @@ CardDetailActivity
 ## 📁 Files Modified
 
 ### **1. CardDetailActivity.java**
+
 - ✂️ Removed inline RecyclerViews for comments/attachments
 - ✂️ Removed old dialog methods
 - ✂️ Removed helper methods (extractFileNameFromUrl, getMimeTypeFromUrl)
@@ -304,16 +323,19 @@ CardDetailActivity
 ## ✅ Benefits of Cleanup
 
 ### **1. Cleaner Code**:
+
 - 238 lines removed from CardDetailActivity
 - Single Responsibility Principle - Activity focuses on task editing
 - Fragments handle comments/attachments independently
 
 ### **2. Better Architecture**:
+
 - Separation of concerns
 - Reusable fragments
 - Easier to maintain
 
 ### **3. Improved UX**:
+
 - BottomSheet vs AlertDialog (better UI)
 - File upload vs URL input (more secure)
 - Edit/Delete functionality
@@ -321,10 +343,12 @@ CardDetailActivity
 - Progress tracking
 
 ### **4. Security**:
+
 - Old: Direct URL input (no validation)
 - New: 2-step signed upload (secure)
 
 ### **5. Maintainability**:
+
 - Comments logic in CommentsFragment
 - Attachments logic in AttachmentsFragment
 - Easy to add features independently
@@ -334,6 +358,7 @@ CardDetailActivity
 ## 🚀 What's Next
 
 ### **Optional Enhancements**:
+
 1. Remove old RecyclerView elements from `card_detail.xml` layout
 2. Add progress indicators to BottomSheets
 3. Add retry logic for failed uploads
@@ -341,6 +366,7 @@ CardDetailActivity
 5. Add image preview for attachments
 
 ### **Testing**:
+
 1. Test "Add Comment" button → BottomSheet opens
 2. Test "Add Attachment" button → BottomSheet opens
 3. Verify old inline RecyclerViews are gone

@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
+import com.example.tralalero.adapter.AttachmentAdapter;
+import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.domain.model.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
@@ -46,6 +48,14 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private MaterialButton btnDeleteTask;
     private MaterialButton btnConfirm;
     private boolean isEditMode = false;
+    
+    // Comments and Attachments (inline)
+    private RecyclerView rvComments;
+    private RecyclerView rvAttachments;
+    private TextView tvNoComments;
+    private TextView tvNoAttachments;
+    private CommentAdapter commentAdapter;
+    private AttachmentAdapter attachmentAdapter;
     
     private Date selectedStartDate;
     private Date selectedDueDate;
@@ -228,12 +238,14 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         }
         if (btnAddAttachment != null) {
             btnAddAttachment.setOnClickListener(v -> {
-                openAttachmentsBottomSheet();
+                // Direct file picker action
+                Toast.makeText(requireContext(), "File picker would open here", Toast.LENGTH_SHORT).show();
             });
         }
         if (btnAddComment != null) {
             btnAddComment.setOnClickListener(v -> {
-                openCommentsBottomSheet();
+                // Focus on comment input
+                Toast.makeText(requireContext(), "Focus on comment input", Toast.LENGTH_SHORT).show();
             });
         }
         if (btnDeleteTask != null) {
@@ -316,35 +328,5 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePickerDialog.show();
-    }
-    
-    /**
-     * Open Comments BottomSheet to view and add comments
-     */
-    private void openCommentsBottomSheet() {
-        if (!isEditMode || task == null || task.getId() == null || task.getId().isEmpty()) {
-            Toast.makeText(requireContext(), "Please save the task first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        com.example.tralalero.feature.task.comments.CommentsFragment commentsFragment = 
-            com.example.tralalero.feature.task.comments.CommentsFragment.newInstance(task.getId());
-        
-        commentsFragment.show(getParentFragmentManager(), "CommentsBottomSheet");
-    }
-
-    /**
-     * Open Attachments BottomSheet to view and upload files
-     */
-    private void openAttachmentsBottomSheet() {
-        if (!isEditMode || task == null || task.getId() == null || task.getId().isEmpty()) {
-            Toast.makeText(requireContext(), "Please save the task first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        com.example.tralalero.feature.task.attachments.AttachmentsFragment attachmentsFragment = 
-            com.example.tralalero.feature.task.attachments.AttachmentsFragment.newInstance(task.getId());
-        
-        attachmentsFragment.show(getParentFragmentManager(), "AttachmentsBottomSheet");
     }
 }

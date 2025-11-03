@@ -53,6 +53,8 @@ public interface ITaskRepository {
 
     void deleteAttachment(String attachmentId, RepositoryCallback<Void> callback);
 
+    void getAttachmentViewUrl(String attachmentId, RepositoryCallback<String> callback);
+
     void getComments(String taskId, RepositoryCallback<List<TaskComment>> callback);
 
     void addComment(String taskId, TaskComment comment, RepositoryCallback<TaskComment> callback);

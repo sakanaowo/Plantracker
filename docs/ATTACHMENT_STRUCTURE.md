@@ -1,7 +1,9 @@
 # 📎 Attachment Data Structure Documentation
 
 ## 🎯 Overview
+
 Attachment trong ứng dụng có **3 layers**:
+
 1. **Backend (PostgreSQL + Prisma)** - Database schema
 2. **Backend API Response** - JSON response từ NestJS
 3. **Android (DTO + Domain)** - Client-side models
@@ -29,17 +31,18 @@ model attachments {
 
 ### **Field Details**:
 
-| Field         | Type       | Nullable | Description                                    |
-|---------------|------------|----------|------------------------------------------------|
-| `id`          | UUID       | ❌ No    | Primary key, auto-generated                    |
-| `task_id`     | UUID       | ❌ No    | Foreign key to tasks table                     |
-| `url`         | String     | ❌ No    | Firebase Storage URL (full path)               |
-| `mime_type`   | String     | ✅ Yes   | File MIME type (e.g., "image/png")             |
-| `size`        | Int        | ✅ Yes   | File size in bytes                             |
-| `uploaded_by` | UUID       | ✅ Yes   | User ID who uploaded (foreign key to users)    |
-| `created_at`  | Timestamp  | ❌ No    | Upload timestamp (auto-generated)              |
+| Field         | Type      | Nullable | Description                                 |
+| ------------- | --------- | -------- | ------------------------------------------- |
+| `id`          | UUID      | ❌ No    | Primary key, auto-generated                 |
+| `task_id`     | UUID      | ❌ No    | Foreign key to tasks table                  |
+| `url`         | String    | ❌ No    | Firebase Storage URL (full path)            |
+| `mime_type`   | String    | ✅ Yes   | File MIME type (e.g., "image/png")          |
+| `size`        | Int       | ✅ Yes   | File size in bytes                          |
+| `uploaded_by` | UUID      | ✅ Yes   | User ID who uploaded (foreign key to users) |
+| `created_at`  | Timestamp | ❌ No    | Upload timestamp (auto-generated)           |
 
 ### **Important Notes**:
+
 - ⚠️ **`fileName` NOT stored in database** - Extracted from `url` field
 - 🔗 Cascade delete: Khi task bị xóa → tất cả attachments bị xóa
 - 📊 Index: `task_id + created_at` để query nhanh
@@ -54,14 +57,14 @@ model attachments {
 
 ```typescript
 {
-  id: string;           // UUID
-  taskId: string;       // UUID (camelCase)
-  url: string;          // Firebase Storage URL
-  fileName: string;     // ⚠️ EXTRACTED from URL, not in DB
-  mimeType: string;     // nullable
-  size: number;         // nullable (bytes)
-  uploadedBy: string;   // UUID, nullable
-  createdAt: Date;      // ISO 8601 timestamp
+  id: string; // UUID
+  taskId: string; // UUID (camelCase)
+  url: string; // Firebase Storage URL
+  fileName: string; // ⚠️ EXTRACTED from URL, not in DB
+  mimeType: string; // nullable
+  size: number; // nullable (bytes)
+  uploadedBy: string; // UUID, nullable
+  createdAt: Date; // ISO 8601 timestamp
 }
 ```
 
@@ -86,7 +89,7 @@ model attachments {
 private extractFileName(url: string): string {
   const parts = url.split('/');
   const fileNameWithTimestamp = parts[parts.length - 1];
-  
+
   // Remove timestamp prefix (e.g., "1698765432-document.pdf" → "document.pdf")
   const match = fileNameWithTimestamp.match(/^\d+-(.+)$/);
   return match ? match[1] : fileNameWithTimestamp;
@@ -108,28 +111,29 @@ private extractFileName(url: string): string {
 public class AttachmentDTO {
     public String id;
     public String taskId;
-    
+
     @SerializedName("url")
     public String url;
-    
+
     @SerializedName("file_name")  // ⚠️ Backend sends "fileName" (camelCase)
     public String fileName;
-    
+
     @SerializedName("mime_type")
     public String mimeType;
-    
+
     @SerializedName("size")
     public Integer size;
-    
+
     @SerializedName("uploaded_by")
     public String uploadedBy;
-    
+
     @SerializedName("created_at")
     public String createdAt;  // ISO 8601 String
 }
 ```
 
 **Purpose**:
+
 - ✅ Receives JSON from backend API
 - ✅ Uses `@SerializedName` for snake_case ↔ camelCase mapping
 - ✅ **Public fields** (no setters/getters) - used by Gson
@@ -190,7 +194,7 @@ public class Attachment {
                 mimeType.contains("excel") ||
                 mimeType.contains("powerpoint");
     }
-    
+
     public String getFormattedSize() {
         if (size == null) return "Unknown size";
         if (size < 1024) return size + " B";
@@ -201,6 +205,7 @@ public class Attachment {
 ```
 
 **Purpose**:
+
 - ✅ Immutable domain model (private final fields)
 - ✅ Business logic methods (isImage, isPdf, getFormattedSize)
 - ✅ Type-safe (Date instead of String)
@@ -216,13 +221,13 @@ public class Attachment {
 
 ```java
 public class AttachmentMapper {
-    
+
     /**
      * Convert DTO → Domain Model
      */
     public static Attachment toDomain(AttachmentDTO dto) {
         if (dto == null) return null;
-        
+
         Date createdAt = null;
         if (dto.createdAt != null) {
             try {
@@ -235,7 +240,7 @@ public class AttachmentMapper {
                 e.printStackTrace();
             }
         }
-        
+
         return new Attachment(
             dto.id,
             dto.taskId,
@@ -247,13 +252,13 @@ public class AttachmentMapper {
             createdAt
         );
     }
-    
+
     /**
      * Convert Domain Model → DTO
      */
     public static AttachmentDTO toDto(Attachment attachment) {
         if (attachment == null) return null;
-        
+
         AttachmentDTO dto = new AttachmentDTO();
         dto.id = attachment.getId();
         dto.taskId = attachment.getTaskId();
@@ -262,7 +267,7 @@ public class AttachmentMapper {
         dto.mimeType = attachment.getMimeType();
         dto.size = attachment.getSize();
         dto.uploadedBy = attachment.getUploadedBy();
-        
+
         if (attachment.getCreatedAt() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat(
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US
@@ -270,16 +275,16 @@ public class AttachmentMapper {
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             dto.createdAt = sdf.format(attachment.getCreatedAt());
         }
-        
+
         return dto;
     }
-    
+
     /**
      * Convert List<DTO> → List<Domain>
      */
     public static List<Attachment> toDomainList(List<AttachmentDTO> dtoList) {
         if (dtoList == null) return new ArrayList<>();
-        
+
         List<Attachment> attachments = new ArrayList<>();
         for (AttachmentDTO dto : dtoList) {
             attachments.add(toDomain(dto));
@@ -355,16 +360,16 @@ public class AttachmentMapper {
 
 ## 🔑 Key Differences: DTO vs Domain Model
 
-| Aspect               | AttachmentDTO                  | Attachment (Domain)           |
-|----------------------|--------------------------------|-------------------------------|
-| **Package**          | `data.remote.dto`              | `domain.model`                |
-| **Fields**           | Public                         | Private final (immutable)     |
-| **Access**           | Direct field access            | Getter methods only           |
-| **createdAt Type**   | `String` (ISO 8601)            | `Date` object                 |
-| **Gson Annotations** | ✅ Yes (`@SerializedName`)     | ❌ No                          |
-| **Business Logic**   | ❌ No                           | ✅ Yes (isImage, isPdf, etc.) |
-| **Purpose**          | Network layer (JSON mapping)  | Business logic & UI           |
-| **Mutable**          | ✅ Yes (can assign fields)     | ❌ No (immutable)             |
+| Aspect               | AttachmentDTO                | Attachment (Domain)           |
+| -------------------- | ---------------------------- | ----------------------------- |
+| **Package**          | `data.remote.dto`            | `domain.model`                |
+| **Fields**           | Public                       | Private final (immutable)     |
+| **Access**           | Direct field access          | Getter methods only           |
+| **createdAt Type**   | `String` (ISO 8601)          | `Date` object                 |
+| **Gson Annotations** | ✅ Yes (`@SerializedName`)   | ❌ No                         |
+| **Business Logic**   | ❌ No                        | ✅ Yes (isImage, isPdf, etc.) |
+| **Purpose**          | Network layer (JSON mapping) | Business logic & UI           |
+| **Mutable**          | ✅ Yes (can assign fields)   | ❌ No (immutable)             |
 
 ---
 
@@ -378,6 +383,7 @@ Call<List<AttachmentDTO>> listAttachments(@Path("taskId") String taskId);
 ```
 
 **Response**:
+
 ```json
 [
   {
@@ -402,7 +408,7 @@ Call<List<AttachmentDTO>> listAttachments(@Path("taskId") String taskId);
 public void getTaskAttachments(String taskId, TaskCallback<List<Attachment>> callback) {
     apiService.getTaskAttachments(taskId).enqueue(new Callback<List<AttachmentDTO>>() {
         @Override
-        public void onResponse(Call<List<AttachmentDTO>> call, 
+        public void onResponse(Call<List<AttachmentDTO>> call,
                                Response<List<AttachmentDTO>> response) {
             if (response.isSuccessful() && response.body() != null) {
                 // Convert DTO → Domain
@@ -430,10 +436,10 @@ public void getTaskAttachments(String taskId, TaskCallback<List<Attachment>> cal
 @Override
 public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
     Attachment attachment = attachments.get(position);
-    
+
     holder.tvFileName.setText(attachment.getFileName());
     holder.tvFileSize.setText(attachment.getFormattedSize()); // "1.2 MB"
-    
+
     // Set icon based on file type
     if (attachment.isImage()) {
         holder.ivFileIcon.setImageResource(R.drawable.ic_image);
@@ -448,7 +454,7 @@ public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
     } else {
         holder.ivFileIcon.setImageResource(R.drawable.ic_file);
     }
-    
+
     // Format timestamp
     if (attachment.getCreatedAt() != null) {
         String timeAgo = DateUtils.getRelativeTimeSpanString(
@@ -466,18 +472,21 @@ public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 ## ⚠️ Important Notes & Gotchas
 
 ### **1. fileName Field**:
+
 - ❌ **NOT stored in database**
 - ✅ **Extracted from `url` field** by backend
 - 🔧 Backend logic: `extractFileName(url)` removes timestamp prefix
 - 📝 Example: `1698765432-report.pdf` → `report.pdf`
 
 ### **2. Date Handling**:
+
 - Backend sends: `"2025-10-29T10:30:45.123Z"` (ISO 8601 string)
 - AttachmentDTO: Stores as `String`
 - Domain Model: Converts to `Date` object via `SimpleDateFormat`
 - UI: Use `DateUtils.getRelativeTimeSpanString()` for "2h ago"
 
 ### **3. Nullable Fields**:
+
 - `mimeType`, `size`, `uploadedBy` can be **null**
 - Always check before using:
   ```java
@@ -487,17 +496,20 @@ public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
   ```
 
 ### **4. DTO Field Access**:
+
 - AttachmentDTO uses **public fields**, NOT setters:
+
   ```java
   // ✅ CORRECT
   dto.id = "123";
   dto.fileName = "doc.pdf";
-  
+
   // ❌ WRONG (no setter methods)
   dto.setId("123");  // Compile error!
   ```
 
 ### **5. Immutability**:
+
 - Domain model is **immutable** (final fields)
 - Cannot change after creation:
   ```java
@@ -511,15 +523,15 @@ public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
 ### **MIME Type Examples**:
 
-| File Type    | MIME Type                                                  | Detection Method       |
-|--------------|------------------------------------------------------------|------------------------|
-| **Images**   | `image/png`, `image/jpeg`, `image/gif`                     | `mimeType.startsWith("image/")` |
-| **PDF**      | `application/pdf`                                          | `equals("application/pdf")` |
-| **Word**     | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `contains("word")` |
-| **Excel**    | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` | `contains("excel")` |
-| **PowerPoint** | `application/vnd.openxmlformats-officedocument.presentationml.presentation` | `contains("powerpoint")` |
-| **Text**     | `text/plain`                                               | `startsWith("text/")` |
-| **Video**    | `video/mp4`, `video/quicktime`                             | `startsWith("video/")` |
+| File Type      | MIME Type                                                                   | Detection Method                |
+| -------------- | --------------------------------------------------------------------------- | ------------------------------- |
+| **Images**     | `image/png`, `image/jpeg`, `image/gif`                                      | `mimeType.startsWith("image/")` |
+| **PDF**        | `application/pdf`                                                           | `equals("application/pdf")`     |
+| **Word**       | `application/vnd.openxmlformats-officedocument.wordprocessingml.document`   | `contains("word")`              |
+| **Excel**      | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`         | `contains("excel")`             |
+| **PowerPoint** | `application/vnd.openxmlformats-officedocument.presentationml.presentation` | `contains("powerpoint")`        |
+| **Text**       | `text/plain`                                                                | `startsWith("text/")`           |
+| **Video**      | `video/mp4`, `video/quicktime`                                              | `startsWith("video/")`          |
 
 ---
 
@@ -528,6 +540,7 @@ public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 ### **Step 1: Request Upload URL**
 
 **Request**:
+
 ```java
 RequestAttachmentUploadDto dto = new RequestAttachmentUploadDto();
 dto.fileName = "report.pdf";
@@ -538,6 +551,7 @@ attachmentApiService.requestUploadUrl(taskId, dto);
 ```
 
 **Response**:
+
 ```json
 {
   "attachmentId": "550e8400-...",
@@ -553,7 +567,7 @@ attachmentApiService.requestUploadUrl(taskId, dto);
 // Read file bytes
 byte[] fileBytes = readFileBytes(fileUri);
 RequestBody body = RequestBody.create(
-    MediaType.parse(mimeType), 
+    MediaType.parse(mimeType),
     fileBytes
 );
 
@@ -568,6 +582,7 @@ attachmentApiService.uploadToSignedUrl(uploadUrl, body);
 ## 🎯 Summary
 
 ### **Architecture Overview**:
+
 ```
 Database (PostgreSQL)
     ↓ Prisma ORM
@@ -581,6 +596,7 @@ UI (Fragments, Adapters)
 ```
 
 ### **Key Points**:
+
 - ✅ 3-layer separation (Database → DTO → Domain)
 - ✅ fileName extracted from URL (not in DB)
 - ✅ DTO uses public fields (Gson mapping)
@@ -593,4 +609,4 @@ UI (Fragments, Adapters)
 
 **Document Version**: 1.0  
 **Last Updated**: October 29, 2025  
-**Author**: Dev Team  
+**Author**: Dev Team

@@ -65,6 +65,7 @@
 ```
 
 **Features**:
+
 - ✅ Scrollable list of comments
 - ✅ Real-time timestamps ("2h ago")
 - ✅ @mentions highlighted in blue
@@ -107,6 +108,7 @@
 ```
 
 **Features**:
+
 - ✅ File type icons (PDF, Image, Excel, etc.)
 - ✅ File size and uploader name
 - ✅ Download button (⬇)
@@ -174,15 +176,15 @@ User Action          →  App Response
 
 5. User selects file    → onActivityResult receives Uri
                         → AttachmentUploader.uploadFile(...)
-                        
+
 6. Upload process       → Step 1: Request upload URL
                         → Backend creates record
                         → Returns signed URL
-                        
+
                         → Step 2: Upload to Firebase
                         → PUT file bytes to signed URL
                         → Progress updates (10%, 30%, 50%, 100%)
-                        
+
                         → Step 3: Register in UI
                         → TaskViewModel.addAttachment(...)
                         → Reload list
@@ -347,19 +349,20 @@ private void openCommentsBottomSheet() {
         Toast.makeText(this, "Please save the task first", ...).show();
         return; // ❌ BLOCKED
     }
-    
+
     // ⚠️ VALIDATION 2: Check taskId exists
     if (taskId == null || taskId.isEmpty()) {
         Toast.makeText(this, "Please save the task first", ...).show();
         return; // ❌ BLOCKED
     }
-    
+
     // ✅ PASSED - Open BottomSheet
     CommentsFragment.newInstance(taskId).show(...);
 }
 ```
 
 **Why this validation?**
+
 - Prevents orphaned comments/attachments
 - Ensures task exists in backend before adding related data
 - User must save task first → gets taskId from backend → then can add comments/files
@@ -369,24 +372,28 @@ private void openCommentsBottomSheet() {
 ## 💡 Best Practices Implemented
 
 ### **1. BottomSheet UX**:
+
 - ✅ Swipe to dismiss
 - ✅ Tap outside to close
 - ✅ Smooth slide-up animation
 - ✅ Backdrop dimming for focus
 
 ### **2. Data Management**:
+
 - ✅ Shared ViewModel across fragments
 - ✅ LiveData Observer pattern
 - ✅ Automatic UI updates on data changes
 - ✅ No manual refresh needed
 
 ### **3. Error Handling**:
+
 - ✅ Validation before opening fragments
 - ✅ Toast messages for user feedback
 - ✅ Network error callbacks
 - ✅ Upload failure handling
 
 ### **4. Performance**:
+
 - ✅ Lazy loading (fragments created only when opened)
 - ✅ RecyclerView for efficient list rendering
 - ✅ Image loading with Glide (cached)
@@ -421,6 +428,7 @@ fragment.show(getSupportFragmentManager(), "AttachmentsBottomSheet");
 ## 📱 Screenshots Mock
 
 ### Before (Old UI):
+
 ```
 ┌────────────────────┐
 │ Add Comment        │  ← Single dialog, basic input
@@ -428,6 +436,7 @@ fragment.show(getSupportFragmentManager(), "AttachmentsBottomSheet");
 ```
 
 ### After (New UI):
+
 ```
 ┌────────────────────────────────┐
 │ Comments              ╳        │  ← Full-featured BottomSheet

@@ -20,6 +20,7 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.model.Attachment;
@@ -174,7 +175,8 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
     private void setupViewModelAndUploader() {
         TaskApiService taskApi = ApiClient.get(App.authManager).create(TaskApiService.class);
         AttachmentApiService attachmentApi = ApiClient.get(App.authManager).create(AttachmentApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(taskApi);
+        CommentApiService commentApi = ApiClient.get(App.authManager).create(CommentApiService.class);
+        ITaskRepository repository = new TaskRepositoryImpl(taskApi, commentApi, attachmentApi);
 
         // Build minimal factory like CardDetailActivity
         com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase getTaskByIdUseCase = new com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase(repository);
@@ -192,6 +194,10 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         com.example.tralalero.domain.usecase.task.AddChecklistUseCase addChecklistUseCase = new com.example.tralalero.domain.usecase.task.AddChecklistUseCase(repository);
         com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase getTaskChecklistsUseCase = new com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase(repository);
+        com.example.tralalero.domain.usecase.task.UpdateCommentUseCase updateCommentUseCase = new com.example.tralalero.domain.usecase.task.UpdateCommentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.DeleteCommentUseCase deleteCommentUseCase = new com.example.tralalero.domain.usecase.task.DeleteCommentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase deleteAttachmentUseCase = new com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase(repository);
+        com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase(repository);
 
         TaskViewModelFactory factory = new TaskViewModelFactory(
                 getTaskByIdUseCase,
@@ -209,6 +215,10 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
                 getTaskChecklistsUseCase,
+                updateCommentUseCase,
+                deleteCommentUseCase,
+                deleteAttachmentUseCase,
+                getAttachmentViewUrlUseCase,
                 repository
         );
 
