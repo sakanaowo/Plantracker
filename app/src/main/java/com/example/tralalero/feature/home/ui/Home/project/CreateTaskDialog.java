@@ -2,6 +2,8 @@ package com.example.tralalero.feature.home.ui.Home.project;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Window;
 import android.widget.EditText;
@@ -36,6 +38,11 @@ public class CreateTaskDialog extends Dialog {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.dialog_create_task);
+
+        // Set transparent background for rounded corners
+        if (getWindow() != null) {
+            getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
 
         // Initialize views
         etTaskTitle = findViewById(R.id.etTaskTitle);
