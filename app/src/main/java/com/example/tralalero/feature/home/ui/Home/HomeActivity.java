@@ -1,6 +1,9 @@
 package com.example.tralalero.feature.home.ui.Home;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +15,9 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -28,7 +34,9 @@ import com.example.tralalero.domain.model.Workspace;
 import com.example.tralalero.domain.repository.IWorkspaceRepository;
 import com.example.tralalero.feature.home.ui.BaseActivity;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
+import com.example.tralalero.service.MyFirebaseMessagingService;
 import com.example.tralalero.test.RepositoryTestActivity;
+import com.example.tralalero.util.FCMHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
@@ -42,6 +50,19 @@ public class HomeActivity extends BaseActivity {
     private static final String TAG = "HomeActivity";
     private WorkspaceViewModel workspaceViewModel;
     private AuthViewModel authViewModel;
+
+    // FCM Permission Launcher (Android 13+)
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    Log.d(TAG, "Notification permission granted");
+                    // Trigger FCM token registration
+                    getFCMTokenAndRegister();
+                } else {
+                    Log.w(TAG, "Notification permission denied");
+                    Toast.makeText(this, "Thông báo đẩy đã bị tắt", Toast.LENGTH_SHORT).show();
+                }
+            });
     private void setupViewModels() {
         workspaceViewModel = new ViewModelProvider(
                 this,
@@ -192,6 +213,8 @@ public class HomeActivity extends BaseActivity {
         loadWorkspacesWithCache();  // Person 1: Cache-first approach
 
         setupTestRepositoryButton();
+        setupNotificationPermission(); // Request notification permission
+
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
         cardNew.setOnClickListener(v -> inboxForm.setVisibility(View.VISIBLE));
@@ -237,5 +260,52 @@ public class HomeActivity extends BaseActivity {
 
             fabTest.setVisibility(View.GONE);
         }
+    }
+
+    /**
+     * Request notification permission for Android 13+ (API 33+)
+     * For Android 12 and below, permission is granted by default
+     */
+    private void setupNotificationPermission() {
+        // Android 13+ requires runtime permission for notifications
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Notification permission already granted");
+                // Already granted, trigger FCM token registration
+                getFCMTokenAndRegister();
+            } else {
+                // Request permission
+                Log.d(TAG, "Requesting notification permission");
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        } else {
+            // Android 12 and below - no runtime permission needed
+            Log.d(TAG, "Android < 13, notification permission not required");
+            getFCMTokenAndRegister();
+        }
+    }
+
+    /**
+     * Get FCM token and register with backend server
+     */
+    private void getFCMTokenAndRegister() {
+        Log.d(TAG, "getFCMTokenAndRegister called");
+        FCMHelper.getFCMToken(this, new FCMHelper.FCMTokenCallback() {
+            @Override
+            public void onSuccess(String token) {
+                Log.d(TAG, "FCM Token received: " + token);
+                Toast.makeText(HomeActivity.this, "Đã kích hoạt thông báo đẩy", Toast.LENGTH_SHORT).show();
+                
+                // Send token to backend server
+                MyFirebaseMessagingService.registerTokenWithBackend(HomeActivity.this, token);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e(TAG, "Failed to get FCM token", e);
+                Toast.makeText(HomeActivity.this, "Không thể lấy FCM token", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

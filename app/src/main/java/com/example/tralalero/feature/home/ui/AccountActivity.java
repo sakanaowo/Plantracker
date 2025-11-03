@@ -448,6 +448,12 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         tvAvatarLetter.setVisibility(View.VISIBLE);
         imgAvatar.setVisibility(View.GONE);
 
+        // ✅ Fix: Check if Activity is still alive before loading with Glide
+        if (isFinishing() || isDestroyed()) {
+            Log.w(TAG, "Activity destroyed, skipping Glide load");
+            return;
+        }
+
         Glide.with(this)
             .load(avatarUrl)
             .diskCacheStrategy(DiskCacheStrategy.ALL)

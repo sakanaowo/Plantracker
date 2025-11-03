@@ -49,13 +49,13 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private MaterialButton btnConfirm;
     private boolean isEditMode = false;
     
-    // RecyclerViews and Adapters
-    private RecyclerView rvAttachments;
+    // Comments and Attachments (inline)
     private RecyclerView rvComments;
-    private TextView tvNoAttachments;
+    private RecyclerView rvAttachments;
     private TextView tvNoComments;
-    private AttachmentAdapter attachmentAdapter;
+    private TextView tvNoAttachments;
     private CommentAdapter commentAdapter;
+    private AttachmentAdapter attachmentAdapter;
     
     private Date selectedStartDate;
     private Date selectedDueDate;
@@ -120,16 +120,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         btnDeleteTask = view.findViewById(R.id.btnDeleteTask);
         btnConfirm = view.findViewById(R.id.btnConfirm);
         
-        // RecyclerViews
-        rvAttachments = view.findViewById(R.id.rvAttachments);
-        rvComments = view.findViewById(R.id.rvComments);
-        tvNoAttachments = view.findViewById(R.id.tvNoAttachments);
-        tvNoComments = view.findViewById(R.id.tvNoComments);
-        
         etDescription.setEnabled(false);
-        
-        // Setup RecyclerViews
-        setupRecyclerViews();
         
         // Enable date fields for editing
         etDateStart.setEnabled(true);
@@ -139,55 +130,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         etDueDate.setEnabled(true);
         etDueDate.setFocusable(false);
         etDueDate.setClickable(true);
-    }
-    
-    private void setupRecyclerViews() {
-        if (getContext() == null) return;
-        
-        // Setup Attachments RecyclerView
-        rvAttachments.setLayoutManager(new LinearLayoutManager(getContext()));
-        attachmentAdapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
-            @Override
-            public void onDownloadClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement download functionality
-                Toast.makeText(getContext(), "Download: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onDeleteClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Implement delete attachment
-                Toast.makeText(getContext(), "Delete attachment", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onAttachmentClick(com.example.tralalero.domain.model.Attachment attachment) {
-                // TODO: Open/View attachment
-                Toast.makeText(getContext(), "View: " + attachment.getFileName(), Toast.LENGTH_SHORT).show();
-            }
-        });
-        rvAttachments.setAdapter(attachmentAdapter);
-        
-        // Setup Comments RecyclerView
-        rvComments.setLayoutManager(new LinearLayoutManager(getContext()));
-        commentAdapter = new CommentAdapter(new CommentAdapter.OnCommentClickListener() {
-            @Override
-            public void onOptionsClick(com.example.tralalero.domain.model.TaskComment comment, int position) {
-                // TODO: Show edit/delete options
-                Toast.makeText(getContext(), "Comment options", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onCommentClick(com.example.tralalero.domain.model.TaskComment comment) {
-                // Optional: Handle comment click
-            }
-        });
-        rvComments.setAdapter(commentAdapter);
-        
-        // Initially hide RecyclerViews and show placeholders
-        rvAttachments.setVisibility(View.GONE);
-        tvNoAttachments.setVisibility(View.VISIBLE);
-        rvComments.setVisibility(View.GONE);
-        tvNoComments.setVisibility(View.VISIBLE);
     }
     
     private void loadTaskData() {
@@ -269,39 +211,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                 etDueDate.setHint("Select due date");
             }
         }
-        
-        // Load attachments and comments if in edit mode and taskId exists
-        if (isEditMode && task != null && task.getId() != null && !task.getId().isEmpty()) {
-            // Note: Actual loading will be done by the host activity/fragment
-            // via setAttachments() and setComments() methods
-        }
-    }
-    
-    // Public methods to set data from host Activity/Fragment
-    public void setAttachments(java.util.List<com.example.tralalero.domain.model.Attachment> attachments) {
-        if (attachmentAdapter != null) {
-            attachmentAdapter.setAttachments(attachments);
-            if (attachments != null && !attachments.isEmpty()) {
-                rvAttachments.setVisibility(View.VISIBLE);
-                tvNoAttachments.setVisibility(View.GONE);
-            } else {
-                rvAttachments.setVisibility(View.GONE);
-                tvNoAttachments.setVisibility(View.VISIBLE);
-            }
-        }
-    }
-    
-    public void setComments(java.util.List<com.example.tralalero.domain.model.TaskComment> comments) {
-        if (commentAdapter != null) {
-            commentAdapter.setComments(comments);
-            if (comments != null && !comments.isEmpty()) {
-                rvComments.setVisibility(View.VISIBLE);
-                tvNoComments.setVisibility(View.GONE);
-            } else {
-                rvComments.setVisibility(View.GONE);
-                tvNoComments.setVisibility(View.VISIBLE);
-            }
-        }
     }
     
     private void setupListeners() {
@@ -329,18 +238,14 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         }
         if (btnAddAttachment != null) {
             btnAddAttachment.setOnClickListener(v -> {
-                if (listener != null && task != null) {
-                    listener.onMoveTask(task);
-                }
-                dismiss();
+                // Direct file picker action
+                Toast.makeText(requireContext(), "File picker would open here", Toast.LENGTH_SHORT).show();
             });
         }
         if (btnAddComment != null) {
             btnAddComment.setOnClickListener(v -> {
-                if (listener != null && task != null) {
-                    listener.onAddComment(task);
-                }
-                dismiss();
+                // Focus on comment input
+                Toast.makeText(requireContext(), "Focus on comment input", Toast.LENGTH_SHORT).show();
             });
         }
         if (btnDeleteTask != null) {

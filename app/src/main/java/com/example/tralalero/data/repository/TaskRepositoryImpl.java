@@ -2,15 +2,25 @@ package com.example.tralalero.data.repository;
 
 import com.example.tralalero.data.mapper.AttachmentMapper;
 import com.example.tralalero.data.mapper.ChecklistMapper;
+import com.example.tralalero.data.mapper.ChecklistItemMapper;
 import com.example.tralalero.data.mapper.TaskCommentMapper;
 import com.example.tralalero.data.mapper.TaskMapper;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
+import com.example.tralalero.data.remote.dto.task.ViewUrlResponseDTO;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.ChecklistDTO;
+import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
 import com.example.tralalero.domain.model.Attachment;
 import com.example.tralalero.domain.model.Checklist;
+import com.example.tralalero.domain.model.ChecklistItem;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.TaskComment;
 import com.example.tralalero.domain.repository.ITaskRepository;
@@ -24,9 +34,13 @@ import retrofit2.Response;
 
 public class TaskRepositoryImpl implements ITaskRepository {
     private final TaskApiService apiService;
+    private final CommentApiService commentApiService;
+    private final AttachmentApiService attachmentApiService;
 
-    public TaskRepositoryImpl(TaskApiService apiService) {
+    public TaskRepositoryImpl(TaskApiService apiService, CommentApiService commentApiService, AttachmentApiService attachmentApiService) {
         this.apiService = apiService;
+        this.commentApiService = commentApiService;
+        this.attachmentApiService = attachmentApiService;
     }
 
     @Override
@@ -75,13 +89,13 @@ public class TaskRepositoryImpl implements ITaskRepository {
     /**
      * Get all quick tasks from user's default board (To Do board)
      * Backend finds user's personal workspace, default project, and "To Do" board
-     * 
+     *
      * @param callback Callback to receive list of quick tasks or error
      */
     @Override
     public void getQuickTasks(RepositoryCallback<List<Task>> callback) {
         android.util.Log.d("TaskRepositoryImpl", "Getting quick tasks from default board");
-        
+
         apiService.getQuickTasks().enqueue(new Callback<List<TaskDTO>>() {
             @Override
             public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
@@ -147,11 +161,11 @@ public class TaskRepositoryImpl implements ITaskRepository {
                     } catch (Exception e) {
                         errorBody = e.getMessage();
                     }
-                    
+
                     android.util.Log.e("TaskRepositoryImpl", "Failed to create task: " + response.code());
                     android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
                     android.util.Log.e("TaskRepositoryImpl", "Request URL: " + call.request().url());
-                    
+
                     callback.onError("Failed to create task: " + response.code() + " - " + errorBody);
                 }
             }
@@ -167,10 +181,10 @@ public class TaskRepositoryImpl implements ITaskRepository {
     /**
      * Create a quick task - automatically assigns to default project/board
      * Backend finds user's personal workspace, default project, and "To Do" board
-     * 
-     * @param title Task title
+     *
+     * @param title       Task title
      * @param description Optional task description
-     * @param callback Callback to receive created task or error
+     * @param callback    Callback to receive created task or error
      */
     public void createQuickTask(String title, String description, RepositoryCallback<Task> callback) {
         java.util.Map<String, String> quickTaskData = new java.util.HashMap<>();
@@ -198,10 +212,10 @@ public class TaskRepositoryImpl implements ITaskRepository {
                     } catch (Exception e) {
                         errorBody = e.getMessage();
                     }
-                    
+
                     android.util.Log.e("TaskRepositoryImpl", "Failed to create quick task: " + response.code());
                     android.util.Log.e("TaskRepositoryImpl", "Error body: " + errorBody);
-                    
+
                     callback.onError("Failed to create quick task: " + response.code() + " - " + errorBody);
                 }
             }
@@ -387,7 +401,40 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void deleteAttachment(String attachmentId, RepositoryCallback<Void> callback) {
-        callback.onError("Delete attachment not yet implemented in API");
+        attachmentApiService.deleteAttachment(attachmentId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to delete attachment: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void getAttachmentViewUrl(String attachmentId, RepositoryCallback<String> callback) {
+        attachmentApiService.getViewUrl(attachmentId).enqueue(new Callback<ViewUrlResponseDTO>() {
+            @Override
+            public void onResponse(Call<ViewUrlResponseDTO> call, Response<ViewUrlResponseDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body().getUrl());
+                } else {
+                    callback.onError("Failed to get attachment view URL: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ViewUrlResponseDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override
@@ -396,8 +443,28 @@ public class TaskRepositoryImpl implements ITaskRepository {
             @Override
             public void onResponse(Call<List<TaskCommentDTO>> call, Response<List<TaskCommentDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("TaskRepository", "=== Raw API Response ===");
+                    android.util.Log.d("TaskRepository", "Response code: " + response.code());
+                    android.util.Log.d("TaskRepository", "Response body size: " + response.body().size());
+                    
+                    List<TaskCommentDTO> dtoList = response.body();
+                    for (int i = 0; i < dtoList.size() && i < 3; i++) { // Log max 3 items
+                        TaskCommentDTO dto = dtoList.get(i);
+                        android.util.Log.d("TaskRepository", "Comment " + i + ":");
+                        android.util.Log.d("TaskRepository", "  - id: " + dto.getId());
+                        android.util.Log.d("TaskRepository", "  - userId: " + dto.getUserId());
+                        android.util.Log.d("TaskRepository", "  - body: " + dto.getBody());
+                        android.util.Log.d("TaskRepository", "  - users field: " + dto.getUsers());
+                        if (dto.getUsers() != null) {
+                            android.util.Log.d("TaskRepository", "  - users.name: " + dto.getUsers().getName());
+                            android.util.Log.d("TaskRepository", "  - users.avatarUrl: " + dto.getUsers().getAvatarUrl());
+                        } else {
+                            android.util.Log.d("TaskRepository", "  - users field is NULL");
+                        }
+                    }
                     callback.onSuccess(TaskCommentMapper.toDomainList(response.body()));
                 } else {
+                    android.util.Log.e("TaskRepository", "API Error: " + response.code());
                     callback.onError("Failed to fetch comments: " + response.code());
                 }
             }
@@ -432,28 +499,94 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void updateComment(String commentId, String body, RepositoryCallback<TaskComment> callback) {
-        callback.onError("Update comment not yet implemented in API");
+        TaskCommentDTO updateDTO = new TaskCommentDTO();
+        updateDTO.setBody(body);
+        
+        commentApiService.updateComment(commentId, updateDTO).enqueue(new Callback<TaskCommentDTO>() {
+            @Override
+            public void onResponse(Call<TaskCommentDTO> call, Response<TaskCommentDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    TaskComment updatedComment = TaskCommentMapper.toDomain(response.body());
+                    callback.onSuccess(updatedComment);
+                } else {
+                    callback.onError("Failed to update comment: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TaskCommentDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override
     public void deleteComment(String commentId, RepositoryCallback<Void> callback) {
-        callback.onError("Delete comment not yet implemented in API");
+        commentApiService.deleteComment(commentId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to delete comment: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override
     public void getChecklists(String taskId, RepositoryCallback<List<Checklist>> callback) {
-        apiService.getTaskChecklists(taskId).enqueue(new Callback<List<CheckListDTO>>() {
+        android.util.Log.d("TaskRepository", "🌐 GET /tasks/" + taskId + "/checklists");
+        
+        apiService.getTaskChecklists(taskId).enqueue(new Callback<List<com.example.tralalero.data.remote.dto.ChecklistDTO>>() {
             @Override
-            public void onResponse(Call<List<CheckListDTO>> call, Response<List<CheckListDTO>> response) {
+            public void onResponse(Call<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> call, 
+                                 Response<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    callback.onSuccess(ChecklistMapper.toDomainList(response.body()));
+                    android.util.Log.d("TaskRepository", "✅ " + response.body().size() + " checklists");
+                    
+                    // Convert ChecklistDTO list to Checklist domain models
+                    List<Checklist> checklists = new ArrayList<>();
+                    for (com.example.tralalero.data.remote.dto.ChecklistDTO dto : response.body()) {
+                        // Extract items from each checklist
+                        android.util.Log.d("TaskRepository", "  📋 Checklist ID: " + dto.getId() + ", Title: " + dto.getTitle());
+                        android.util.Log.d("TaskRepository", "  🔍 checklistItems null? " + (dto.getChecklistItems() == null));
+                        
+                        List<com.example.tralalero.domain.model.ChecklistItem> items = new ArrayList<>();
+                        if (dto.getChecklistItems() != null) {
+                            android.util.Log.d("TaskRepository", "  📋 " + dto.getTitle() + ": " + dto.getChecklistItems().size() + " items");
+                            for (com.example.tralalero.data.remote.dto.ChecklistItemDTO itemDto : dto.getChecklistItems()) {
+                                android.util.Log.d("TaskRepository", "    ✔️ Item: " + itemDto.getContent() + " (done: " + itemDto.isDone() + ")");
+                                items.add(ChecklistItemMapper.toDomain(itemDto));
+                            }
+                        } else {
+                            android.util.Log.d("TaskRepository", "  ⚠️ checklistItems is NULL for checklist: " + dto.getTitle());
+                        }
+                        
+                        // Create Checklist domain model
+                        Checklist checklist = new Checklist(
+                            dto.getId(),
+                            dto.getTaskId(),
+                            dto.getTitle(),
+                            null, // createdAt - parse if needed
+                            items
+                        );
+                        checklists.add(checklist);
+                    }
+                    callback.onSuccess(checklists);
                 } else {
                     callback.onError("Failed to fetch checklists: " + response.code());
                 }
             }
 
             @Override
-            public void onFailure(Call<List<CheckListDTO>> call, Throwable t) {
+            public void onFailure(Call<List<com.example.tralalero.data.remote.dto.ChecklistDTO>> call, Throwable t) {
+                android.util.Log.e("TaskRepository", "❌ Network Error: " + t.getMessage());
                 callback.onError("Network error: " + t.getMessage());
             }
         });
@@ -461,7 +594,41 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void addChecklist(String taskId, Checklist checklist, RepositoryCallback<Checklist> callback) {
-        callback.onError("Add checklist not yet implemented in API");
+        CreateChecklistDTO dto = new CreateChecklistDTO(checklist.getTitle());
+        
+        apiService.addTaskChecklist(taskId, dto).enqueue(new Callback<ChecklistDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistDTO> call, Response<ChecklistDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistDTO checklistDTO = response.body();
+                    
+                    // Convert to domain model
+                    List<ChecklistItem> items = new ArrayList<>();
+                    if (checklistDTO.getChecklistItems() != null) {
+                        for (ChecklistItemDTO itemDto : checklistDTO.getChecklistItems()) {
+                            items.add(ChecklistItemMapper.toDomain(itemDto));
+                        }
+                    }
+                    
+                    Checklist newChecklist = new Checklist(
+                        checklistDTO.getId(),
+                        checklistDTO.getTaskId(),
+                        checklistDTO.getTitle(),
+                        null,
+                        items
+                    );
+                    
+                    callback.onSuccess(newChecklist);
+                } else {
+                    callback.onError("Failed to create checklist: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistDTO> call, Throwable t) {
+                callback.onError("Failed to create checklist: " + t.getMessage());
+            }
+        });
     }
 
     @Override
@@ -477,6 +644,93 @@ public class TaskRepositoryImpl implements ITaskRepository {
     @Override
     public void addLabel(String taskId, String labelId, RepositoryCallback<Void> callback) {
         callback.onError("Add label not yet implemented in API");
+    }
+
+    // ============================================================================
+    // CHECKLIST ITEM OPERATIONS
+    // ============================================================================
+
+    @Override
+    public void addChecklistItem(String checklistId, ChecklistItem item, RepositoryCallback<ChecklistItem> callback) {
+        CreateChecklistItemDTO dto = new CreateChecklistItemDTO(item.getContent());
+
+        apiService.createChecklistItem(checklistId, dto).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem newItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(newItem);
+                } else {
+                    callback.onError("Failed to create checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void updateChecklistItemContent(String itemId, String content, RepositoryCallback<ChecklistItem> callback) {
+        UpdateChecklistItemDTO dto = new UpdateChecklistItemDTO(content);
+
+        apiService.updateChecklistItem(itemId, dto).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem updatedItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(updatedItem);
+                } else {
+                    callback.onError("Failed to update checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void toggleChecklistItem(String itemId, RepositoryCallback<ChecklistItem> callback) {
+        apiService.toggleChecklistItem(itemId).enqueue(new Callback<ChecklistItemDTO>() {
+            @Override
+            public void onResponse(Call<ChecklistItemDTO> call, Response<ChecklistItemDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ChecklistItem updatedItem = ChecklistItemMapper.toDomain(response.body());
+                    callback.onSuccess(updatedItem);
+                } else {
+                    callback.onError("Failed to toggle checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChecklistItemDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void deleteChecklistItem(String itemId, RepositoryCallback<Void> callback) {
+        apiService.deleteChecklistItem(itemId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to delete checklist item: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override

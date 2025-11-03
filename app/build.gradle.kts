@@ -20,12 +20,19 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            // Temporarily disabled for easier log reading
+            // buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
         }
         release {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
                 "\"https://plantracker-backend.onrender.com/api/\""
+            )
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"wss://plantracker-backend.onrender.com/notifications\""
             )
             isMinifyEnabled = false
             proguardFiles(
@@ -54,8 +61,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck")
     implementation("com.google.firebase:firebase-appcheck-debug")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-    // TEMPORARILY DISABLED - FCM
-    // implementation("com.google.firebase:firebase-messaging")
+    // FCM - Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-messaging")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
@@ -64,10 +71,16 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.room:room-runtime:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
+    implementation(libs.firebase.messaging)
     annotationProcessor("androidx.room:room-compiler:2.7.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-runtime-android:2.9.4")
+    
+    // WebSocket & Lifecycle for DEV 1
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")

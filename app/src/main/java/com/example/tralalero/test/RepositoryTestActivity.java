@@ -64,11 +64,13 @@ public class RepositoryTestActivity extends AppCompatActivity {
         SprintApiService sprintApi = ApiClient.get().create(SprintApiService.class);
         EventApiService eventApi = ApiClient.get().create(EventApiService.class);
         TimerApiService timerApi = ApiClient.get().create(TimerApiService.class);
+        CommentApiService commentApi = ApiClient.get().create(CommentApiService.class);
+        AttachmentApiService attachmentApi = ApiClient.get().create(AttachmentApiService.class);
 
         workspaceRepository = new WorkspaceRepositoryImpl(workspaceApi);
         projectRepository = new ProjectRepositoryImpl(projectApi);
         boardRepository = new BoardRepositoryImpl(boardApi);
-        taskRepository = new TaskRepositoryImpl(taskApi);
+        taskRepository = new TaskRepositoryImpl(taskApi, commentApi, attachmentApi);
         notificationRepository = new NotificationRepositoryImpl(notificationApi);
         labelRepository = new LabelRepositoryImpl(labelApi);
         sprintRepository = new SprintRepositoryImpl(sprintApi);

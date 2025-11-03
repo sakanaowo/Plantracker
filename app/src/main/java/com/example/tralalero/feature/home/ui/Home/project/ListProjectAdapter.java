@@ -13,6 +13,8 @@ import com.example.tralalero.data.repository.BoardRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.repository.IBoardRepository;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
@@ -65,7 +67,9 @@ public class ListProjectAdapter extends FragmentStateAdapter {
     }
     private void setupTaskViewModel(@NonNull FragmentActivity activity) {
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository repository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
@@ -81,6 +85,10 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(repository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(repository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(repository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(repository);
         TaskViewModelFactory factory = new TaskViewModelFactory(
                 getTaskByIdUseCase,
                 getTasksByBoardUseCase,
@@ -96,7 +104,12 @@ public class ListProjectAdapter extends FragmentStateAdapter {
                 addAttachmentUseCase,
                 getTaskAttachmentsUseCase,
                 addChecklistUseCase,
-                getTaskChecklistsUseCase
+                getTaskChecklistsUseCase,
+                updateCommentUseCase,
+                deleteCommentUseCase,
+                deleteAttachmentUseCase,
+                getAttachmentViewUrlUseCase,
+                repository
         );
         taskViewModel = new ViewModelProvider(activity, factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");
@@ -105,7 +118,9 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         BoardApiService boardApiService = ApiClient.get(App.authManager).create(BoardApiService.class);
         IBoardRepository boardRepository = new BoardRepositoryImpl(boardApiService);
         TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApiService, commentApiService, attachmentApiService);
         GetBoardByIdUseCase getBoardByIdUseCase = new GetBoardByIdUseCase(boardRepository);
         GetBoardsByProjectUseCase getBoardsByProjectUseCase = new GetBoardsByProjectUseCase(boardRepository);
         CreateBoardUseCase createBoardUseCase = new CreateBoardUseCase(boardRepository);

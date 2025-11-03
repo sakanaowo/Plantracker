@@ -35,6 +35,8 @@ import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
@@ -151,7 +153,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         ).get(BoardViewModel.class);
 
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository repository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
 
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
@@ -168,13 +172,19 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(repository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(repository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(repository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(repository);
 
         TaskViewModelFactory taskFactory = new TaskViewModelFactory(
                 getTaskByIdUseCase, getTasksByBoardUseCase, createTaskUseCase,
                 updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
                 unassignTaskUseCase, moveTaskToBoardUseCase, updateTaskPositionUseCase,
                 addCommentUseCase, getTaskCommentsUseCase, addAttachmentUseCase,
-                getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase
+                getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase,
+                updateCommentUseCase, deleteCommentUseCase, deleteAttachmentUseCase, getAttachmentViewUrlUseCase,
+                repository
         );
 
         taskViewModel = new ViewModelProvider(this, taskFactory).get(TaskViewModel.class);

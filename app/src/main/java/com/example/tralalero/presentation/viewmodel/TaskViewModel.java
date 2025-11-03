@@ -22,6 +22,11 @@ import com.example.tralalero.domain.usecase.task.AddAttachmentUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskChecklistsUseCase;
+import com.example.tralalero.domain.usecase.task.UpdateCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase;
+import com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase;
+import com.example.tralalero.domain.repository.ITaskRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +49,11 @@ public class TaskViewModel extends ViewModel {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
+    private final UpdateCommentUseCase updateCommentUseCase;
+    private final DeleteCommentUseCase deleteCommentUseCase;
+    private final DeleteAttachmentUseCase deleteAttachmentUseCase;
+    private final GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase;
+    private final ITaskRepository repository; // For checklist item operations
     private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Task> selectedTaskLiveData = new MutableLiveData<>();
@@ -69,7 +79,12 @@ public class TaskViewModel extends ViewModel {
             AddAttachmentUseCase addAttachmentUseCase,
             GetTaskAttachmentsUseCase getTaskAttachmentsUseCase,
             AddChecklistUseCase addChecklistUseCase,
-            GetTaskChecklistsUseCase getTaskChecklistsUseCase
+            GetTaskChecklistsUseCase getTaskChecklistsUseCase,
+            UpdateCommentUseCase updateCommentUseCase,
+            DeleteCommentUseCase deleteCommentUseCase,
+            DeleteAttachmentUseCase deleteAttachmentUseCase,
+            GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase,
+            ITaskRepository repository // Add repository for checklist item operations
     ) {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
@@ -86,6 +101,11 @@ public class TaskViewModel extends ViewModel {
         this.getTaskAttachmentsUseCase = getTaskAttachmentsUseCase;
         this.addChecklistUseCase = addChecklistUseCase;
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
+        this.updateCommentUseCase = updateCommentUseCase;
+        this.deleteCommentUseCase = deleteCommentUseCase;
+        this.deleteAttachmentUseCase = deleteAttachmentUseCase;
+        this.getAttachmentViewUrlUseCase = getAttachmentViewUrlUseCase;
+        this.repository = repository;
     }
 
     public LiveData<List<Task>> getTasksForBoard(String boardId) {
@@ -405,6 +425,94 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
+    public void updateComment(String commentId, String body) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        updateCommentUseCase.execute(commentId, body, new UpdateCommentUseCase.Callback<TaskComment>() {
+            @Override
+            public void onSuccess(TaskComment result) {
+                loadingLiveData.setValue(false);
+                // Refresh comments to show updated content
+                if (result != null && result.getTaskId() != null) {
+                    loadTaskComments(result.getTaskId());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void deleteComment(String commentId, String taskId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        deleteCommentUseCase.execute(commentId, new DeleteCommentUseCase.Callback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                loadingLiveData.setValue(false);
+                // Refresh comments to remove deleted comment
+                loadTaskComments(taskId);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void deleteAttachment(String attachmentId, String taskId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        deleteAttachmentUseCase.execute(attachmentId, new DeleteAttachmentUseCase.Callback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                loadingLiveData.setValue(false);
+                // Refresh attachments to remove deleted attachment
+                loadTaskAttachments(taskId);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+
+    public void getAttachmentViewUrl(String attachmentId, AttachmentViewUrlCallback callback) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        getAttachmentViewUrlUseCase.execute(attachmentId, new GetAttachmentViewUrlUseCase.Callback<String>() {
+            @Override
+            public void onSuccess(String viewUrl) {
+                loadingLiveData.setValue(false);
+                callback.onSuccess(viewUrl);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+                callback.onError(error);
+            }
+        });
+    }
+
+    // Callback interface for attachment view URL
+    public interface AttachmentViewUrlCallback {
+        void onSuccess(String viewUrl);
+        void onError(String error);
+    }
+
     public void addChecklist(String taskId, Checklist checklist) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -450,145 +558,143 @@ public class TaskViewModel extends ViewModel {
     // ===== ChecklistItem Methods =====
     
     public void loadChecklistItems(String taskId) {
-        // TODO: Implement API call when backend supports checklist items endpoints
-        // For now, return empty list or mock data
         loadingLiveData.setValue(true);
         
-        // Mock implementation - replace with actual API call
-        new Thread(() -> {
-            try {
-                // Simulate network delay
-                Thread.sleep(500);
+        android.util.Log.d("TaskViewModel", "🔍 Loading checklist items for task: " + taskId);
+        
+        // Load checklists and extract all items
+        repository.getChecklists(taskId, new ITaskRepository.RepositoryCallback<List<com.example.tralalero.domain.model.Checklist>>() {
+            @Override
+            public void onSuccess(List<com.example.tralalero.domain.model.Checklist> checklists) {
+                android.util.Log.d("TaskViewModel", "✅ Received " + (checklists != null ? checklists.size() : 0) + " checklists");
                 
-                // TODO: Call API to get checklist items
-                // List<ChecklistItem> items = getChecklistItemsUseCase.execute(taskId);
+                java.util.List<com.example.tralalero.domain.model.ChecklistItem> allItems = new java.util.ArrayList<>();
                 
-                // For now, return empty list
-                java.util.List<com.example.tralalero.domain.model.ChecklistItem> items = new java.util.ArrayList<>();
+                // Collect all items from all checklists
+                if (checklists != null) {
+                    for (com.example.tralalero.domain.model.Checklist checklist : checklists) {
+                        android.util.Log.d("TaskViewModel", "📋 Checklist: " + checklist.getTitle() + 
+                            " has " + (checklist.getItems() != null ? checklist.getItems().size() : 0) + " items");
+                        
+                        if (checklist.getItems() != null) {
+                            allItems.addAll(checklist.getItems());
+                        }
+                    }
+                }
                 
-                checklistItemsLiveData.postValue(items);
+                android.util.Log.d("TaskViewModel", "📊 Total items collected: " + allItems.size());
+                
+                checklistItemsLiveData.postValue(allItems);
                 loadingLiveData.postValue(false);
-            } catch (Exception e) {
-                loadingLiveData.postValue(false);
-                errorLiveData.postValue("Failed to load checklist items: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("TaskViewModel", "❌ Failed to load checklist items: " + error);
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to load checklist items: " + error);
+            }
+        });
     }
     
     public void addChecklistItem(String taskId, com.example.tralalero.domain.model.ChecklistItem item) {
-        // TODO: Implement API call when backend supports checklist items endpoints
         loadingLiveData.setValue(true);
         
-        new Thread(() -> {
-            try {
-                // Simulate network delay
-                Thread.sleep(500);
-                
-                // TODO: Call API to add checklist item
-                // ChecklistItem newItem = addChecklistItemUseCase.execute(taskId, item);
-                
-                // For now, add to current list
-                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
-                    checklistItemsLiveData.getValue();
-                if (currentItems == null) {
-                    currentItems = new java.util.ArrayList<>();
+        // Load checklists first to get the checklist ID
+        repository.getChecklists(taskId, new ITaskRepository.RepositoryCallback<List<com.example.tralalero.domain.model.Checklist>>() {
+            @Override
+            public void onSuccess(List<com.example.tralalero.domain.model.Checklist> checklists) {
+                if (checklists != null && !checklists.isEmpty()) {
+                    // Use first checklist (or create logic to select correct one)
+                    String checklistId = checklists.get(0).getId();
+                    
+                    // Now add item to this checklist
+                    repository.addChecklistItem(checklistId, item, new ITaskRepository.RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem>() {
+                        @Override
+                        public void onSuccess(com.example.tralalero.domain.model.ChecklistItem newItem) {
+                            // Reload all checklist items to refresh UI
+                            loadChecklistItems(taskId);
+                            loadingLiveData.postValue(false);
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            loadingLiveData.postValue(false);
+                            errorLiveData.postValue("Failed to add checklist item: " + error);
+                        }
+                    });
+                } else {
+                    // No checklist exists, need to create one first
+                    loadingLiveData.postValue(false);
+                    errorLiveData.postValue("No checklist found. Creating default checklist...");
+                    
+                    // Auto-create a default checklist
+                    com.example.tralalero.domain.model.Checklist defaultChecklist = 
+                        new com.example.tralalero.domain.model.Checklist(
+                            null, taskId, "Checklist", null, null
+                        );
+                    
+                    repository.addChecklist(taskId, defaultChecklist, new ITaskRepository.RepositoryCallback<com.example.tralalero.domain.model.Checklist>() {
+                        @Override
+                        public void onSuccess(com.example.tralalero.domain.model.Checklist checklist) {
+                            // Now add the item to this new checklist
+                            addChecklistItem(taskId, item);
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            loadingLiveData.postValue(false);
+                            errorLiveData.postValue("Failed to create checklist: " + error);
+                        }
+                    });
                 }
-                
-                // Create new item with generated ID
-                com.example.tralalero.domain.model.ChecklistItem newItem = 
-                    new com.example.tralalero.domain.model.ChecklistItem(
-                        java.util.UUID.randomUUID().toString(),
-                        taskId,
-                        item.getContent(),
-                        false,
-                        currentItems.size(),
-                        new java.util.Date()
-                    );
-                
-                currentItems.add(newItem);
-                checklistItemsLiveData.postValue(currentItems);
-                loadingLiveData.postValue(false);
-            } catch (Exception e) {
-                loadingLiveData.postValue(false);
-                errorLiveData.postValue("Failed to add checklist item: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to load checklists: " + error);
+            }
+        });
     }
     
     public void updateChecklistItem(String taskId, String itemId, boolean isDone) {
-        // TODO: Implement API call when backend supports checklist items endpoints
         loadingLiveData.setValue(true);
         
-        new Thread(() -> {
-            try {
-                // Simulate network delay
-                Thread.sleep(300);
-                
-                // TODO: Call API to update checklist item
-                // updateChecklistItemUseCase.execute(taskId, itemId, isDone);
-                
-                // For now, update in current list
-                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
-                    checklistItemsLiveData.getValue();
-                if (currentItems != null) {
-                    java.util.List<com.example.tralalero.domain.model.ChecklistItem> updatedItems = 
-                        new java.util.ArrayList<>();
-                    for (com.example.tralalero.domain.model.ChecklistItem item : currentItems) {
-                        if (item.getId().equals(itemId)) {
-                            // Create updated item
-                            updatedItems.add(new com.example.tralalero.domain.model.ChecklistItem(
-                                item.getId(),
-                                item.getChecklistId(),
-                                item.getContent(),
-                                isDone,
-                                item.getPosition(),
-                                item.getCreatedAt()
-                            ));
-                        } else {
-                            updatedItems.add(item);
-                        }
-                    }
-                    checklistItemsLiveData.postValue(updatedItems);
-                }
+        // Call toggle API
+        repository.toggleChecklistItem(itemId, new ITaskRepository.RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem>() {
+            @Override
+            public void onSuccess(com.example.tralalero.domain.model.ChecklistItem updatedItem) {
+                // Reload checklist items to reflect the change
+                loadChecklistItems(taskId);
                 loadingLiveData.postValue(false);
-            } catch (Exception e) {
-                loadingLiveData.postValue(false);
-                errorLiveData.postValue("Failed to update checklist item: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to update checklist item: " + error);
+            }
+        });
     }
     
     public void deleteChecklistItem(String taskId, String itemId) {
-        // TODO: Implement API call when backend supports checklist items endpoints
         loadingLiveData.setValue(true);
         
-        new Thread(() -> {
-            try {
-                // Simulate network delay
-                Thread.sleep(300);
-                
-                // TODO: Call API to delete checklist item
-                // deleteChecklistItemUseCase.execute(taskId, itemId);
-                
-                // For now, remove from current list
-                java.util.List<com.example.tralalero.domain.model.ChecklistItem> currentItems = 
-                    checklistItemsLiveData.getValue();
-                if (currentItems != null) {
-                    java.util.List<com.example.tralalero.domain.model.ChecklistItem> updatedItems = 
-                        new java.util.ArrayList<>();
-                    for (com.example.tralalero.domain.model.ChecklistItem item : currentItems) {
-                        if (!item.getId().equals(itemId)) {
-                            updatedItems.add(item);
-                        }
-                    }
-                    checklistItemsLiveData.postValue(updatedItems);
-                }
+        repository.deleteChecklistItem(itemId, new ITaskRepository.RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                // Reload checklist items to reflect the deletion
+                loadChecklistItems(taskId);
                 loadingLiveData.postValue(false);
-            } catch (Exception e) {
-                loadingLiveData.postValue(false);
-                errorLiveData.postValue("Failed to delete checklist item: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.postValue(false);
+                errorLiveData.postValue("Failed to delete checklist item: " + error);
+            }
+        });
     }
 
     @Override

@@ -83,8 +83,8 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/ic_more_vert"
             android:scaleType="centerInside"
-            android:contentDescription="Options"/>
+            android:contentDescription="Comment options"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
