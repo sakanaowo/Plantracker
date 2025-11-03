@@ -193,14 +193,6 @@ public class CardDetailActivity extends AppCompatActivity {
         etNewComment = findViewById(R.id.etNewComment);
         btnSendComment = findViewById(R.id.btnSendComment);
         
-        // Test buttons (temporary)
-        Button btnTestComment = findViewById(R.id.btnTestComment);
-        Button btnTestAttachment = findViewById(R.id.btnTestAttachment);
-        LinearLayout llTestButtons = findViewById(R.id.llTestButtons);
-        
-        // Show test buttons for debugging
-        llTestButtons.setVisibility(View.VISIBLE);
-        
         // Setup RecyclerViews
         setupRecyclerViews();
     }
@@ -596,65 +588,8 @@ public class CardDetailActivity extends AppCompatActivity {
         etDateStart.setOnClickListener(v -> showDatePickerDialog(true));
         etDueDate.setOnClickListener(v -> showDatePickerDialog(false));
         
-        // Test button listeners
-        Button btnTestComment = findViewById(R.id.btnTestComment);
-        Button btnTestAttachment = findViewById(R.id.btnTestAttachment);
-        
-        btnTestComment.setOnClickListener(v -> addTestComment());
-        btnTestAttachment.setOnClickListener(v -> addTestAttachment());
     }
     
-    /**
-     * Add test comment for debugging
-     */
-    private void addTestComment() {
-        java.util.List<com.example.tralalero.domain.model.TaskComment> testComments = new java.util.ArrayList<>();
-        testComments.add(new com.example.tralalero.domain.model.TaskComment(
-            "test-comment-" + System.currentTimeMillis(), 
-            taskId, 
-            "test-user", 
-            "This is a test comment with options button. Click ⋮ to test edit/delete.",
-            new java.util.Date()
-        ));
-        
-        if (commentAdapter.getItemCount() == 0) {
-            commentAdapter.setComments(testComments);
-            rvComments.setVisibility(View.VISIBLE);
-            tvNoComments.setVisibility(View.GONE);
-        } else {
-            commentAdapter.addComment(testComments.get(0));
-        }
-        
-        Toast.makeText(this, "Test comment added", Toast.LENGTH_SHORT).show();
-    }
-    
-    /**
-     * Add test attachment for debugging
-     */
-    private void addTestAttachment() {
-        java.util.List<com.example.tralalero.domain.model.Attachment> testAttachments = new java.util.ArrayList<>();
-        testAttachments.add(new com.example.tralalero.domain.model.Attachment(
-            "test-attachment-" + System.currentTimeMillis(),
-            taskId,
-            "https://example.com/test-file.jpg",
-            "test-image.jpg",
-            "image/jpeg",
-            1024000,  // 1MB
-            "test-user",
-            new java.util.Date()
-        ));
-        
-        if (attachmentAdapter.getItemCount() == 0) {
-            attachmentAdapter.setAttachments(testAttachments);
-            rvAttachments.setVisibility(View.VISIBLE);
-            tvNoAttachments.setVisibility(View.GONE);
-        } else {
-            attachmentAdapter.addAttachment(testAttachments.get(0));
-        }
-        
-        Toast.makeText(this, "Test attachment added", Toast.LENGTH_SHORT).show();
-    }
-
     private void createTask() {
         String title = etTaskTitle.getText().toString().trim();
         if (TextUtils.isEmpty(title)) {

@@ -1,356 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@android:color/white">
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/white">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 
         <!-- Header -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:background="@android:color/white">
+        <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp" android:background="@android:color/white">
 
-            <ImageButton
-                android:id="@+id/btnClose"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="#5E6C84"
-                android:contentDescription="Close"/>
+            <ImageButton android:id="@+id/btnClose" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentStart="true" android:layout_centerVertical="true" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_close_clear_cancel" app:tint="#5E6C84" android:contentDescription="Close"/>
 
-            <TextView
-                android:id="@+id/tvMenuTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:text="Board menu"
-                android:textSize="16sp"
-                android:textColor="#172B4D"
-                android:fontFamily="sans-serif-medium"/>
+            <TextView android:id="@+id/tvMenuTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" android:text="Board menu" android:textSize="16sp" android:textColor="#172B4D" android:fontFamily="sans-serif-medium"/>
 
-            <ImageButton
-                android:id="@+id/btnShare"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_share"
-                app:tint="#5E6C84"
-                android:contentDescription="Share"/>
+            <ImageButton android:id="@+id/btnShare" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_share" app:tint="#5E6C84" android:contentDescription="Share"/>
         </RelativeLayout>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#091E4221"/>
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#091E4221"/>
 
         <!-- Icon Buttons Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="20dp"
-            android:gravity="center"
-            android:background="#F4F5F7">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:paddingTop="20dp" android:paddingBottom="20dp" android:gravity="center" android:background="#F4F5F7">
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
 
-                <ImageButton
-                    android:id="@+id/btnStar"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_menu_button"
-                    android:src="@drawable/ic_star_outline"
-                    android:scaleType="centerInside"
-                    android:padding="12dp"
-                    app:tint="#5E6C84"
-                    android:contentDescription="Star"/>
+                <ImageButton android:id="@+id/btnStar" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_star_outline" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Star"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
 
-                <ImageButton
-                    android:id="@+id/btnVisibility"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_menu_button"
-                    android:src="@drawable/ic_people"
-                    android:scaleType="centerInside"
-                    android:padding="12dp"
-                    app:tint="#5E6C84"
-                    android:contentDescription="Members"/>
+                <ImageButton android:id="@+id/btnVisibility" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_people" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Members"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
 
-                <ImageButton
-                    android:id="@+id/btnCopy"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_menu_button"
-                    android:src="@drawable/ic_copy"
-                    android:scaleType="centerInside"
-                    android:padding="12dp"
-                    app:tint="#5E6C84"
-                    android:contentDescription="Copy"/>
+                <ImageButton android:id="@+id/btnCopy" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_copy" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Copy"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
 
-                <ImageButton
-                    android:id="@+id/btnMore"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_menu_button"
-                    android:src="@drawable/three_dots_icon"
-                    android:scaleType="centerInside"
-                    android:padding="12dp"
-                    app:tint="#5E6C84"
-                    android:contentDescription="More"/>
+                <ImageButton android:id="@+id/btnMore" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/three_dots_icon" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="More"/>
             </LinearLayout>
         </LinearLayout>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#091E4221"/>
+        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#091E4221"/>
 
         <!-- Members Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@android:color/white">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:background="@android:color/white">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@android:drawable/ic_menu_myplaces"
-                    app:tint="#5E6C84"
-                    android:layout_marginEnd="8dp"/>
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_myplaces" app:tint="#5E6C84" android:layout_marginEnd="8dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Members"
-                    android:textSize="14sp"
-                    android:textColor="#5E6C84"
-                    android:fontFamily="sans-serif-medium"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Members" android:textSize="14sp" android:textColor="#5E6C84" android:fontFamily="sans-serif-medium"/>
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvMembers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="12dp"/>
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvMembers" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnInvite"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Invite"
-                android:textAllCaps="false"
-                android:textSize="14sp"
-                android:textColor="@android:color/white"
-                app:cornerRadius="3dp"
-                app:backgroundTint="#0079BF"
-                style="@style/Widget.Material3.Button"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnInvite" android:layout_width="match_parent" android:layout_height="48dp" android:text="Invite" android:textAllCaps="false" android:textSize="14sp" android:textColor="@android:color/white" app:cornerRadius="3dp" app:backgroundTint="#0079BF" style="@style/Widget.Material3.Button"/>
         </LinearLayout>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#091E4221"/>
-
-        <!-- About Section -->
-        <LinearLayout
-            android:id="@+id/layoutAbout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_dialog_info"
-                app:tint="#5E6C84"
-                android:layout_marginEnd="12dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="About this board"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
-        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#091E4221"/>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:background="#091E4221"/>
-
-        <!-- Completed Status Section -->
-
+        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#091E4221"/>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:background="#091E4221"/>
-
-        <!-- Archive Complete Section -->
-        <LinearLayout
-            android:id="@+id/layoutArchiveComplete"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_save"
-                app:tint="#5E6C84"
-                android:layout_marginEnd="12dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Archive cards marked complete"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
-        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#091E4221"/>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#091E4221"/>
-
-
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#091E4221"/>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#F4F5F7"/>
+        <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#F4F5F7"/>
 
         <!-- Activity Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Activity"
-            android:textSize="12sp"
-            android:textColor="#5E6C84"
-            android:fontFamily="sans-serif-medium"
-            android:padding="16dp"
-            android:paddingBottom="8dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Activity" android:textSize="12sp" android:textColor="#5E6C84" android:fontFamily="sans-serif-medium" android:padding="16dp" android:paddingBottom="8dp"/>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvActivity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="12dp"/>
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvActivity" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingBottom="12dp"/>
 
         <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:background="#091E4221"/>
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="16dp" android:background="#091E4221"/>
 
         <!-- Synced Section -->
-        <LinearLayout
-            android:id="@+id/layoutSynced"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
+        <LinearLayout android:id="@+id/layoutSynced" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="?attr/selectableItemBackground" android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_popup_sync"
-                app:tint="#42A5F5"
-                android:layout_marginEnd="12dp"/>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_popup_sync" app:tint="#42A5F5" android:layout_marginEnd="12dp"/>
 
-            <TextView
-                android:id="@+id/tvSyncedStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Synced"
-                android:textSize="14sp"
-                android:textColor="#172B4D"/>
+            <TextView android:id="@+id/tvSyncedStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Synced" android:textSize="14sp" android:textColor="#172B4D"/>
         </LinearLayout>
 
         <!-- Bottom Padding -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="16dp"/>
+        <View android:layout_width="match_parent" android:layout_height="16dp"/>
 
     </LinearLayout>
 
