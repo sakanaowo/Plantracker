@@ -203,9 +203,8 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         if (projectName != null && !projectName.isEmpty()) {
             tvProjectName.setText(projectName);
         }
-//        if (workspaceName != null && !workspaceName.isEmpty()) {
-//            tvWorkspaceName.setText(workspaceName);
-//        }
+        
+      
 
         backButton.setOnClickListener(v -> {
             // Just finish() to return to previous WorkspaceActivity (don't create new one)

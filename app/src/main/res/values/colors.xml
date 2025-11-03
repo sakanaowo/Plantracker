@@ -27,4 +27,14 @@
     <color name="notification_action_color">#03DAC5</color>
     <color name="notification_badge_bg">#FF3B30</color>
     <color name="notification_badge_text">#FFFFFF</color>
+
+    <!-- Text colors (DEV 1) -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+
+    <!-- Role colors (DEV 1) -->
+    <color name="role_owner">#FF6B6B</color>
+    <color name="role_admin">#4ECDC4</color>
+    <color name="role_member">#45B7D1</color>
+    <color name="role_viewer">#95E1D3</color>
 </resources>

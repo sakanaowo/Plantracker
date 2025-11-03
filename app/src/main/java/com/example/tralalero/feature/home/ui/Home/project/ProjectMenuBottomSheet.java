@@ -22,6 +22,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
+import com.example.tralalero.data.repository.MemberRepositoryImpl;
+import com.example.tralalero.domain.repository.IMemberRepository;
+import com.example.tralalero.feature.project.members.InviteMemberDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -38,6 +41,8 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private String projectId;
     private boolean isStarred = false;
     private String currentVisibility = "WORKSPACE"; // PRIVATE, WORKSPACE, PUBLIC
+    
+    private IMemberRepository memberRepository;
     
     private TextView tvMenuTitle;
     private ImageButton btnClose, btnShare, btnStar, btnVisibility, btnCopy, btnMore;
@@ -76,10 +81,15 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
+        initRepository();
         initViews(view);
         setupListeners();
         setupRecyclerViews();
         loadData();
+    }
+    
+    private void initRepository() {
+        memberRepository = new MemberRepositoryImpl(getContext());
     }
 
     private void initViews(View view) {
@@ -135,7 +145,6 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         });
         
         btnInvite.setOnClickListener(v -> {
-            // TODO: Kiểm tra quyền owner trước khi cho phép invite
             showInviteDialog();
         });
         
@@ -286,8 +295,88 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
     
     private void showInviteDialog() {
-        // TODO: Implement invite member dialog
-        Toast.makeText(getContext(), "Invite member feature - coming soon", Toast.LENGTH_SHORT).show();
+        if (getContext() == null || getFragmentManager() == null) return;
+        
+        InviteMemberDialog dialog = InviteMemberDialog.newInstance();
+        
+        dialog.setOnInviteListener(new InviteMemberDialog.OnInviteListener() {
+            @Override
+            public void onInvite(String email, String role) {
+                // Call API to invite member
+                inviteMemberToProject(email, role);
+            }
+        });
+        
+        dialog.show(getFragmentManager(), "InviteMemberDialog");
+    }
+    
+    private void inviteMemberToProject(String email, String role) {
+        if (memberRepository == null || projectId == null) {
+            Toast.makeText(getContext(), "❌ Error: Unable to invite member", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        memberRepository.inviteMember(projectId, email, role, new IMemberRepository.RepositoryCallback<com.example.tralalero.domain.model.Member>() {
+            @Override
+            public void onSuccess(com.example.tralalero.domain.model.Member result) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Add activity log
+                        addActivityLog("invited " + email + " to " + projectName + " as " + role);
+                        
+                        // Show success toast
+                        Toast.makeText(getContext(), "✅ Invitation sent to " + email, Toast.LENGTH_SHORT).show();
+                        
+                        // Refresh member list
+                        loadProjectMembers();
+                    });
+                }
+            }
+            
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Handle specific error messages  
+                        if (error.contains("404") || error.toLowerCase().contains("not found")) {
+                            showUserNotFoundDialog(email);
+                        } else if (error.contains("already a project member") || error.contains("409")) {
+                            Toast.makeText(getContext(), 
+                                "⚠️ " + email + " is already a member of this project", 
+                                Toast.LENGTH_LONG).show();
+                        } else if (error.contains("403") || error.contains("permission")) {
+                            Toast.makeText(getContext(), 
+                                "🚫 Permission denied! Only project owners can invite members.", 
+                                Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(getContext(), 
+                                "❌ Failed to invite: " + error, 
+                                Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            }
+        });
+    }
+    
+    private void showUserNotFoundDialog(String email) {
+        if (getContext() == null) return;
+        
+        new android.app.AlertDialog.Builder(getContext())
+            .setTitle("❌ User Not Found")
+            .setMessage("The email " + email + " is not registered in the system.\n\n" +
+                       "⚠️ Users must create an account before they can be invited to projects.\n\n" +
+                       "Options:\n" +
+                       "• Ask them to download and sign up\n" +
+                       "• Try a different email address\n" +
+                       "• Check for typos in the email")
+            .setPositiveButton("Try Another Email", (dialog, which) -> {
+                // Reopen invite dialog
+                showInviteDialog();
+            })
+            .setNegativeButton("OK", null)
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .show();
     }
 
     private void setupRecyclerViews() {
@@ -301,15 +390,82 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void loadData() {
-        // Load members (hardcoded for now)
-        List<Member> members = new ArrayList<>();
-        members.add(new Member("BA", "B22DCVT028 Nguyen Thai Anh", true));
-        memberAdapter.setMembers(members);
-        
+        loadProjectMembers();
+        loadActivityLogs();
+    }
+    
+    private void loadProjectMembers() {
+        if (memberRepository != null && projectId != null) {
+            memberRepository.getProjectMembers(projectId, new IMemberRepository.RepositoryCallback<List<com.example.tralalero.domain.model.Member>>() {
+                @Override
+                public void onSuccess(List<com.example.tralalero.domain.model.Member> domainMembers) {
+                    if (getContext() == null) return;
+                    
+                    // Convert domain members to UI members
+                    List<UIMember> uiMembers = new ArrayList<>();
+                    for (com.example.tralalero.domain.model.Member domainMember : domainMembers) {
+                        String initials = getInitials(domainMember.getUser().getName());
+                        boolean isAdmin = domainMember.isAdmin() || domainMember.isOwner();
+                        uiMembers.add(new UIMember(initials, domainMember.getUser().getName(), isAdmin));
+                    }
+                    
+                    // Update UI on main thread
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (memberAdapter != null) {
+                                memberAdapter.setMembers(uiMembers);
+                            }
+                        });
+                    }
+                }
+                
+                @Override
+                public void onError(String error) {
+                    // Fallback to default member
+                    List<UIMember> defaultMembers = new ArrayList<>();
+                    defaultMembers.add(new UIMember("U", "You", true));
+                    
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (memberAdapter != null) {
+                                memberAdapter.setMembers(defaultMembers);
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            // Fallback if no repository
+            List<UIMember> defaultMembers = new ArrayList<>();
+            defaultMembers.add(new UIMember("U", "You", true));
+            memberAdapter.setMembers(defaultMembers);
+        }
+    }
+    
+    private void loadActivityLogs() {
         // Load activity logs (hardcoded for now - giống như trong ảnh)
         List<ActivityLog> activities = new ArrayList<>();
         // TODO: add logic to load real data from API
         activityAdapter.setActivities(activities);
+    }
+    
+    private String getInitials(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "?";
+        }
+        
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        } else {
+            StringBuilder initials = new StringBuilder();
+            for (int i = 0; i < Math.min(2, parts.length); i++) {
+                if (!parts[i].isEmpty()) {
+                    initials.append(parts[i].charAt(0));
+                }
+            }
+            return initials.toString().toUpperCase();
+        }
     }
     
     private void addActivityLog(String action) {
@@ -319,12 +475,12 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
-    static class Member {
+    static class UIMember {
         String initials;
         String name;
         boolean isAdmin;
 
-        Member(String initials, String name, boolean isAdmin) {
+        UIMember(String initials, String name, boolean isAdmin) {
             this.initials = initials;
             this.name = name;
             this.isAdmin = isAdmin;
@@ -344,9 +500,9 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
 
     static class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder> {
-        private List<Member> members = new ArrayList<>();
+        private List<UIMember> members = new ArrayList<>();
 
-        void setMembers(List<Member> members) {
+        void setMembers(List<UIMember> members) {
             this.members = members;
             notifyDataSetChanged();
         }
@@ -360,7 +516,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Member member = members.get(position);
+            UIMember member = members.get(position);
             holder.tvMemberAvatar.setText(member.initials);
             holder.ivAdminBadge.setVisibility(member.isAdmin ? View.VISIBLE : View.GONE);
         }
