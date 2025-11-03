@@ -18,13 +18,22 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
+import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.domain.model.ProjectMember;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_TASK_ID = "task_id";
     private static final String ARG_TASK_TITLE = "task_title";
@@ -34,8 +43,12 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_TASK_START_DATE = "task_start_date";
     private static final String ARG_TASK_DUE_DATE = "task_due_date";
     private static final String ARG_IS_EDIT_MODE = "is_edit_mode";
+    private static final String ARG_PROJECT_ID = "project_id";
+    private static final String ARG_ASSIGNEE_ID = "assignee_id";
     
     private Task task;
+    private String projectId;
+    private String assigneeId;
     private OnActionClickListener listener;
     private ImageView ivClose;
     private RadioButton rbTaskTitle;
@@ -82,6 +95,8 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         args.putString(ARG_TASK_DESCRIPTION, task.getDescription());
         args.putString(ARG_TASK_PRIORITY, task.getPriority().name());
         args.putString(ARG_TASK_STATUS, task.getStatus().name());
+        args.putString(ARG_PROJECT_ID, task.getProjectId());
+        args.putString(ARG_ASSIGNEE_ID, task.getAssigneeId());
         
         // Store dates as timestamps
         if (task.getStartAt() != null) {
@@ -138,6 +153,10 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         // Get edit mode flag
         isEditMode = args.getBoolean(ARG_IS_EDIT_MODE, false);
+        
+        // Get project ID and assignee ID
+        projectId = args.getString(ARG_PROJECT_ID);
+        assigneeId = args.getString(ARG_ASSIGNEE_ID);
         
         // Update button text based on mode
         if (btnConfirm != null) {
@@ -230,10 +249,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         if (btnMembers != null) {
             btnMembers.setOnClickListener(v -> {
-                if (listener != null && task != null) {
-                    listener.onAssignTask(task);
-                }
-                dismiss();
+                showAssignMemberDialog();
             });
         }
         if (btnAddAttachment != null) {
@@ -329,4 +345,106 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePickerDialog.show();
     }
+    
+    private void showAssignMemberDialog() {
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(requireContext(), "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (task == null || task.getId() == null) {
+            Toast.makeText(requireContext(), "Cannot assign task: Invalid task", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, assigneeId);
+        assignSheet.setOnMemberSelectedListener(new AssignMemberBottomSheet.OnMemberSelectedListener() {
+            @Override
+            public void onMemberSelected(ProjectMember member) {
+                // Call API to assign task
+                assignTaskToMember(task.getId(), member);
+            }
+            
+            @Override
+            public void onUnassign() {
+                // Call API to unassign task
+                unassignTask(task.getId());
+            }
+        });
+        
+        assignSheet.show(getParentFragmentManager(), "assign_member");
+    }
+    
+    private void assignTaskToMember(String taskId, ProjectMember member) {
+        // Create TaskDTO with only assigneeId field
+        TaskDTO updateDto = new TaskDTO();
+        updateDto.setAssigneeId(member.getUserId());
+        
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        apiService.updateTask(taskId, updateDto).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    assigneeId = member.getUserId();
+                    
+                    Toast.makeText(requireContext(), 
+                        "Assigned to: " + member.getName(), 
+                        Toast.LENGTH_SHORT).show();
+                    
+                    // Update button text to show assignee
+                    if (btnMembers != null) {
+                        btnMembers.setText(member.getName());
+                    }
+                } else {
+                    Toast.makeText(requireContext(), 
+                        "Failed to assign task", 
+                        Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Toast.makeText(requireContext(), 
+                    "Network error: " + t.getMessage(), 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void unassignTask(String taskId) {
+        // Create TaskDTO with null assigneeId
+        TaskDTO updateDto = new TaskDTO();
+        updateDto.setAssigneeId(null);
+        
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        apiService.updateTask(taskId, updateDto).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful()) {
+                    assigneeId = null;
+                    
+                    Toast.makeText(requireContext(), 
+                        "Task unassigned", 
+                        Toast.LENGTH_SHORT).show();
+                    
+                    // Reset button text
+                    if (btnMembers != null) {
+                        btnMembers.setText("Assign Task");
+                    }
+                } else {
+                    Toast.makeText(requireContext(), 
+                        "Failed to unassign task", 
+                        Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Toast.makeText(requireContext(), 
+                    "Network error: " + t.getMessage(), 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }
+

@@ -1,6 +1,7 @@
 package com.example.tralalero.data.remote.api;
 
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 
 import java.util.List;
 
@@ -16,6 +17,9 @@ public interface ProjectApiService {
 
     @GET("projects/{id}")
     Call<ProjectDTO> getProjectById(@Path("id") String projectId);
+
+    @GET("projects/{id}/members")
+    Call<List<ProjectMemberDTO>> getProjectMembers(@Path("id") String projectId);
 
 
     @POST("projects")

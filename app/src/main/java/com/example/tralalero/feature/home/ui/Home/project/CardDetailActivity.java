@@ -704,27 +704,40 @@ public class CardDetailActivity extends AppCompatActivity {
     }
 
     private void showAssignTaskDialog() {
-        CharSequence[] options = {
-            "Self-assign (Assign to me)",
-            "Assign to member (Coming soon)"
-        };
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Assign Task")
-                .setItems(options, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            selfAssignTask();
-                            break;
-                        case 1:
-                            Toast.makeText(this, "Assign to member feature is under development", 
-                                    Toast.LENGTH_SHORT).show();
-                            // TODO: Implement assign to member when ready
-                            break;
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Open new AssignMemberBottomSheet
+        String currentAssigneeId = null; // TODO: Get from task if available
+        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, currentAssigneeId);
+        assignSheet.setOnMemberSelectedListener(new AssignMemberBottomSheet.OnMemberSelectedListener() {
+            @Override
+            public void onMemberSelected(com.example.tralalero.domain.model.ProjectMember member) {
+                // Assign task to selected member
+                taskViewModel.assignTask(taskId, member.getUserId());
+                Toast.makeText(CardDetailActivity.this, 
+                    "Assigned to: " + member.getName(), 
+                    Toast.LENGTH_SHORT).show();
+            }
+            
+            @Override
+            public void onUnassign() {
+                // Unassign task
+                taskViewModel.unassignTask(taskId);
+                Toast.makeText(CardDetailActivity.this, 
+                    "Task unassigned", 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        assignSheet.show(getSupportFragmentManager(), "assign_member");
     }
 
     private void selfAssignTask() {

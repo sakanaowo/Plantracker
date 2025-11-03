@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+
+    <!-- Header -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="16dp">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Assign Task" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/black" />
+
+        <ImageView android:id="@+id/ivClose" android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_close" android:padding="4dp" android:contentDescription="Close" />
+    </LinearLayout>
+
+    <!-- Search Bar -->
+    <com.google.android.material.textfield.TextInputLayout style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Search members" app:startIconDrawable="@drawable/glass" app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp" app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp">
+
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etSearchMember" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Current Assignee Section -->
+    <LinearLayout android:id="@+id/currentAssigneeSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="16dp" android:visibility="gone">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Current Assignee" android:textSize="14sp" android:textStyle="bold" android:textColor="#888888" android:paddingBottom="8dp" />
+
+        <include android:id="@+id/currentAssigneeItem" layout="@layout/item_member" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginTop="8dp" android:layout_marginBottom="8dp" />
+    </LinearLayout>
+
+    <!-- Members List -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Project Members" android:textSize="14sp" android:textStyle="bold" android:textColor="#888888" android:paddingTop="8dp" android:paddingBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvMembers" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxHeight="400dp" android:nestedScrollingEnabled="true" />
+
+    <!-- Empty State -->
+    <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No members found" android:textSize="14sp" android:textColor="#888888" android:gravity="center" android:padding="32dp" android:visibility="gone" />
+
+    <!-- Unassign Button -->
+    <Button android:id="@+id/btnUnassign" style="?attr/borderlessButtonStyle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Unassign Task" android:textColor="#F44336" android:layout_marginTop="8dp" />
+
+</LinearLayout>

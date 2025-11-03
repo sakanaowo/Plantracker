@@ -5,12 +5,18 @@ public class Workspace {
     private final String name;
     private final String type; 
     private final String ownerId;
+    private final boolean isOwner;  // NEW: Flag to indicate if current user is owner
 
     public Workspace(String id, String name, String type, String ownerId) {
+        this(id, name, type, ownerId, false);
+    }
+
+    public Workspace(String id, String name, String type, String ownerId, boolean isOwner) {
         this.id = id;
         this.name = name;
         this.type = type;
         this.ownerId = ownerId;
+        this.isOwner = isOwner;
     }
 
     public String getId() {
@@ -27,6 +33,10 @@ public class Workspace {
 
     public String getOwnerId() {
         return ownerId;
+    }
+
+    public boolean isOwner() {
+        return isOwner;
     }
 
     public boolean isPersonal() {
