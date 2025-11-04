@@ -357,94 +357,19 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             return;
         }
         
-        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, assigneeId);
-        assignSheet.setOnMemberSelectedListener(new AssignMemberBottomSheet.OnMemberSelectedListener() {
+        // Use new multi-select AssignMemberBottomSheet
+        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, task.getId());
+        assignSheet.setOnAssigneesChangedListener(new AssignMemberBottomSheet.OnAssigneesChangedListener() {
             @Override
-            public void onMemberSelected(ProjectMember member) {
-                // Call API to assign task
-                assignTaskToMember(task.getId(), member);
-            }
-            
-            @Override
-            public void onUnassign() {
-                // Call API to unassign task
-                unassignTask(task.getId());
+            public void onAssigneesChanged() {
+                // Reload task details to show updated assignees
+                Toast.makeText(requireContext(), "Assignees updated", Toast.LENGTH_SHORT).show();
+                // TODO: Implement reload task details from API to update UI with new assignees
+                // This will be implemented when updating task cards to show multiple avatars
             }
         });
         
         assignSheet.show(getParentFragmentManager(), "assign_member");
-    }
-    
-    private void assignTaskToMember(String taskId, ProjectMember member) {
-        // Create TaskDTO with only assigneeId field
-        TaskDTO updateDto = new TaskDTO();
-        updateDto.setAssigneeId(member.getUserId());
-        
-        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        apiService.updateTask(taskId, updateDto).enqueue(new Callback<TaskDTO>() {
-            @Override
-            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    assigneeId = member.getUserId();
-                    
-                    Toast.makeText(requireContext(), 
-                        "Assigned to: " + member.getName(), 
-                        Toast.LENGTH_SHORT).show();
-                    
-                    // Update button text to show assignee
-                    if (btnMembers != null) {
-                        btnMembers.setText(member.getName());
-                    }
-                } else {
-                    Toast.makeText(requireContext(), 
-                        "Failed to assign task", 
-                        Toast.LENGTH_SHORT).show();
-                }
-            }
-            
-            @Override
-            public void onFailure(Call<TaskDTO> call, Throwable t) {
-                Toast.makeText(requireContext(), 
-                    "Network error: " + t.getMessage(), 
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    
-    private void unassignTask(String taskId) {
-        // Create TaskDTO with null assigneeId
-        TaskDTO updateDto = new TaskDTO();
-        updateDto.setAssigneeId(null);
-        
-        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        apiService.updateTask(taskId, updateDto).enqueue(new Callback<TaskDTO>() {
-            @Override
-            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
-                if (response.isSuccessful()) {
-                    assigneeId = null;
-                    
-                    Toast.makeText(requireContext(), 
-                        "Task unassigned", 
-                        Toast.LENGTH_SHORT).show();
-                    
-                    // Reset button text
-                    if (btnMembers != null) {
-                        btnMembers.setText("Assign Task");
-                    }
-                } else {
-                    Toast.makeText(requireContext(), 
-                        "Failed to unassign task", 
-                        Toast.LENGTH_SHORT).show();
-                }
-            }
-            
-            @Override
-            public void onFailure(Call<TaskDTO> call, Throwable t) {
-                Toast.makeText(requireContext(), 
-                    "Network error: " + t.getMessage(), 
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }
 

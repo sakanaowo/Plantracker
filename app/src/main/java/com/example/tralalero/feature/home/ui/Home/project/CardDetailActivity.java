@@ -714,26 +714,16 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
-        // Open new AssignMemberBottomSheet
-        String currentAssigneeId = null; // TODO: Get from task if available
-        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, currentAssigneeId);
-        assignSheet.setOnMemberSelectedListener(new AssignMemberBottomSheet.OnMemberSelectedListener() {
+        // Open new AssignMemberBottomSheet with multi-select support
+        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, taskId);
+        assignSheet.setOnAssigneesChangedListener(new AssignMemberBottomSheet.OnAssigneesChangedListener() {
             @Override
-            public void onMemberSelected(com.example.tralalero.domain.model.ProjectMember member) {
-                // Assign task to selected member
-                taskViewModel.assignTask(taskId, member.getUserId());
+            public void onAssigneesChanged() {
+                // Reload task details to show updated assignees
                 Toast.makeText(CardDetailActivity.this, 
-                    "Assigned to: " + member.getName(), 
+                    "Assignees updated", 
                     Toast.LENGTH_SHORT).show();
-            }
-            
-            @Override
-            public void onUnassign() {
-                // Unassign task
-                taskViewModel.unassignTask(taskId);
-                Toast.makeText(CardDetailActivity.this, 
-                    "Task unassigned", 
-                    Toast.LENGTH_SHORT).show();
+                // TODO: Reload task details if needed
             }
         });
         
