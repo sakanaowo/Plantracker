@@ -29,12 +29,20 @@
     <!-- Members List -->
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Project Members" android:textSize="14sp" android:textStyle="bold" android:textColor="#888888" android:paddingTop="8dp" android:paddingBottom="8dp" />
 
+    <!-- Selected Count -->
+    <TextView android:id="@+id/tvSelectedCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 selected" android:textSize="12sp" android:textColor="#4CAF50" android:paddingBottom="8dp" android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvMembers" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxHeight="400dp" android:nestedScrollingEnabled="true" />
 
     <!-- Empty State -->
     <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No members found" android:textSize="14sp" android:textColor="#888888" android:gravity="center" android:padding="32dp" android:visibility="gone" />
 
-    <!-- Unassign Button -->
-    <Button android:id="@+id/btnUnassign" style="?attr/borderlessButtonStyle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Unassign Task" android:textColor="#F44336" android:layout_marginTop="8dp" />
+    <!-- Action Buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="16dp">
+
+        <Button android:id="@+id/btnUnassignAll" style="?attr/borderlessButtonStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Unassign All" android:textColor="#F44336" android:visibility="gone" />
+
+        <Button android:id="@+id/btnSave" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Save Changes" android:textColor="#4CAF50" android:layout_marginStart="8dp" />
+    </LinearLayout>
 
 </LinearLayout>

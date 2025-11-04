@@ -5,6 +5,7 @@ import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
 import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListItemDTO;
+import com.example.tralalero.data.remote.dto.task.TaskAssigneeDTO;
 import com.example.tralalero.data.remote.dto.ChecklistDTO;
 import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
 import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
@@ -147,4 +148,41 @@ public interface TaskApiService {
     Call<Void> deleteChecklistItem(
         @Path("id") String itemId
     );
+
+    // ==================== ASSIGNEES ====================
+
+    /**
+     * Get all assignees for a task
+     * GET /tasks/:taskId/assignees
+     */
+    @GET("tasks/{taskId}/assignees")
+    Call<List<TaskAssigneeDTO>> getTaskAssignees(@Path("taskId") String taskId);
+
+    /**
+     * Assign multiple users to a task
+     * POST /tasks/:taskId/assignees
+     * Body: { "userIds": ["userId1", "userId2"] }
+     */
+    @POST("tasks/{taskId}/assignees")
+    Call<Void> assignUsers(
+        @Path("taskId") String taskId,
+        @Body java.util.Map<String, List<String>> body
+    );
+
+    /**
+     * Unassign a specific user from a task
+     * DELETE /tasks/:taskId/assignees/:userId
+     */
+    @DELETE("tasks/{taskId}/assignees/{userId}")
+    Call<Void> unassignUser(
+        @Path("taskId") String taskId,
+        @Path("userId") String userId
+    );
+
+    /**
+     * Unassign all users from a task
+     * DELETE /tasks/:taskId/assignees
+     */
+    @DELETE("tasks/{taskId}/assignees")
+    Call<Void> unassignAll(@Path("taskId") String taskId);
 }

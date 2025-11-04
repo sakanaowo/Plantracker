@@ -3,6 +3,7 @@ package com.example.tralalero.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,20 +14,22 @@ import com.example.tralalero.R;
 import com.example.tralalero.domain.model.ProjectMember;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelectionAdapter.MemberViewHolder> {
 
     private List<ProjectMember> members = new ArrayList<>();
     private List<ProjectMember> filteredMembers = new ArrayList<>();
-    private String currentAssigneeId;
-    private OnMemberClickListener listener;
+    private Set<String> selectedUserIds = new HashSet<>(); // ✅ Changed to Set for multi-select
+    private OnSelectionChangeListener listener;
 
-    public interface OnMemberClickListener {
-        void onMemberClick(ProjectMember member);
+    public interface OnSelectionChangeListener {
+        void onSelectionChanged(Set<String> selectedUserIds);
     }
 
-    public MemberSelectionAdapter(OnMemberClickListener listener) {
+    public MemberSelectionAdapter(OnSelectionChangeListener listener) {
         this.listener = listener;
     }
 
@@ -36,9 +39,13 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
         notifyDataSetChanged();
     }
 
-    public void setCurrentAssigneeId(String assigneeId) {
-        this.currentAssigneeId = assigneeId;
+    public void setSelectedUserIds(Set<String> userIds) {
+        this.selectedUserIds = userIds != null ? new HashSet<>(userIds) : new HashSet<>();
         notifyDataSetChanged();
+    }
+
+    public Set<String> getSelectedUserIds() {
+        return new HashSet<>(selectedUserIds);
     }
 
     public void filter(String query) {
@@ -68,8 +75,18 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
     @Override
     public void onBindViewHolder(@NonNull MemberViewHolder holder, int position) {
         ProjectMember member = filteredMembers.get(position);
-        boolean isSelected = currentAssigneeId != null && currentAssigneeId.equals(member.getUserId());
-        holder.bind(member, isSelected, listener);
+        boolean isSelected = selectedUserIds.contains(member.getUserId());
+        holder.bind(member, isSelected, (selectedMember, checked) -> {
+            if (checked) {
+                selectedUserIds.add(selectedMember.getUserId());
+            } else {
+                selectedUserIds.remove(selectedMember.getUserId());
+            }
+            if (listener != null) {
+                listener.onSelectionChanged(selectedUserIds);
+            }
+            notifyItemChanged(position);
+        });
     }
 
     @Override
@@ -83,7 +100,7 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
         private final TextView tvName;
         private final TextView tvEmail;
         private final TextView tvRole;
-        private final ImageView ivSelected;
+        private final CheckBox cbSelected; // ✅ Changed from ImageView to CheckBox
 
         public MemberViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -92,10 +109,10 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
             tvName = itemView.findViewById(R.id.tvMemberName);
             tvEmail = itemView.findViewById(R.id.tvMemberEmail);
             tvRole = itemView.findViewById(R.id.tvMemberRole);
-            ivSelected = itemView.findViewById(R.id.ivSelected);
+            cbSelected = itemView.findViewById(R.id.cbMemberSelected);
         }
 
-        public void bind(ProjectMember member, boolean isSelected, OnMemberClickListener listener) {
+        public void bind(ProjectMember member, boolean isSelected, OnCheckChangeListener listener) {
             tvName.setText(member.getName());
             tvEmail.setText(member.getEmail());
             tvRole.setText(member.getRole());
@@ -108,8 +125,8 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
             ivAvatar.setVisibility(View.GONE);
             tvInitials.setVisibility(View.VISIBLE);
 
-            // Show selected indicator
-            ivSelected.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+            // Set checkbox state
+            cbSelected.setChecked(isSelected);
 
             // Set role color
             if ("ADMIN".equals(member.getRole())) {
@@ -118,11 +135,24 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
                 tvRole.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
             }
 
-            itemView.setOnClickListener(v -> {
+            // Handle clicks
+            View.OnClickListener clickListener = v -> {
+                cbSelected.setChecked(!cbSelected.isChecked());
                 if (listener != null) {
-                    listener.onMemberClick(member);
+                    listener.onCheckChanged(member, cbSelected.isChecked());
+                }
+            };
+
+            itemView.setOnClickListener(clickListener);
+            cbSelected.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (listener != null && buttonView.isPressed()) {
+                    listener.onCheckChanged(member, isChecked);
                 }
             });
         }
+    }
+
+    interface OnCheckChangeListener {
+        void onCheckChanged(ProjectMember member, boolean isChecked);
     }
 }

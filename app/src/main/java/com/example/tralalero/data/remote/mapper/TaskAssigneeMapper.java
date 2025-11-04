@@ -1,27 +1,28 @@
 package com.example.tralalero.data.remote.mapper;
 
-import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
-import com.example.tralalero.domain.model.ProjectMember;
+import com.example.tralalero.data.remote.dto.task.TaskAssigneeDTO;
+import com.example.tralalero.domain.model.TaskAssignee;
 
-public class ProjectMemberMapper {
+public class TaskAssigneeMapper {
     
-    public static ProjectMember toDomain(ProjectMemberDTO dto) {
+    public static TaskAssignee toDomain(TaskAssigneeDTO dto) {
         if (dto == null || dto.getUsers() == null) {
             return null;
         }
         
-        ProjectMemberDTO.UserInfo user = dto.getUsers();
+        TaskAssigneeDTO.UserInfo user = dto.getUsers();
         
         // Use userId from DTO if available, otherwise use user.id
         String userId = dto.getUserId() != null ? dto.getUserId() : user.getId();
         
-        return new ProjectMember(
-                dto.getId(),
-                userId,  // ✅ Use fallback logic
+        return new TaskAssignee(
+                dto.getTaskId(),
+                userId,
                 user.getName(),
                 user.getEmail(),
                 user.getAvatarUrl(),
-                dto.getRole()
+                dto.getAssignedAt(),
+                dto.getAssignedBy()
         );
     }
 }

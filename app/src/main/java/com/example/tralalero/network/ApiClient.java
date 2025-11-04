@@ -69,6 +69,7 @@ public class ApiClient {
         // ✅ FIXED: Create Gson with proper configuration
         Gson gson = new GsonBuilder()
                 .setLenient()
+                .serializeNulls()  // ✅ Include null fields in JSON
                 .create();
 
         return new Retrofit.Builder()

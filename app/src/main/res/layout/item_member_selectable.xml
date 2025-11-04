@@ -24,7 +24,7 @@
     <!-- Role Badge -->
     <TextView android:id="@+id/tvMemberRole" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADMIN" android:textSize="12sp" android:textColor="#4CAF50" android:background="@drawable/bg_header4" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_marginStart="8dp" />
 
-    <!-- Selected Indicator -->
-    <ImageView android:id="@+id/ivSelected" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/pin_svg" app:tint="#4CAF50" android:visibility="gone" android:layout_marginStart="8dp" />
+    <!-- Multi-select Checkbox -->
+    <CheckBox android:id="@+id/cbMemberSelected" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:clickable="false" android:focusable="false" />
 
 </LinearLayout>
