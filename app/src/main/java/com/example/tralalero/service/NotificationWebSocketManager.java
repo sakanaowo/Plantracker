@@ -36,7 +36,7 @@ public class NotificationWebSocketManager {
     
     // Connection state
     private boolean isConnected = false;
-    private boolean shouldReconnect = true;
+    private boolean shouldReconnect = false; // DISABLED: Prevent reconnect spam when backend is down
     
     // Reconnection strategy
     private int reconnectAttempts = 0;
@@ -100,7 +100,7 @@ public class NotificationWebSocketManager {
         }
         
         this.currentToken = token;
-        shouldReconnect = true;
+        // shouldReconnect = true;
         reconnectAttempts = 0;
         
         // Use BuildConfig.WS_URL or fallback to production URL
