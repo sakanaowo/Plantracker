@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
@@ -43,6 +44,7 @@ public class WorkspaceActivity extends HomeActivity {
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private String workspaceId;
+    private String workspaceName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ public class WorkspaceActivity extends HomeActivity {
             return insets;
         });
         workspaceId = getIntent().getStringExtra("WORKSPACE_ID");
+        workspaceName = getIntent().getStringExtra("WORKSPACE_NAME");
 
         if (workspaceId == null || workspaceId.isEmpty()) {
             Toast.makeText(this, "Error: No workspace ID provided", Toast.LENGTH_SHORT).show();
@@ -64,6 +67,7 @@ public class WorkspaceActivity extends HomeActivity {
 
         Log.d(TAG, "=== WorkspaceActivity Started ===");
         Log.d(TAG, "Workspace ID: " + workspaceId);
+        Log.d(TAG, "Workspace Name: " + workspaceName);
         setupViewModels();
         setupUI();
         setupRecyclerView();
@@ -79,6 +83,15 @@ public class WorkspaceActivity extends HomeActivity {
         progressBar = findViewById(R.id.progressBar);
         if (progressBar == null) {
             Log.w(TAG, "ProgressBar not found in layout, creating programmatically");
+        }
+        
+        // Set workspace name as title
+        TextView tvTitle = findViewById(R.id.tvTitle);
+        if (tvTitle != null && workspaceName != null && !workspaceName.isEmpty()) {
+            tvTitle.setText(workspaceName);
+            Log.d(TAG, "Title set to: " + workspaceName);
+        } else {
+            Log.w(TAG, "Could not set title - tvTitle or workspaceName is null");
         }
     }
 

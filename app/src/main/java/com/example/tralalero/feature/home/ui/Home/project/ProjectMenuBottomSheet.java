@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ import com.example.tralalero.data.repository.MemberRepositoryImpl;
 import com.example.tralalero.domain.repository.IActivityLogRepository;
 import com.example.tralalero.domain.repository.IMemberRepository;
 import com.example.tralalero.feature.project.members.InviteMemberDialog;
+import com.example.tralalero.feature.home.ui.adapter.ActivityLogAdapter;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -57,7 +59,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private View layoutSynced;
     
     private MemberAdapter memberAdapter;
-    private ActivityAdapter activityAdapter;
+    private ActivityLogAdapter activityAdapter;  // FIXED: Use ActivityLogAdapter instead of ActivityAdapter
 
     public static ProjectMenuBottomSheet newInstance(String projectId, String projectName) {
         ProjectMenuBottomSheet fragment = new ProjectMenuBottomSheet();
@@ -392,13 +394,31 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void setupRecyclerViews() {
+        Log.d("ProjectMenuBottomSheet", "🔧 Setting up RecyclerViews");
+        
+        // Check if RecyclerViews exist
+        if (rvMembers == null) {
+            Log.e("ProjectMenuBottomSheet", "❌ rvMembers is NULL!");
+            return;
+        }
+        if (rvActivity == null) {
+            Log.e("ProjectMenuBottomSheet", "❌ rvActivity is NULL!");
+            return;
+        }
+        
+        Log.d("ProjectMenuBottomSheet", "✅ Both RecyclerViews found");
+        Log.d("ProjectMenuBottomSheet", "   rvMembers visibility: " + rvMembers.getVisibility());
+        Log.d("ProjectMenuBottomSheet", "   rvActivity visibility: " + rvActivity.getVisibility());
+        
         memberAdapter = new MemberAdapter();
         rvMembers.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvMembers.setAdapter(memberAdapter);
+        Log.d("ProjectMenuBottomSheet", "✅ Member adapter initialized and set");
         
-        activityAdapter = new ActivityAdapter();
+        activityAdapter = new ActivityLogAdapter(getContext());  // FIXED: Pass context and use ActivityLogAdapter
         rvActivity.setLayoutManager(new LinearLayoutManager(getContext()));
         rvActivity.setAdapter(activityAdapter);
+        Log.d("ProjectMenuBottomSheet", "✅ Activity adapter initialized and set");
     }
 
     private void loadData() {
@@ -421,7 +441,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         // Load from cache first
         List<com.example.tralalero.domain.model.ActivityLog> cachedLogs = loadActivityLogsFromCache();
         if (!cachedLogs.isEmpty()) {
-            activityAdapter.setActivities(cachedLogs);
+            activityAdapter.setActivityLogs(cachedLogs);  // FIXED: Use setActivityLogs
         }
         
         // Then fetch fresh data
@@ -480,14 +500,22 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                 public void onSuccess(List<com.example.tralalero.domain.model.Member> domainMembers) {
                     if (getContext() == null) return;
                     
+                    Log.d("ProjectMenuBottomSheet", "✅ Received " + domainMembers.size() + " members from API");
+                    
                     // Convert domain members to UI members
                     List<UIMember> uiMembers = new ArrayList<>();
                     for (com.example.tralalero.domain.model.Member domainMember : domainMembers) {
                         String initials = getInitials(domainMember.getUser().getName());
                         boolean isAdmin = domainMember.isAdmin() || domainMember.isOwner();
                         String avatarUrl = domainMember.getUser().getAvatarUrl();
-                        uiMembers.add(new UIMember(initials, domainMember.getUser().getName(), avatarUrl, isAdmin));
+                        
+                        UIMember uiMember = new UIMember(initials, domainMember.getUser().getName(), avatarUrl, isAdmin);
+                        uiMembers.add(uiMember);
+                        
+                        Log.d("ProjectMenuBottomSheet", "   Member: " + domainMember.getUser().getName() + " (initials: " + initials + ", avatar: " + (avatarUrl != null ? "YES" : "NO") + ")");
                     }
+                    
+                    Log.d("ProjectMenuBottomSheet", "📊 Total UI members created: " + uiMembers.size());
                     
                     // Save to cache
                     saveMembersToCache(uiMembers);
@@ -496,32 +524,46 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (memberAdapter != null) {
+                                Log.d("ProjectMenuBottomSheet", "🔄 Updating adapter with " + uiMembers.size() + " members");
                                 memberAdapter.setMembers(uiMembers);
+                                Log.d("ProjectMenuBottomSheet", "✅ Adapter updated, count: " + memberAdapter.getItemCount());
+                            } else {
+                                Log.e("ProjectMenuBottomSheet", "❌ memberAdapter is NULL!");
                             }
                         });
+                    } else {
+                        Log.e("ProjectMenuBottomSheet", "❌ Activity is NULL!");
                     }
                 }
                 
                 @Override
                 public void onError(String error) {
-                    // Fallback to default member
-                    List<UIMember> defaultMembers = new ArrayList<>();
-                    defaultMembers.add(new UIMember("U", "You", null, true));
+                    Log.e("ProjectMenuBottomSheet", "❌ Failed to load members: " + error);
                     
+                    // Show empty list instead of fake data
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (memberAdapter != null) {
-                                memberAdapter.setMembers(defaultMembers);
+                                memberAdapter.setMembers(new ArrayList<>());
+                                Log.d("ProjectMenuBottomSheet", "Cleared member list due to error");
                             }
                         });
                     }
                 }
             });
         } else {
-            // Fallback if no repository
-            List<UIMember> defaultMembers = new ArrayList<>();
-            defaultMembers.add(new UIMember("U", "You", null, true));
-            memberAdapter.setMembers(defaultMembers);
+            // Log why members aren't loading
+            if (memberRepository == null) {
+                Log.e("ProjectMenuBottomSheet", "❌ memberRepository is NULL! Cannot load members");
+            }
+            if (projectId == null) {
+                Log.e("ProjectMenuBottomSheet", "❌ projectId is NULL! Cannot load members");
+            }
+            
+            // Show empty list - no fake data
+            if (memberAdapter != null) {
+                memberAdapter.setMembers(new ArrayList<>());
+            }
         }
     }
     
@@ -531,15 +573,23 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                 new IActivityLogRepository.RepositoryCallback<List<com.example.tralalero.domain.model.ActivityLog>>() {
                 @Override
                 public void onSuccess(List<com.example.tralalero.domain.model.ActivityLog> logs) {
+                    Log.d("ProjectMenuBottomSheet", "✅ Received " + logs.size() + " activity logs from API");
+                    
                     // Save to cache
                     saveActivityLogsToCache(logs);
                     
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (activityAdapter != null) {
-                                activityAdapter.setActivities(logs);
+                                Log.d("ProjectMenuBottomSheet", "🔄 Updating activity adapter with " + logs.size() + " logs");
+                                activityAdapter.setActivityLogs(logs);  // FIXED: Use setActivityLogs instead of setActivities
+                                Log.d("ProjectMenuBottomSheet", "✅ Activity adapter updated, count: " + activityAdapter.getItemCount());
+                            } else {
+                                Log.e("ProjectMenuBottomSheet", "❌ activityAdapter is NULL!");
                             }
                         });
+                    } else {
+                        Log.e("ProjectMenuBottomSheet", "❌ Activity is NULL!");
                     }
                 }
                 
@@ -549,7 +599,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (activityAdapter != null) {
-                                activityAdapter.setActivities(new ArrayList<>());
+                                activityAdapter.setActivityLogs(new ArrayList<>());  // FIXED: Use setActivityLogs
                             }
                         });
                     }
@@ -557,7 +607,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             });
         } else {
             // Fallback if no repository
-            activityAdapter.setActivities(new ArrayList<>());
+            activityAdapter.setActivityLogs(new ArrayList<>());  // FIXED: Use setActivityLogs
         }
     }
     
@@ -603,26 +653,33 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         private List<UIMember> members = new ArrayList<>();
 
         void setMembers(List<UIMember> members) {
+            Log.d("MemberAdapter", "📝 setMembers called with " + members.size() + " members");
             this.members = members;
             notifyDataSetChanged();
+            Log.d("MemberAdapter", "✅ notifyDataSetChanged complete, getItemCount=" + getItemCount());
         }
 
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            Log.d("MemberAdapter", "🏗️ onCreateViewHolder called");
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_member, parent, false);
             return new ViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Log.d("MemberAdapter", "📌 onBindViewHolder position=" + position);
             UIMember member = members.get(position);
+            
+            Log.d("MemberAdapter", "   Member: " + member.name + ", avatar=" + member.avatarUrl);
             
             // Load avatar or show initials
             if (member.avatarUrl != null && !member.avatarUrl.isEmpty()) {
                 holder.ivMemberAvatar.setVisibility(View.VISIBLE);
                 holder.tvMemberAvatar.setVisibility(View.GONE);
                 
+                Log.d("MemberAdapter", "   Loading avatar from URL");
                 Glide.with(holder.itemView.getContext())
                         .load(member.avatarUrl)
                         .transform(new CircleCrop())
@@ -632,6 +689,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                 holder.ivMemberAvatar.setVisibility(View.GONE);
                 holder.tvMemberAvatar.setVisibility(View.VISIBLE);
                 holder.tvMemberAvatar.setText(member.initials);
+                Log.d("MemberAdapter", "   Showing initials: " + member.initials);
             }
             
             holder.ivAdminBadge.setVisibility(member.isAdmin ? View.VISIBLE : View.GONE);
@@ -639,7 +697,9 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
 
         @Override
         public int getItemCount() {
-            return members.size();
+            int count = members.size();
+            Log.d("MemberAdapter", "📊 getItemCount=" + count);
+            return count;
         }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
@@ -652,67 +712,6 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                 ivMemberAvatar = itemView.findViewById(R.id.ivMemberAvatar);
                 tvMemberAvatar = itemView.findViewById(R.id.tvMemberAvatar);
                 ivAdminBadge = itemView.findViewById(R.id.ivAdminBadge);
-            }
-        }
-    }
-
-    static class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
-        private List<com.example.tralalero.domain.model.ActivityLog> activities = new ArrayList<>();
-
-        void setActivities(List<com.example.tralalero.domain.model.ActivityLog> activities) {
-            this.activities = activities;
-            notifyDataSetChanged();
-        }
-        
-        void addActivity(com.example.tralalero.domain.model.ActivityLog activity) {
-            activities.add(0, activity);
-            notifyItemInserted(0);
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_activity, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            com.example.tralalero.domain.model.ActivityLog activity = activities.get(position);
-            
-            // Use user initials for avatar
-            holder.tvActivityAvatar.setText(activity.getUserInitials());
-            
-            // Use formatted message from domain model
-            String fullText = activity.getFormattedMessage();
-            SpannableString spannableString = new SpannableString(fullText);
-            
-            // Bold username (first word/part)
-            String userName = activity.getUserName();
-            if (userName != null && fullText.startsWith(userName)) {
-                spannableString.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 
-                    0, userName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            
-            holder.tvActivityText.setText(spannableString);
-            holder.tvActivityTime.setText(activity.getFormattedTime());
-        }
-
-        @Override
-        public int getItemCount() {
-            return activities.size();
-        }
-
-        static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvActivityAvatar;
-            TextView tvActivityText;
-            TextView tvActivityTime;
-
-            ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvActivityAvatar = itemView.findViewById(R.id.tvActivityAvatar);
-                tvActivityText = itemView.findViewById(R.id.tvActivityText);
-                tvActivityTime = itemView.findViewById(R.id.tvActivityTime);
             }
         }
     }

@@ -82,13 +82,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         SharedPreferences prefs = getSharedPreferences("notification_prefs", MODE_PRIVATE);
         boolean showFCM = prefs.getBoolean("show_fcm_notifications", true);
         
-        if (!showFCM) {
-            // App is foreground - WebSocket already handled this notification
-            Log.d(TAG, "⚠️ App foreground, skipping FCM notification (WebSocket handled it)");
-            return;
-        }
+        Log.d(TAG, "📊 [FCM] App state check:");
+        Log.d(TAG, "   show_fcm_notifications: " + showFCM);
+        Log.d(TAG, "   Interpretation: " + (showFCM ? "BACKGROUND (show FCM)" : "FOREGROUND (WebSocket active)"));
         
-        Log.d(TAG, "✅ App background, showing FCM notification");
+        if (!showFCM) {
+            // App is foreground - WebSocket should handle notifications
+            // CHANGED: Still show as backup to prevent race condition losses
+            Log.d(TAG, "⚠️ [FCM] App foreground, but ALLOWING notification as backup");
+            Log.d(TAG, "   This prevents race condition when WebSocket not yet connected");
+            // Don't return - continue to show notification
+        } else {
+            Log.d(TAG, "✅ [FCM] App background, showing notification");
+        }
 
         // Check if message contains data payload
         if (!remoteMessage.getData().isEmpty()) {

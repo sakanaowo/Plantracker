@@ -76,38 +76,42 @@ public class ActivityLog {
 
     private String formatAction(String action, String entityType) {
         if (action == null) {
-            return "performed an action";
+            return "đã thực hiện một hành động";
         }
         
         switch (action) {
             case "CREATED":
-                return "created " + formatEntityType(entityType);
+                return "đã tạo " + formatEntityType(entityType);
             case "UPDATED":
-                return "updated " + formatEntityType(entityType);
+                return "đã cập nhật " + formatEntityType(entityType);
             case "DELETED":
-                return "deleted " + formatEntityType(entityType);
+                return "đã xóa " + formatEntityType(entityType);
             case "ADDED":
                 // Special handling for MEMBERSHIP invitations
                 if ("MEMBERSHIP".equals(entityType)) {
-                    return "invited you to join";
+                    return "đã mời bạn tham gia";
                 }
-                return "added " + formatEntityType(entityType);
+                return "đã thêm " + formatEntityType(entityType);
             case "COMMENTED":
-                return "commented on";
+                return "đã bình luận về";
             case "ASSIGNED":
-                return "assigned";
+                return "đã giao";
             case "UNASSIGNED":
-                return "unassigned";
+                return "đã hủy giao";
             case "MOVED":
-                return "moved";
+                return "đã chuyển";
             case "CHECKED":
-                return "checked";
+                return "đã đánh dấu";
             case "UNCHECKED":
-                return "unchecked";
+                return "đã bỏ đánh dấu";
             case "ADDED_MEMBER":
-                return "added member to";
+                return "đã thêm thành viên vào";
             case "REMOVED_MEMBER":
-                return "removed member from";
+                return "đã xóa thành viên khỏi";
+            case "COMPLETED":
+                return "đã hoàn thành";
+            case "REOPENED":
+                return "đã mở lại";
             default:
                 return action.toLowerCase();
         }
@@ -115,26 +119,26 @@ public class ActivityLog {
 
     private String formatEntityType(String entityType) {
         if (entityType == null) {
-            return "item";
+            return "mục";
         }
         
         switch (entityType) {
             case "TASK":
-                return "task";
+                return "nhiệm vụ";
             case "CHECKLIST_ITEM":
-                return "checklist item";
+                return "mục checklist";
             case "COMMENT":
-                return "comment";
+                return "bình luận";
             case "PROJECT":
-                return "project";
+                return "dự án";
             case "BOARD":
-                return "board";
+                return "bảng";
             case "LABEL":
-                return "label";
+                return "nhãn";
             case "ATTACHMENT":
-                return "attachment";
+                return "tập tin đính kèm";
             case "MEMBERSHIP":
-                return ""; // Empty string for "invited you to join [project name]"
+                return ""; // Empty string for "đã mời bạn tham gia [project name]"
             default:
                 return entityType.toLowerCase();
         }

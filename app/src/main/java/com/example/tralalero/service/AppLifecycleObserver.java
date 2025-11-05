@@ -45,8 +45,10 @@ public class AppLifecycleObserver implements DefaultLifecycleObserver {
     public void onStart(@NonNull LifecycleOwner owner) {
         Log.d(TAG, "🟢 App FOREGROUND - Connecting WebSocket");
         
-        // Disable FCM notifications (WebSocket will handle them)
-        setShowFCMNotifications(false);
+        // CRITICAL FIX: Keep FCM enabled temporarily during WebSocket connection
+        // This prevents missing notifications during race condition window
+        Log.d(TAG, "⏳ Keeping FCM ENABLED during WebSocket connection (prevent race condition)");
+        // setShowFCMNotifications(false); // MOVED: Will be disabled AFTER WebSocket connects
         
         // Connect WebSocket on background thread (blocking call)
         new Thread(() -> {
@@ -60,11 +62,21 @@ public class AppLifecycleObserver implements DefaultLifecycleObserver {
                     if (userId != null) {
                         wsManager.setCurrentUserId(userId);
                     }
+                    
+                    // NOW disable FCM after WebSocket is connected
+                    // Give 2 seconds for WebSocket to fully establish
+                    Thread.sleep(2000);
+                    setShowFCMNotifications(false);
+                    Log.d(TAG, "✅ WebSocket connected, now disabling FCM");
                 } else {
                     Log.w(TAG, "No Firebase token available, cannot connect WebSocket");
+                    // Keep FCM enabled if WebSocket can't connect
+                    setShowFCMNotifications(true);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error connecting WebSocket", e);
+                // Keep FCM enabled if WebSocket connection fails
+                setShowFCMNotifications(true);
             }
         }).start();
     }

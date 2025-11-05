@@ -90,17 +90,17 @@ public class NotificationWebSocketManager {
      */
     public void connect(String token) {
         if (isConnected) {
-            Log.d(TAG, "Already connected to WebSocket");
+            Log.d(TAG, "⚠️ [WebSocket] Already connected, skipping");
             return;
         }
         
         if (token == null || token.isEmpty()) {
-            Log.e(TAG, "Cannot connect: Token is null or empty");
+            Log.e(TAG, "❌ [WebSocket] Cannot connect: Token is null or empty");
             return;
         }
         
         this.currentToken = token;
-        // shouldReconnect = true;
+        shouldReconnect = false; // KEEP FALSE to prevent spam
         reconnectAttempts = 0;
         
         // Use BuildConfig.WS_URL or fallback to production URL
@@ -108,9 +108,13 @@ public class NotificationWebSocketManager {
         if (wsUrl == null || wsUrl.isEmpty()) {
             // Fallback to production WebSocket URL (Render deployment)
             wsUrl = "wss://plantracker-backend.onrender.com/notifications";
-            Log.w(TAG, "⚠️ BuildConfig.WS_URL not set, using production URL: " + wsUrl);
+            Log.w(TAG, "⚠️ BuildConfig.WS_URL not set, using production URL");
         }
-        Log.d(TAG, "🔄 Connecting to WebSocket: " + wsUrl);
+        
+        Log.d(TAG, "🔄 [WebSocket] Initiating connection...");
+        Log.d(TAG, "   URL: " + wsUrl);
+        Log.d(TAG, "   Token: " + token.substring(0, Math.min(20, token.length())) + "...");
+        Log.d(TAG, "   shouldReconnect: " + shouldReconnect);
         
         Request request = new Request.Builder()
                 .url(wsUrl)
@@ -187,13 +191,18 @@ public class NotificationWebSocketManager {
      */
     private void handleNotification(NotificationPayload notification) {
         if (notification == null || notification.getId() == null) {
-            Log.w(TAG, "Invalid notification received");
+            Log.w(TAG, "⚠️ [WebSocket] Invalid notification received (null or no ID)");
             return;
         }
         
+        Log.d(TAG, "🔔 [WebSocket] Processing notification:");
+        Log.d(TAG, "   ID: " + notification.getId());
+        Log.d(TAG, "   Type: " + notification.getType());
+        Log.d(TAG, "   Title: " + notification.getTitle());
+        
         // Check for duplicates
         if (receivedNotificationIds.contains(notification.getId())) {
-            Log.d(TAG, "⚠️ Duplicate notification ignored: " + notification.getId());
+            Log.d(TAG, "⚠️ [WebSocket] Duplicate notification ignored: " + notification.getId());
             return;
         }
         
@@ -202,16 +211,21 @@ public class NotificationWebSocketManager {
         
         // Limit deduplication set size
         if (receivedNotificationIds.size() > MAX_DEDUP_SIZE) {
+            Log.d(TAG, "🧹 [WebSocket] Clearing deduplication cache (reached max size)");
             receivedNotificationIds.clear();
         }
         
-        Log.d(TAG, "📬 New notification: " + notification.getTitle());
+        Log.d(TAG, "📬 [WebSocket] New notification accepted: " + notification.getTitle());
+        Log.d(TAG, "   Listener registered: " + (notificationListener != null));
         
         // Notify listener on main thread
         if (notificationListener != null) {
-            new Handler(Looper.getMainLooper()).post(() -> 
-                notificationListener.onNotificationReceived(notification)
-            );
+            new Handler(Looper.getMainLooper()).post(() -> {
+                Log.d(TAG, "🔔 [WebSocket] Calling listener.onNotificationReceived()");
+                notificationListener.onNotificationReceived(notification);
+            });
+        } else {
+            Log.w(TAG, "⚠️ [WebSocket] No listener registered - notification ignored!");
         }
     }
     
@@ -257,10 +271,14 @@ public class NotificationWebSocketManager {
         public void onOpen(WebSocket webSocket, Response response) {
             isConnected = true;
             reconnectAttempts = 0;
-            Log.d(TAG, "✅ WebSocket connected");
+            Log.d(TAG, "✅ [WebSocket] Connection established successfully!");
+            Log.d(TAG, "   Response code: " + response.code());
+            Log.d(TAG, "   Protocol: " + response.protocol());
+            Log.d(TAG, "   isConnected: " + isConnected);
             
             // Start ping
             pingHandler.postDelayed(() -> sendPing(), PING_INTERVAL);
+            Log.d(TAG, "📡 [WebSocket] Ping scheduler started (every 30s)");
             
             // TODO: Send subscribe message if userId is available
             // This will be done when we integrate with App.java
@@ -268,33 +286,41 @@ public class NotificationWebSocketManager {
         
         @Override
         public void onMessage(WebSocket webSocket, String text) {
-            Log.d(TAG, "📨 Message received: " + text);
+            Log.d(TAG, "📨 [WebSocket] Raw message received");
+            Log.d(TAG, "   Length: " + text.length() + " chars");
+            Log.d(TAG, "   Content: " + text);
             
             try {
                 WebSocketMessage message = gson.fromJson(text, WebSocketMessage.class);
                 
                 if (message == null || message.getType() == null) {
-                    Log.w(TAG, "Invalid message format");
+                    Log.w(TAG, "⚠️ [WebSocket] Invalid message format - cannot parse");
                     return;
                 }
                 
+                Log.d(TAG, "📦 [WebSocket] Parsed message type: " + message.getType());
+                
                 switch (message.getType()) {
                     case "notification":
+                        Log.d(TAG, "🔔 [WebSocket] Notification message detected");
                         if (message.getPayload() != null) {
+                            Log.d(TAG, "   Payload: " + message.getPayload().getTitle());
                             handleNotification(message.getPayload());
+                        } else {
+                            Log.w(TAG, "   ⚠️ Payload is null!");
                         }
                         break;
                         
                     case "pong":
-                        Log.d(TAG, "📡 Pong received");
+                        Log.d(TAG, "📡 [WebSocket] Pong received");
                         break;
                         
                     case "subscribe-success":
-                        Log.d(TAG, "✅ Subscribed successfully");
+                        Log.d(TAG, "✅ [WebSocket] Subscribed successfully");
                         break;
                         
                     case "error":
-                        Log.e(TAG, "❌ Error from server: " + message.getMessage());
+                        Log.e(TAG, "❌ [WebSocket] Error from server: " + message.getMessage());
                         break;
                         
                     default:
