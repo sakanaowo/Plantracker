@@ -52,9 +52,10 @@ public class ApiClient {
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS);
+                .connectTimeout(60, TimeUnit.SECONDS)  // Increased for Render cold start
+                .readTimeout(60, TimeUnit.SECONDS)     // Increased for slow responses
+                .writeTimeout(60, TimeUnit.SECONDS)    // Increased for upload operations
+                .retryOnConnectionFailure(true);        // Auto retry on connection failure
 
         if (authManager != null) {
             clientBuilder.addInterceptor(new FirebaseInterceptor(authManager));
