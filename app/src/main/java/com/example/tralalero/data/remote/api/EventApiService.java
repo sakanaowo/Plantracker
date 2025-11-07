@@ -11,7 +11,10 @@ public interface EventApiService {
 
 
     @GET("events")
-    Call<List<EventDTO>> getEventsByProject(@Query("projectId") String projectId);
+    Call<List<EventDTO>> getEventsByProject(
+        @Query("projectId") String projectId,
+        @Query("filter") String filter  // UPCOMING, PAST, RECURRING
+    );
 
 
     @GET("events/{id}")
@@ -31,5 +34,9 @@ public interface EventApiService {
 
     @DELETE("events/{id}")
     Call<Void> deleteEvent(@Path("id") String eventId);
+    
+    
+    @POST("events/{id}/send-reminder")
+    Call<Void> sendReminder(@Path("id") String eventId);
 }
 

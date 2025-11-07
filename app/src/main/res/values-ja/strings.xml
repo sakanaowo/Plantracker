@@ -26,4 +26,43 @@
     <string name="inbox">受信トレイ</string>
     <string name="activity">アクティビティ</string>
     <string name="account">アカウント</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">イベント &amp; 会議</string>
+    <string name="upcoming">今後</string>
+    <string name="past">過去</string>
+    <string name="recurring">繰り返し</string>
+    <string name="no_events">イベントなし</string>
+    <string name="no_events_yet">まだイベントがありません</string>
+    <string name="create_first_event">最初のイベントを作成</string>
+    <string name="create_event">イベントを作成</string>
+    <string name="filter">フィルター</string>
+    <string name="search">検索</string>
+    <string name="time">時間</string>
+    <string name="attendees">参加者</string>
+    <string name="menu">メニュー</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">リンクをコピー</string>
+    <string name="join">参加</string>
+    <string name="details">詳細</string>
+    <string name="edit_event">イベントを編集</string>
+    <string name="cancel_event">イベントをキャンセル</string>
+    <string name="send_reminder">リマインダーを送信</string>
+    
+    <!-- Create Event Dialog -->
+    <string name="event_title">イベントタイトル</string>
+    <string name="event_date">イベント日付</string>
+    <string name="event_time">イベント時間</string>
+    <string name="duration">期間（分）</string>
+    <string name="event_description">説明</string>
+    <string name="event_type">イベントタイプ</string>
+    <string name="meeting">会議</string>
+    <string name="milestone">マイルストーン</string>
+    <string name="other">その他</string>
+    <string name="add_attendees">参加者を追加</string>
+    <string name="create_google_meet">Google Meetを作成</string>
+    <string name="recurrence">繰り返し</string>
+    <string name="cancel">キャンセル</string>
+    <string name="create">作成</string>
 </resources>
+

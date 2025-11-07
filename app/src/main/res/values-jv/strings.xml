@@ -26,4 +26,42 @@
     <string name="inbox">受信トレイ</string>
     <string name="activity">アクティビティ</string>
     <string name="account">アカウント</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">Acara &amp; Rapat</string>
+    <string name="upcoming">Sing Bakal Teka</string>
+    <string name="past">Sing Wis Liwat</string>
+    <string name="recurring">Mbaleni</string>
+    <string name="no_events">Ora Ana Acara</string>
+    <string name="no_events_yet">Durung Ana Acara</string>
+    <string name="create_first_event">Nggawe Acara Pisanan</string>
+    <string name="create_event">Nggawe Acara</string>
+    <string name="filter">Filter</string>
+    <string name="search">Nggoleki</string>
+    <string name="time">Wektu</string>
+    <string name="attendees">Peserta</string>
+    <string name="menu">Menu</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">Salin Tautan</string>
+    <string name="join">Gabung</string>
+    <string name="details">Rincian</string>
+    <string name="edit_event">Sunting Acara</string>
+    <string name="cancel_event">Mbatalake Acara</string>
+    <string name="send_reminder">Kirim Pangeling</string>
+    
+    <!-- Create Event Dialog -->
+    <string name="event_title">Judhul Acara</string>
+    <string name="event_date">Tanggal Acara</string>
+    <string name="event_time">Jam Acara</string>
+    <string name="duration">Durasi (menit)</string>
+    <string name="event_description">Katrangan</string>
+    <string name="event_type">Jenis Acara</string>
+    <string name="meeting">Rapat</string>
+    <string name="milestone">Tonggak</string>
+    <string name="other">Liyane</string>
+    <string name="add_attendees">Tambah Peserta</string>
+    <string name="create_google_meet">Nggawe Google Meet</string>
+    <string name="recurrence">Mbaleni</string>
+    <string name="cancel">Batal</string>
+    <string name="create">Nggawe</string>
 </resources>
