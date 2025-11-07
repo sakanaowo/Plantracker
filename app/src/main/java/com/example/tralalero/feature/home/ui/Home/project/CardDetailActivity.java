@@ -1029,7 +1029,7 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onResponse(retrofit2.Call<AuthUrlResponse> call, 
                                  retrofit2.Response<AuthUrlResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    String authUrl = response.body().getUrl();
+                    String authUrl = response.body().getAuthUrl();
                     // Open browser with auth URL
                     Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(authUrl));
                     startActivity(intent);

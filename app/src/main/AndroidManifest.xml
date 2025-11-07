@@ -39,6 +39,18 @@
         <activity android:name=".feature.home.ui.ActivityTimer" android:exported="false" />
         <activity android:name=".feature.home.ui.SettingsActivity" android:theme="@style/Theme.Tralalero" />
 
+        <!-- Google Calendar OAuth Callback -->
+        <activity android:name=".feature.home.ui.GoogleCalendarCallbackActivity" android:exported="true" android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Deep link: plantracker://calendar/connected -->
+                <data android:scheme="plantracker" android:host="calendar" android:pathPrefix="/connected" />
+            </intent-filter>
+        </activity>
+
         <activity android:name=".feature.invitations.InvitationsActivity" android:exported="false" android:label="Invitations" />
 
         <activity android:name=".test.RepositoryTestActivity" android:exported="false" android:label="Repository Test" />

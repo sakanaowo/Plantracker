@@ -21,6 +21,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
@@ -33,8 +34,11 @@ import com.example.tralalero.core.DependencyProvider;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
+import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.domain.model.AuthUrlResponse;
+import com.example.tralalero.domain.model.GoogleCalendarStatusResponse;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -49,6 +53,9 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.IOException;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "AccountActivity";
@@ -63,6 +70,11 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<String> storagePermissionLauncher;
     private ActivityResultLauncher<Intent> editProfileLauncher;
+    
+    // Google Calendar
+    private GoogleAuthApiService googleAuthApiService;
+    private TextView tvGoogleCalendarStatus;
+    private LinearLayout layoutGoogleCalendar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +98,7 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
 
         tokenManager = new TokenManager(this);
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        googleAuthApiService = ApiClient.get(App.authManager).create(GoogleAuthApiService.class);
         setupActivityResultLaunchers();
 
         TextView tvName = findViewById(R.id.tvName);
@@ -93,6 +106,8 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         imgAvatar = findViewById(R.id.imgAvatar);
         btnAccountOptions = findViewById(R.id.btnAccountOptions);
+        tvGoogleCalendarStatus = findViewById(R.id.tvGoogleCalendarStatus);
+        layoutGoogleCalendar = findViewById(R.id.layoutGoogleCalendar);
 
         if (firebaseUser != null) {
             String email = firebaseUser.getEmail();
@@ -140,6 +155,165 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         layoutBrowseTemplates.setOnClickListener(v -> {
             // TODO: Implement browse templates
         });
+        
+        // Setup Google Calendar integration
+        setupGoogleCalendar();
+    }
+    
+    private void setupGoogleCalendar() {
+        // Check status on load
+        checkGoogleCalendarStatus();
+        
+        // Handle click
+        layoutGoogleCalendar.setOnClickListener(v -> showGoogleCalendarDialog());
+    }
+    
+    private void checkGoogleCalendarStatus() {
+        googleAuthApiService.getIntegrationStatus().enqueue(new Callback<GoogleCalendarStatusResponse>() {
+            @Override
+            public void onResponse(Call<GoogleCalendarStatusResponse> call, Response<GoogleCalendarStatusResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    GoogleCalendarStatusResponse status = response.body();
+                    updateGoogleCalendarUI(status);
+                } else {
+                    Log.e(TAG, "Failed to check Google Calendar status: " + response.code());
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<GoogleCalendarStatusResponse> call, Throwable t) {
+                Log.e(TAG, "Network error checking Google Calendar status", t);
+            }
+        });
+    }
+    
+    private void updateGoogleCalendarUI(GoogleCalendarStatusResponse status) {
+        if (tvGoogleCalendarStatus != null) {
+            if (status.isConnected()) {
+                tvGoogleCalendarStatus.setText("✓ Connected: " + status.getAccountEmail());
+                tvGoogleCalendarStatus.setTextColor(getResources().getColor(R.color.primary));
+            } else {
+                tvGoogleCalendarStatus.setText("Not connected - Tap to connect");
+                tvGoogleCalendarStatus.setTextColor(getResources().getColor(R.color.on_surface_variant));
+            }
+        }
+    }
+    
+    private void showGoogleCalendarDialog() {
+        // Check current status first
+        googleAuthApiService.getIntegrationStatus().enqueue(new Callback<GoogleCalendarStatusResponse>() {
+            @Override
+            public void onResponse(Call<GoogleCalendarStatusResponse> call, Response<GoogleCalendarStatusResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    GoogleCalendarStatusResponse status = response.body();
+                    
+                    if (status.isConnected()) {
+                        // Already connected - show disconnect option
+                        showDisconnectDialog(status.getAccountEmail());
+                    } else {
+                        // Not connected - show connect option
+                        showConnectDialog();
+                    }
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<GoogleCalendarStatusResponse> call, Throwable t) {
+                Log.e(TAG, "Failed to check status", t);
+                Toast.makeText(AccountActivity.this, "Failed to check connection status", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void showConnectDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Connect Google Calendar")
+            .setMessage("Connect your Google Calendar to sync tasks and events across devices.\n\nFeatures:\n• Automatic task reminders\n• Google Meet integration\n• Cross-device sync")
+            .setPositiveButton("Connect", (dialog, which) -> startGoogleOAuth())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    private void showDisconnectDialog(String email) {
+        new AlertDialog.Builder(this)
+            .setTitle("Disconnect Google Calendar")
+            .setMessage("Connected as: " + email + "\n\nDisconnecting will:\n• Stop syncing tasks to Google Calendar\n• Remove Google Meet links from events\n• Keep existing calendar events")
+            .setPositiveButton("Disconnect", (dialog, which) -> disconnectGoogleCalendar())
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Re-connect", (dialog, which) -> startGoogleOAuth())
+            .show();
+    }
+    
+    private void startGoogleOAuth() {
+        Toast.makeText(this, "Connecting to Google Calendar...", Toast.LENGTH_SHORT).show();
+        
+        googleAuthApiService.getAuthUrl().enqueue(new Callback<AuthUrlResponse>() {
+            @Override
+            public void onResponse(Call<AuthUrlResponse> call, Response<AuthUrlResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String authUrl = response.body().getAuthUrl();
+                    openChromeCustomTab(authUrl);
+                } else {
+                    Log.e(TAG, "Failed to get auth URL: " + response.code());
+                    Toast.makeText(AccountActivity.this, "Failed to start Google sign-in", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<AuthUrlResponse> call, Throwable t) {
+                Log.e(TAG, "Network error getting auth URL", t);
+                Toast.makeText(AccountActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void openChromeCustomTab(String url) {
+        try {
+            CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+            builder.setShowTitle(true);
+            builder.setToolbarColor(getResources().getColor(R.color.primary));
+            
+            CustomTabsIntent customTabsIntent = builder.build();
+            customTabsIntent.launchUrl(this, Uri.parse(url));
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to open Chrome Custom Tab", e);
+            // Fallback to default browser
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        }
+    }
+    
+    private void disconnectGoogleCalendar() {
+        Toast.makeText(this, "Disconnecting...", Toast.LENGTH_SHORT).show();
+        
+        googleAuthApiService.disconnect().enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(AccountActivity.this, "✓ Disconnected from Google Calendar", Toast.LENGTH_SHORT).show();
+                    if (tvGoogleCalendarStatus != null) {
+                        tvGoogleCalendarStatus.setText("Not connected - Tap to connect");
+                        tvGoogleCalendarStatus.setTextColor(getResources().getColor(R.color.on_surface_variant));
+                    }
+                } else {
+                    Log.e(TAG, "Failed to disconnect: " + response.code());
+                    Toast.makeText(AccountActivity.this, "Failed to disconnect", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Network error disconnecting", t);
+                Toast.makeText(AccountActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Re-check status when returning to activity (after OAuth callback)
+        checkGoogleCalendarStatus();
     }
 
     private void setupActivityResultLaunchers() {

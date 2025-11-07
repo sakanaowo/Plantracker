@@ -1,20 +1,20 @@
 package com.example.tralalero.domain.model;
 
 public class AuthUrlResponse {
-    private String url;
+    private String authUrl;
     
     public AuthUrlResponse() {
     }
     
-    public AuthUrlResponse(String url) {
-        this.url = url;
+    public AuthUrlResponse(String authUrl) {
+        this.authUrl = authUrl;
     }
     
-    public String getUrl() {
-        return url;
+    public String getAuthUrl() {
+        return authUrl;
     }
     
-    public void setUrl(String url) {
-        this.url = url;
+    public void setAuthUrl(String authUrl) {
+        this.authUrl = authUrl;
     }
 }

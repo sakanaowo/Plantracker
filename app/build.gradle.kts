@@ -85,6 +85,9 @@ dependencies {
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    
+    // Chrome Custom Tabs for OAuth flow
+    implementation("androidx.browser:browser:1.8.0")
 
 
     implementation(platform(libs.firebase.bom))

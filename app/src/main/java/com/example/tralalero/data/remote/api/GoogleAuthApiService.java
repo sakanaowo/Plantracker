@@ -8,12 +8,12 @@ import retrofit2.http.*;
 
 public interface GoogleAuthApiService {
     
-    @GET("google-auth/status")
+    @GET("auth/google/status")
     Call<GoogleCalendarStatusResponse> getIntegrationStatus();
     
-    @GET("google-auth/auth-url")
+    @GET("auth/google/auth-url")
     Call<AuthUrlResponse> getAuthUrl();
     
-    @POST("google-auth/disconnect")
+    @POST("auth/google/disconnect")
     Call<Void> disconnect();
 }

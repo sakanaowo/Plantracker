@@ -1,30 +1,30 @@
 package com.example.tralalero.domain.model;
 
 public class GoogleCalendarStatusResponse {
-    private boolean connected;
-    private String userEmail;
+    private boolean isConnected;
+    private String accountEmail;
     
     public GoogleCalendarStatusResponse() {
     }
     
-    public GoogleCalendarStatusResponse(boolean connected, String userEmail) {
-        this.connected = connected;
-        this.userEmail = userEmail;
+    public GoogleCalendarStatusResponse(boolean isConnected, String accountEmail) {
+        this.isConnected = isConnected;
+        this.accountEmail = accountEmail;
     }
     
     public boolean isConnected() {
-        return connected;
+        return isConnected;
     }
     
-    public void setConnected(boolean connected) {
-        this.connected = connected;
+    public void setConnected(boolean isConnected) {
+        this.isConnected = isConnected;
     }
     
-    public String getUserEmail() {
-        return userEmail;
+    public String getAccountEmail() {
+        return accountEmail;
     }
     
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
+    public void setAccountEmail(String accountEmail) {
+        this.accountEmail = accountEmail;
     }
 }
