@@ -26,4 +26,15 @@
     <string name="inbox">Hộp thư</string>
     <string name="activity">Hoạt động</string>
     <string name="account">Tài khoản</string>
+
+    <!-- Calendar Sync Strings -->
+    <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
+    <string name="view_in_calendar">Xem trong Calendar</string>
+    <string name="calendar_reminder_settings">Cài đặt nhắc nhở</string>
+    <string name="connect_google_calendar">Kết nối Google Calendar</string>
+    <string name="calendar_not_connected">Chưa kết nối Google Calendar</string>
+    <string name="connect_now">Kết nối ngay</string>
+    <string name="calendar_event_created">Sự kiện: %1$s - Hạn chót</string>
+    <string name="reminder_before">%1$s trước</string>
+    <string name="save_task_first">Vui lòng lưu task trước</string>
 </resources>
