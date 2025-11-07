@@ -35,6 +35,7 @@ import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
 import com.example.tralalero.feature.home.ui.Home.project.CreateTaskBottomSheet;
+import com.example.tralalero.feature.home.ui.Home.project.ProjectCalendarFragment;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
@@ -53,6 +54,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.android.material.tabs.TabLayout;
+
 public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener, BoardAdapter.OnTaskBoardChangeListener {
     private static final String TAG = "ProjectActivity";
     private static final int REQUEST_CODE_CREATE_TASK = 2001;
@@ -68,6 +71,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private TextView tvProjectName;
     private TextView tvWorkspaceName;
     private ImageButton backButton;
+    private TabLayout tabLayout;
 
     private String projectId;
     private String projectName;
@@ -93,6 +97,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         setupViewModels();
         initViews();
         setupRecyclerView();
+        setupTabs();
         observeViewModels();
         loadBoards();
     }
@@ -204,6 +209,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         progressBar = findViewById(R.id.progressBar);
         tvProjectName = findViewById(R.id.tvProjectName);
         tvWorkspaceName = findViewById(R.id.tvWorkspaceName);
+        tabLayout = findViewById(R.id.tabLayout);
         ImageView ivProjectMenu = findViewById(R.id.ivProjectMenu);
 
         if (projectName != null && !projectName.isEmpty()) {
@@ -221,6 +227,66 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         ivProjectMenu.setOnClickListener(v -> {
             showProjectMenu();
         });
+    }
+    
+    private void setupTabs() {
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int position = tab.getPosition();
+                switch (position) {
+                    case 0: // Board tab
+                        showBoardView();
+                        break;
+                    case 1: // Calendar tab
+                        showCalendarFragment();
+                        break;
+                    case 2: // Event tab
+                        // Dev 2 will handle
+                        Toast.makeText(ProjectActivity.this, 
+                            "Event tab - Coming soon", 
+                            Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+            
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+            
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
+        });
+    }
+    
+    private void showBoardView() {
+        boardsRecyclerView.setVisibility(View.VISIBLE);
+        
+        // Hide calendar fragment if showing
+        androidx.fragment.app.Fragment calendarFragment = getSupportFragmentManager()
+            .findFragmentByTag("calendar_fragment");
+        if (calendarFragment != null) {
+            getSupportFragmentManager().beginTransaction()
+                .hide(calendarFragment)
+                .commit();
+        }
+    }
+    
+    private void showCalendarFragment() {
+        boardsRecyclerView.setVisibility(View.GONE);
+        
+        androidx.fragment.app.Fragment calendarFragment = getSupportFragmentManager()
+            .findFragmentByTag("calendar_fragment");
+        
+        if (calendarFragment == null) {
+            calendarFragment = ProjectCalendarFragment.newInstance(projectId);
+            getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragmentContainer, calendarFragment, "calendar_fragment")
+                .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                .show(calendarFragment)
+                .commit();
+        }
     }
     
     private void showProjectMenu() {

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Chọn thời gian nhắc nhở"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:paddingBottom="16dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bạn sẽ nhận được thông báo trước deadline:"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:paddingBottom="12dp"/>
+
+    <CheckBox
+        android:id="@+id/cbReminder15Min"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="15 phút trước"
+        android:textSize="16sp"
+        android:paddingVertical="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbReminder1Hour"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1 giờ trước"
+        android:textSize="16sp"
+        android:paddingVertical="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbReminder1Day"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1 ngày trước"
+        android:textSize="16sp"
+        android:paddingVertical="8dp"/>
+
+    <CheckBox
+        android:id="@+id/cbReminder1Week"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1 tuần trước"
+        android:textSize="16sp"
+        android:paddingVertical="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="💡 Tip: Bạn có thể chọn nhiều thời gian nhắc nhở"
+        android:textSize="12sp"
+        android:textColor="#4CAF50"
+        android:textStyle="italic"
+        android:paddingTop="12dp"/>
+
+</LinearLayout>

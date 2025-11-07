@@ -1,6 +1,7 @@
 package com.example.tralalero.domain.model;
 
 import java.util.Date;
+import java.util.List;
 
 public class Task {
     private final String id;
@@ -30,6 +31,12 @@ public class Task {
 
     private final Date createdAt;
     private final Date updatedAt;
+    
+    // Calendar Sync Fields
+    private final boolean calendarSyncEnabled;
+    private final List<Integer> calendarReminderMinutes;
+    private final String calendarEventId;
+    private final Date calendarSyncedAt;
 
     public Task(String id, String projectId, String boardId, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
@@ -37,6 +44,20 @@ public class Task {
                 String epicId, String parentTaskId, Date startAt, Date dueAt,
                 Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
                 Date createdAt, Date updatedAt) {
+        this(id, projectId, boardId, title, description, issueKey, type, status, priority,
+             position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
+             storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
+             false, null, null, null);
+    }
+    
+    public Task(String id, String projectId, String boardId, String title, String description,
+                String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
+                double position, String assigneeId, String createdBy, String sprintId,
+                String epicId, String parentTaskId, Date startAt, Date dueAt,
+                Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
+                Date createdAt, Date updatedAt,
+                boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
+                String calendarEventId, Date calendarSyncedAt) {
         this.id = id;
         this.projectId = projectId;
         this.boardId = boardId;
@@ -59,6 +80,10 @@ public class Task {
         this.remainingEstimateSec = remainingEstimateSec;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.calendarSyncEnabled = calendarSyncEnabled;
+        this.calendarReminderMinutes = calendarReminderMinutes;
+        this.calendarEventId = calendarEventId;
+        this.calendarSyncedAt = calendarSyncedAt;
     }
 
     public String getId() {
@@ -206,6 +231,27 @@ public class Task {
 
         int worked = originalEstimateSec - remainingEstimateSec;
         return (worked * 100) / originalEstimateSec;
+    }
+    
+    // Calendar Sync Getters
+    public boolean isCalendarSyncEnabled() {
+        return calendarSyncEnabled;
+    }
+    
+    public List<Integer> getCalendarReminderMinutes() {
+        return calendarReminderMinutes;
+    }
+    
+    public String getCalendarEventId() {
+        return calendarEventId;
+    }
+    
+    public Date getCalendarSyncedAt() {
+        return calendarSyncedAt;
+    }
+    
+    public boolean hasCalendarEvent() {
+        return calendarEventId != null && !calendarEventId.isEmpty();
     }
 
     @Override

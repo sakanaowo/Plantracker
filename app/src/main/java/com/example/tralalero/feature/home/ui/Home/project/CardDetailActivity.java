@@ -30,24 +30,30 @@ import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
 import com.example.tralalero.data.remote.api.UserApiService;
+import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.feature.task.attachments.AttachmentUploader;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.model.Label;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.model.GoogleCalendarStatusResponse;
+import com.example.tralalero.domain.model.AuthUrlResponse;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 public class CardDetailActivity extends AppCompatActivity {
+    private static final String TAG = "CardDetailActivity";
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
     public static final String EXTRA_BOARD_NAME = "board_name"; // NEW: Board name to display
@@ -108,6 +114,16 @@ public class CardDetailActivity extends AppCompatActivity {
     private AttachmentUploader attachmentUploader;
     private ActivityResultLauncher<String> filePickerLauncher;
     private UserApiService userApiService;
+    
+    // Calendar Sync UI
+    private SwitchMaterial switchCalendarSync;
+    private MaterialButton btnCalendarSyncSettings;
+    private MaterialButton btnViewInCalendar;
+    private TextView tvCalendarEventInfo;
+    private LinearLayout layoutCalendarDetails;
+    private boolean isCalendarSyncEnabled = false;
+    private List<Integer> reminderMinutes = new ArrayList<>(Arrays.asList(15, 60, 1440));
+    private GoogleAuthApiService googleAuthApiService;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -130,6 +146,7 @@ public class CardDetailActivity extends AppCompatActivity {
         setupViewModel();
         setupUI();
         setupListeners();
+        setupCalendarSyncUI();
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -192,6 +209,13 @@ public class CardDetailActivity extends AppCompatActivity {
         layoutCommentInput = findViewById(R.id.layoutCommentInput);
         etNewComment = findViewById(R.id.etNewComment);
         btnSendComment = findViewById(R.id.btnSendComment);
+        
+        // Calendar Sync Views
+        switchCalendarSync = findViewById(R.id.switchCalendarSync);
+        btnCalendarSyncSettings = findViewById(R.id.btnCalendarSyncSettings);
+        btnViewInCalendar = findViewById(R.id.btnViewInCalendar);
+        tvCalendarEventInfo = findViewById(R.id.tvCalendarEventInfo);
+        layoutCalendarDetails = findViewById(R.id.layoutCalendarDetails);
         
         // Setup RecyclerViews
         setupRecyclerViews();
@@ -612,7 +636,12 @@ public class CardDetailActivity extends AppCompatActivity {
                 0.0,             // position
                 null,            // assigneeId
                 null,            // createdBy (backend will set)
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null,
+                // Calendar sync fields
+                isCalendarSyncEnabled,
+                isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
+                null,            // calendarEventId (backend will generate)
+                null             // calendarSyncedAt (backend will set)
         );
         taskViewModel.createTask(newTask);
         Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show();
@@ -648,7 +677,12 @@ public class CardDetailActivity extends AppCompatActivity {
                 position,
                 assigneeId,
                 createdBy,
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null,
+                // Calendar sync fields
+                isCalendarSyncEnabled,
+                isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
+                null,            // calendarEventId (preserve existing or backend will set)
+                null             // calendarSyncedAt (backend will update)
         );
         taskViewModel.updateTask(taskId, updatedTask);
         Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show();
@@ -900,6 +934,183 @@ public class CardDetailActivity extends AppCompatActivity {
         }
         
         return chip;
+    }
+    
+    private void setupCalendarSyncUI() {
+        // Initialize Google Auth API Service
+        googleAuthApiService = ApiClient.get(App.authManager).create(GoogleAuthApiService.class);
+        
+        // Check Google Calendar connection status
+        checkGoogleCalendarConnection();
+        
+        // Toggle calendar sync
+        switchCalendarSync.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isCalendarSyncEnabled = isChecked;
+            layoutCalendarDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            
+            if (isChecked && !isGoogleCalendarConnected()) {
+                showConnectGoogleCalendarDialog();
+            } else if (isChecked) {
+                updateReminderInfoText();
+            }
+        });
+        
+        // Settings button
+        btnCalendarSyncSettings.setOnClickListener(v -> {
+            showReminderSettingsDialog();
+        });
+        
+        // View in calendar button
+        btnViewInCalendar.setOnClickListener(v -> {
+            if (isEditMode && taskId != null) {
+                // For now, just show a message since we need the calendarEventId from backend
+                Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+                // TODO: Implement when backend provides calendarEventId
+                // openGoogleCalendarEvent(calendarEventId);
+            }
+        });
+    }
+    
+    private void checkGoogleCalendarConnection() {
+        googleAuthApiService.getIntegrationStatus().enqueue(new retrofit2.Callback<GoogleCalendarStatusResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<GoogleCalendarStatusResponse> call, 
+                                 retrofit2.Response<GoogleCalendarStatusResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    updateCalendarSyncUI(response.body().isConnected());
+                } else {
+                    // Default to not connected
+                    updateCalendarSyncUI(false);
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<GoogleCalendarStatusResponse> call, Throwable t) {
+                android.util.Log.e(TAG, "Failed to check calendar connection", t);
+                updateCalendarSyncUI(false);
+            }
+        });
+    }
+    
+    private boolean isGoogleCalendarConnected() {
+        // This will be set by checkGoogleCalendarConnection
+        return switchCalendarSync.isEnabled();
+    }
+    
+    private void updateCalendarSyncUI(boolean connected) {
+        if (!connected) {
+            switchCalendarSync.setEnabled(false);
+            switchCalendarSync.setChecked(false);
+            tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar. Nhấn vào switch để kết nối.");
+        } else {
+            switchCalendarSync.setEnabled(true);
+            if (isEditMode) {
+                updateReminderInfoText();
+            }
+        }
+    }
+    
+    private void showConnectGoogleCalendarDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Kết nối Google Calendar")
+            .setMessage("Để sử dụng tính năng đồng bộ lịch, bạn cần kết nối với Google Calendar.")
+            .setPositiveButton("Kết nối ngay", (dialog, which) -> {
+                startGoogleCalendarAuth();
+            })
+            .setNegativeButton("Để sau", (dialog, which) -> {
+                switchCalendarSync.setChecked(false);
+            })
+            .show();
+    }
+    
+    private void startGoogleCalendarAuth() {
+        googleAuthApiService.getAuthUrl().enqueue(new retrofit2.Callback<AuthUrlResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<AuthUrlResponse> call, 
+                                 retrofit2.Response<AuthUrlResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String authUrl = response.body().getUrl();
+                    // Open browser with auth URL
+                    Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(authUrl));
+                    startActivity(intent);
+                    Toast.makeText(CardDetailActivity.this, 
+                        "Vui lòng hoàn tất đăng nhập trên trình duyệt", 
+                        Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, 
+                        "Không thể lấy URL đăng nhập", 
+                        Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<AuthUrlResponse> call, Throwable t) {
+                android.util.Log.e(TAG, "Failed to get auth URL", t);
+                Toast.makeText(CardDetailActivity.this, 
+                    "Lỗi: " + t.getMessage(), 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void showReminderSettingsDialog() {
+        CalendarReminderSettingsDialog dialog = new CalendarReminderSettingsDialog();
+        dialog.setCurrentReminders(reminderMinutes);
+        dialog.setOnSaveListener(newReminders -> {
+            reminderMinutes = newReminders;
+            updateReminderInfoText();
+            Toast.makeText(this, "Đã lưu cài đặt nhắc nhở", Toast.LENGTH_SHORT).show();
+        });
+        dialog.show(getSupportFragmentManager(), "reminder_settings");
+    }
+    
+    private void updateReminderInfoText() {
+        String taskTitle = etTaskTitle.getText().toString().trim();
+        if (taskTitle.isEmpty()) {
+            taskTitle = "Task này";
+        }
+        
+        StringBuilder info = new StringBuilder("📅 Sự kiện: " + taskTitle + " - Hạn chót\n");
+        
+        if (!reminderMinutes.isEmpty()) {
+            info.append("⏰ Nhắc nhở: ");
+            
+            List<String> reminderTexts = new ArrayList<>();
+            for (int minutes : reminderMinutes) {
+                if (minutes < 60) {
+                    reminderTexts.add(minutes + " phút");
+                } else if (minutes < 1440) {
+                    reminderTexts.add((minutes / 60) + " giờ");
+                } else if (minutes < 10080) {
+                    reminderTexts.add((minutes / 1440) + " ngày");
+                } else {
+                    reminderTexts.add((minutes / 10080) + " tuần");
+                }
+            }
+            info.append(String.join(", ", reminderTexts)).append(" trước");
+        } else {
+            info.append("⏰ Không có nhắc nhở");
+        }
+        
+        tvCalendarEventInfo.setText(info.toString());
+    }
+    
+    private void openGoogleCalendarEvent(String eventId) {
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(this, "Chưa có sự kiện trong Calendar", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse("content://com.android.calendar/events/" + eventId));
+            startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            // Fallback: web browser
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse("https://calendar.google.com/calendar/event?eid=" + eventId));
+            startActivity(intent);
+        }
     }
 
     private void showDatePickerDialog(boolean isStartDate) {
