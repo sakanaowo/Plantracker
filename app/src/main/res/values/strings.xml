@@ -57,4 +57,42 @@
     <string name="calendar_event_created">Event: %1$s - Deadline</string>
     <string name="reminder_before">%1$s before</string>
     <string name="save_task_first">Please save task first</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">Events &amp; Meetings</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="past">Past</string>
+    <string name="recurring">Recurring</string>
+    <string name="no_events">No events</string>
+    <string name="no_events_yet">No events yet</string>
+    <string name="create_first_event">Create first event</string>
+    <string name="create_event">Create event</string>
+    <string name="filter">Filter</string>
+    <string name="search">Search</string>
+    <string name="time">Time</string>
+    <string name="attendees">Attendees</string>
+    <string name="menu">Menu</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">Copy link</string>
+    <string name="join">Join</string>
+    <string name="details">Details</string>
+    <string name="edit_event">Edit event</string>
+    <string name="cancel_event">Cancel event</string>
+    <string name="send_reminder">Send reminder</string>
+
+    <!-- Create Event Dialog -->
+    <string name="event_title">Event title</string>
+    <string name="event_date">Event date</string>
+    <string name="event_time">Event time</string>
+    <string name="duration">Duration (minutes)</string>
+    <string name="event_description">Description</string>
+    <string name="event_type">Event type</string>
+    <string name="meeting">Meeting</string>
+    <string name="milestone">Milestone</string>
+    <string name="other">Other</string>
+    <string name="add_attendees">Add attendees</string>
+    <string name="create_google_meet">Create Google Meet</string>
+    <string name="recurrence">Recurrence</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
 </resources>

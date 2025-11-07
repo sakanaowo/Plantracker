@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface IEventRepository {
     void getEventsByProject(String projectId, RepositoryCallback<List<Event>> callback);
+    
+    void getEventsByProject(String projectId, String filter, RepositoryCallback<List<Event>> callback);
 
     void getEventById(String eventId, RepositoryCallback<Event> callback);
 

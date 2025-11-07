@@ -22,7 +22,13 @@ public class EventRepositoryImpl implements IEventRepository {
 
     @Override
     public void getEventsByProject(String projectId, RepositoryCallback<List<Event>> callback) {
-        apiService.getEventsByProject(projectId).enqueue(new Callback<List<EventDTO>>() {
+        // Default: no filter (get all events)
+        getEventsByProject(projectId, null, callback);
+    }
+    
+    @Override
+    public void getEventsByProject(String projectId, String filter, RepositoryCallback<List<Event>> callback) {
+        apiService.getEventsByProject(projectId, filter).enqueue(new Callback<List<EventDTO>>() {
             @Override
             public void onResponse(Call<List<EventDTO>> call, Response<List<EventDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {

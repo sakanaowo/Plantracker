@@ -37,4 +37,42 @@
     <string name="calendar_event_created">Sự kiện: %1$s - Hạn chót</string>
     <string name="reminder_before">%1$s trước</string>
     <string name="save_task_first">Vui lòng lưu task trước</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">Sự kiện &amp; Cuộc họp</string>
+    <string name="upcoming">Sắp tới</string>
+    <string name="past">Đã qua</string>
+    <string name="recurring">Lặp lại</string>
+    <string name="no_events">Không có sự kiện</string>
+    <string name="no_events_yet">Chưa có sự kiện nào</string>
+    <string name="create_first_event">Tạo sự kiện đầu tiên</string>
+    <string name="create_event">Tạo sự kiện</string>
+    <string name="filter">Lọc</string>
+    <string name="search">Tìm kiếm</string>
+    <string name="time">Thời gian</string>
+    <string name="attendees">Người tham gia</string>
+    <string name="menu">Menu</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">Sao chép liên kết</string>
+    <string name="join">Tham gia</string>
+    <string name="details">Chi tiết</string>
+    <string name="edit_event">Chỉnh sửa sự kiện</string>
+    <string name="cancel_event">Hủy sự kiện</string>
+    <string name="send_reminder">Gửi nhắc nhở</string>
+
+    <!-- Create Event Dialog -->
+    <string name="event_title">Tiêu đề sự kiện</string>
+    <string name="event_date">Ngày sự kiện</string>
+    <string name="event_time">Giờ sự kiện</string>
+    <string name="duration">Thời lượng (phút)</string>
+    <string name="event_description">Mô tả</string>
+    <string name="event_type">Loại sự kiện</string>
+    <string name="meeting">Cuộc họp</string>
+    <string name="milestone">Cột mốc</string>
+    <string name="other">Khác</string>
+    <string name="add_attendees">Thêm người tham gia</string>
+    <string name="create_google_meet">Tạo Google Meet</string>
+    <string name="recurrence">Lặp lại</string>
+    <string name="cancel">Hủy</string>
+    <string name="create">Tạo</string>
 </resources>
