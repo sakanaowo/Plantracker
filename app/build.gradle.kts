@@ -19,9 +19,19 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://plantracker-backend.onrender.com/api/\""
+            )
+//            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
             // Use secure WebSocket (wss) for Render deployment
-            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"wss://plantracker-backend.onrender.com/notifications\""
+            )
+//            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
         }
         release {
             buildConfigField(
@@ -76,16 +86,16 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-runtime-android:2.9.4")
-    
+
     // WebSocket & Lifecycle for DEV 1
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
-    
+
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
-    
+
     // Chrome Custom Tabs for OAuth flow
     implementation("androidx.browser:browser:1.8.0")
 
