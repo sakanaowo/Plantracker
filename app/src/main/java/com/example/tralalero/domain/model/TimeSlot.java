@@ -1,11 +1,19 @@
 package com.example.tralalero.domain.model;
 
+import android.util.Log;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Represents a suggested time slot for a meeting
  */
 public class TimeSlot {
+    private static final String TAG = "TimeSlot";
     private String start;  // ISO 8601 datetime string
     private String end;    // ISO 8601 datetime string
     private List<String> availableUsers; // User IDs who are free
@@ -58,13 +66,29 @@ public class TimeSlot {
      * Get formatted date string (e.g., "Nov 9, 2025")
      */
     public String getFormattedDate() {
+        if (start == null || start.isEmpty()) {
+            return "N/A";
+        }
+        
         try {
-            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM d, yyyy");
-            java.util.Date date = inputFormat.parse(start);
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat outputFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+            Date date = inputFormat.parse(start);
             return outputFormat.format(date);
-        } catch (Exception e) {
-            return start;
+        } catch (ParseException e) {
+            Log.e(TAG, "Failed to parse date with milliseconds: " + start, e);
+            // Try alternative ISO format without milliseconds
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                altFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                SimpleDateFormat outputFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+                Date date = altFormat.parse(start);
+                return outputFormat.format(date);
+            } catch (ParseException e2) {
+                Log.e(TAG, "Failed to parse date with alternative format: " + start, e2);
+                return "Invalid Date";
+            }
         }
     }
 
@@ -72,14 +96,31 @@ public class TimeSlot {
      * Get formatted time range (e.g., "9:00 AM - 10:00 AM")
      */
     public String getFormattedTimeRange() {
+        if (start == null || start.isEmpty() || end == null || end.isEmpty()) {
+            return "N/A";
+        }
+        
         try {
-            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("h:mm a");
-            java.util.Date startDate = inputFormat.parse(start);
-            java.util.Date endDate = inputFormat.parse(end);
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat outputFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+            Date startDate = inputFormat.parse(start);
+            Date endDate = inputFormat.parse(end);
             return outputFormat.format(startDate) + " - " + outputFormat.format(endDate);
-        } catch (Exception e) {
-            return start + " - " + end;
+        } catch (ParseException e) {
+            Log.e(TAG, "Failed to parse time range with milliseconds", e);
+            // Try alternative ISO format without milliseconds
+            try {
+                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                altFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                SimpleDateFormat outputFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+                Date startDate = altFormat.parse(start);
+                Date endDate = altFormat.parse(end);
+                return outputFormat.format(startDate) + " - " + outputFormat.format(endDate);
+            } catch (ParseException e2) {
+                Log.e(TAG, "Failed to parse time range with alternative format", e2);
+                return "Invalid Time";
+            }
         }
     }
 

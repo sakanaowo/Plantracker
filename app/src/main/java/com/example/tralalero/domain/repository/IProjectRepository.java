@@ -1,5 +1,6 @@
 package com.example.tralalero.domain.repository;
 
+import com.example.tralalero.data.dto.project.ProjectSummaryResponse;
 import com.example.tralalero.domain.model.Project;
 
 public interface IProjectRepository {
@@ -14,6 +15,11 @@ public interface IProjectRepository {
     void updateProjectKey(String projectId, String newKey, RepositoryCallback<Project> callback);
 
     void updateBoardType(String projectId, String boardType, RepositoryCallback<Project> callback);
+    
+    /**
+     * Get project summary statistics
+     */
+    void getProjectSummary(String projectId, RepositoryCallback<ProjectSummaryResponse> callback);
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);
