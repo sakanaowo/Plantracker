@@ -48,16 +48,6 @@
             android:insetLeft="0dp"
             android:insetRight="0dp"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPickDate"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Chọn"
-            android:textSize="12sp"
-            app:icon="@drawable/ic_google_calendar"
-            app:iconSize="18dp"/>
-
         <!-- Action Buttons -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSyncCalendar"
@@ -108,6 +98,14 @@
             android:textSize="14sp"
             android:textColor="#666666"/>
     </LinearLayout>
+    
+    <!-- Calendar View -->
+    <CalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:layout_marginTop="4dp"/>
 
     <!-- Events List -->
     <androidx.recyclerview.widget.RecyclerView

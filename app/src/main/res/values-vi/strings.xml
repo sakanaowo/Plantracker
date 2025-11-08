@@ -27,17 +27,6 @@
     <string name="activity">Hoạt động</string>
     <string name="account">Tài khoản</string>
 
-    <!-- Calendar Sync Strings -->
-    <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
-    <string name="view_in_calendar">Xem trong Calendar</string>
-    <string name="calendar_reminder_settings">Cài đặt nhắc nhở</string>
-    <string name="connect_google_calendar">Kết nối Google Calendar</string>
-    <string name="calendar_not_connected">Chưa kết nối Google Calendar</string>
-    <string name="connect_now">Kết nối ngay</string>
-    <string name="calendar_event_created">Sự kiện: %1$s - Hạn chót</string>
-    <string name="reminder_before">%1$s trước</string>
-    <string name="save_task_first">Vui lòng lưu task trước</string>
-
     <!-- Events Tab -->
     <string name="events_and_meetings">Sự kiện &amp; Cuộc họp</string>
     <string name="upcoming">Sắp tới</string>
@@ -59,7 +48,7 @@
     <string name="edit_event">Chỉnh sửa sự kiện</string>
     <string name="cancel_event">Hủy sự kiện</string>
     <string name="send_reminder">Gửi nhắc nhở</string>
-
+    
     <!-- Create Event Dialog -->
     <string name="event_title">Tiêu đề sự kiện</string>
     <string name="event_date">Ngày sự kiện</string>
@@ -75,4 +64,9 @@
     <string name="recurrence">Lặp lại</string>
     <string name="cancel">Hủy</string>
     <string name="create">Tạo</string>
+    
+    <!-- Calendar Integration -->
+    <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
+    <string name="view_in_calendar">Xem trong Lịch</string>
+    <string name="calendar_reminder_settings">Cài đặt Nhắc nhở Lịch</string>
 </resources>
