@@ -126,7 +126,7 @@
                 android:hint="@string/event_time"
                 app:boxBackgroundMode="outline"
                 app:endIconMode="custom"
-                app:endIconDrawable="@drawable/ic_clock">
+                app:endIconDrawable="@drawable/ic_time">
                 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etEventTime"

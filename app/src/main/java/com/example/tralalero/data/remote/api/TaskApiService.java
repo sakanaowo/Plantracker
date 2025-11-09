@@ -11,10 +11,12 @@ import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
 import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
 import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
 import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
+import com.example.tralalero.data.dto.TaskStatisticsDTO;
 
 import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.http.*;
 import retrofit2.http.*;
 
 public interface TaskApiService {
@@ -185,4 +187,12 @@ public interface TaskApiService {
      */
     @DELETE("tasks/{taskId}/assignees")
     Call<Void> unassignAll(@Path("taskId") String taskId);
+    
+    /**
+     * Get task statistics for a project
+     * GET /tasks/statistics/project/{projectId}
+     * Returns counts for done, updated (last 7 days), created (last 7 days), due (next 7 days)
+     */
+    @GET("tasks/statistics/project/{projectId}")
+    Call<TaskStatisticsDTO> getProjectStatistics(@Path("projectId") String projectId);
 }
