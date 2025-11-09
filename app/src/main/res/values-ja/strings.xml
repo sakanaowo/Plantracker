@@ -69,5 +69,28 @@
     <string name="sync_with_google_calendar">Googleカレンダーと同期</string>
     <string name="view_in_calendar">カレンダーで表示</string>
     <string name="calendar_reminder_settings">カレンダーリマインダー設定</string>
+    
+    <!-- Meeting Scheduler -->
+    <string name="select_team_members">チームメンバーを選択</string>
+    <string name="choose_members_availability">メンバーの空き状況を確認するため選択</string>
+    <string name="search_members">メンバーを検索</string>
+    <string name="zero_members_selected">0人のメンバーが選択されています</string>
+    <string name="next">次へ</string>
+    <string name="find_meeting_time">会議時間を検索</string>
+    <string name="duration_minutes">期間（分）</string>
+    <string name="date_range">期間</string>
+    <string name="start_date">開始日</string>
+    <string name="end_date">終了日</string>
+    <string name="find_available_times">空き時間を検索</string>
+    <string name="suggested_times">提案された時間</string>
+    <string name="no_available_times">利用可能な時間が見つかりません</string>
+    <string name="close">閉じる</string>
+    
+    <!-- Quick Event -->
+    <string name="quick_event">クイックイベント</string>
+    <string name="date">日付</string>
+    <string name="add_google_meet_link">Google Meetリンクを追加</string>
+    <string name="description_optional">説明（オプション）</string>
 </resources>
+
 

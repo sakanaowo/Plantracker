@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
 import com.google.android.material.snackbar.Snackbar;
@@ -33,9 +34,10 @@ public class ProjectSummaryFragment extends Fragment {
     private TextView tvInProgressCount;
     private TextView tvDoneStatusCount;
     
-    // Loading
+    // Loading & Refresh
     private ProgressBar progressBar;
-    
+    private SwipeRefreshLayout swipeRefreshLayout;
+
     public static ProjectSummaryFragment newInstance(String projectId) {
         ProjectSummaryFragment fragment = new ProjectSummaryFragment();
         Bundle args = new Bundle();
@@ -83,33 +85,46 @@ public class ProjectSummaryFragment extends Fragment {
         
         // Loading indicator
         progressBar = view.findViewById(R.id.progressBar);
+        
+        // Swipe refresh
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadSummaryData();
+        });
     }
     
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(ProjectSummaryViewModel.class);
         
-        // Observe statistics data
-        viewModel.getStatistics().observe(getViewLifecycleOwner(), stats -> {
-            if (stats != null) {
+        // Observe summary data
+        viewModel.getSummary().observe(getViewLifecycleOwner(), summary -> {
+            if (summary != null) {
                 updateStatsCards(
-                    stats.getDoneCount(),
-                    stats.getUpdatedCount(),
-                    stats.getCreatedCount(),
-                    stats.getDueCount()
+                    summary.getDone(),
+                    summary.getUpdated(),
+                    summary.getCreated(),
+                    summary.getDue()
                 );
-                updateStatusOverview(
-                    stats.getTotalCount(),
-                    stats.getTodoCount(),
-                    stats.getInProgressCount(),
-                    stats.getDoneCount()
-                );
+                
+                // Update status overview if available
+                if (summary.getStatusOverview() != null) {
+                    updateStatusOverview(
+                        summary.getStatusOverview().getTotal(),
+                        summary.getStatusOverview().getToDo(),
+                        summary.getStatusOverview().getInProgress(),
+                        summary.getStatusOverview().getDone()
+                    );
+                }
             }
         });
         
         // Observe loading state
-        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(isLoading);
             }
         });
         
@@ -127,7 +142,7 @@ public class ProjectSummaryFragment extends Fragment {
     
     private void loadSummaryData() {
         if (projectId != null && !projectId.isEmpty()) {
-            viewModel.loadStatistics(projectId);
+            viewModel.loadSummary(projectId);
         } else {
             Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
         }
