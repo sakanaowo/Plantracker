@@ -17,18 +17,22 @@
 
     <!--untranslatable-->
     <string name="language_english" translatable="false">English</string>
+    <string name="language_japanese" translatable="false">日本の</string>
     <string name="language_vietnamese" translatable="false">Tiếng Việt</string>
 
     <string-array name="language_names">
         <item>@string/language_english</item>
+        <item>@string/language_japanese</item>
         <item>@string/language_vietnamese</item>
     </string-array>
 
     <string name="language_english_code" translatable="false">en</string>
+    <string name="language_japanese_code" translatable="false">ja</string>
     <string name="language_vietnamese_code" translatable="false">vi</string>
 
     <string-array name="language_codes">
         <item>@string/language_english_code</item>
+        <item>@string/language_japanese_code</item>
         <item>@string/language_vietnamese_code</item>
     </string-array>
 
@@ -46,17 +50,6 @@
     <string name="inbox">Inbox</string>
     <string name="activity">Activity</string>
     <string name="account">Account</string>
-
-    <!-- Calendar Sync Strings -->
-    <string name="sync_with_google_calendar">Sync with Google Calendar</string>
-    <string name="view_in_calendar">View in Calendar</string>
-    <string name="calendar_reminder_settings">Reminder Settings</string>
-    <string name="connect_google_calendar">Connect Google Calendar</string>
-    <string name="calendar_not_connected">Google Calendar not connected</string>
-    <string name="connect_now">Connect Now</string>
-    <string name="calendar_event_created">Event: %1$s - Deadline</string>
-    <string name="reminder_before">%1$s before</string>
-    <string name="save_task_first">Please save task first</string>
 
     <!-- Events Tab -->
     <string name="events_and_meetings">Events &amp; Meetings</string>
@@ -79,7 +72,7 @@
     <string name="edit_event">Edit event</string>
     <string name="cancel_event">Cancel event</string>
     <string name="send_reminder">Send reminder</string>
-
+    
     <!-- Create Event Dialog -->
     <string name="event_title">Event title</string>
     <string name="event_date">Event date</string>
@@ -95,4 +88,9 @@
     <string name="recurrence">Recurrence</string>
     <string name="cancel">Cancel</string>
     <string name="create">Create</string>
+    
+    <!-- Calendar Integration -->
+    <string name="sync_with_google_calendar">Sync with Google Calendar</string>
+    <string name="view_in_calendar">View in Calendar</string>
+    <string name="calendar_reminder_settings">Calendar Reminder Settings</string>
 </resources>

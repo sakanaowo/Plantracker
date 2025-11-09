@@ -358,7 +358,13 @@ public class NotificationWebSocketManager {
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             isConnected = false;
             pingHandler.removeCallbacksAndMessages(null);
-            Log.e(TAG, "❌ WebSocket failure: " + t.getMessage(), t);
+            
+            // Log only if it's not a timeout (to reduce log spam when backend is down)
+            if (!(t instanceof java.net.SocketTimeoutException)) {
+                Log.e(TAG, "❌ WebSocket failure: " + t.getMessage(), t);
+            } else {
+                Log.w(TAG, "⚠️ WebSocket timeout - backend may be unavailable");
+            }
             
             // Schedule reconnect
             if (shouldReconnect) {

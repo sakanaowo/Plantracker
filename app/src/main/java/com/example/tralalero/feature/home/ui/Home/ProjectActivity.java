@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -36,6 +37,8 @@ import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
 import com.example.tralalero.feature.home.ui.Home.project.CreateTaskBottomSheet;
 import com.example.tralalero.feature.home.ui.Home.project.ProjectCalendarFragment;
+import com.example.tralalero.feature.home.ui.Home.project.ProjectSummaryFragment;
+import com.example.tralalero.feature.home.ui.Home.project.ProjectEventsFragment;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
@@ -235,17 +238,17 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
                 switch (position) {
-                    case 0: // Board tab
+                    case 0: // Summary tab
+                        showSummaryFragment();
+                        break;
+                    case 1: // Board tab
                         showBoardView();
                         break;
-                    case 1: // Calendar tab
+                    case 2: // Calendar tab
                         showCalendarFragment();
                         break;
-                    case 2: // Event tab
-                        // Dev 2 will handle
-                        Toast.makeText(ProjectActivity.this, 
-                            "Event tab - Coming soon", 
-                            Toast.LENGTH_SHORT).show();
+                    case 3: // Event tab
+                        showEventsFragment();
                         break;
                 }
             }
@@ -258,24 +261,48 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         });
     }
     
-    private void showBoardView() {
-        boardsRecyclerView.setVisibility(View.VISIBLE);
+    private void showSummaryFragment() {
+        boardsRecyclerView.setVisibility(View.GONE);
+        FrameLayout fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.setVisibility(View.VISIBLE);
         
-        // Hide calendar fragment if showing
-        androidx.fragment.app.Fragment calendarFragment = getSupportFragmentManager()
-            .findFragmentByTag("calendar_fragment");
-        if (calendarFragment != null) {
+        androidx.fragment.app.Fragment summaryFragment = getSupportFragmentManager()
+            .findFragmentByTag("summary_fragment");
+        
+        // Hide other fragments
+        hideOtherFragments("summary_fragment");
+        
+        if (summaryFragment == null) {
+            summaryFragment = ProjectSummaryFragment.newInstance(projectId);
             getSupportFragmentManager().beginTransaction()
-                .hide(calendarFragment)
+                .add(R.id.fragmentContainer, summaryFragment, "summary_fragment")
+                .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                .show(summaryFragment)
                 .commit();
         }
     }
     
+    private void showBoardView() {
+        boardsRecyclerView.setVisibility(View.VISIBLE);
+        FrameLayout fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.setVisibility(View.GONE);
+        
+        // Hide all fragments
+        hideOtherFragments(null);
+    }
+    
     private void showCalendarFragment() {
         boardsRecyclerView.setVisibility(View.GONE);
+        FrameLayout fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.setVisibility(View.VISIBLE);
         
         androidx.fragment.app.Fragment calendarFragment = getSupportFragmentManager()
             .findFragmentByTag("calendar_fragment");
+        
+        // Hide other fragments
+        hideOtherFragments("calendar_fragment");
         
         if (calendarFragment == null) {
             calendarFragment = ProjectCalendarFragment.newInstance(projectId);
@@ -287,6 +314,45 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                 .show(calendarFragment)
                 .commit();
         }
+    }
+    
+    private void showEventsFragment() {
+        boardsRecyclerView.setVisibility(View.GONE);
+        FrameLayout fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.setVisibility(View.VISIBLE);
+        
+        androidx.fragment.app.Fragment eventsFragment = getSupportFragmentManager()
+            .findFragmentByTag("events_fragment");
+        
+        // Hide other fragments
+        hideOtherFragments("events_fragment");
+        
+        if (eventsFragment == null) {
+            eventsFragment = ProjectEventsFragment.newInstance(projectId);
+            getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragmentContainer, eventsFragment, "events_fragment")
+                .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                .show(eventsFragment)
+                .commit();
+        }
+    }
+    
+    private void hideOtherFragments(String exceptTag) {
+        androidx.fragment.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        
+        String[] fragmentTags = {"summary_fragment", "calendar_fragment", "events_fragment"};
+        for (String tag : fragmentTags) {
+            if (!tag.equals(exceptTag)) {
+                androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
+                if (fragment != null) {
+                    transaction.hide(fragment);
+                }
+            }
+        }
+        
+        transaction.commit();
     }
     
     private void showProjectMenu() {

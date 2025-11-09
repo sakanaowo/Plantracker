@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CalendarView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -40,10 +41,10 @@ public class ProjectCalendarFragment extends Fragment {
     private TextView tvSelectedDate;
     private TextView tvEventCount;
     private LinearLayout layoutEmptyState;
+    private CalendarView calendarView;
     
     private Button btnPreviousMonth;
     private Button btnNextMonth;
-    private Button btnPickDate;
     private Button btnSyncCalendar;
     private Button btnFilter;
     
@@ -96,15 +97,17 @@ public class ProjectCalendarFragment extends Fragment {
         tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
         tvEventCount = view.findViewById(R.id.tvEventCount);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
+        calendarView = view.findViewById(R.id.calendarView);
         
         btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth);
         btnNextMonth = view.findViewById(R.id.btnNextMonth);
-        btnPickDate = view.findViewById(R.id.btnPickDate);
         btnSyncCalendar = view.findViewById(R.id.btnSyncCalendar);
         btnFilter = view.findViewById(R.id.btnFilter);
         
         monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
         dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        
+        setupCalendarView();
     }
 
     private void setupRecyclerView() {
@@ -116,21 +119,38 @@ public class ProjectCalendarFragment extends Fragment {
             Toast.makeText(getContext(), "Event: " + event.getTitle(), Toast.LENGTH_SHORT).show();
         });
     }
+    
+    private void setupCalendarView() {
+        if (calendarView != null) {
+            calendarView.setDate(selectedCalendar.getTimeInMillis(), false, true);
+            
+            calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
+                selectedCalendar.set(year, month, dayOfMonth);
+                updateDateDisplay();
+                loadCalendarData();
+                
+                int currentYear = selectedCalendar.get(Calendar.YEAR);
+                int currentMonth = selectedCalendar.get(Calendar.MONTH);
+                int currentDay = selectedCalendar.get(Calendar.DAY_OF_MONTH);
+                viewModel.filterEventsByDate(currentYear, currentMonth, currentDay);
+            });
+        }
+    }
 
     private void setupButtons() {
         btnPreviousMonth.setOnClickListener(v -> {
             selectedCalendar.add(Calendar.MONTH, -1);
+            calendarView.setDate(selectedCalendar.getTimeInMillis(), true, true);
             updateDateDisplay();
             loadCalendarData();
         });
         
         btnNextMonth.setOnClickListener(v -> {
             selectedCalendar.add(Calendar.MONTH, 1);
+            calendarView.setDate(selectedCalendar.getTimeInMillis(), true, true);
             updateDateDisplay();
             loadCalendarData();
         });
-        
-        btnPickDate.setOnClickListener(v -> showDatePicker());
         
         btnSyncCalendar.setOnClickListener(v -> {
             if (projectId != null && !projectId.isEmpty()) {
@@ -180,21 +200,6 @@ public class ProjectCalendarFragment extends Fragment {
                 Toast.makeText(getContext(), "Calendar synced successfully", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void showDatePicker() {
-        MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText("Choose date")
-            .setSelection(selectedCalendar.getTimeInMillis())
-            .build();
-        
-        datePicker.addOnPositiveButtonClickListener(selection -> {
-            selectedCalendar.setTimeInMillis(selection);
-            updateDateDisplay();
-            loadCalendarData();
-        });
-        
-        datePicker.show(getParentFragmentManager(), "DATE_PICKER");
     }
 
     private void updateDateDisplay() {
