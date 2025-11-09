@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tralalero.R;
+import com.example.tralalero.data.dto.project.ProjectSummaryResponse;
 import com.google.android.material.snackbar.Snackbar;
 
 public class ProjectSummaryFragment extends Fragment {
@@ -88,26 +89,30 @@ public class ProjectSummaryFragment extends Fragment {
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(ProjectSummaryViewModel.class);
         
-        // Observe statistics data
-        viewModel.getStatistics().observe(getViewLifecycleOwner(), stats -> {
-            if (stats != null) {
+        // Observe summary data
+        viewModel.getSummary().observe(getViewLifecycleOwner(), summary -> {
+            if (summary != null) {
                 updateStatsCards(
-                    stats.getDoneCount(),
-                    stats.getUpdatedCount(),
-                    stats.getCreatedCount(),
-                    stats.getDueCount()
+                    summary.getDone(),
+                    summary.getUpdated(),
+                    summary.getCreated(),
+                    summary.getDue()
                 );
-                updateStatusOverview(
-                    stats.getTotalCount(),
-                    stats.getTodoCount(),
-                    stats.getInProgressCount(),
-                    stats.getDoneCount()
-                );
+                
+                if (summary.getStatusOverview() != null) {
+                    ProjectSummaryResponse.StatusOverview overview = summary.getStatusOverview();
+                    updateStatusOverview(
+                        overview.getTotal(),
+                        overview.getToDo(),
+                        overview.getInProgress(),
+                        overview.getDone()
+                    );
+                }
             }
         });
         
         // Observe loading state
-        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             }
@@ -127,7 +132,7 @@ public class ProjectSummaryFragment extends Fragment {
     
     private void loadSummaryData() {
         if (projectId != null && !projectId.isEmpty()) {
-            viewModel.loadStatistics(projectId);
+            viewModel.loadSummary(projectId);
         } else {
             Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
         }
