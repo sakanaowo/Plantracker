@@ -77,6 +77,19 @@ public class TaskDTO {
     @SerializedName(value = "deletedAt", alternate = {"deleted_at"})
     private String deletedAt;
 
+    // Calendar Sync fields
+    @SerializedName(value = "calendarEventId", alternate = {"calendar_event_id"})
+    private String calendarEventId;
+
+    @SerializedName(value = "calendarReminderEnabled", alternate = {"calendar_reminder_enabled"})
+    private Boolean calendarReminderEnabled;
+
+    @SerializedName(value = "calendarReminderTime", alternate = {"calendar_reminder_time"})
+    private Integer calendarReminderTime;
+
+    @SerializedName(value = "lastSyncedAt", alternate = {"last_synced_at"})
+    private String lastSyncedAt;
+
     public String getId() {
         return id;
     }
@@ -259,5 +272,37 @@ public class TaskDTO {
 
     public void setDeletedAt(String deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public String getCalendarEventId() {
+        return calendarEventId;
+    }
+
+    public void setCalendarEventId(String calendarEventId) {
+        this.calendarEventId = calendarEventId;
+    }
+
+    public Boolean getCalendarReminderEnabled() {
+        return calendarReminderEnabled;
+    }
+
+    public void setCalendarReminderEnabled(Boolean calendarReminderEnabled) {
+        this.calendarReminderEnabled = calendarReminderEnabled;
+    }
+
+    public Integer getCalendarReminderTime() {
+        return calendarReminderTime;
+    }
+
+    public void setCalendarReminderTime(Integer calendarReminderTime) {
+        this.calendarReminderTime = calendarReminderTime;
+    }
+
+    public String getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(String lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
     }
 }

@@ -195,4 +195,36 @@ public interface TaskApiService {
      */
     @GET("tasks/statistics/project/{projectId}")
     Call<TaskStatisticsDTO> getProjectStatistics(@Path("projectId") String projectId);
+    
+    // ==================== CALENDAR SYNC ====================
+    
+    /**
+     * Update task with calendar sync settings
+     * PUT /tasks/:taskId/calendar-sync
+     * 
+     * @param taskId Task ID
+     * @param syncData Map with:
+     *   - "calendarReminderEnabled" (boolean)
+     *   - "calendarReminderTime" (int, minutes before due)
+     * @return Updated task with calendar_event_id and last_synced_at
+     */
+    @PUT("tasks/{taskId}/calendar-sync")
+    Call<TaskDTO> updateCalendarSync(
+        @Path("taskId") String taskId,
+        @Body java.util.Map<String, Object> syncData
+    );
+    
+    /**
+     * Get tasks with calendar sync enabled for date range
+     * GET /tasks/calendar?startDate=2025-11-10&endDate=2025-11-17
+     * 
+     * @param startDate Start date (ISO format)
+     * @param endDate End date (ISO format)
+     * @return List of tasks with deadlines in range
+     */
+    @GET("tasks/calendar")
+    Call<List<TaskDTO>> getCalendarTasks(
+        @Query("startDate") String startDate,
+        @Query("endDate") String endDate
+    );
 }
