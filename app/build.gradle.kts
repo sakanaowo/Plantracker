@@ -96,6 +96,9 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
+    // MPAndroidChart for donut chart in Project Summary
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     // Chrome Custom Tabs for OAuth flow
     implementation("androidx.browser:browser:1.8.0")
 
