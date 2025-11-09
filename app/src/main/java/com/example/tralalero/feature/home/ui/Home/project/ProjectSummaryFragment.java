@@ -12,9 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
-import com.example.tralalero.data.dto.project.ProjectSummaryResponse;
 import com.google.android.material.snackbar.Snackbar;
 
 public class ProjectSummaryFragment extends Fragment {
@@ -34,9 +34,10 @@ public class ProjectSummaryFragment extends Fragment {
     private TextView tvInProgressCount;
     private TextView tvDoneStatusCount;
     
-    // Loading
+    // Loading & Refresh
     private ProgressBar progressBar;
-    
+    private SwipeRefreshLayout swipeRefreshLayout;
+
     public static ProjectSummaryFragment newInstance(String projectId) {
         ProjectSummaryFragment fragment = new ProjectSummaryFragment();
         Bundle args = new Bundle();
@@ -84,6 +85,12 @@ public class ProjectSummaryFragment extends Fragment {
         
         // Loading indicator
         progressBar = view.findViewById(R.id.progressBar);
+        
+        // Swipe refresh
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadSummaryData();
+        });
     }
     
     private void setupViewModel() {
@@ -99,13 +106,13 @@ public class ProjectSummaryFragment extends Fragment {
                     summary.getDue()
                 );
                 
+                // Update status overview if available
                 if (summary.getStatusOverview() != null) {
-                    ProjectSummaryResponse.StatusOverview overview = summary.getStatusOverview();
                     updateStatusOverview(
-                        overview.getTotal(),
-                        overview.getToDo(),
-                        overview.getInProgress(),
-                        overview.getDone()
+                        summary.getStatusOverview().getTotal(),
+                        summary.getStatusOverview().getToDo(),
+                        summary.getStatusOverview().getInProgress(),
+                        summary.getStatusOverview().getDone()
                     );
                 }
             }
@@ -115,6 +122,9 @@ public class ProjectSummaryFragment extends Fragment {
         viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(isLoading);
             }
         });
         

@@ -69,4 +69,26 @@
     <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
     <string name="view_in_calendar">Xem trong Lịch</string>
     <string name="calendar_reminder_settings">Cài đặt Nhắc nhở Lịch</string>
+    
+    <!-- Meeting Scheduler -->
+    <string name="select_team_members">Chọn Thành viên Nhóm</string>
+    <string name="choose_members_availability">Chọn thành viên để kiểm tra tình trạng</string>
+    <string name="search_members">Tìm kiếm thành viên</string>
+    <string name="zero_members_selected">0 thành viên được chọn</string>
+    <string name="next">Tiếp theo</string>
+    <string name="find_meeting_time">Tìm Thời gian Họp</string>
+    <string name="duration_minutes">Thời lượng (phút)</string>
+    <string name="date_range">Khoảng Thời gian</string>
+    <string name="start_date">Ngày Bắt đầu</string>
+    <string name="end_date">Ngày Kết thúc</string>
+    <string name="find_available_times">Tìm Thời gian Rảnh</string>
+    <string name="suggested_times">Thời gian Đề xuất</string>
+    <string name="no_available_times">Không tìm thấy thời gian rảnh</string>
+    <string name="close">Đóng</string>
+    
+    <!-- Quick Event -->
+    <string name="quick_event">Sự kiện Nhanh</string>
+    <string name="date">Ngày</string>
+    <string name="add_google_meet_link">Thêm liên kết Google Meet</string>
+    <string name="description_optional">Mô tả (tùy chọn)</string>
 </resources>
