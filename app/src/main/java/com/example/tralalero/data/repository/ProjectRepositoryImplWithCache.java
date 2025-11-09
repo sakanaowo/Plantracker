@@ -449,6 +449,46 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
         }
     }
     
+    // ==================== GET PROJECT SUMMARY ====================
+    
+    @Override
+    public void getProjectSummary(String projectId, RepositoryCallback<com.example.tralalero.data.dto.project.ProjectSummaryResponse> callback) {
+        // Input validation
+        if (projectId == null || projectId.trim().isEmpty()) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("projectId cannot be null or empty"));
+            }
+            return;
+        }
+        
+        if (callback == null) {
+            Log.e(TAG, "getProjectSummary: callback is null");
+            return;
+        }
+        
+        try {
+            apiService.getProjectSummary(projectId).enqueue(new Callback<com.example.tralalero.data.dto.project.ProjectSummaryResponse>() {
+                @Override
+                public void onResponse(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, 
+                                     Response<com.example.tralalero.data.dto.project.ProjectSummaryResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        mainHandler.post(() -> callback.onSuccess(response.body()));
+                    } else {
+                        mainHandler.post(() -> callback.onError("Failed to get project summary: " + response.code()));
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting project summary", e);
+            mainHandler.post(() -> callback.onError("Error: " + e.getMessage()));
+        }
+    }
+    
     // ==================== CACHE MANAGEMENT ====================
     
     /**

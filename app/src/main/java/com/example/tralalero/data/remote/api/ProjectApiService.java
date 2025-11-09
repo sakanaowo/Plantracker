@@ -1,5 +1,6 @@
 package com.example.tralalero.data.remote.api;
 
+import com.example.tralalero.data.dto.project.ProjectSummaryResponse;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 
@@ -35,5 +36,13 @@ public interface ProjectApiService {
 
     @DELETE("projects/{id}")
     Call<Void> deleteProject(@Path("id") String projectId);
+    
+    /**
+     * Get project summary statistics
+     * @param projectId Project ID
+     * @return Summary with done, updated, created, due counts and status overview
+     */
+    @GET("projects/{id}/summary")
+    Call<ProjectSummaryResponse> getProjectSummary(@Path("id") String projectId);
 }
 

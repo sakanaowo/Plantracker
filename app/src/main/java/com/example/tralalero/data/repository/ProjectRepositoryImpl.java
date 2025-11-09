@@ -1,9 +1,12 @@
 package com.example.tralalero.data.repository;
 
+import android.content.Context;
+
 import com.example.tralalero.data.mapper.ProjectMapper;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.domain.repository.IProjectRepository;
 
 import retrofit2.Call;
@@ -15,6 +18,10 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     public ProjectRepositoryImpl(ProjectApiService apiService) {
         this.apiService = apiService;
+    }
+    
+    public ProjectRepositoryImpl(Context context) {
+        this.apiService = ApiClient.get().create(ProjectApiService.class);
     }
 
     @Override
@@ -137,6 +144,26 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
             @Override
             public void onFailure(Call<ProjectDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+    
+    @Override
+    public void getProjectSummary(String projectId, RepositoryCallback<com.example.tralalero.data.dto.project.ProjectSummaryResponse> callback) {
+        apiService.getProjectSummary(projectId).enqueue(new Callback<com.example.tralalero.data.dto.project.ProjectSummaryResponse>() {
+            @Override
+            public void onResponse(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, 
+                                 Response<com.example.tralalero.data.dto.project.ProjectSummaryResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to get project summary: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, Throwable t) {
                 callback.onError("Network error: " + t.getMessage());
             }
         });
