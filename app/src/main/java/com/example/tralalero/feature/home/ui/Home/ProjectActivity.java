@@ -259,6 +259,12 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
         });
+        
+        // Select Board tab by default (index 1)
+        TabLayout.Tab boardTab = tabLayout.getTabAt(1);
+        if (boardTab != null) {
+            boardTab.select();
+        }
     }
     
     private void showSummaryFragment() {

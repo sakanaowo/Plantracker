@@ -2,6 +2,7 @@ package com.example.tralalero.feature.home.ui.Home.project;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectSummaryFragment extends Fragment {
+    
+    private static final String TAG = "ProjectSummary";
     
     private String projectId;
     private ProjectSummaryViewModel viewModel;
@@ -75,6 +78,8 @@ public class ProjectSummaryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
+        Log.d(TAG, "onViewCreated - projectId: " + projectId);
+        
         initializeViews(view);
         setupViewModel();
         loadSummaryData();
@@ -113,6 +118,11 @@ public class ProjectSummaryFragment extends Fragment {
         // Observe summary data
         viewModel.getSummary().observe(getViewLifecycleOwner(), summary -> {
             if (summary != null) {
+                Log.d(TAG, "Summary data received - Done: " + summary.getDone() + 
+                          ", Updated: " + summary.getUpdated() + 
+                          ", Created: " + summary.getCreated() + 
+                          ", Due: " + summary.getDue());
+                
                 updateStatsCards(
                     summary.getDone(),
                     summary.getUpdated(),
@@ -122,6 +132,8 @@ public class ProjectSummaryFragment extends Fragment {
                 
                 // Update status overview if available
                 if (summary.getStatusOverview() != null) {
+                    Log.d(TAG, "Status overview - Total: " + summary.getStatusOverview().getTotal());
+                    
                     updateStatusOverview(
                         summary.getStatusOverview().getTotal(),
                         summary.getStatusOverview().getToDo(),
@@ -137,6 +149,8 @@ public class ProjectSummaryFragment extends Fragment {
                         summary.getStatusOverview().getDone()
                     );
                 }
+            } else {
+                Log.w(TAG, "Summary data is null");
             }
         });
         
@@ -153,6 +167,8 @@ public class ProjectSummaryFragment extends Fragment {
         // Observe errors
         viewModel.getError().observe(getViewLifecycleOwner(), errorMsg -> {
             if (errorMsg != null && !errorMsg.isEmpty() && getView() != null) {
+                Log.e(TAG, "Error occurred: " + errorMsg);
+                
                 Snackbar.make(getView(), 
                     "❌ " + errorMsg, 
                     Snackbar.LENGTH_LONG)
@@ -163,9 +179,12 @@ public class ProjectSummaryFragment extends Fragment {
     }
     
     private void loadSummaryData() {
+        Log.d(TAG, "loadSummaryData - Loading data for projectId: " + projectId);
+        
         if (projectId != null && !projectId.isEmpty()) {
             viewModel.loadSummary(projectId);
         } else {
+            Log.e(TAG, "loadSummaryData - No project ID available!");
             Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
         }
     }

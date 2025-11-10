@@ -1,78 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="280dp"
-    android:layout_height="match_parent"
-    android:layout_marginEnd="12dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
-    android:background="@android:color/white">
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="280dp" android:layout_height="match_parent" android:layout_marginEnd="12dp" app:cardCornerRadius="8dp" app:cardElevation="2dp" android:background="@android:color/white">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="12dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
 
         <!-- Board Title with menu -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingBottom="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingVertical="12dp" android:paddingHorizontal="8dp">
 
-            <TextView
-                android:id="@+id/tvBoardTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="To Do"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/black"
-                tools:text="To Do" />
+            <TextView android:id="@+id/tvBoardTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="To Do" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black" tools:text="To Do" />
 
         </LinearLayout>
 
         <!-- Task RecyclerView -->
 
         <!-- Add card button -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/taskRecycler"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:scrollbars="vertical"
-            tools:listitem="@layout/board_detail_item" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/taskRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:clipToPadding="false" android:overScrollMode="never" android:minHeight="120dp" android:scrollbars="vertical" tools:listitem="@layout/board_detail_item" />
 
-        <LinearLayout
-            android:id="@+id/btnAddCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="4dp"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true">
+        <LinearLayout android:id="@+id/btnAddCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingVertical="8dp" android:paddingHorizontal="4dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@android:drawable/ic_input_add"
-                app:tint="#5E6C84"
-                android:contentDescription="Add" />
+            <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_input_add" app:tint="#5E6C84" android:contentDescription="Add" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="Add card"
-                android:textSize="14sp"
-                android:textColor="#5E6C84" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:text="Add card" android:textSize="14sp" android:textColor="#5E6C84" />
         </LinearLayout>
 
     </LinearLayout>

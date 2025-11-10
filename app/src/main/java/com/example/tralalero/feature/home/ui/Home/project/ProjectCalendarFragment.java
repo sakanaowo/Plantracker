@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CalendarEvent;
 import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.text.SimpleDateFormat;
@@ -47,6 +48,7 @@ public class ProjectCalendarFragment extends Fragment {
     private Button btnNextMonth;
     private Button btnSyncCalendar;
     private Button btnFilter;
+    private FloatingActionButton fabAddEvent;
     
     private CalendarEventAdapter eventAdapter;
     private ProjectCalendarViewModel viewModel;
@@ -103,11 +105,13 @@ public class ProjectCalendarFragment extends Fragment {
         btnNextMonth = view.findViewById(R.id.btnNextMonth);
         btnSyncCalendar = view.findViewById(R.id.btnSyncCalendar);
         btnFilter = view.findViewById(R.id.btnFilter);
+        fabAddEvent = view.findViewById(R.id.fabAddEvent);
         
         monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
         dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         
         setupCalendarView();
+        setupFabButton();
     }
 
     private void setupRecyclerView() {

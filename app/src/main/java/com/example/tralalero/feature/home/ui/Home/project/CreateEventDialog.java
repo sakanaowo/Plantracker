@@ -13,7 +13,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
 import com.example.tralalero.R;
+import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.MemberApiService;
+import com.example.tralalero.data.remote.dto.member.MemberDTO;
 import com.example.tralalero.domain.model.ProjectEvent;
+import com.example.tralalero.domain.model.User;
+import com.example.tralalero.feature.home.ui.Home.calendar.MemberSelectionBottomSheet;
+import com.example.tralalero.network.ApiClient;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -21,6 +27,10 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Dialog for creating a new project event
@@ -141,12 +151,47 @@ public class CreateEventDialog extends DialogFragment {
     }
     
     private void showSelectAttendeesDialog() {
-        // TODO: Load project members và show selection dialog
-        // Khi chọn xong, thêm chips vào chipGroupAttendees
-        Toast.makeText(getContext(), "TODO: Select attendees from project members", Toast.LENGTH_SHORT).show();
-        
-        // Demo: Add a sample chip
-        addAttendeeChip("user123", "John Doe");
+        // Load project members from API
+        MemberApiService api = ApiClient.get(App.authManager).create(MemberApiService.class);
+        api.getMembers(projectId).enqueue(new Callback<MemberApiService.MemberListResponse>() {
+            @Override
+            public void onResponse(Call<MemberApiService.MemberListResponse> call, 
+                                 Response<MemberApiService.MemberListResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().data != null) {
+                    List<User> users = new ArrayList<>();
+                    for (MemberDTO dto : response.body().data) {
+                        if (dto.getUser() != null) {
+                            User user = new User();
+                            user.setId(dto.getUserId());
+                            user.setName(dto.getUser().getName());
+                            user.setEmail(dto.getUser().getEmail());
+                            users.add(user);
+                        }
+                    }
+
+                    // Show member selection bottom sheet
+                    MemberSelectionBottomSheet sheet = MemberSelectionBottomSheet.newInstance(users);
+                    sheet.setListener(selected -> {
+                        // Clear existing chips
+                        chipGroupAttendees.removeAllViews();
+                        selectedAttendeeIds.clear();
+                        
+                        // Add chips for selected members
+                        for (User u : selected) {
+                            addAttendeeChip(u.getId(), u.getName());
+                        }
+                    });
+                    sheet.show(getParentFragmentManager(), "select_members");
+                } else {
+                    Toast.makeText(getContext(), "Failed to load members", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MemberApiService.MemberListResponse> call, Throwable t) {
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
     
     private void addAttendeeChip(String userId, String userName) {
