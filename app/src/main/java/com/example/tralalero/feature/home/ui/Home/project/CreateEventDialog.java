@@ -161,10 +161,13 @@ public class CreateEventDialog extends DialogFragment {
                     List<User> users = new ArrayList<>();
                     for (MemberDTO dto : response.body().data) {
                         if (dto.getUser() != null) {
-                            User user = new User();
-                            user.setId(dto.getUserId());
-                            user.setName(dto.getUser().getName());
-                            user.setEmail(dto.getUser().getEmail());
+                            User user = new User(
+                                dto.getUserId(),
+                                dto.getUser().getName(),
+                                dto.getUser().getEmail(),
+                                dto.getUser().getAvatarUrl(),
+                                null // firebaseUid not available in MemberDTO.UserInfo
+                            );
                             users.add(user);
                         }
                     }
