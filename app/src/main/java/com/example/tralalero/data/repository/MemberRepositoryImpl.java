@@ -68,13 +68,35 @@ public class MemberRepositoryImpl implements IMemberRepository {
                 @Override
                 public void onResponse(Call<List<MemberDTO>> call,
                                      Response<List<MemberDTO>> response) {
+                    Log.d(TAG, "Response code: " + response.code());
+                    Log.d(TAG, "Response body null? " + (response.body() == null));
+                    
                     if (response.isSuccessful() && response.body() != null) {
+                        Log.d(TAG, "Raw response size: " + response.body().size());
                         List<Member> members = MemberMapper.toDomainList(response.body());
-                        Log.d(TAG, "Loaded " + members.size() + " members");
+                        Log.d(TAG, "Mapped members: " + members.size());
+                        
+                        // Debug: print each member
+                        for (Member m : members) {
+                            Log.d(TAG, "  - Member ID: " + m.getId() + 
+                                      ", UserId: " + m.getUserId() + 
+                                      ", User: " + (m.getUser() != null ? m.getUser().getName() : "NULL"));
+                        }
+                        
                         callback.onSuccess(members);
                     } else {
                         String error = "Failed to load members: " + response.code();
                         Log.e(TAG, error);
+                        
+                        // Try to log error body
+                        try {
+                            if (response.errorBody() != null) {
+                                Log.e(TAG, "Error body: " + response.errorBody().string());
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not read error body", e);
+                        }
+                        
                         callback.onError(error);
                     }
                 }

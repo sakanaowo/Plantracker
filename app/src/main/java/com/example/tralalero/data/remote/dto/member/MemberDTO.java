@@ -12,7 +12,7 @@ public class MemberDTO {
     @SerializedName("role")
     private String role; // OWNER, ADMIN, MEMBER, VIEWER
 
-    @SerializedName("user")
+    @SerializedName("users")  // Backend uses "users" (plural), not "user"
     private UserInfo user;
 
     @SerializedName("addedBy")

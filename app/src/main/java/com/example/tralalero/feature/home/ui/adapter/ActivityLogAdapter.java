@@ -14,6 +14,8 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.ActivityLog;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,6 +30,7 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
     private List<ActivityLog> activityLogs = new ArrayList<>();
     private Context context;
     private OnInvitationClickListener invitationClickListener;
+    private String currentUserId;
 
     public interface OnInvitationClickListener {
         void onInvitationClick(ActivityLog log);
@@ -35,6 +38,12 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
 
     public ActivityLogAdapter(Context context) {
         this.context = context;
+        
+        // Get current user ID from Firebase
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            this.currentUserId = user.getUid();
+        }
     }
 
     public void setOnInvitationClickListener(OnInvitationClickListener listener) {
@@ -108,9 +117,9 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 itemView.setFocusable(false);
             }
             
-            // Set activity message
-            String message = log.getFormattedMessage();
-            tvActivityMessage.setText(message != null ? message : "Activity");
+            // Set activity message with improved formatting
+            String message = formatActivityMessage(log);
+            tvActivityMessage.setText(message);
 
             // Set time
             String createdAt = log.getCreatedAt();
@@ -129,6 +138,70 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 ivUserAvatar.setVisibility(View.GONE);
                 tvUserInitials.setVisibility(View.VISIBLE);
                 tvUserInitials.setText(log.getUserInitials());
+            }
+        }
+        
+        private String formatActivityMessage(ActivityLog log) {
+            boolean isSelf = currentUserId != null && currentUserId.equals(log.getUserId());
+            String userName = isSelf ? "You" : log.getUserName();
+            String action = log.getAction();
+            String entityType = log.getEntityType();
+            String entityName = log.getEntityName();
+            
+            switch (action) {
+                case "CREATED":
+                    if ("TASK".equals(entityType)) {
+                        return userName + " created task \"" + entityName + "\"";
+                    } else if ("PROJECT".equals(entityType)) {
+                        return userName + " created project \"" + entityName + "\"";
+                    } else if ("EVENT".equals(entityType)) {
+                        return userName + " created event \"" + entityName + "\"";
+                    } else if ("BOARD".equals(entityType)) {
+                        return userName + " created board \"" + entityName + "\"";
+                    }
+                    return userName + " created " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                
+                case "ADDED":
+                    if ("MEMBERSHIP".equals(entityType)) {
+                        // entityName is the invited person's name
+                        if (isSelf) {
+                            return "You invited " + entityName + " to the project";
+                        } else {
+                            return entityName + " joined the project";
+                        }
+                    }
+                    return userName + " added " + entityType.toLowerCase();
+                
+                case "ASSIGNED":
+                    if ("TASK".equals(entityType)) {
+                        // Check if assigning to self
+                        if (isSelf) {
+                            return "You assigned task \"" + entityName + "\"";
+                        }
+                        return userName + " assigned task \"" + entityName + "\"";
+                    }
+                    return userName + " assigned " + entityName;
+                
+                case "UPDATED":
+                    return userName + " updated " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                
+                case "DELETED":
+                    return userName + " deleted " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                
+                case "COMMENTED":
+                    return userName + " commented on \"" + entityName + "\"";
+                
+                case "MOVED":
+                    return userName + " moved task \"" + entityName + "\"";
+                
+                case "COMPLETED":
+                    return userName + " completed task \"" + entityName + "\"";
+                
+                case "REOPENED":
+                    return userName + " reopened task \"" + entityName + "\"";
+                
+                default:
+                    return userName + " " + action.toLowerCase() + " " + entityType.toLowerCase();
             }
         }
 
