@@ -16,6 +16,10 @@ public class ProjectEvent {
     private List<String> attendeeIds;
     private int attendeeCount;
     private String meetLink;
+    private String meetingLink; // Alternative name for meetLink
+    private String location; // Location for milestones/other events
+    private String startAt; // ISO 8601 format with timezone
+    private String endAt; // ISO 8601 format with timezone
     private boolean createGoogleMeet;
     private String calendarEventId;
     private Date createdAt;
@@ -142,6 +146,38 @@ public class ProjectEvent {
     
     public void setMeetLink(String meetLink) {
         this.meetLink = meetLink;
+    }
+    
+    public String getMeetingLink() {
+        return meetingLink;
+    }
+    
+    public void setMeetingLink(String meetingLink) {
+        this.meetingLink = meetingLink;
+    }
+    
+    public String getLocation() {
+        return location;
+    }
+    
+    public void setLocation(String location) {
+        this.location = location;
+    }
+    
+    public String getStartAt() {
+        return startAt;
+    }
+    
+    public void setStartAt(String startAt) {
+        this.startAt = startAt;
+    }
+    
+    public String getEndAt() {
+        return endAt;
+    }
+    
+    public void setEndAt(String endAt) {
+        this.endAt = endAt;
     }
     
     public boolean isCreateGoogleMeet() {

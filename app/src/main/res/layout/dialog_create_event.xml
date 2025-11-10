@@ -28,6 +28,14 @@
                 android:textStyle="bold"
                 android:textColor="#212121"/>
             
+            <ProgressBar
+                android:id="@+id/progressBarLoading"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"
+                style="?android:attr/progressBarStyleSmall"/>
+            
             <ImageButton
                 android:id="@+id/btnCloseDialog"
                 android:layout_width="40dp"
@@ -204,6 +212,7 @@
         
         <!-- Google Meet Option -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardGoogleMeet"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"

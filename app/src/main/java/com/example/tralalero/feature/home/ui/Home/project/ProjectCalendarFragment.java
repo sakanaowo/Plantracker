@@ -114,28 +114,6 @@ public class ProjectCalendarFragment extends Fragment {
         setupFabButton();
     }
 
-    private void setupFabButton() {
-        if (fabAddEvent != null) {
-            fabAddEvent.setOnClickListener(v -> {
-                showCreateEventDialog();
-            });
-        }
-    }
-    
-    private void showCreateEventDialog() {
-        if (projectId != null && !projectId.isEmpty()) {
-            CreateEventDialog dialog = CreateEventDialog.newInstance(projectId);
-            dialog.setOnEventCreatedListener(event -> {
-                // Reload calendar data after event created
-                loadCalendarData();
-                Toast.makeText(getContext(), "Event created successfully", Toast.LENGTH_SHORT).show();
-            });
-            dialog.show(getParentFragmentManager(), "create_event");
-        } else {
-            Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     private void setupRecyclerView() {
         eventAdapter = new CalendarEventAdapter();
         rvCalendarEvents.setLayoutManager(new LinearLayoutManager(getContext()));
