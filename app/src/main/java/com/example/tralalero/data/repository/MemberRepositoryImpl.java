@@ -64,23 +64,45 @@ public class MemberRepositoryImpl implements IMemberRepository {
         Log.d(TAG, "Fetching members for projectId: " + projectId);
         
         apiService.getMembers(projectId).enqueue(
-            new Callback<MemberApiService.MemberListResponse>() {
+            new Callback<List<MemberDTO>>() {
                 @Override
-                public void onResponse(Call<MemberApiService.MemberListResponse> call,
-                                     Response<MemberApiService.MemberListResponse> response) {
+                public void onResponse(Call<List<MemberDTO>> call,
+                                     Response<List<MemberDTO>> response) {
+                    Log.d(TAG, "Response code: " + response.code());
+                    Log.d(TAG, "Response body null? " + (response.body() == null));
+                    
                     if (response.isSuccessful() && response.body() != null) {
-                        List<Member> members = MemberMapper.toDomainList(response.body().data);
-                        Log.d(TAG, "Loaded " + members.size() + " members");
+                        Log.d(TAG, "Raw response size: " + response.body().size());
+                        List<Member> members = MemberMapper.toDomainList(response.body());
+                        Log.d(TAG, "Mapped members: " + members.size());
+                        
+                        // Debug: print each member
+                        for (Member m : members) {
+                            Log.d(TAG, "  - Member ID: " + m.getId() + 
+                                      ", UserId: " + m.getUserId() + 
+                                      ", User: " + (m.getUser() != null ? m.getUser().getName() : "NULL"));
+                        }
+                        
                         callback.onSuccess(members);
                     } else {
                         String error = "Failed to load members: " + response.code();
                         Log.e(TAG, error);
+                        
+                        // Try to log error body
+                        try {
+                            if (response.errorBody() != null) {
+                                Log.e(TAG, "Error body: " + response.errorBody().string());
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not read error body", e);
+                        }
+                        
                         callback.onError(error);
                     }
                 }
 
                 @Override
-                public void onFailure(Call<MemberApiService.MemberListResponse> call,
+                public void onFailure(Call<List<MemberDTO>> call,
                                     Throwable t) {
                     Log.e(TAG, "Network error: " + t.getMessage());
                     callback.onError(t.getMessage());

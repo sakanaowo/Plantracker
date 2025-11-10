@@ -153,13 +153,13 @@ public class CreateEventDialog extends DialogFragment {
     private void showSelectAttendeesDialog() {
         // Load project members from API
         MemberApiService api = ApiClient.get(App.authManager).create(MemberApiService.class);
-        api.getMembers(projectId).enqueue(new Callback<MemberApiService.MemberListResponse>() {
+        api.getMembers(projectId).enqueue(new Callback<List<MemberDTO>>() {
             @Override
-            public void onResponse(Call<MemberApiService.MemberListResponse> call, 
-                                 Response<MemberApiService.MemberListResponse> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().data != null) {
+            public void onResponse(Call<List<MemberDTO>> call, 
+                                 Response<List<MemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
                     List<User> users = new ArrayList<>();
-                    for (MemberDTO dto : response.body().data) {
+                    for (MemberDTO dto : response.body()) {
                         if (dto.getUser() != null) {
                             User user = new User(
                                 dto.getUserId(),
@@ -191,7 +191,7 @@ public class CreateEventDialog extends DialogFragment {
             }
 
             @Override
-            public void onFailure(Call<MemberApiService.MemberListResponse> call, Throwable t) {
+            public void onFailure(Call<List<MemberDTO>> call, Throwable t) {
                 Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });

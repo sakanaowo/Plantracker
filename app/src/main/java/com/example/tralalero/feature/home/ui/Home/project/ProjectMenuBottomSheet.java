@@ -505,6 +505,12 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                     // Convert domain members to UI members
                     List<UIMember> uiMembers = new ArrayList<>();
                     for (com.example.tralalero.domain.model.Member domainMember : domainMembers) {
+                        // Skip if user info is null
+                        if (domainMember.getUser() == null) {
+                            Log.w("ProjectMenuBottomSheet", "⚠️ Skipping member with null user info: " + domainMember.getId());
+                            continue;
+                        }
+                        
                         String initials = getInitials(domainMember.getUser().getName());
                         boolean isAdmin = domainMember.isAdmin() || domainMember.isOwner();
                         String avatarUrl = domainMember.getUser().getAvatarUrl();

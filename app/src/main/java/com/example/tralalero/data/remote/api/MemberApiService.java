@@ -13,7 +13,7 @@ public interface MemberApiService {
     );
 
     @GET("projects/{projectId}/members")
-    Call<MemberListResponse> getMembers(
+    Call<List<MemberDTO>> getMembers(
         @Path("projectId") String projectId
     );
 
@@ -29,10 +29,4 @@ public interface MemberApiService {
         @Path("projectId") String projectId,
         @Path("memberId") String memberId
     );
-
-    // Response wrapper
-    class MemberListResponse {
-        public List<MemberDTO> data;
-        public int count;
-    }
 }
