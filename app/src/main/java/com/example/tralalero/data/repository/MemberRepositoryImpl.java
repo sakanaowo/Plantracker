@@ -64,12 +64,12 @@ public class MemberRepositoryImpl implements IMemberRepository {
         Log.d(TAG, "Fetching members for projectId: " + projectId);
         
         apiService.getMembers(projectId).enqueue(
-            new Callback<MemberApiService.MemberListResponse>() {
+            new Callback<List<MemberDTO>>() {
                 @Override
-                public void onResponse(Call<MemberApiService.MemberListResponse> call,
-                                     Response<MemberApiService.MemberListResponse> response) {
+                public void onResponse(Call<List<MemberDTO>> call,
+                                     Response<List<MemberDTO>> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        List<Member> members = MemberMapper.toDomainList(response.body().data);
+                        List<Member> members = MemberMapper.toDomainList(response.body());
                         Log.d(TAG, "Loaded " + members.size() + " members");
                         callback.onSuccess(members);
                     } else {
@@ -80,7 +80,7 @@ public class MemberRepositoryImpl implements IMemberRepository {
                 }
 
                 @Override
-                public void onFailure(Call<MemberApiService.MemberListResponse> call,
+                public void onFailure(Call<List<MemberDTO>> call,
                                     Throwable t) {
                     Log.e(TAG, "Network error: " + t.getMessage());
                     callback.onError(t.getMessage());

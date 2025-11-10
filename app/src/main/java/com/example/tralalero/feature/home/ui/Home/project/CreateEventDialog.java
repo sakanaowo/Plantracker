@@ -42,13 +42,22 @@ public class CreateEventDialog extends DialogFragment {
     private TextInputEditText etDuration;
     private TextInputEditText etEventDescription;
     private RadioGroup rgEventType;
+    private RadioButton rbMeeting;
+    private RadioButton rbMilestone;
     private ChipGroup chipGroupAttendees;
     private SwitchMaterial switchCreateMeet;
     private Spinner spinnerRecurrence;
+    private com.google.android.material.card.MaterialCardView cardGoogleMeet;
+    private com.google.android.material.textfield.TextInputLayout tilMeetingLink;
+    private TextInputEditText etMeetingLink;
+    private com.google.android.material.textfield.TextInputLayout tilLocation;
+    private TextInputEditText etLocation;
+    private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
     private List<String> selectedAttendeeIds = new ArrayList<>();
     private OnEventCreatedListener listener;
+    private boolean isLoadingMembers = false;
     
     public interface OnEventCreatedListener {
         void onEventCreated(ProjectEvent event);
@@ -84,6 +93,7 @@ public class CreateEventDialog extends DialogFragment {
         
         initViews(view);
         setupDateTimePickers();
+        setupEventTypeUI();
         setupAttendees(view);
         setupRecurrence();
         setupButtons(view);
@@ -98,9 +108,110 @@ public class CreateEventDialog extends DialogFragment {
         etDuration = view.findViewById(R.id.etDuration);
         etEventDescription = view.findViewById(R.id.etEventDescription);
         rgEventType = view.findViewById(R.id.rgEventType);
+        rbMeeting = view.findViewById(R.id.rbMeeting);
+        rbMilestone = view.findViewById(R.id.rbMilestone);
         chipGroupAttendees = view.findViewById(R.id.chipGroupAttendees);
         switchCreateMeet = view.findViewById(R.id.switchCreateMeet);
         spinnerRecurrence = view.findViewById(R.id.spinnerRecurrence);
+        cardGoogleMeet = view.findViewById(R.id.cardGoogleMeet);
+        progressBarLoading = view.findViewById(R.id.progressBarLoading);
+        
+        // Find or create dynamic fields for meeting link and location
+        ViewGroup parent = (ViewGroup) etEventDescription.getParent().getParent();
+        int descIndex = parent.indexOfChild((View) etEventDescription.getParent().getParent());
+        
+        // Create Meeting Link field (initially visible)
+        tilMeetingLink = new com.google.android.material.textfield.TextInputLayout(getContext());
+        tilMeetingLink.setBoxBackgroundMode(com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE);
+        tilMeetingLink.setHint("Meeting Link");
+        tilMeetingLink.setId(View.generateViewId());
+        LinearLayout.LayoutParams linkParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        linkParams.bottomMargin = 16 * (int) getResources().getDisplayMetrics().density;
+        tilMeetingLink.setLayoutParams(linkParams);
+        
+        etMeetingLink = new TextInputEditText(getContext());
+        etMeetingLink.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        etMeetingLink.setMaxLines(1);
+        tilMeetingLink.addView(etMeetingLink);
+        
+        // Create Location field (initially hidden)
+        tilLocation = new com.google.android.material.textfield.TextInputLayout(getContext());
+        tilLocation.setBoxBackgroundMode(com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE);
+        tilLocation.setHint("Địa điểm");
+        tilLocation.setId(View.generateViewId());
+        tilLocation.setVisibility(View.GONE);
+        LinearLayout.LayoutParams locParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        locParams.bottomMargin = 16 * (int) getResources().getDisplayMetrics().density;
+        tilLocation.setLayoutParams(locParams);
+        
+        etLocation = new TextInputEditText(getContext());
+        etLocation.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+        etLocation.setMaxLines(2);
+        tilLocation.addView(etLocation);
+        
+        // Insert after description field
+        parent.addView(tilMeetingLink, descIndex + 1);
+        parent.addView(tilLocation, descIndex + 2);
+        
+        // Setup text change listener to clear errors
+        if (etMeetingLink != null) {
+            etMeetingLink.addTextChangedListener(new android.text.TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (tilMeetingLink != null && tilMeetingLink.getError() != null) {
+                        tilMeetingLink.setError(null);
+                    }
+                }
+                
+                @Override
+                public void afterTextChanged(android.text.Editable s) {}
+            });
+        }
+    }
+    
+    private void setupEventTypeUI() {
+        // Listen to radio button changes to show/hide appropriate fields
+        rgEventType.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbMeeting) {
+                // MEETING: Show meeting link + Google Meet card, hide location
+                tilMeetingLink.setVisibility(View.VISIBLE);
+                cardGoogleMeet.setVisibility(View.VISIBLE);
+                tilLocation.setVisibility(View.GONE);
+                // Clear error when switching to meeting type
+                if (tilMeetingLink != null) tilMeetingLink.setError(null);
+            } else if (checkedId == R.id.rbMilestone) {
+                // MILESTONE: Show location, hide meeting link + Google Meet
+                tilMeetingLink.setVisibility(View.GONE);
+                cardGoogleMeet.setVisibility(View.GONE);
+                tilLocation.setVisibility(View.VISIBLE);
+            } else {
+                // OTHER: Show location, hide meeting link + Google Meet
+                tilMeetingLink.setVisibility(View.GONE);
+                cardGoogleMeet.setVisibility(View.GONE);
+                tilLocation.setVisibility(View.VISIBLE);
+            }
+        });
+        
+        // Listen to Google Meet switch to clear meeting link error
+        switchCreateMeet.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && tilMeetingLink != null) {
+                tilMeetingLink.setError(null);
+            }
+        });
+        
+        // Set default state (MEETING is checked by default in XML)
+        tilMeetingLink.setVisibility(View.VISIBLE);
+        cardGoogleMeet.setVisibility(View.VISIBLE);
+        tilLocation.setVisibility(View.GONE);
     }
     
     private void setupDateTimePickers() {
@@ -151,15 +262,33 @@ public class CreateEventDialog extends DialogFragment {
     }
     
     private void showSelectAttendeesDialog() {
+        // Prevent multiple concurrent requests
+        if (isLoadingMembers) {
+            Toast.makeText(getContext(), "Loading members, please wait...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show loading state
+        isLoadingMembers = true;
+        if (progressBarLoading != null) {
+            progressBarLoading.setVisibility(View.VISIBLE);
+        }
+        
         // Load project members from API
         MemberApiService api = ApiClient.get(App.authManager).create(MemberApiService.class);
-        api.getMembers(projectId).enqueue(new Callback<MemberApiService.MemberListResponse>() {
+        api.getMembers(projectId).enqueue(new Callback<List<MemberDTO>>() {
             @Override
-            public void onResponse(Call<MemberApiService.MemberListResponse> call, 
-                                 Response<MemberApiService.MemberListResponse> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().data != null) {
+            public void onResponse(Call<List<MemberDTO>> call, 
+                                 Response<List<MemberDTO>> response) {
+                // Hide loading state
+                isLoadingMembers = false;
+                if (progressBarLoading != null) {
+                    progressBarLoading.setVisibility(View.GONE);
+                }
+                
+                if (response.isSuccessful() && response.body() != null) {
                     List<User> users = new ArrayList<>();
-                    for (MemberDTO dto : response.body().data) {
+                    for (MemberDTO dto : response.body()) {
                         if (dto.getUser() != null) {
                             User user = new User();
                             user.setId(dto.getUserId());
@@ -188,7 +317,12 @@ public class CreateEventDialog extends DialogFragment {
             }
 
             @Override
-            public void onFailure(Call<MemberApiService.MemberListResponse> call, Throwable t) {
+            public void onFailure(Call<List<MemberDTO>> call, Throwable t) {
+                // Hide loading state
+                isLoadingMembers = false;
+                if (progressBarLoading != null) {
+                    progressBarLoading.setVisibility(View.GONE);
+                }
                 Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -274,32 +408,111 @@ public class CreateEventDialog extends DialogFragment {
     }
     
     private void createEvent() {
-        // TODO: Build event object và call API
+        // Build event object và call API
         ProjectEvent event = new ProjectEvent();
         event.setTitle(etEventTitle.getText().toString());
         event.setDate(parseDate(etEventDate.getText().toString()));
         event.setTime(etEventTime.getText().toString());
         
         String durationStr = etDuration.getText().toString();
-        event.setDuration(durationStr.isEmpty() ? 60 : Integer.parseInt(durationStr));
+        int durationMinutes = durationStr.isEmpty() ? 60 : Integer.parseInt(durationStr);
+        event.setDuration(durationMinutes);
         
-        if (etEventDescription.getText() != null) {
+        if (etEventDescription.getText() != null && !etEventDescription.getText().toString().trim().isEmpty()) {
             event.setDescription(etEventDescription.getText().toString());
         }
         
-        event.setType(getSelectedEventType());
+        // Set event type and related fields
+        String eventType = getSelectedEventType();
+        event.setType(eventType);
+        
+        if ("MEETING".equals(eventType)) {
+            // For meetings: meeting link is required if not auto-creating Google Meet
+            String meetLink = etMeetingLink.getText() != null ? 
+                            etMeetingLink.getText().toString().trim() : "";
+            boolean autoCreateMeet = switchCreateMeet.isChecked();
+            
+            if (!autoCreateMeet && meetLink.isEmpty()) {
+                tilMeetingLink.setError("Meeting link is required (or enable Google Meet)");
+                etMeetingLink.requestFocus();
+                return;
+            }
+            
+            if (!meetLink.isEmpty()) {
+                event.setMeetingLink(meetLink);
+            }
+            event.setCreateGoogleMeet(autoCreateMeet);
+        } else {
+            // For milestones/other: set location if provided
+            if (etLocation.getText() != null && !etLocation.getText().toString().trim().isEmpty()) {
+                event.setLocation(etLocation.getText().toString());
+            }
+            event.setCreateGoogleMeet(false);
+        }
+        
         event.setAttendeeIds(selectedAttendeeIds);
-        event.setCreateGoogleMeet(switchCreateMeet.isChecked());
         event.setRecurrence(getSelectedRecurrence());
         event.setProjectId(projectId);
         
-        // TODO: Call API to create event
-        // For now, just callback with the event
+        // Format startAt and endAt with ISO 8601 timezone (UTC)
+        String startAtISO = formatToISO8601(etEventDate.getText().toString(), etEventTime.getText().toString());
+        String endAtISO = formatToISO8601WithDuration(etEventDate.getText().toString(), etEventTime.getText().toString(), durationMinutes);
+        event.setStartAt(startAtISO);
+        event.setEndAt(endAtISO);
+        
+        // Call API to create event
         if (listener != null) {
             listener.onEventCreated(event);
         }
         
         dismiss();
+    }
+    
+    /**
+     * Format date and time to ISO 8601 format with UTC timezone
+     * @param dateStr Date in format dd/MM/yyyy
+     * @param timeStr Time in format HH:mm
+     * @return ISO 8601 string like "2024-01-15T10:00:00Z"
+     */
+    private String formatToISO8601(String dateStr, String timeStr) {
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date date = inputFormat.parse(dateStr + " " + timeStr);
+            
+            SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            
+            return iso8601Format.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(new Date());
+        }
+    }
+    
+    /**
+     * Format end time by adding duration to start time
+     * @param dateStr Date in format dd/MM/yyyy
+     * @param timeStr Time in format HH:mm
+     * @param durationMinutes Duration in minutes
+     * @return ISO 8601 string with end time
+     */
+    private String formatToISO8601WithDuration(String dateStr, String timeStr, int durationMinutes) {
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = inputFormat.parse(dateStr + " " + timeStr);
+            
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(startDate);
+            cal.add(Calendar.MINUTE, durationMinutes);
+            
+            SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            
+            return iso8601Format.format(cal.getTime());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return formatToISO8601(dateStr, timeStr);
+        }
     }
     
     private Date parseDate(String dateStr) {
