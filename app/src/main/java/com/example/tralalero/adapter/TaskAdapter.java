@@ -110,7 +110,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
                   boolean isFirst, boolean isLast) {
             tvTaskTitle.setText(task.getTitle());
 
-            checkBox.setChecked(false); 
+            // ✅ FIX: Check actual task status (enum comparison)
+            boolean isCompleted = task.getStatus() == Task.TaskStatus.DONE;
+            checkBox.setChecked(isCompleted);
+            tvTaskTitle.setAlpha(isCompleted ? 0.5f : 1f);
 
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 tvTaskTitle.setAlpha(isChecked ? 0.5f : 1f);

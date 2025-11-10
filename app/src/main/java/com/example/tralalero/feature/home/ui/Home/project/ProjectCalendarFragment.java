@@ -46,8 +46,7 @@ public class ProjectCalendarFragment extends Fragment {
     
     private Button btnPreviousMonth;
     private Button btnNextMonth;
-    private Button btnSyncCalendar;
-    private Button btnFilter;
+    // ✅ FIX: Removed btnSyncCalendar and btnFilter per user request
     private FloatingActionButton fabAddEvent;
     
     private CalendarEventAdapter eventAdapter;
@@ -103,8 +102,7 @@ public class ProjectCalendarFragment extends Fragment {
         
         btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth);
         btnNextMonth = view.findViewById(R.id.btnNextMonth);
-        btnSyncCalendar = view.findViewById(R.id.btnSyncCalendar);
-        btnFilter = view.findViewById(R.id.btnFilter);
+        // ✅ FIX: Removed findViewById for btnSyncCalendar and btnFilter
         fabAddEvent = view.findViewById(R.id.fabAddEvent);
         
         monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
@@ -112,6 +110,28 @@ public class ProjectCalendarFragment extends Fragment {
         
         setupCalendarView();
         setupFabButton();
+    }
+
+    private void setupFabButton() {
+        if (fabAddEvent != null) {
+            fabAddEvent.setOnClickListener(v -> {
+                showCreateEventDialog();
+            });
+        }
+    }
+    
+    private void showCreateEventDialog() {
+        if (projectId != null && !projectId.isEmpty()) {
+            CreateEventDialog dialog = CreateEventDialog.newInstance(projectId);
+            dialog.setOnEventCreatedListener(event -> {
+                // Reload calendar data after event created
+                loadCalendarData();
+                Toast.makeText(getContext(), "Event created successfully", Toast.LENGTH_SHORT).show();
+            });
+            dialog.show(getParentFragmentManager(), "create_event");
+        } else {
+            Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupRecyclerView() {
@@ -156,22 +176,7 @@ public class ProjectCalendarFragment extends Fragment {
             loadCalendarData();
         });
         
-        btnSyncCalendar.setOnClickListener(v -> {
-            if (projectId != null && !projectId.isEmpty()) {
-                viewModel.syncWithGoogleCalendar(projectId);
-                Toast.makeText(getContext(), "Syncing with Google Calendar...", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getContext(), "No project selected", Toast.LENGTH_SHORT).show();
-            }
-        });
-        
-        btnFilter.setOnClickListener(v -> {
-            // Filter by selected date
-            int year = selectedCalendar.get(Calendar.YEAR);
-            int month = selectedCalendar.get(Calendar.MONTH);
-            int day = selectedCalendar.get(Calendar.DAY_OF_MONTH);
-            viewModel.filterEventsByDate(year, month, day);
-        });
+        // ✅ FIX: Removed btnSyncCalendar and btnFilter click listeners
     }
     
     private void setupObservers() {
@@ -228,14 +233,34 @@ public class ProjectCalendarFragment extends Fragment {
 
     private void updateEventsList(List<CalendarEvent> events) {
         if (events == null || events.isEmpty()) {
+            // Show empty state
             rvCalendarEvents.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
             tvEventCount.setText("0 events");
         } else {
+            // Show events list
             rvCalendarEvents.setVisibility(View.VISIBLE);
             layoutEmptyState.setVisibility(View.GONE);
             tvEventCount.setText(events.size() + " event" + (events.size() > 1 ? "s" : ""));
             eventAdapter.setEvents(events);
         }
+    }
+    
+    /**
+     * Show empty state when no events exist
+     * This is called when calendar data is loaded and list is empty
+     */
+    private void showEmptyState() {
+        rvCalendarEvents.setVisibility(View.GONE);
+        layoutEmptyState.setVisibility(View.VISIBLE);
+        tvEventCount.setText("0 events");
+    }
+    
+    /**
+     * Hide empty state when events exist
+     */
+    private void hideEmptyState() {
+        rvCalendarEvents.setVisibility(View.VISIBLE);
+        layoutEmptyState.setVisibility(View.GONE);
     }
 }

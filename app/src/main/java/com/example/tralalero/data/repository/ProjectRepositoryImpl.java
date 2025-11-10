@@ -2,6 +2,7 @@ package com.example.tralalero.data.repository;
 
 import android.content.Context;
 
+import com.example.tralalero.App.App;
 import com.example.tralalero.data.mapper.ProjectMapper;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
@@ -21,7 +22,8 @@ public class ProjectRepositoryImpl implements IProjectRepository {
     }
     
     public ProjectRepositoryImpl(Context context) {
-        this.apiService = ApiClient.get().create(ProjectApiService.class);
+        // ✅ FIX: Use authenticated ApiClient with FirebaseInterceptor
+        this.apiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
     }
 
     @Override

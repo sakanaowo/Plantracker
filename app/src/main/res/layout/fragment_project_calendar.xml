@@ -14,10 +14,7 @@
 
             <com.google.android.material.button.MaterialButton android:id="@+id/btnNextMonth" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="&gt;" android:textSize="18sp" android:insetLeft="0dp" android:insetRight="0dp"/>
 
-            <!-- Action Buttons -->
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnSyncCalendar" style="@style/Widget.MaterialComponents.Button.TextButton.Icon" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Sync" android:textSize="12sp" app:icon="@drawable/ic_sync" app:iconSize="18dp"/>
-
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnFilter" style="@style/Widget.MaterialComponents.Button.TextButton.Icon" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Filter" android:textSize="12sp" app:icon="@drawable/ic_label" app:iconSize="18dp"/>
+            <!-- ✅ FIX: Removed Sync and Filter buttons per user request -->
         </LinearLayout>
 
         <!-- Selected Date Info -->
@@ -35,38 +32,13 @@
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarEvents" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp" android:clipToPadding="false"/>
 
         <!-- Empty State -->
-        <LinearLayout 
-            android:id="@+id/layoutEmptyState" 
-            android:layout_width="match_parent" 
-            android:layout_height="0dp" 
-            android:layout_weight="1" 
-            android:orientation="vertical" 
-            android:gravity="center" 
-            android:padding="32dp"
-            android:visibility="gone">
+        <LinearLayout android:id="@+id/layoutEmptyState" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="32dp" android:visibility="gone">
 
-            <ImageView 
-                android:layout_width="120dp" 
-                android:layout_height="120dp" 
-                android:src="@drawable/ic_google_calendar" 
-                android:alpha="0.3"/>
+            <ImageView android:layout_width="120dp" android:layout_height="120dp" android:src="@drawable/ic_google_calendar" android:alpha="0.3"/>
 
-            <TextView 
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
-                android:text="No events this month" 
-                android:textSize="16sp" 
-                android:textColor="#999999" 
-                android:layout_marginTop="16dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No events this month" android:textSize="16sp" android:textColor="#999999" android:layout_marginTop="16dp"/>
 
-            <TextView 
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
-                android:text="Tap + to create an event or sync from Google Calendar" 
-                android:textSize="14sp" 
-                android:gravity="center"
-                android:textColor="#BBBBBB" 
-                android:layout_marginTop="8dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tap + to create an event or sync from Google Calendar" android:textSize="14sp" android:gravity="center" android:textColor="#BBBBBB" android:layout_marginTop="8dp"/>
         </LinearLayout>
 
         <!-- Loading Indicator -->

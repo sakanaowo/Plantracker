@@ -6,31 +6,32 @@ public class EventDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("project_id")
+    @SerializedName("projectId")  // ✅ Changed from project_id to projectId for backend DTO
     private String projectId;
 
     @SerializedName("title")
     private String title;
 
 
-    @SerializedName("start_at")
+    @SerializedName("startAt")  // ✅ Changed from start_at to startAt
     private String startAt;
 
-    @SerializedName("end_at")
+    @SerializedName("endAt")  // ✅ Changed from end_at to endAt
     private String endAt;
 
     @SerializedName("location")
     private String location;
 
-    @SerializedName("meet_link")
+    @SerializedName("meetLink")  // ✅ Changed from meet_link to meetLink
     private String meetLink;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  // ✅ Changed from created_at to createdAt
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")  // ✅ Changed from updated_at to updatedAt
     private String updatedAt;
-    @SerializedName("created_by")
+    
+    @SerializedName("createdBy")  // ✅ Changed from created_by to createdBy
     private String createdBy;
 
     public String getId() {

@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -51,6 +53,7 @@ import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.utils.SwipeGestureListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,6 +78,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private TextView tvWorkspaceName;
     private ImageButton backButton;
     private TabLayout tabLayout;
+    private GestureDetector gestureDetector;
 
     private String projectId;
     private String projectName;
@@ -101,6 +105,7 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         initViews();
         setupRecyclerView();
         setupTabs();
+        setupSwipeGesture();  // ✅ Add swipe gesture support
         observeViewModels();
         loadBoards();
     }
@@ -265,6 +270,42 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         if (boardTab != null) {
             boardTab.select();
         }
+    }
+    
+    private void setupSwipeGesture() {
+        // ✅ Setup gesture detector for swipe navigation between tabs
+        gestureDetector = new GestureDetector(this, new SwipeGestureListener() {
+            @Override
+            public void onSwipeLeft() {
+                // Swipe left = next tab
+                int currentTab = tabLayout.getSelectedTabPosition();
+                if (currentTab < 3) { // Max tab index is 3
+                    TabLayout.Tab nextTab = tabLayout.getTabAt(currentTab + 1);
+                    if (nextTab != null) {
+                        nextTab.select();
+                    }
+                }
+            }
+
+            @Override
+            public void onSwipeRight() {
+                // Swipe right = previous tab
+                int currentTab = tabLayout.getSelectedTabPosition();
+                if (currentTab > 0) {
+                    TabLayout.Tab prevTab = tabLayout.getTabAt(currentTab - 1);
+                    if (prevTab != null) {
+                        prevTab.select();
+                    }
+                }
+            }
+        });
+        
+        // Apply gesture to root layout
+        View rootView = findViewById(android.R.id.content);
+        rootView.setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            return false; // Don't consume - let children handle clicks
+        });
     }
     
     private void showSummaryFragment() {
@@ -487,15 +528,8 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                 if (createdTask != null && createdTask.getTitle().equals(title)) {
                     Toast.makeText(this, "✅ Task created: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
                     
-                    // Open task detail for editing
-                    Intent intent = new Intent(this, CardDetailActivity.class);
-                    intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, createdTask.getId());
-                    intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, board.getId());
-                    intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
-                    intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
-                    intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, board.getName());
-                    intent.putExtra("board_id_for_reload", board.getId());
-                    startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
+                    // ✅ FIX: Remove auto-navigate to CardDetailActivity
+                    // User wants to stay on board view after creating task
                     
                     // Reload tasks
                     loadTasksForBoard(board.getId());
