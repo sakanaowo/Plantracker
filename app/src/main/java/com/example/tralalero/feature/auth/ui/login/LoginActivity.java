@@ -134,6 +134,27 @@ public class LoginActivity extends AppCompatActivity {
         ).get(AuthViewModel.class);
     }
     private void observeViewModel() {
+        // Observe AuthState for auto-navigation
+        authViewModel.getAuthState().observe(this, state -> {
+            switch (state) {
+                case LOGIN_SUCCESS:
+                    // Auto-navigate to Home on successful login
+                    navigateToHome();
+                    break;
+                case LOGIN_ERROR:
+                    // Error is handled by error observer below
+                    break;
+                case LOGGING_IN:
+                    // Loading state is handled by loading observer below
+                    break;
+                case IDLE:
+                case LOGGED_OUT:
+                    // Do nothing
+                    break;
+            }
+        });
+
+        // Observe loading state
         authViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading) {
                 btnLogin.setEnabled(false);
@@ -143,6 +164,8 @@ public class LoginActivity extends AppCompatActivity {
                 btnLogin.setText("Login");
             }
         });
+
+        // Observe current user for display purposes
         authViewModel.getCurrentUser().observe(this, user -> {
             if (user != null) {
                 Log.d("LoginActivity", "Logged in user id=" + user.id
@@ -150,19 +173,28 @@ public class LoginActivity extends AppCompatActivity {
                         + ", firebaseUid=" + user.firebaseUid);
                 Toast.makeText(this, "Welcome back, " + user.name, Toast.LENGTH_SHORT).show();
                 getFirebaseToken();
-                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                intent.putExtra("user_name", user.getName());
-                intent.putExtra("user_email", user.getEmail());
-                startActivity(intent);
-                finish();
             }
         });
+
+        // Observe error state
         authViewModel.getError().observe(this, error -> {
-            if (error != null) {
+            if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
                 authViewModel.clearError();
             }
         });
+    }
+
+    private void navigateToHome() {
+        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+        com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
+        if (user != null) {
+            intent.putExtra("user_name", user.getName());
+            intent.putExtra("user_email", user.getEmail());
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
     private void getFirebaseToken() {
         com.google.firebase.auth.FirebaseUser firebaseUser =
@@ -298,7 +330,7 @@ public class LoginActivity extends AppCompatActivity {
                 );
                 
                 Log.d(TAG, "Saved internal user ID: " + internalUserId);
-                navigateToHome(firebaseUser);
+                navigateToHomeWithUserData(firebaseUser.getDisplayName(), firebaseUser.getEmail());
             }
 
             @Override
@@ -310,10 +342,10 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void navigateToHome(FirebaseUser user) {
+    private void navigateToHomeWithUserData(String userName, String userEmail) {
         Intent intent = new Intent(this, HomeActivity.class);
-        intent.putExtra("user_name", user.getDisplayName());
-        intent.putExtra("user_email", user.getEmail());
+        intent.putExtra("user_name", userName);
+        intent.putExtra("user_email", userEmail);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

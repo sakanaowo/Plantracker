@@ -4,13 +4,23 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.project.GetProjectByIdUseCase;
 import com.example.tralalero.domain.usecase.project.CreateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.DeleteProjectUseCase;
 import com.example.tralalero.domain.usecase.project.SwitchBoardTypeUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
+import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProjectViewModel extends ViewModel {
     private final GetProjectByIdUseCase getProjectByIdUseCase;
@@ -19,7 +29,13 @@ public class ProjectViewModel extends ViewModel {
     private final DeleteProjectUseCase deleteProjectUseCase;
     private final SwitchBoardTypeUseCase switchBoardTypeUseCase;
     private final UpdateProjectKeyUseCase updateProjectKeyUseCase;
+    private final GetBoardsByProjectUseCase getBoardsByProjectUseCase;
+    private final GetTasksByBoardUseCase getTasksByBoardUseCase;
+    
     private final MutableLiveData<Project> selectedProjectLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Board>> boardsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Map<String, List<Task>>> tasksPerBoardLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> selectedProjectIdLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> projectDeletedLiveData = new MutableLiveData<>(false);
@@ -32,7 +48,9 @@ public class ProjectViewModel extends ViewModel {
             UpdateProjectUseCase updateProjectUseCase,
             DeleteProjectUseCase deleteProjectUseCase,
             SwitchBoardTypeUseCase switchBoardTypeUseCase,
-            UpdateProjectKeyUseCase updateProjectKeyUseCase
+            UpdateProjectKeyUseCase updateProjectKeyUseCase,
+            GetBoardsByProjectUseCase getBoardsByProjectUseCase,
+            GetTasksByBoardUseCase getTasksByBoardUseCase
     ) {
         this.getProjectByIdUseCase = getProjectByIdUseCase;
         this.createProjectUseCase = createProjectUseCase;
@@ -40,10 +58,20 @@ public class ProjectViewModel extends ViewModel {
         this.deleteProjectUseCase = deleteProjectUseCase;
         this.switchBoardTypeUseCase = switchBoardTypeUseCase;
         this.updateProjectKeyUseCase = updateProjectKeyUseCase;
+        this.getBoardsByProjectUseCase = getBoardsByProjectUseCase;
+        this.getTasksByBoardUseCase = getTasksByBoardUseCase;
     }
 
     public LiveData<Project> getSelectedProject() {
         return selectedProjectLiveData;
+    }
+
+    public LiveData<List<Board>> getBoards() {
+        return boardsLiveData;
+    }
+
+    public LiveData<Map<String, List<Task>>> getTasksPerBoard() {
+        return tasksPerBoardLiveData;
     }
 
     public LiveData<Boolean> isLoading() {
@@ -64,6 +92,78 @@ public class ProjectViewModel extends ViewModel {
 
     public LiveData<Boolean> isProjectUpdated() {
         return projectUpdatedLiveData;
+    }
+
+    // ✅ Select project - auto-loads boards and tasks
+    public void selectProject(String projectId) {
+        if (projectId == null) return;
+        
+        selectedProjectIdLiveData.setValue(projectId);
+        
+        // Load project details
+        loadProjectById(projectId);
+        
+        // Auto-load boards for this project
+        loadBoardsForProject(projectId);
+    }
+    
+    public void loadBoardsForProject(String projectId) {
+        loadingLiveData.setValue(true);
+        
+        getBoardsByProjectUseCase.execute(projectId, new GetBoardsByProjectUseCase.Callback<List<Board>>() {
+            @Override
+            public void onSuccess(List<Board> boards) {
+                boardsLiveData.setValue(boards);
+                
+                // Auto-load tasks for all boards
+                if (boards != null && !boards.isEmpty()) {
+                    loadTasksForAllBoards(boards);
+                } else {
+                    loadingLiveData.setValue(false);
+                    tasksPerBoardLiveData.setValue(new HashMap<>());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+    
+    private void loadTasksForAllBoards(List<Board> boards) {
+        Map<String, List<Task>> tasksMap = new HashMap<>();
+        AtomicInteger pendingRequests = new AtomicInteger(boards.size());
+        
+        for (Board board : boards) {
+            getTasksByBoardUseCase.execute(board.getId(), new GetTasksByBoardUseCase.Callback<List<Task>>() {
+                @Override
+                public void onSuccess(List<Task> tasks) {
+                    synchronized (tasksMap) {
+                        tasksMap.put(board.getId(), tasks != null ? tasks : new ArrayList<>());
+                    }
+                    
+                    if (pendingRequests.decrementAndGet() == 0) {
+                        // All tasks loaded
+                        loadingLiveData.setValue(false);
+                        tasksPerBoardLiveData.setValue(new HashMap<>(tasksMap));
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    synchronized (tasksMap) {
+                        tasksMap.put(board.getId(), new ArrayList<>());
+                    }
+                    
+                    if (pendingRequests.decrementAndGet() == 0) {
+                        loadingLiveData.setValue(false);
+                        tasksPerBoardLiveData.setValue(new HashMap<>(tasksMap));
+                    }
+                }
+            });
+        }
     }
 
     public void loadProjectById(String projectId) {
