@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
 import com.example.tralalero.App.App;
@@ -22,13 +23,15 @@ import com.example.tralalero.feature.auth.ui.login.ContinueWithGoogle;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.presentation.viewmodel.AuthViewModel;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private boolean hasCheckedAuth = false;
+    private AuthViewModel authViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,83 +46,59 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         
-        // Only check auth once when activity is first created
-        if (!hasCheckedAuth) {
-            checkAuthenticationState();
-            hasCheckedAuth = true;
-        }
+        // Setup ViewModel
+        setupViewModel();
+        
+        // Observe auth state for auto-redirect
+        observeViewModel();
+        
+        // AuthViewModel constructor auto-checks session via checkStoredSession()
+        // Observer will handle navigation based on isLoggedIn state
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Removed checkAuthenticationState() to prevent redirect on every onStart
+        // DO NOTHING - LiveData auto-updates via ViewModel
     }
 
-
-    private void checkAuthenticationState() {
-        Log.d(TAG, "=== Checking Authentication State ===");
-
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (firebaseUser != null) {
-            Log.d(TAG, "Firebase user found: " + firebaseUser.getEmail());
-
-            validateTokenAndNavigate(firebaseUser);
-        } else {
-            Log.d(TAG, "No Firebase user, showing login screen");
-            showLoginScreen();
-        }
+    private void setupViewModel() {
+        authViewModel = new ViewModelProvider(
+            this,
+            ViewModelFactoryProvider.provideAuthViewModelFactory()
+        ).get(AuthViewModel.class);
     }
 
-
-    private void validateTokenAndNavigate(FirebaseUser firebaseUser) {
-        firebaseUser.getIdToken(true) // Force refresh
-                .addOnSuccessListener(result -> {
-                    String token = result.getToken();
-                    if (token != null && !token.isEmpty()) {
-                        Log.d(TAG, "✅ Valid token obtained, navigating to Home");
-                        Log.d(TAG, "Token length: " + token.length());
-
-                        if (App.tokenManager != null) {
-                            App.tokenManager.saveAuthData(
-                                    token,
-                                    firebaseUser.getUid(),
-                                    firebaseUser.getEmail(),
-                                    firebaseUser.getDisplayName()
-                            );
-                            Log.d(TAG, "Token saved to TokenManager");
-                        }
-
-                        navigateToHome();
-                    } else {
-                        Log.e(TAG, "❌ Token is null or empty");
-                        showLoginScreen();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ Failed to get token: " + e.getMessage(), e);
-
-                    FirebaseAuth.getInstance().signOut();
-                    if (App.authManager != null) {
-                        App.authManager.clearCache();
-                    }
-                    if (App.tokenManager != null) {
-                        App.tokenManager.clearAuthData();
-                    }
-
-                    Toast.makeText(this,
-                            "Session expired. Please login again.",
-                            Toast.LENGTH_LONG).show();
-
+    private void observeViewModel() {
+        // Observe auth state for auto-navigation
+        authViewModel.getAuthState().observe(this, state -> {
+            Log.d(TAG, "AuthState changed: " + state);
+            
+            switch (state) {
+                case LOGIN_SUCCESS:
+                case SIGNUP_SUCCESS:
+                    // User is logged in - navigate to Home
+                    navigateToHome();
+                    break;
+                case IDLE:
+                case LOGGED_OUT:
+                case LOGIN_ERROR:
+                case SIGNUP_ERROR:
+                    // User is not logged in - show login screen
                     showLoginScreen();
-                });
+                    break;
+                case LOGGING_IN:
+                case SIGNING_UP:
+                    // Do nothing during login/signup process
+                    break;
+            }
+        });
     }
-
 
     private void navigateToHome() {
         Log.d(TAG, "Navigating to HomeActivity");
         Intent intent = new Intent(this, HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }

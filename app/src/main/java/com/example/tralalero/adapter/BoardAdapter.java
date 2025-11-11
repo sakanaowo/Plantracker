@@ -22,6 +22,7 @@ import java.util.List;
 public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHolder> {
 
     private List<Board> boards = new ArrayList<>();
+    private java.util.Map<String, List<Task>> tasksPerBoard = new java.util.HashMap<>();
     private OnBoardActionListener listener;
 
     public interface OnBoardActionListener {
@@ -43,6 +44,11 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         notifyDataSetChanged();
     }
 
+    public void setTasksPerBoard(java.util.Map<String, List<Task>> tasksPerBoard) {
+        this.tasksPerBoard = tasksPerBoard;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public BoardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -54,7 +60,8 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
     @Override
     public void onBindViewHolder(@NonNull BoardViewHolder holder, int position) {
         Board board = boards.get(position);
-        holder.bind(board, listener);
+        List<Task> tasks = tasksPerBoard.get(board.getId());
+        holder.bind(board, tasks, listener);
     }
 
     @Override
@@ -80,13 +87,14 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             taskRecycler.setAdapter(taskAdapter);
         }
 
-        void bind(Board board, OnBoardActionListener listener) {
+        void bind(Board board, List<Task> tasks, OnBoardActionListener listener) {
             tvBoardTitle.setText(board.getName());
 
             if (listener != null) {
-                List<Task> tasks = listener.getTasksForBoard(board.getId());
                 if (tasks != null) {
                     taskAdapter.updateTasks(tasks);
+                } else {
+                    taskAdapter.updateTasks(new ArrayList<>());
                 }
 
                 taskAdapter.setOnTaskClickListener(task -> {

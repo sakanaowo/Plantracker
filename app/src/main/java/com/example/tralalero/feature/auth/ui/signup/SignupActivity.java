@@ -124,6 +124,27 @@ public class SignupActivity extends AppCompatActivity {
         ).get(AuthViewModel.class);
     }
     private void observeViewModel() {
+        // Observe AuthState for auto-navigation
+        authViewModel.getAuthState().observe(this, state -> {
+            switch (state) {
+                case SIGNUP_SUCCESS:
+                    // Auto-navigate to Home on successful signup
+                    navigateToHome();
+                    break;
+                case SIGNUP_ERROR:
+                    // Error is handled by error observer below
+                    break;
+                case SIGNING_UP:
+                    // Loading state is handled by loading observer below
+                    break;
+                case IDLE:
+                case LOGGED_OUT:
+                    // Do nothing
+                    break;
+            }
+        });
+
+        // Observe loading state
         authViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading) {
                 btnSignUp.setEnabled(false);
@@ -133,25 +154,36 @@ public class SignupActivity extends AppCompatActivity {
                 btnSignUp.setText("Sign Up");
             }
         });
+
+        // Observe current user for display purposes
         authViewModel.getCurrentUser().observe(this, user -> {
             if (user != null) {
                 Log.d("SignupActivity", "Signed up user id=" + user.id
                         + ", email=" + user.email
                         + ", firebaseUid=" + user.firebaseUid);
-                Toast.makeText(this, "Welcome back, " + user.name, Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
-                intent.putExtra("user_name", user.getName());
-                intent.putExtra("user_email", user.getEmail());
-                startActivity(intent);
-                finish();
+                Toast.makeText(this, "Welcome, " + user.name, Toast.LENGTH_SHORT).show();
             }
         });
+
+        // Observe error state
         authViewModel.getError().observe(this, error -> {
-            if (error != null) {
+            if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
                 authViewModel.clearError();
             }
         });
+    }
+
+    private void navigateToHome() {
+        Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
+        com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
+        if (user != null) {
+            intent.putExtra("user_name", user.getName());
+            intent.putExtra("user_email", user.getEmail());
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
     private void attemptSignUp() {
         String email = etEmail != null ? etEmail.getText().toString().trim() : "";

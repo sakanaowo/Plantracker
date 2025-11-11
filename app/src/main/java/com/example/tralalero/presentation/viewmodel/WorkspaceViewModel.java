@@ -7,12 +7,15 @@ import androidx.lifecycle.ViewModel;
 import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Project;
 import com.example.tralalero.domain.model.Workspace;
+import com.example.tralalero.domain.usecase.project.CreateProjectUseCase;
+import com.example.tralalero.domain.usecase.project.DeleteProjectUseCase;
 import com.example.tralalero.domain.usecase.workspace.CreateWorkspaceUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceBoardsUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceByIdUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceProjectsUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspacesUseCase;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class WorkspaceViewModel extends ViewModel {
@@ -21,26 +24,33 @@ public class WorkspaceViewModel extends ViewModel {
     private final CreateWorkspaceUseCase createWorkspaceUseCase;
     private final GetWorkspaceProjectsUseCase getWorkspaceProjectsUseCase;
     private final GetWorkspaceBoardsUseCase getWorkspaceBoardsUseCase;
+    private final CreateProjectUseCase createProjectUseCase;
+    private final DeleteProjectUseCase deleteProjectUseCase;
+    
     private final MutableLiveData<List<Workspace>> workspacesLiveData = new MutableLiveData<>();
     private final MutableLiveData<Workspace> selectedWorkspaceLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Project>> projectsLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Board>> boardsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> selectedWorkspaceIdLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> workspaceCreatedLiveData = new MutableLiveData<>(false);
 
     public WorkspaceViewModel(
             GetWorkspacesUseCase getWorkspacesUseCase,
             GetWorkspaceByIdUseCase getWorkspaceByIdUseCase,
             CreateWorkspaceUseCase createWorkspaceUseCase,
             GetWorkspaceProjectsUseCase getWorkspaceProjectsUseCase,
-            GetWorkspaceBoardsUseCase getWorkspaceBoardsUseCase
+            GetWorkspaceBoardsUseCase getWorkspaceBoardsUseCase,
+            CreateProjectUseCase createProjectUseCase,
+            DeleteProjectUseCase deleteProjectUseCase
     ) {
         this.getWorkspacesUseCase = getWorkspacesUseCase;
         this.getWorkspaceByIdUseCase = getWorkspaceByIdUseCase;
         this.createWorkspaceUseCase = createWorkspaceUseCase;
         this.getWorkspaceProjectsUseCase = getWorkspaceProjectsUseCase;
         this.getWorkspaceBoardsUseCase = getWorkspaceBoardsUseCase;
+        this.createProjectUseCase = createProjectUseCase;
+        this.deleteProjectUseCase = deleteProjectUseCase;
     }
 
     public LiveData<List<Workspace>> getWorkspaces() {
@@ -67,8 +77,36 @@ public class WorkspaceViewModel extends ViewModel {
         return errorLiveData;
     }
 
-    public LiveData<Boolean> isWorkspaceCreated() {
-        return workspaceCreatedLiveData;
+    // ✅ Auto-load when workspace selected
+    public void selectWorkspace(String workspaceId) {
+        if (workspaceId == null) return;
+        
+        selectedWorkspaceIdLiveData.setValue(workspaceId);
+        
+        // Load workspace details
+        loadWorkspaceById(workspaceId);
+        
+        // Auto-load projects for this workspace
+        loadProjectsForWorkspace(workspaceId);
+    }
+    
+    private void loadProjectsForWorkspace(String workspaceId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        getWorkspaceProjectsUseCase.execute(workspaceId, new GetWorkspaceProjectsUseCase.Callback<List<Project>>() {
+            @Override
+            public void onSuccess(List<Project> result) {
+                loadingLiveData.setValue(false);
+                projectsLiveData.setValue(result);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
     }
 
     public void loadWorkspaces() {
@@ -112,14 +150,13 @@ public class WorkspaceViewModel extends ViewModel {
     public void createWorkspace(Workspace workspace) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-        workspaceCreatedLiveData.setValue(false);
 
         createWorkspaceUseCase.execute(workspace, new CreateWorkspaceUseCase.Callback<Workspace>() {
             @Override
             public void onSuccess(Workspace result) {
                 loadingLiveData.setValue(false);
                 selectedWorkspaceLiveData.setValue(result);
-                workspaceCreatedLiveData.setValue(true);
+                // Reload workspaces to include the new one
                 loadWorkspaces();
             }
 
@@ -127,44 +164,99 @@ public class WorkspaceViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                workspaceCreatedLiveData.setValue(false);
             }
         });
     }
 
-    public void loadWorkspaceProjects(String workspaceId) {
-        loadingLiveData.setValue(true);
-        errorLiveData.setValue(null);
-
-        getWorkspaceProjectsUseCase.execute(workspaceId, new GetWorkspaceProjectsUseCase.Callback<List<Project>>() {
+    // ✅ Create project with optimistic update
+    public void createProject(String workspaceId, String name, String description) {
+        // Optimistic update - add temp project immediately
+        List<Project> currentProjects = projectsLiveData.getValue();
+        final List<Project> originalList = currentProjects != null ? new ArrayList<>(currentProjects) : new ArrayList<>();
+        
+        Project tempProject = new Project(
+            "temp_" + System.currentTimeMillis(),  // Temp ID
+            workspaceId,
+            name,
+            description,
+            "",  // Empty key - will be set by server
+            "KANBAN"  // Default board type
+        );
+        
+        List<Project> updated = new ArrayList<>(originalList);
+        updated.add(0, tempProject);  // Add to beginning
+        projectsLiveData.setValue(updated);
+        
+        // Background API call - pass the Project object
+        createProjectUseCase.execute(workspaceId, tempProject, new CreateProjectUseCase.Callback<Project>() {
             @Override
-            public void onSuccess(List<Project> result) {
-                loadingLiveData.setValue(false);
-                projectsLiveData.setValue(result);
+            public void onSuccess(Project result) {
+                // Reload to get real data from server
+                loadProjectsForWorkspace(workspaceId);
             }
 
             @Override
             public void onError(String error) {
-                loadingLiveData.setValue(false);
+                // Rollback optimistic update on error
+                projectsLiveData.setValue(originalList);
                 errorLiveData.setValue(error);
             }
         });
     }
-
-    public void loadProjectBoards(String projectId) {
-        loadingLiveData.setValue(true);
-        errorLiveData.setValue(null);
-
-        getWorkspaceBoardsUseCase.execute(projectId, new GetWorkspaceBoardsUseCase.Callback<List<Board>>() {
+    
+    // ✅ Delete project with optimistic update (RACE CONDITION FIXED)
+    public void deleteProject(String projectId) {
+        List<Project> current = projectsLiveData.getValue();
+        if (current == null) return;
+        
+        // Create a final copy for rollback
+        final List<Project> originalList = new ArrayList<>(current);
+        
+        // Find the project to delete
+        Project toDelete = null;
+        for (Project p : current) {
+            if (p.getId() != null && p.getId().equals(projectId)) {
+                toDelete = p;
+                break;
+            }
+        }
+        
+        if (toDelete == null) {
+            errorLiveData.setValue("Project not found");
+            return;
+        }
+        
+        // Optimistic update - remove immediately
+        List<Project> updated = new ArrayList<>(current);
+        updated.removeIf(p -> p.getId() != null && p.getId().equals(projectId));
+        projectsLiveData.setValue(updated);
+        
+        // Background API call
+        final Project deletedProject = toDelete;
+        deleteProjectUseCase.execute(projectId, new DeleteProjectUseCase.Callback<Void>() {
             @Override
-            public void onSuccess(List<Board> result) {
-                loadingLiveData.setValue(false);
-                boardsLiveData.setValue(result);
+            public void onSuccess(Void result) {
+                // Already updated UI, nothing more to do
             }
 
             @Override
             public void onError(String error) {
-                loadingLiveData.setValue(false);
+                // ✅ FIX: Smart rollback - restore deleted project to current list
+                List<Project> currentList = projectsLiveData.getValue();
+                if (currentList != null) {
+                    List<Project> restoredList = new ArrayList<>(currentList);
+                    // Add back the deleted project at original position
+                    int originalIndex = originalList.indexOf(deletedProject);
+                    if (originalIndex >= 0 && originalIndex <= restoredList.size()) {
+                        restoredList.add(originalIndex, deletedProject);
+                    } else {
+                        restoredList.add(0, deletedProject); // Add at beginning if position unknown
+                    }
+                    projectsLiveData.setValue(restoredList);
+                } else {
+                    // Fallback to complete restore
+                    projectsLiveData.setValue(originalList);
+                }
                 errorLiveData.setValue(error);
             }
         });
@@ -174,9 +266,6 @@ public class WorkspaceViewModel extends ViewModel {
         errorLiveData.setValue(null);
     }
 
-    public void resetCreatedFlag() {
-        workspaceCreatedLiveData.setValue(false);
-    }
     @Override
     protected void onCleared() {
         super.onCleared();
