@@ -426,7 +426,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
     
     private void handleUpdateStartDate(Task task, java.util.Date startDate) {
-        Log.d(TAG, "handleUpdateStartDate: " + task.getId() + " -> " + startDate);
+        Log.d(TAG, "✅ handleUpdateStartDate via ViewModel: " + task.getId() + " -> " + startDate);
         
         // Create updated task with new start date
         Task updatedTask = new Task(
@@ -454,15 +454,14 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getUpdatedAt()
         );
         
-        // Update via ViewModel
+        // ✅ Update via ViewModel - optimistic update handles UI instantly
         taskViewModel.updateTask(task.getId(), updatedTask);
         
-        // ✅ REMOVED: Save to cache + reload - ViewModel handles via optimistic update
-        Toast.makeText(this, "Start date updated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "✓ Start date updated", Toast.LENGTH_SHORT).show();
     }
     
     private void handleUpdateDueDate(Task task, java.util.Date dueDate) {
-        Log.d(TAG, "handleUpdateDueDate: " + task.getId() + " -> " + dueDate);
+        Log.d(TAG, "✅ handleUpdateDueDate via ViewModel: " + task.getId() + " -> " + dueDate);
         
         // Create updated task with new due date
         Task updatedTask = new Task(
@@ -490,14 +489,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getUpdatedAt()
         );
         
-        // Update via ViewModel
+        // ✅ Update via ViewModel - optimistic update handles UI instantly
         taskViewModel.updateTask(task.getId(), updatedTask);
         
-        // Save to cache
-        App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
-        
-        // ✅ REMOVED: Reload - ViewModel optimistic update handles it
-        Toast.makeText(this, "Due date updated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "✓ Due date updated", Toast.LENGTH_SHORT).show();
     }
     
     /**

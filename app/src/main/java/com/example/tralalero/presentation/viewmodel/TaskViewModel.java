@@ -304,9 +304,21 @@ public class TaskViewModel extends ViewModel {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
                 
-                // ✅ Replace temp with real task
+                // ✅ Replace temp with real task (NO RELOAD!)
                 if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
-                    loadTasksByBoard(result.getBoardId());
+                    // Update board tasks list directly
+                    MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(result.getBoardId());
+                    if (boardTasks != null && boardTasks.getValue() != null) {
+                        List<Task> updated = new ArrayList<>();
+                        for (Task t : boardTasks.getValue()) {
+                            if (t == tempTask) {
+                                updated.add(result); // Replace temp with real
+                            } else {
+                                updated.add(t);
+                            }
+                        }
+                        boardTasks.setValue(updated);
+                    }
                 } else {
                     // Update inbox
                     List<Task> inbox = inboxTasksLiveData.getValue();
@@ -886,9 +898,7 @@ public class TaskViewModel extends ViewModel {
             @Override
             public void onSuccess(Task result) {
                 selectedTaskLiveData.setValue(result);
-                if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
-                    loadTasksByBoard(result.getBoardId());
-                }
+                // Task position update should trigger board reload in Activity if needed
             }
 
             @Override

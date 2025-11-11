@@ -51,13 +51,7 @@ public class BoardViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     
-    // ❌ DEPRECATED: These boolean flags are anti-pattern, will be removed
-    private final MutableLiveData<Boolean> boardDeletedLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> boardCreatedLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> boardUpdatedLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> boardsReorderedLiveData = new MutableLiveData<>(false);
-    
-    // ✅ NEW: Current project ID for context
+    // ✅ Current project ID for context
     private String currentProjectId = null;
 
     public BoardViewModel(
@@ -114,22 +108,6 @@ public class BoardViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return errorLiveData;
-    }
-
-    public LiveData<Boolean> isBoardDeleted() {
-        return boardDeletedLiveData;
-    }
-
-    public LiveData<Boolean> isBoardCreated() {
-        return boardCreatedLiveData;
-    }
-
-    public LiveData<Boolean> isBoardUpdated() {
-        return boardUpdatedLiveData;
-    }
-
-    public LiveData<Boolean> areBoardsReordered() {
-        return boardsReorderedLiveData;
     }
 
     public void loadBoardById(String boardId) {
@@ -232,7 +210,6 @@ public class BoardViewModel extends ViewModel {
      */
     public void createBoard(String projectId, Board board) {
         errorLiveData.setValue(null);
-        boardCreatedLiveData.setValue(false);
         
         // ✅ Optimistic update: Add board to UI immediately
         List<Board> currentBoards = projectBoardsLiveData.getValue();
@@ -262,7 +239,6 @@ public class BoardViewModel extends ViewModel {
             public void onSuccess(Board result) {
                 loadingLiveData.setValue(false);
                 selectedBoardLiveData.setValue(result);
-                boardCreatedLiveData.setValue(true);
                 
                 // ✅ Replace temp board with real board
                 List<Board> boards = projectBoardsLiveData.getValue();
@@ -288,7 +264,6 @@ public class BoardViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                boardCreatedLiveData.setValue(false);
                 
                 // ✅ Rollback: Remove temp board on error
                 List<Board> boards = projectBoardsLiveData.getValue();
@@ -309,21 +284,18 @@ public class BoardViewModel extends ViewModel {
     public void updateBoard(String boardId, Board board) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-        boardUpdatedLiveData.setValue(false);
 
         updateBoardUseCase.execute(boardId, board, new UpdateBoardUseCase.Callback<Board>() {
             @Override
             public void onSuccess(Board result) {
                 loadingLiveData.setValue(false);
                 selectedBoardLiveData.setValue(result);
-                boardUpdatedLiveData.setValue(true);
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                boardUpdatedLiveData.setValue(false);
             }
         });
     }
@@ -334,7 +306,6 @@ public class BoardViewModel extends ViewModel {
      */
     public void deleteBoard(String boardId) {
         errorLiveData.setValue(null);
-        boardDeletedLiveData.setValue(false);
         
         // ✅ Optimistic update: Remove board from UI immediately
         List<Board> currentBoards = projectBoardsLiveData.getValue();
@@ -364,7 +335,6 @@ public class BoardViewModel extends ViewModel {
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 selectedBoardLiveData.setValue(null);
-                boardDeletedLiveData.setValue(true);
                 // Board already removed from UI, no need to update
             }
 
@@ -372,7 +342,6 @@ public class BoardViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                boardDeletedLiveData.setValue(false);
                 
                 // ✅ Rollback: Restore board on error
                 if (boardToRestore != null) {
@@ -402,20 +371,17 @@ public class BoardViewModel extends ViewModel {
     public void reorderBoards(String projectId, List<String> boardIds) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-        boardsReorderedLiveData.setValue(false);
 
         reorderBoardsUseCase.execute(projectId, boardIds, new ReorderBoardsUseCase.Callback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
-                boardsReorderedLiveData.setValue(true);
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                boardsReorderedLiveData.setValue(false);
             }
         });
     }
@@ -453,12 +419,6 @@ public class BoardViewModel extends ViewModel {
         errorLiveData.setValue(null);
     }
 
-    public void resetFlags() {
-        boardCreatedLiveData.setValue(false);
-        boardUpdatedLiveData.setValue(false);
-        boardDeletedLiveData.setValue(false);
-        boardsReorderedLiveData.setValue(false);
-    }
     @Override
     protected void onCleared() {
         super.onCleared();
