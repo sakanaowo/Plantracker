@@ -84,14 +84,9 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     private String projectName;
     private String workspaceId;
     private String workspaceName;
-    // ❌ DELETED: State now lives in ViewModel only
-    // private List<Board> boards = new ArrayList<>();
-    // private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
-    
-    // ✅ FIX STATE INCONSISTENCY: Debounce reload requests
-    private android.os.Handler reloadHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private Runnable pendingReloadRunnable = null;
-    
+    // ✅ REMOVED: State moved to ProjectViewModel
+    // ❌ OLD: private List<Board> boards = new ArrayList<>();
+    // ❌ OLD: private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
     private ActivityResultLauncher<Intent> inboxActivityLauncher;
 
     @Override
@@ -106,36 +101,29 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         });
 
         getIntentData();
-        setupActivityResultLauncher();
+        setupActivityResultLauncher();  // 📥 Setup result launcher
         setupViewModels();
         initViews();
         setupRecyclerView();
         setupTabs();
-        setupSwipeGesture();
-        
-        // ✅ Observe once in onCreate
+        setupSwipeGesture();  // ✅ Add swipe gesture support
         observeViewModels();
         
-        // ✅ Trigger initial load once - selectProject auto-loads boards + tasks
+        // ✅ MVVM: Load once via ProjectViewModel - auto-loads boards and tasks
         projectViewModel.selectProject(projectId);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        
-        // ✅ Cleanup: Remove pending reload callbacks to prevent memory leak
-        if (pendingReloadRunnable != null) {
-            reloadHandler.removeCallbacks(pendingReloadRunnable);
-            pendingReloadRunnable = null;
-        }
     }
 
-    // ❌ DELETE onResume reload - LiveData auto-updates
     @Override
     protected void onResume() {
         super.onResume();
-        // DO NOTHING - LiveData observer auto-updates UI
+        // ✅ REMOVED: No more manual reload!
+        // ❌ OLD: for (Board board : boards) { loadTasksForBoard(board.getId()); }
+        // Observer auto-updates UI when data changes
     }
 
     private void getIntentData() {
@@ -164,12 +152,10 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                     String boardId = data.getStringExtra("board_id");
 
                     Log.d(TAG, "📥 Received result: Task created - taskId: " + taskId + ", boardId: " + boardId);
-
-                    // ✅ LiveData observer auto-updates UI - NO MANUAL RELOAD
-                    if (boardId != null && taskId != null) {
-                        Toast.makeText(this, "✅ Task added to board!", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "✓ Task will be auto-updated via LiveData");
-                    }
+                    
+                    // ✅ MVVM: Observer auto-updates UI
+                    // No manual reload needed
+                    Toast.makeText(this, "✅ Task added to board!", Toast.LENGTH_SHORT).show();
                 }
             }
         );
@@ -444,83 +430,56 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         showTaskDetailBottomSheet(task, board);
     }
 
-    @Override
     public List<Task> getTasksForBoard(String boardId) {
+        // ✅ MVVM: Get from ViewModel, not Activity state
         Map<String, List<Task>> tasksMap = projectViewModel.getTasksPerBoard().getValue();
-        if (tasksMap != null) {
-            return tasksMap.get(boardId);
-        }
-        return new ArrayList<>();
+        return tasksMap != null && tasksMap.containsKey(boardId) 
+            ? tasksMap.get(boardId) 
+            : new ArrayList<>();
     }
     public void onTaskPositionChanged(Task task, double newPosition, Board board) {
         Log.d(TAG, "🔄 Task '" + task.getTitle() + "' updating position to " + newPosition);
+        
+        // ✅ MVVM: Update position, then refresh board
         taskViewModel.updateTaskPosition(task.getId(), newPosition);
         
-        // ✅ FIX STATE INCONSISTENCY: Debounce reload to prevent multiple concurrent requests
-        // Cancel any pending reload
-        if (pendingReloadRunnable != null) {
-            reloadHandler.removeCallbacks(pendingReloadRunnable);
-        }
-        
-        // Schedule new reload (will be cancelled if another drag happens within 500ms)
-        pendingReloadRunnable = () -> {
-            if (projectId != null) {
-                Log.d(TAG, "🔄 Reloading boards after position change");
-                projectViewModel.loadBoardsForProject(projectId);
-            }
-            pendingReloadRunnable = null;
-        };
-        
-        reloadHandler.postDelayed(pendingReloadRunnable, 500);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            projectViewModel.refreshBoardTasks(board.getId());
+        }, 300);
     }
 
     private void observeViewModels() {
-        // ✅ Observe boards from ProjectViewModel
-        projectViewModel.getBoards().observe(this, boards -> {
-            if (boards != null) {
-                Log.d(TAG, "📋 Boards updated from ViewModel: " + boards.size());
-                boardAdapter.setBoards(boards);
-            } else {
-                Log.w(TAG, "⚠️ No boards found");
-                boardAdapter.setBoards(new ArrayList<>());
-            }
-        });
-        
-        // ✅ Observe tasksPerBoard from ProjectViewModel
-        projectViewModel.getTasksPerBoard().observe(this, tasksMap -> {
-            if (tasksMap != null) {
-                Log.d(TAG, "📋 Tasks updated from ViewModel - " + tasksMap.size() + " boards with tasks");
-                boardAdapter.setTasksPerBoard(tasksMap);
-                boardAdapter.notifyDataSetChanged();
-            }
-        });
-        
-        // ✅ Loading observer
+        // ✅ Loading indicator
         projectViewModel.isLoading().observe(this, isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             }
         });
-        
-        // ✅ Error observer
+
+        // ✅ Error handling
         projectViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
                 projectViewModel.clearError();
             }
         });
-        
-        // ✅ Keep boardViewModel error observer for board operations
-        boardViewModel.getError().observe(this, error -> {
-            if (error != null && !error.isEmpty()) {
-                Toast.makeText(this, "Board Error: " + error, Toast.LENGTH_LONG).show();
-                boardViewModel.clearError();
+
+        // ✅ MVVM: Observe boards from ProjectViewModel
+        projectViewModel.getBoards().observe(this, boards -> {
+            if (boards != null) {
+                Log.d(TAG, "📋 Loaded " + boards.size() + " boards from ProjectViewModel");
+                boardAdapter.setBoards(boards);
+            }
+        });
+
+        // ✅ MVVM: Observe tasksPerBoard from ProjectViewModel
+        projectViewModel.getTasksPerBoard().observe(this, tasksMap -> {
+            if (tasksMap != null) {
+                Log.d(TAG, "📋 Loaded tasks for " + tasksMap.size() + " boards from ProjectViewModel");
+                boardAdapter.notifyDataSetChanged();
             }
         });
     }
-
-    // ❌ DELETE loadBoards() - ProjectViewModel handles this
-    // ❌ DELETE loadTasksForBoard() - ProjectViewModel handles this
 
     private void showCreateTaskDialog(Board board) {
         CreateTaskBottomSheet bottomSheet = CreateTaskBottomSheet.newInstance();
@@ -554,42 +513,17 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
             // Create task via API
             taskViewModel.createTask(newTask);
             
-            // ✅ FIX MEMORY LEAK: Use observeForever with manual cleanup
-            final androidx.lifecycle.Observer<Task>[] taskObserver = new androidx.lifecycle.Observer[1];
-            final androidx.lifecycle.Observer<String>[] errorObserver = new androidx.lifecycle.Observer[1];
+            // ✅ MVVM: Refresh board to get new task from server
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                projectViewModel.refreshBoardTasks(board.getId());
+                Toast.makeText(this, "✅ Task created", Toast.LENGTH_SHORT).show();
+            }, 300);
             
-            taskObserver[0] = createdTask -> {
-                if (createdTask != null && createdTask.getTitle().equals(title)) {
-                    Toast.makeText(this, "✅ Task created: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
-                    
-                    // Reload all boards and tasks via ViewModel
-                    if (projectId != null) {
-                        projectViewModel.loadBoardsForProject(projectId);
-                    }
-                    
-                    // ✅ Clean up both observers
-                    taskViewModel.getSelectedTask().removeObserver(taskObserver[0]);
-                    if (errorObserver[0] != null) {
-                        taskViewModel.getError().removeObserver(errorObserver[0]);
-                    }
-                }
-            };
-            
-            errorObserver[0] = error -> {
+            taskViewModel.getError().observe(this, error -> {
                 if (error != null && !error.isEmpty()) {
                     Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_SHORT).show();
-                    
-                    // ✅ Clean up both observers on error
-                    taskViewModel.getError().removeObserver(errorObserver[0]);
-                    if (taskObserver[0] != null) {
-                        taskViewModel.getSelectedTask().removeObserver(taskObserver[0]);
-                    }
                 }
-            };
-            
-            // Observe with manual observers
-            taskViewModel.getSelectedTask().observeForever(taskObserver[0]);
-            taskViewModel.getError().observeForever(errorObserver[0]);
+            });
         });
         
         bottomSheet.show(getSupportFragmentManager(), "CreateTaskBottomSheet");
@@ -614,23 +548,15 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
     }
 
-    // ❌ DELETE onActivityResult reload - LiveData auto-updates
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_CODE_CREATE_TASK || requestCode == REQUEST_CODE_EDIT_TASK) {
-                String boardIdForReload = null;
-                if (data != null) {
-                    boardIdForReload = data.getStringExtra("board_id_for_reload");
-                }
-                if (boardIdForReload != null && !boardIdForReload.isEmpty()) {
-                    Log.d(TAG, "✅ Task updated for board: " + boardIdForReload + " - will auto-update via LiveData");
-                } else {
-                    Log.d(TAG, "✅ Task updated - will auto-update via LiveData");
-                }
-                // LiveData observer auto-updates UI - NO MANUAL RELOAD
+                // ✅ MVVM: Observer auto-updates UI when task changes
+                // No manual reload needed
+                Log.d(TAG, "✅ Task updated - observer will auto-refresh UI");
             }
         }
     }
@@ -639,10 +565,10 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
     public void onMoveTaskToBoard(Task task, Board currentBoard, int direction) {
         Log.d(TAG, "onMoveTaskToBoard: task=" + task.getTitle() + ", currentBoard=" + currentBoard.getName() + ", direction=" + direction);
         
-        // ✅ Get boards from ViewModel instead of Activity state
+        // ✅ Get boards from ViewModel
         List<Board> boards = projectViewModel.getBoards().getValue();
         if (boards == null || boards.isEmpty()) {
-            Toast.makeText(this, "Error: No boards available", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error: No boards loaded", Toast.LENGTH_SHORT).show();
             return;
         }
         
@@ -672,14 +598,22 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         }
         
         Board targetBoard = boards.get(targetBoardIndex);
-
         Log.d(TAG, "Moving task '" + task.getTitle() + "' from '" + currentBoard.getName() + "' to '" + targetBoard.getName() + "'");
         
-        // ✅ Just call ViewModel - LiveData observer will handle UI update
+        // ✅ MVVM: Call TaskViewModel to move, then refresh affected boards in ProjectViewModel
         taskViewModel.moveTaskToBoard(task.getId(), targetBoard.getId(), 0.0);
         
-        Toast.makeText(this, "✅ Moving to " + targetBoard.getName() + "...", Toast.LENGTH_SHORT).show();
+        // ✅ Refresh both boards to sync with server
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            projectViewModel.refreshBoardTasks(currentBoard.getId());
+            projectViewModel.refreshBoardTasks(targetBoard.getId());
+        }, 500);
         
-        // Observer auto-updates UI via ProjectViewModel - NO MANUAL RELOAD
+        Toast.makeText(this, "✅ Moved to " + targetBoard.getName(), Toast.LENGTH_SHORT).show();
+        
+        // ✅ REMOVED: No manual UI update, no local state manipulation
+        // ❌ OLD: Update tasksPerBoard map manually
+        // ❌ OLD: boardAdapter.notifyDataSetChanged()
+        // Observer will auto-update when ProjectViewModel.tasksPerBoardLiveData changes
     }
 }

@@ -298,6 +298,30 @@ public class ProjectViewModel extends ViewModel {
         projectUpdatedLiveData.setValue(false);
         projectDeletedLiveData.setValue(false);
     }
+    
+    // ✅ Refresh specific board tasks after external changes (e.g. task move, create, delete)
+    public void refreshBoardTasks(String boardId) {
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) {
+            currentMap = new HashMap<>();
+        }
+        
+        final Map<String, List<Task>> updatedMap = new HashMap<>(currentMap);
+        
+        getTasksByBoardUseCase.execute(boardId, new GetTasksByBoardUseCase.Callback<List<Task>>() {
+            @Override
+            public void onSuccess(List<Task> tasks) {
+                updatedMap.put(boardId, tasks != null ? tasks : new ArrayList<>());
+                tasksPerBoardLiveData.setValue(updatedMap);
+            }
+
+            @Override
+            public void onError(String error) {
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+    
     @Override
     protected void onCleared() {
         super.onCleared();
