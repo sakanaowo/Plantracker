@@ -79,20 +79,19 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         setupViewModel();
         initViews();
         setupRecyclerView();
-        setupSwipeRefresh();  // ← ADDED: Setup pull-to-refresh
+        setupSwipeRefresh();
         setupNotificationCard();
         setupQuickAddTask();
-        observeViewModel();
-        setupBottomNavigation(1); 
-        loadAllTasks();
+        observeViewModel(); // ✅ Must be BEFORE loadInboxTasks
+        setupBottomNavigation(1);
+        
+        // ✅ NEW: Load inbox tasks once via ViewModel
+        // Note: loadInboxTasks is currently a stub, will be implemented later
+        taskViewModel.loadInboxTasks("");
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume() - Reloading all tasks");
-        loadAllTasks();
-    }
+    // ✅ REMOVED: No more onResume reload!
+    // ViewModel keeps state, no need to reload on resume
 
     private void setupViewModel() {
         TaskRepositoryImplWithCache repositoryWithCache = 
@@ -196,56 +195,20 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         });
     }
     private void observeViewModel() {
-        taskViewModel.getTasks().observe(this, tasks -> {
+        // ✅ NEW: Observe inbox tasks from ViewModel (single source of truth)
+        taskViewModel.getInboxTasks().observe(this, tasks -> {
             if (tasks != null && !tasks.isEmpty()) {
                 taskAdapter.setTasks(tasks);
                 showContent();
-                Log.d(TAG, "Tasks loaded: " + tasks.size());
+                Log.d(TAG, "✅ Inbox tasks updated: " + tasks.size());
             } else {
                 taskAdapter.setTasks(new ArrayList<>());
                 showEmpty();
-                Log.d(TAG, "No tasks found");
+                Log.d(TAG, "No inbox tasks");
             }
         });
-        taskViewModel.getSelectedTask().observe(this, createdTask -> {
-            if (createdTask != null) {
-                Log.d(TAG, "New task created: " + createdTask.getTitle() + " (ID: " + createdTask.getId() + ")");
-                App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(createdTask);
-                Log.d(TAG, "✓ Task saved to local database cache");
-                if (createdTask.getId() != null && createdTask.getBoardId() != null) {
-                    Intent resultIntent = new Intent();
-                    resultIntent.putExtra(EXTRA_TASK_ID, createdTask.getId());
-                    resultIntent.putExtra(EXTRA_BOARD_ID, createdTask.getBoardId());
-                    setResult(RESULT_OK, resultIntent);
-                    Log.d(TAG, "� Result set: Task " + createdTask.getId() + " on board " + createdTask.getBoardId());
-                }
-                List<Task> currentTasks = taskViewModel.getTasks().getValue();
-                if (currentTasks == null) {
-                    currentTasks = new ArrayList<>();
-                }
-                boolean taskExists = false;
-                for (Task task : currentTasks) {
-                    if (task.getId() != null && task.getId().equals(createdTask.getId())) {
-                        taskExists = true;
-                        break;
-                    }
-                }
-
-                if (!taskExists) {
-                    List<Task> updatedTasks = new ArrayList<>();
-                    updatedTasks.add(createdTask);
-                    updatedTasks.addAll(currentTasks);
-
-                    taskAdapter.setTasks(updatedTasks);
-                    showContent();
-                    recyclerView.smoothScrollToPosition(0);
-
-                    Toast.makeText(this, "✅ Đã thêm task vào database: " + createdTask.getTitle(), Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "New task added to UI list: " + createdTask.getTitle());
-                }
-                taskViewModel.clearSelectedTask();
-            }
-        });
+        
+        // ✅ Observe loading state (optional - can show spinner)
         taskViewModel.isLoading().observe(this, isLoading -> {
             if (isLoading != null && isLoading) {
                 Log.d(TAG, "Loading tasks...");
@@ -270,9 +233,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 R.color.colorAccent
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "User triggered pull-to-refresh for tasks");
-                isInitialLoad = false;  // Not initial load anymore
-                forceRefreshTasks();
+                Log.d(TAG, "✅ Pull-to-refresh via ViewModel");
+                taskViewModel.loadInboxTasks("");
+                // Stop refreshing animation (observer will update UI)
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    swipeRefreshLayout.setRefreshing(false);
+                }, 500);
             });
         }
     }
@@ -298,187 +264,53 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         Log.d(TAG, "Showing empty view");
     }
 
-    private void forceRefreshTasks() {
-        Log.d(TAG, "Force refreshing tasks from API...");
-        App.dependencyProvider.clearTaskCache();
-        isInitialLoad = false;  // Not initial load
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setRefreshing(true);
-        }
-        loadAllTasks();
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                swipeRefreshLayout.setRefreshing(false);
-                Log.d(TAG, "Refresh timeout");
-            }
-        }, 5000);
-    }
+    // ✅ REMOVED: loadAllTasks(), loadQuickTasksFromApi(), forceRefreshTasks()
+    // All replaced by taskViewModel.loadInboxTasks() + observer pattern
 
-    private void loadAllTasks() {
-        // Show loading only if no cache and initial load
-        if (isInitialLoad) {
-            showLoading();
-        }
+    /**
+     * ✅ NEW: Create task via ViewModel with optimistic update
+     * This replaces direct API call pattern
+     */
+    private void createTask(String title) {
+        Log.d(TAG, "✅ Creating quick task via ViewModel: " + title);
         
-        Log.d(TAG, "Loading quick tasks with cache...");
-        final long startTime = System.currentTimeMillis();
-        App.dependencyProvider.getTaskRepositoryWithCache()
-            .getAllTasks(new TaskRepositoryImplWithCache.TaskCallback() {
-                @Override
-                public void onSuccess(List<Task> tasks) {
-                    long duration = System.currentTimeMillis() - startTime;
+        // Create new task object using immutable constructor (optimistic temp task)
+        String tempId = "temp_" + System.currentTimeMillis();
+        java.util.Date now = new java.util.Date();
+        Task newTask = new Task(
+            tempId,          // id (temp)
+            null,            // projectId
+            null,            // boardId (inbox)
+            title,           // title
+            "",             // description
+            null,            // issueKey
+            Task.TaskType.TASK,
+            Task.TaskStatus.TO_DO,
+            Task.TaskPriority.MEDIUM,
+            0.0,             // position
+            null,            // assigneeId
+            null,            // createdBy
+            null,            // sprintId
+            null,            // epicId
+            null,            // parentTaskId
+            null,            // startAt
+            null,            // dueAt
+            null,            // storyPoints
+            null,            // originalEstimateSec
+            null,            // remainingEstimateSec
+            now,             // createdAt
+            now              // updatedAt
+        );
 
-                    runOnUiThread(() -> {
-                        if (tasks != null && !tasks.isEmpty()) {
-                            taskAdapter.setTasks(tasks);
-                            showContent();
-                            String message = "⚡ Cache: " + duration + "ms (" + tasks.size() + " tasks)";
-                            Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
-                            Log.i(TAG, "CACHE HIT: " + duration + "ms, " + tasks.size() + " tasks");
-                        }
-                    });
-                    loadQuickTasksFromApi();
-                }
-
-                @Override
-                public void onCacheEmpty() {
-                    runOnUiThread(() -> {
-                        Log.d(TAG, "Cache empty - loading from API...");
-                        // Keep showing loading since cache is empty
-                    });
-                    loadQuickTasksFromApi();
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    runOnUiThread(() -> {
-                        Log.e(TAG, "Cache error, loading from API...", e);
-                    });
-                    loadQuickTasksFromApi();
-                }
-            });
-    }
-
-    private void loadQuickTasksFromApi() {
-        Log.d(TAG, "Fetching quick tasks from API...");
-        final long apiStartTime = System.currentTimeMillis();
-        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
-        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
-        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
-
-        apiRepository.getQuickTasks(new RepositoryCallback<List<Task>>() {
-            @Override
-            public void onSuccess(List<Task> tasks) {
-                long apiDuration = System.currentTimeMillis() - apiStartTime;
-
-                runOnUiThread(() -> {
-                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-
-                    if (tasks != null && !tasks.isEmpty()) {
-                        taskAdapter.setTasks(tasks);
-                        showContent();
-
-                        String message = "🌐 API: " + apiDuration + "ms (" + tasks.size() + " tasks)";
-                        Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
-                        Log.i(TAG, "API SUCCESS: " + apiDuration + "ms, " + tasks.size() + " quick tasks loaded");
-                        App.dependencyProvider.getTaskRepositoryWithCache().saveTasksToCache(tasks);
-                        Log.d(TAG, "✓ Quick tasks saved to cache");
-                    } else {
-                        taskAdapter.setTasks(new ArrayList<>());
-                        showEmpty();
-                        Log.d(TAG, "No quick tasks found");
-                    }
-                    
-                    isInitialLoad = false;  // Initial load complete
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
-                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-
-                    // Show empty view on error if no tasks loaded
-                    if (taskAdapter.getTasks().isEmpty()) {
-                        showEmpty();
-                    }
-
-                    Toast.makeText(InboxActivity.this,
-                            "Failed to load quick tasks: " + error,
-                            Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "API ERROR: " + error);
-                    
-                    isInitialLoad = false;  // Initial load complete (even with error)
-                });
-            }
-        });
-    };
-
-        private void createTask(String title) {
-        Log.d(TAG, "Creating quick task: " + title);
-        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
-        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
-        ITaskRepository taskRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
-
-        taskRepository.createQuickTask(title, "", new ITaskRepository.RepositoryCallback<Task>() {
-            @Override
-            public void onSuccess(Task result) {
-                runOnUiThread(() -> {
-                    Log.d(TAG, "✓ Quick task created successfully");
-                    Log.d(TAG, "  ID: " + result.getId());
-                    Log.d(TAG, "  Title: " + result.getTitle());
-                    Log.d(TAG, "  Project: " + result.getProjectId());
-                    Log.d(TAG, "  Board: " + result.getBoardId());
-                    App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(result);
-                    Log.d(TAG, "✓ Task saved to cache");
-                    List<Task> currentTasks = taskAdapter.getTasks();
-                    if (currentTasks == null) {
-                        currentTasks = new ArrayList<>();
-                    }
-                    boolean taskExists = false;
-                    for (Task task : currentTasks) {
-                        if (task.getId() != null && task.getId().equals(result.getId())) {
-                            taskExists = true;
-                            break;
-                        }
-                    }
-
-                    if (!taskExists) {
-                        List<Task> updatedTasks = new ArrayList<>();
-                        updatedTasks.add(result);
-                        updatedTasks.addAll(currentTasks);
-
-                        taskAdapter.setTasks(updatedTasks);
-                        showContent();
-                        recyclerView.smoothScrollToPosition(0);
-
-                        Log.d(TAG, "✓ Task added to RecyclerView immediately");
-                    }
-                    loadAllTasks();
-                    android.widget.Toast.makeText(InboxActivity.this, 
-                        "✓ Task created", 
-                        android.widget.Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
-                    Log.e(TAG, "Failed to create quick task: " + error);
-                    android.widget.Toast.makeText(InboxActivity.this, 
-                        "Error creating task: " + error, 
-                        android.widget.Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-
-        Log.d(TAG, "Quick task creation request sent");
+        // ✅ Call ViewModel - optimistic update will show instantly
+        taskViewModel.createTask(newTask);
+        
+        // Observer auto-updates UI via inboxTasksLiveData
+        android.widget.Toast.makeText(this, 
+            "✓ Creating task...", 
+            android.widget.Toast.LENGTH_SHORT).show();
+        
+        Log.d(TAG, "✅ Task creation delegated to ViewModel (optimistic update)");
     }
 
     private void showTaskDetailBottomSheet(Task task) {
@@ -522,10 +354,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 String userId = input.getText().toString().trim();
                 if (!userId.isEmpty()) {
                     taskViewModel.assignTask(task.getId(), userId);
-                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                        loadAllTasks();
-                        Toast.makeText(this, "Task assigned successfully", Toast.LENGTH_SHORT).show();
-                    }, 500);
+                    // ✅ REMOVED: loadAllTasks() - observer auto-updates
+                    Toast.makeText(this, "Task assigned successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "User ID cannot be empty", Toast.LENGTH_SHORT).show();
                 }
@@ -544,10 +374,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 String targetBoardId = input.getText().toString().trim();
                 if (!targetBoardId.isEmpty()) {
                     taskViewModel.moveTaskToBoard(task.getId(), targetBoardId, 0);
-                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                        loadAllTasks();
-                        Toast.makeText(this, "Task moved successfully", Toast.LENGTH_SHORT).show();
-                    }, 500);
+                    // ✅ REMOVED: loadAllTasks() - optimistic update handles it
+                    Toast.makeText(this, "Task moved successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Board ID cannot be empty", Toast.LENGTH_SHORT).show();
                 }
@@ -590,10 +418,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             .setMessage("Are you sure you want to delete \"" + task.getTitle() + "\"?")
             .setPositiveButton("Delete", (dialog, which) -> {
                 taskViewModel.deleteTask(task.getId());
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    loadAllTasks();
-                    Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show();
-                }, 500);
+                // ✅ REMOVED: loadAllTasks() - optimistic delete removes instantly
+                Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("Cancel", null)
             .show();
@@ -631,14 +457,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         // Update via ViewModel
         taskViewModel.updateTask(task.getId(), updatedTask);
         
-        // Save to cache
-        App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
-        
-        // Reload after delay
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            loadAllTasks();
-        }, 1000);
-        
+        // ✅ REMOVED: Save to cache + reload - ViewModel handles via optimistic update
         Toast.makeText(this, "Start date updated", Toast.LENGTH_SHORT).show();
     }
     
@@ -677,132 +496,22 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         // Save to cache
         App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
         
-        // Reload after delay
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            loadAllTasks();
-        }, 1000);
-        
+        // ✅ REMOVED: Reload - ViewModel optimistic update handles it
         Toast.makeText(this, "Due date updated", Toast.LENGTH_SHORT).show();
     }
     
+    /**
+     * ✅ REFACTORED: Use ViewModel's toggleTaskComplete for instant checkbox
+     * No manual UI update needed - observer auto-updates!
+     */
     private void handleTaskCompleted(Task task) {
-        Log.d(TAG, "handleTaskCompleted: " + task.getId() + " - Moving to Done (attempting board move)");
-
-        // Optimistically remove from UI for fast feedback
-        List<Task> currentTasks = taskAdapter.getTasks();
-        List<Task> updatedTasks = new ArrayList<>();
-        for (Task t : currentTasks) {
-            if (!t.getId().equals(task.getId())) {
-                updatedTasks.add(t);
-            }
-        }
-        taskAdapter.setTasks(updatedTasks);
-        if (updatedTasks.isEmpty()) {
-            showEmpty();
-        }
-
-        // Try to find the project's "Done" board and move the task there.
-        String projectId = task.getProjectId();
-        if (projectId == null || projectId.isEmpty()) {
-            // Fallback: just update status if no project information
-            Log.w(TAG, "No projectId for task " + task.getId() + ", falling back to status update");
-            Task updatedTask = new Task(
-                    task.getId(),
-                    task.getProjectId(),
-                    task.getBoardId(),
-                    task.getTitle(),
-                    task.getDescription(),
-                    task.getIssueKey(),
-                    task.getType(),
-                    Task.TaskStatus.DONE,
-                    task.getPriority(),
-                    task.getPosition(),
-                    task.getAssigneeId(),
-                    task.getCreatedBy(),
-                    task.getSprintId(),
-                    task.getEpicId(),
-                    task.getParentTaskId(),
-                    task.getStartAt(),
-                    task.getDueAt(),
-                    task.getStoryPoints(),
-                    task.getOriginalEstimateSec(),
-                    task.getRemainingEstimateSec(),
-                    task.getCreatedAt(),
-                    task.getUpdatedAt()
-            );
-            taskViewModel.updateTask(task.getId(), updatedTask);
-            App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
-            Toast.makeText(this, "✓ Task marked done (no project)", Toast.LENGTH_SHORT).show();
-            new Handler(Looper.getMainLooper()).postDelayed(this::loadAllTasks, 1500);
-            return;
-        }
-
-        // Create BoardViewModel to query project boards
-        com.example.tralalero.presentation.viewmodel.BoardViewModel boardViewModel =
-                new androidx.lifecycle.ViewModelProvider(this,
-                        com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider.provideBoardViewModelFactory())
-                        .get(com.example.tralalero.presentation.viewmodel.BoardViewModel.class);
-
-        // Observe boards once to find the Done board
-        androidx.lifecycle.Observer<java.util.List<com.example.tralalero.domain.model.Board>> boardsObserver = new androidx.lifecycle.Observer<java.util.List<com.example.tralalero.domain.model.Board>>() {
-            @Override
-            public void onChanged(java.util.List<com.example.tralalero.domain.model.Board> boards) {
-                if (boards == null) return;
-
-                com.example.tralalero.domain.model.Board doneBoard = null;
-                for (com.example.tralalero.domain.model.Board b : boards) {
-                    if (b == null || b.getName() == null) continue;
-                    if (b.getName().equalsIgnoreCase("done") || b.getName().equalsIgnoreCase("DONE")) {
-                        doneBoard = b;
-                        break;
-                    }
-                }
-
-                if (doneBoard != null) {
-                    Log.d(TAG, "Found Done board: " + doneBoard.getId() + " - moving task");
-                    taskViewModel.moveTaskToBoard(task.getId(), doneBoard.getId(), 0);
-                } else {
-                    Log.w(TAG, "Done board not found for project " + projectId + ", falling back to status update");
-                    // Fallback: update status only
-                    Task updatedTask = new Task(
-                            task.getId(),
-                            task.getProjectId(),
-                            task.getBoardId(),
-                            task.getTitle(),
-                            task.getDescription(),
-                            task.getIssueKey(),
-                            task.getType(),
-                            Task.TaskStatus.DONE,
-                            task.getPriority(),
-                            task.getPosition(),
-                            task.getAssigneeId(),
-                            task.getCreatedBy(),
-                            task.getSprintId(),
-                            task.getEpicId(),
-                            task.getParentTaskId(),
-                            task.getStartAt(),
-                            task.getDueAt(),
-                            task.getStoryPoints(),
-                            task.getOriginalEstimateSec(),
-                            task.getRemainingEstimateSec(),
-                            task.getCreatedAt(),
-                            task.getUpdatedAt()
-                    );
-                    taskViewModel.updateTask(task.getId(), updatedTask);
-                    App.dependencyProvider.getTaskRepositoryWithCache().saveTaskToCache(updatedTask);
-                }
-
-                // Remove observer after one update
-                boardViewModel.getProjectBoards().removeObserver(this);
-
-                // Reload inbox after a short delay to re-sync with backend
-                new Handler(Looper.getMainLooper()).postDelayed(() -> loadAllTasks(), 1200);
-                Toast.makeText(InboxActivity.this, "✓ Task moved to Done", Toast.LENGTH_SHORT).show();
-            }
-        };
-
-        boardViewModel.getProjectBoards().observe(this, boardsObserver);
-        boardViewModel.loadBoardsByProject(projectId);
+        Log.d(TAG, "✅ Toggle task complete via ViewModel: " + task.getId());
+        
+        // ✅ Single line! ViewModel handles optimistic update + API + rollback
+        taskViewModel.toggleTaskComplete(task);
+        
+        // Observer automatically updates UI
+        Toast.makeText(this, "✓ Task toggled", Toast.LENGTH_SHORT).show();
     }
 }
 

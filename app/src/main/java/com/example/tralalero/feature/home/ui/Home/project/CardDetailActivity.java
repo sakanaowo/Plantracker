@@ -147,6 +147,13 @@ public class CardDetailActivity extends AppCompatActivity {
         setupUI();
         setupListeners();
         setupCalendarSyncUI();
+        
+        // ✅ NEW: Load task via ViewModel if in edit mode
+        if (isEditMode && taskId != null && !taskId.isEmpty()) {
+            taskViewModel.loadTaskById(taskId);
+            // Observer will auto-update UI when task loads
+        }
+        
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -155,18 +162,8 @@ public class CardDetailActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        
-        // Reload data when returning to this activity
-        if (isEditMode && taskId != null && !taskId.isEmpty()) {
-            loadTaskAttachments();
-            loadTaskComments();
-            loadChecklistItems();  // CRITICAL - Reload checklist items!
-            loadTaskLabels();
-        }
-    }
+    // ✅ REMOVED: onResume reload
+    // ViewModel maintains state, no need to reload on resume
 
     private void getIntentData() {
         if (getIntent() != null) {
@@ -421,6 +418,14 @@ public class CardDetailActivity extends AppCompatActivity {
     }
 
     private void observeViewModel() {
+        // ✅ NEW: Observe selectedTask for auto-update
+        taskViewModel.getSelectedTask().observe(this, task -> {
+            if (task != null) {
+                android.util.Log.d("CardDetail", "✅ Task updated via ViewModel: " + task.getTitle());
+                updateUIWithTask(task);
+            }
+        });
+        
         taskViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, error, Toast.LENGTH_LONG).show();
@@ -1491,6 +1496,78 @@ public class CardDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Cannot open file - backend integration needed", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * ✅ NEW: Update UI with task data from ViewModel
+     * Called when selectedTask LiveData changes
+     */
+    private void updateUIWithTask(Task task) {
+        // Update title
+        if (etTaskTitle != null) {
+            etTaskTitle.setText(task.getTitle());
+        }
+        
+        // Update description
+        if (etDescription != null) {
+            etDescription.setText(task.getDescription() != null ? task.getDescription() : "");
+        }
+        
+        // Update dates
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        if (etDateStart != null && task.getStartAt() != null) {
+            etDateStart.setText(dateFormat.format(task.getStartAt()));
+        }
+        if (etDueDate != null && task.getDueAt() != null) {
+            etDueDate.setText(dateFormat.format(task.getDueAt()));
+        }
+        
+        // Update priority buttons
+        updatePriorityButtons(task.getPriority());
+        
+        // Update board name
+        if (tvBoardName != null && boardName != null) {
+            tvBoardName.setText(boardName);
+        }
+        
+        // Update calendar sync status
+        if (task.isCalendarSyncEnabled()) {
+            isCalendarSyncEnabled = true;
+            if (switchCalendarSync != null) {
+                switchCalendarSync.setChecked(true);
+            }
+            updateCalendarSyncUI(true);
+        }
+        
+        android.util.Log.d("CardDetail", "✅ UI updated with task: " + task.getTitle());
+    }
+    
+    /**
+     * Update priority button states
+     */
+    private void updatePriorityButtons(Task.TaskPriority priority) {
+        if (btnLowPriority == null || btnMediumPriority == null || btnHighPriority == null) {
+            return;
+        }
+        
+        // Reset all buttons
+        btnLowPriority.setBackgroundColor(Color.TRANSPARENT);
+        btnMediumPriority.setBackgroundColor(Color.TRANSPARENT);
+        btnHighPriority.setBackgroundColor(Color.TRANSPARENT);
+        
+        // Highlight selected priority
+        currentPriority = priority;
+        switch (priority) {
+            case LOW:
+                btnLowPriority.setBackgroundColor(getResources().getColor(R.color.priority_low, null));
+                break;
+            case MEDIUM:
+                btnMediumPriority.setBackgroundColor(getResources().getColor(R.color.priority_medium, null));
+                break;
+            case HIGH:
+                btnHighPriority.setBackgroundColor(getResources().getColor(R.color.priority_high, null));
+                break;
+        }
     }
     
     /**
