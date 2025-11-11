@@ -7,12 +7,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.util.TaskItemTouchHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +67,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         RecyclerView taskRecycler;
         LinearLayout btnAddCard;
         TaskAdapter taskAdapter;
+        ItemTouchHelper itemTouchHelper; // ✅ ADD: Drag & drop support
 
         BoardViewHolder(View itemView) {
             super(itemView);
@@ -90,6 +93,69 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     listener.onTaskClick(task, board);
                 });
 
+                // ✅ ADD: Setup drag & drop for tasks
+                TaskItemTouchHelper.TaskItemTouchHelperListener dragListener = new TaskItemTouchHelper.TaskItemTouchHelperListener() {
+                    @Override
+                    public void onTaskMoved(int fromPosition, int toPosition) {
+                        // Update adapter immediately for smooth animation
+                        taskAdapter.moveItem(fromPosition, toPosition);
+                    }
+
+                    @Override
+                    public void onTaskDropped(int position) {
+                        // Calculate new position and update backend
+                        Task task = taskAdapter.getTaskAt(position);
+                        if (task != null && listener instanceof OnTaskPositionChangeListener) {
+                            double newPosition = calculateNewPosition(position);
+                            ((OnTaskPositionChangeListener) listener).onTaskPositionChanged(task, newPosition, board);
+                        }
+                    }
+                    
+                    private double calculateNewPosition(int position) {
+                        List<Task> tasks = taskAdapter.getTasks();
+                        int taskCount = tasks.size();
+                        
+                        if (taskCount <= 1) {
+                            return 1000.0;
+                        }
+                        
+                        // Moving to first position
+                        if (position == 0) {
+                            Task firstTask = tasks.get(0);
+                            if (firstTask != null) {
+                                return firstTask.getPosition() / 2.0;
+                            }
+                            return 500.0;
+                        }
+                        
+                        // Moving to last position
+                        if (position >= taskCount - 1) {
+                            Task lastTask = tasks.get(taskCount - 1);
+                            if (lastTask != null) {
+                                return lastTask.getPosition() + 1024.0;
+                            }
+                            return position * 1000.0;
+                        }
+                        
+                        // Moving to middle position
+                        Task prevTask = tasks.get(position - 1);
+                        Task nextTask = tasks.get(position + 1);
+                        
+                        if (prevTask != null && nextTask != null) {
+                            return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+                        }
+                        
+                        return position * 1000.0;
+                    }
+                };
+                
+                TaskItemTouchHelper touchHelper = new TaskItemTouchHelper(dragListener);
+                if (itemTouchHelper != null) {
+                    itemTouchHelper.attachToRecyclerView(null); // Detach old one
+                }
+                itemTouchHelper = new ItemTouchHelper(touchHelper);
+                itemTouchHelper.attachToRecyclerView(taskRecycler);
+
                 // Setup move left/right listeners
                 taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
                     @Override
@@ -106,62 +172,6 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                         if (listener instanceof OnTaskBoardChangeListener) {
                             ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, +1);
                         }
-                    }
-                    
-                    /**
-                     * Calculate new position when moving task from 'from' to 'to'
-                     * IMPORTANT: Call this BEFORE swapping items in list!
-                     */
-                    private double calculateNewPositionForMove(int fromPos, int toPos) {
-                        int taskCount = taskAdapter.getItemCount();
-                        
-                        if (taskCount <= 1) {
-                            return 1000.0;
-                        }
-                        
-                        // Moving to first position
-                        if (toPos == 0) {
-                            Task firstTask = taskAdapter.getTaskAt(0);
-                            if (firstTask != null) {
-                                return firstTask.getPosition() / 2.0;
-                            }
-                            return 500.0;
-                        }
-                        
-                        // Moving to last position
-                        if (toPos >= taskCount - 1) {
-                            Task lastTask = taskAdapter.getTaskAt(taskCount - 1);
-                            if (lastTask != null) {
-                                return lastTask.getPosition() + 1024.0;
-                            }
-                            return toPos * 1000.0;
-                        }
-                        
-                        // Moving to middle position
-                        // Need to find what will be prev/next AFTER the swap
-                        if (fromPos < toPos) {
-                            // Moving DOWN: will be between toPos and toPos+1
-                            Task prevTask = taskAdapter.getTaskAt(toPos);
-                            Task nextTask = taskAdapter.getTaskAt(toPos + 1);
-                            if (prevTask != null && nextTask != null) {
-                                double result = (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
-                                android.util.Log.d("BoardAdapter", "Move DOWN: prev=" + prevTask.getPosition() + 
-                                    ", next=" + nextTask.getPosition() + ", new=" + result);
-                                return result;
-                            }
-                        } else {
-                            // Moving UP: will be between toPos-1 and toPos
-                            Task prevTask = taskAdapter.getTaskAt(toPos - 1);
-                            Task nextTask = taskAdapter.getTaskAt(toPos);
-                            if (prevTask != null && nextTask != null) {
-                                double result = (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
-                                android.util.Log.d("BoardAdapter", "Move UP: prev=" + prevTask.getPosition() + 
-                                    ", next=" + nextTask.getPosition() + ", new=" + result);
-                                return result;
-                            }
-                        }
-                        
-                        return toPos * 1000.0;
                     }
                 });
 

@@ -36,6 +36,17 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
         this.filteredMembers = new ArrayList<>(members);
         this.listener = listener;
     }
+    
+    /**
+     * ✅ ADD: Set pre-selected members
+     */
+    public void setSelectedMembers(List<User> preSelected) {
+        selectedIds.clear();
+        for (User user : preSelected) {
+            selectedIds.add(user.getId());
+        }
+        notifyDataSetChanged();
+    }
 
     @NonNull
     @Override
@@ -91,6 +102,9 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
         void bind(User member, boolean isSelected) {
             tvName.setText(member.getName());
             tvEmail.setText(member.getEmail());
+            
+            // ✅ FIX: Set listener to null BEFORE changing checkbox state
+            checkbox.setOnCheckedChangeListener(null);
             checkbox.setChecked(isSelected);
 
             // Load avatar
@@ -104,14 +118,13 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
                 ivAvatar.setImageResource(R.drawable.ic_person);
             }
 
-            // Handle click
+            // ✅ FIX: Set listener AFTER checkbox state is set
+            // Handle click on entire item
             itemView.setOnClickListener(v -> toggleSelection(member));
             
-            checkbox.setOnCheckedChangeListener(null); // Remove old listener
+            // Handle checkbox click
             checkbox.setOnCheckedChangeListener((buttonView, checked) -> {
-                if (checked != isSelected) {
-                    toggleSelection(member);
-                }
+                toggleSelection(member);
             });
         }
         

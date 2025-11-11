@@ -19,6 +19,9 @@ import com.example.tralalero.domain.model.CalendarSyncResult;
 import com.example.tralalero.domain.repository.ICalendarRepository;
 import com.example.tralalero.network.ApiClient;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.util.List;
 
 import retrofit2.Call;
@@ -149,13 +152,28 @@ public class CalendarRepositoryImpl implements ICalendarRepository {
 
     @Override
     public void syncEventsFromGoogle(String projectId, String timeMin, String timeMax, RepositoryCallback<List<CalendarEvent>> callback) {
-        apiService.syncFromGoogle(projectId, timeMin, timeMax).enqueue(new Callback<List<CalendarEventDTO>>() {
+        apiService.syncFromGoogle(projectId, timeMin, timeMax).enqueue(new Callback<com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse>() {
             @Override
-            public void onResponse(Call<List<CalendarEventDTO>> call, Response<List<CalendarEventDTO>> response) {
+            public void onResponse(Call<com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse> call, Response<com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<CalendarEvent> events = CalendarMapper.toDomainList(response.body());
-                    Log.d(TAG, "Imported " + events.size() + " events from Google Calendar");
-                    callback.onSuccess(events);
+                    com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse syncResponse = response.body();
+                    
+                    // ✅ FIX: Check success flag and handle gracefully
+                    if (syncResponse.isSuccess() && syncResponse.getEvents() != null) {
+                        List<CalendarEvent> events = CalendarMapper.toDomainList(syncResponse.getEvents());
+                        Log.d(TAG, "✅ Imported " + events.size() + " events from Google Calendar");
+                        callback.onSuccess(events);
+                    } else {
+                        // Return empty list if user hasn't connected Google Calendar
+                        String message = syncResponse.getMessage();
+                        if (message != null && message.contains("not connected")) {
+                            Log.w(TAG, "⚠️ Google Calendar not connected: " + message);
+                            callback.onSuccess(new ArrayList<>());  // Return empty list, not error
+                        } else {
+                            Log.e(TAG, "❌ Failed to sync: " + message);
+                            callback.onError(message != null ? message : "Failed to sync events");
+                        }
+                    }
                 } else {
                     String errorMsg = "Failed to sync events from Google: " + response.code();
                     Log.e(TAG, errorMsg);
@@ -164,7 +182,7 @@ public class CalendarRepositoryImpl implements ICalendarRepository {
             }
 
             @Override
-            public void onFailure(Call<List<CalendarEventDTO>> call, Throwable t) {
+            public void onFailure(Call<com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse> call, Throwable t) {
                 String errorMsg = "Network error syncing from Google: " + t.getMessage();
                 Log.e(TAG, errorMsg, t);
                 callback.onError(errorMsg);

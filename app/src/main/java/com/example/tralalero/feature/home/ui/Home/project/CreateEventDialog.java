@@ -56,6 +56,7 @@ public class CreateEventDialog extends DialogFragment {
     
     private String projectId;
     private List<String> selectedAttendeeIds = new ArrayList<>();
+    private List<User> selectedAttendees = new ArrayList<>();  // ✅ ADD: Track full User objects
     private OnEventCreatedListener listener;
     private boolean isLoadingMembers = false;
     
@@ -301,16 +302,18 @@ public class CreateEventDialog extends DialogFragment {
                         }
                     }
 
-                    // Show member selection bottom sheet
-                    MemberSelectionBottomSheet sheet = MemberSelectionBottomSheet.newInstance(users);
+                    // ✅ FIX: Show member selection bottom sheet with pre-selected members
+                    MemberSelectionBottomSheet sheet = MemberSelectionBottomSheet.newInstance(users, selectedAttendees);
                     sheet.setListener(selected -> {
                         // Clear existing chips
                         chipGroupAttendees.removeAllViews();
                         selectedAttendeeIds.clear();
+                        selectedAttendees.clear();  // ✅ Clear full User list
                         
                         // Add chips for selected members
                         for (User u : selected) {
                             addAttendeeChip(u.getId(), u.getName());
+                            selectedAttendees.add(u);  // ✅ Track full User object
                         }
                     });
                     sheet.show(getParentFragmentManager(), "select_members");
@@ -479,16 +482,24 @@ public class CreateEventDialog extends DialogFragment {
      */
     private String formatToISO8601(String dateStr, String timeStr) {
         try {
+            // ✅ FIX: Parse in local timezone first
             SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            inputFormat.setTimeZone(TimeZone.getDefault()); // Use device timezone
             Date date = inputFormat.parse(dateStr + " " + timeStr);
             
+            // ✅ FIX: Format to ISO 8601 with 'Z' suffix (UTC)
             SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
             iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
             
-            return iso8601Format.format(date);
+            String result = iso8601Format.format(date);
+            android.util.Log.d("CreateEventDialog", "Formatted startAt: " + result);
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
-            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(new Date());
+            // Fallback: use current time in ISO 8601 format
+            SimpleDateFormat fallbackFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            fallbackFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return fallbackFormat.format(new Date());
         }
     }
     
@@ -501,17 +512,22 @@ public class CreateEventDialog extends DialogFragment {
      */
     private String formatToISO8601WithDuration(String dateStr, String timeStr, int durationMinutes) {
         try {
+            // ✅ FIX: Parse in local timezone first
             SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            inputFormat.setTimeZone(TimeZone.getDefault()); // Use device timezone
             Date startDate = inputFormat.parse(dateStr + " " + timeStr);
             
-            Calendar cal = Calendar.getInstance();
+            Calendar cal = Calendar.getInstance(TimeZone.getDefault());
             cal.setTime(startDate);
             cal.add(Calendar.MINUTE, durationMinutes);
             
+            // ✅ FIX: Format to ISO 8601 with 'Z' suffix (UTC)
             SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
             iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
             
-            return iso8601Format.format(cal.getTime());
+            String result = iso8601Format.format(cal.getTime());
+            android.util.Log.d("CreateEventDialog", "Formatted endAt: " + result);
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
             return formatToISO8601(dateStr, timeStr);

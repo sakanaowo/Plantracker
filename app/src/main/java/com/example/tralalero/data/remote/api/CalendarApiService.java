@@ -6,6 +6,7 @@ import com.example.tralalero.data.remote.dto.calendar.CalendarEventDTO;
 import com.example.tralalero.data.remote.dto.calendar.CalendarSyncRequest;
 import com.example.tralalero.data.remote.dto.calendar.CalendarSyncResponse;
 import com.example.tralalero.data.remote.dto.calendar.CallbackResponse;
+import com.example.tralalero.data.remote.dto.calendar.SyncFromGoogleResponse;
 
 import java.util.List;
 
@@ -58,14 +59,15 @@ public interface CalendarApiService {
 
     /**
      * Import events from Google Calendar
+     * ✅ FIXED: Changed return type to handle new response format {success, events, count, message}
      * 
      * @param projectId Target project to import events into
      * @param timeMin Start time filter (ISO 8601 format)
      * @param timeMax End time filter (ISO 8601 format)
-     * @return List of imported calendar events
+     * @return Response with success status, events list, and optional message
      */
     @GET("calendar/sync/from-google")
-    Call<List<CalendarEventDTO>> syncFromGoogle(
+    Call<SyncFromGoogleResponse> syncFromGoogle(
         @Query("projectId") String projectId,
         @Query("timeMin") String timeMin,
         @Query("timeMax") String timeMax

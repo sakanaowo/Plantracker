@@ -89,7 +89,14 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     }
 
     public Task getTaskAt(int position) {
+        if (position < 0 || position >= taskList.size()) {
+            return null;
+        }
         return taskList.get(position);
+    }
+    
+    public List<Task> getTasks() {
+        return taskList;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

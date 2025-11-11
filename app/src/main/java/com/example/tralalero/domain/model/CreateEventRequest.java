@@ -6,13 +6,19 @@ public class CreateEventRequest {
     private String projectId;
     private String title;
     private String description;
-    private String date;
-    private String time;
+    private String date;  // @Deprecated - use startAt/endAt instead
+    private String time;  // @Deprecated - use startAt/endAt instead
     private int duration;
     private String type;
     private String recurrence;
     private List<String> attendeeIds;
     private boolean createGoogleMeet;
+    
+    // ✅ ADD: ISO 8601 datetime fields for API
+    private String startAt;  // ISO 8601 format: "2025-11-11T15:00:00Z"
+    private String endAt;    // ISO 8601 format: "2025-11-11T15:30:00Z"
+    private String location;  // Location for milestones/other events
+    private String meetingLink;  // Meeting link (Zoom, Google Meet, etc.)
     
     // Constructors
     public CreateEventRequest() {}
@@ -112,5 +118,38 @@ public class CreateEventRequest {
     
     public void setCreateGoogleMeet(boolean createGoogleMeet) {
         this.createGoogleMeet = createGoogleMeet;
+    }
+    
+    // ✅ ADD: Getters and setters for new fields
+    public String getStartAt() {
+        return startAt;
+    }
+    
+    public void setStartAt(String startAt) {
+        this.startAt = startAt;
+    }
+    
+    public String getEndAt() {
+        return endAt;
+    }
+    
+    public void setEndAt(String endAt) {
+        this.endAt = endAt;
+    }
+    
+    public String getLocation() {
+        return location;
+    }
+    
+    public void setLocation(String location) {
+        this.location = location;
+    }
+    
+    public String getMeetingLink() {
+        return meetingLink;
+    }
+    
+    public void setMeetingLink(String meetingLink) {
+        this.meetingLink = meetingLink;
     }
 }

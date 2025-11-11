@@ -29,6 +29,7 @@ public class MemberSelectionBottomSheet extends BottomSheetDialogFragment {
 
     private List<User> allMembers;
     private List<User> selectedMembers = new ArrayList<>();
+    private List<User> preSelectedMembers = new ArrayList<>();  // ✅ ADD: Track pre-selected members
     private MemberSelectionListener listener;
     private MemberSelectionAdapter adapter;
 
@@ -46,6 +47,19 @@ public class MemberSelectionBottomSheet extends BottomSheetDialogFragment {
         Bundle args = new Bundle();
         fragment.setArguments(args);
         fragment.allMembers = members;
+        return fragment;
+    }
+    
+    /**
+     * Set pre-selected members (for re-opening dialog with existing selection)
+     */
+    public static MemberSelectionBottomSheet newInstance(List<User> members, List<User> preSelected) {
+        MemberSelectionBottomSheet fragment = new MemberSelectionBottomSheet();
+        Bundle args = new Bundle();
+        fragment.setArguments(args);
+        fragment.allMembers = members;
+        fragment.preSelectedMembers = preSelected != null ? new ArrayList<>(preSelected) : new ArrayList<>();
+        fragment.selectedMembers = preSelected != null ? new ArrayList<>(preSelected) : new ArrayList<>();
         return fragment;
     }
 
@@ -87,9 +101,18 @@ public class MemberSelectionBottomSheet extends BottomSheetDialogFragment {
             allMembers != null ? allMembers : new ArrayList<>(),
             this::onMemberToggled
         );
+        
+        // ✅ FIX: Set pre-selected members in adapter
+        if (!preSelectedMembers.isEmpty()) {
+            adapter.setSelectedMembers(preSelectedMembers);
+        }
 
         rvMembers.setLayoutManager(new LinearLayoutManager(getContext()));
         rvMembers.setAdapter(adapter);
+        
+        // ✅ FIX: Update UI with pre-selected count
+        updateSelectedCount();
+        btnNext.setEnabled(!selectedMembers.isEmpty());
     }
 
     private void setupSearchFilter() {

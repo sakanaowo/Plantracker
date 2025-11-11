@@ -235,13 +235,14 @@ public class ProjectEventsFragment extends Fragment {
             request.setTitle(event.getTitle());
             request.setDescription(event.getDescription());
             
-            // Format date and time
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            request.setDate(dateFormat.format(event.getDate()));
-            request.setTime(event.getTime());
+            // ✅ FIX: Use ISO 8601 formatted startAt/endAt instead of separate date/time
+            request.setStartAt(event.getStartAt());
+            request.setEndAt(event.getEndAt());
             
             request.setDuration(event.getDuration());
             request.setType(event.getType());
+            request.setLocation(event.getLocation());  // ✅ Add location
+            request.setMeetingLink(event.getMeetingLink());  // ✅ Add meeting link
             request.setAttendeeIds(event.getAttendeeIds());
             request.setCreateGoogleMeet(event.isCreateGoogleMeet());
             request.setRecurrence(event.getRecurrence());

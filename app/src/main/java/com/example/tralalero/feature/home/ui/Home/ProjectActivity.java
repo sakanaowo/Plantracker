@@ -622,19 +622,62 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         Board targetBoard = boards.get(targetBoardIndex);
 
         Log.d(TAG, "Moving task '" + task.getTitle() + "' from '" + currentBoard.getName() + "' to '" + targetBoard.getName() + "'");
-        if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
+        
+        // ✅ FIX: Update UI immediately (optimistic update) instead of waiting
+        List<Task> currentBoardTasks = tasksPerBoard.get(currentBoard.getId());
+        List<Task> targetBoardTasks = tasksPerBoard.get(targetBoard.getId());
+        
+        if (currentBoardTasks != null) {
+            // Remove task from current board immediately
+            currentBoardTasks.remove(task);
+            tasksPerBoard.put(currentBoard.getId(), new ArrayList<>(currentBoardTasks));
         }
+        
+        if (targetBoardTasks == null) {
+            targetBoardTasks = new ArrayList<>();
+        }
+        
+        // Create new Task instance with updated boardId (Task is immutable)
+        Task movedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            targetBoard.getId(), // ✅ Updated boardId
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            0.0, // Reset position to top
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt()
+        );
+        
+        // Add task to target board immediately at top
+        targetBoardTasks.add(0, movedTask);
+        tasksPerBoard.put(targetBoard.getId(), new ArrayList<>(targetBoardTasks));
+        
+        // ✅ Update UI immediately - NO LOADING, NO WAITING
+        boardAdapter.notifyDataSetChanged();
+        Toast.makeText(this, "✅ Moved to " + targetBoard.getName(), Toast.LENGTH_SHORT).show();
+        
+        // Update backend (no need to wait for response to update UI)
         taskViewModel.moveTaskToBoard(task.getId(), targetBoard.getId(), 0.0);
+        
+        // ✅ Sync with server after delay to ensure consistency
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             loadTasksForBoard(currentBoard.getId());
             loadTasksForBoard(targetBoard.getId());
-
-            if (progressBar != null) {
-                progressBar.setVisibility(View.GONE);
-            }
-
-            Toast.makeText(this, "Moved to " + targetBoard.getName(), Toast.LENGTH_SHORT).show();
-        }, 500);
+        }, 800);
     }
 }

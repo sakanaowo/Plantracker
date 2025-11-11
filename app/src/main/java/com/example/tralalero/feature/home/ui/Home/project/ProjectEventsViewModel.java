@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.EventApiService;
 import com.example.tralalero.data.remote.dto.event.EventDTO;
+import com.example.tralalero.data.dto.event.CreateProjectEventRequest;
 import com.example.tralalero.domain.model.CreateEventRequest;
 import com.example.tralalero.domain.model.ProjectEvent;
 import com.example.tralalero.domain.model.UpdateEventRequest;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import java.util.List;
 
@@ -104,16 +106,19 @@ public class ProjectEventsViewModel extends ViewModel {
     }
     
     /**
-     * Create new event
+     * Create new event using the correct POST /events/projects endpoint
+     * This endpoint supports Google Calendar integration and participant notifications
      */
     public LiveData<Result<ProjectEvent>> createEvent(CreateEventRequest request) {
         MutableLiveData<Result<ProjectEvent>> resultLiveData = new MutableLiveData<>();
         loadingLiveData.setValue(true);
         error.setValue(null);
         
-        EventDTO eventDTO = convertCreateRequestToDTO(request);
+        // ✅ FIX: Convert to CreateProjectEventRequest for POST /events/projects endpoint
+        CreateProjectEventRequest projectEventRequest = convertToProjectEventRequest(request);
         
-        eventApiService.createEvent(eventDTO).enqueue(new Callback<EventDTO>() {
+        // ✅ FIX: Call createProjectEvent() instead of createEvent()
+        eventApiService.createProjectEvent(projectEventRequest).enqueue(new Callback<EventDTO>() {
             @Override
             public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
                 loadingLiveData.setValue(false);
@@ -124,6 +129,14 @@ public class ProjectEventsViewModel extends ViewModel {
                     createEventSuccess.setValue(event);
                 } else {
                     String errorMsg = "Không thể tạo sự kiện";
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            errorMsg += ": " + errorBody;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     resultLiveData.setValue(Result.error(errorMsg));
                     error.setValue(errorMsg);
                 }
@@ -298,30 +311,104 @@ public class ProjectEventsViewModel extends ViewModel {
         return event;
     }
     
+    /**
+     * Convert CreateEventRequest to CreateProjectEventRequest for POST /events/projects
+     * This method extracts date, time, and duration from ISO 8601 startAt/endAt fields
+     */
+    private CreateProjectEventRequest convertToProjectEventRequest(CreateEventRequest request) {
+        CreateProjectEventRequest dto = new CreateProjectEventRequest();
+        dto.setProjectId(request.getProjectId());
+        dto.setTitle(request.getTitle());
+        dto.setDescription(request.getDescription());
+        dto.setType(request.getType() != null ? request.getType() : "MEETING");
+        dto.setRecurrence(request.getRecurrence() != null ? request.getRecurrence() : "NONE");
+        dto.setAttendeeIds(request.getAttendeeIds());
+        dto.setCreateGoogleMeet(request.isCreateGoogleMeet());
+        
+        // ✅ Extract date, time, duration from startAt/endAt (ISO 8601)
+        if (request.getStartAt() != null && request.getEndAt() != null) {
+            try {
+                // Parse ISO 8601 datetime: "2025-11-15T10:00:00Z"
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                
+                Date startDate = isoFormat.parse(request.getStartAt());
+                Date endDate = isoFormat.parse(request.getEndAt());
+                
+                // Extract date in YYYY-MM-DD format
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                dateFormat.setTimeZone(TimeZone.getDefault());
+                dto.setDate(dateFormat.format(startDate));
+                
+                // Extract time in HH:mm format
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
+                timeFormat.setTimeZone(TimeZone.getDefault());
+                dto.setTime(timeFormat.format(startDate));
+                
+                // Calculate duration in minutes
+                long durationMs = endDate.getTime() - startDate.getTime();
+                int durationMinutes = (int) (durationMs / 60000);
+                dto.setDuration(durationMinutes);
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Fallback to current time
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
+                Date now = new Date();
+                dto.setDate(dateFormat.format(now));
+                dto.setTime(timeFormat.format(now));
+                dto.setDuration(60); // Default 1 hour
+            }
+        } else {
+            // Fallback: Use old date/time fields if available
+            dto.setDate(request.getDate());
+            dto.setTime(request.getTime());
+            dto.setDuration(request.getDuration());
+        }
+        
+        return dto;
+    }
+    
+    /**
+     * @deprecated Use convertToProjectEventRequest() instead
+     * This method is kept for backward compatibility but should not be used
+     */
+    @Deprecated
     private EventDTO convertCreateRequestToDTO(CreateEventRequest request) {
         EventDTO dto = new EventDTO();
         dto.setProjectId(request.getProjectId());
         dto.setTitle(request.getTitle());
         
-        // Convert date + time to ISO format for startAt
-        try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-            Date startDate = inputFormat.parse(request.getDate() + " " + request.getTime());
-            
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-            dto.setStartAt(isoFormat.format(startDate));
-            
-            // Calculate endAt based on duration
-            if (request.getDuration() > 0) {
-                long endTime = startDate.getTime() + (request.getDuration() * 60 * 1000);
-                dto.setEndAt(isoFormat.format(new Date(endTime)));
+        // ✅ FIX: Use startAt/endAt from request directly (already ISO 8601 formatted)
+        if (request.getStartAt() != null && request.getEndAt() != null) {
+            dto.setStartAt(request.getStartAt());
+            dto.setEndAt(request.getEndAt());
+        } else {
+            // Fallback: Convert old date/time format (for backward compatibility)
+            try {
+                SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+                inputFormat.setTimeZone(TimeZone.getDefault());
+                Date startDate = inputFormat.parse(request.getDate() + " " + request.getTime());
+                
+                // ✅ FIX: Format with 'Z' timezone suffix (ISO 8601 UTC)
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                dto.setStartAt(isoFormat.format(startDate));
+                
+                // Calculate endAt based on duration
+                if (request.getDuration() > 0) {
+                    long endTime = startDate.getTime() + (request.getDuration() * 60 * 1000);
+                    dto.setEndAt(isoFormat.format(new Date(endTime)));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         
-        // Set location from description for now
-        dto.setLocation(request.getDescription());
+        // ✅ FIX: Set location and meetLink properly
+        dto.setLocation(request.getLocation());
+        dto.setMeetLink(request.getMeetingLink());
         
         return dto;
     }
