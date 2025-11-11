@@ -28,10 +28,23 @@ import com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase;
 import com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase;
 import com.example.tralalero.domain.repository.ITaskRepository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TaskViewModel - Enhanced for MVVM Architecture
+ * 
+ * DEV 2 WORK - DAY 3-5: Complete TaskViewModel with optimistic updates
+ * 
+ * Features:
+ * - Inbox tasks management
+ * - Optimistic updates for all CRUD operations
+ * - Toggle task complete with instant feedback
+ * - Move task to board with instant UI update
+ * - Zero manual reload needed in Activities
+ */
 public class TaskViewModel extends ViewModel {
 
     private final GetTaskByIdUseCase getTaskByIdUseCase;
@@ -54,7 +67,14 @@ public class TaskViewModel extends ViewModel {
     private final DeleteAttachmentUseCase deleteAttachmentUseCase;
     private final GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase;
     private final ITaskRepository repository; // For checklist item operations
+    
+    // ========== State Management ==========
+    // Tasks per board for ProjectActivity
     private final Map<String, MutableLiveData<List<Task>>> tasksPerBoardMap = new HashMap<>();
+    
+    // ✅ NEW: Inbox tasks for InboxActivity
+    private final MutableLiveData<List<Task>> inboxTasksLiveData = new MutableLiveData<>();
+    
     private final MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<Task> selectedTaskLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<TaskComment>> commentsLiveData = new MutableLiveData<>();
@@ -123,6 +143,14 @@ public class TaskViewModel extends ViewModel {
     public LiveData<List<Task>> getTasks() {
         return tasksLiveData;
     }
+    
+    /**
+     * ✅ NEW: Get inbox tasks for InboxActivity
+     * @return LiveData of all user's inbox tasks
+     */
+    public LiveData<List<Task>> getInboxTasks() {
+        return inboxTasksLiveData;
+    }
 
     public LiveData<Task> getSelectedTask() {
         return selectedTaskLiveData;
@@ -158,6 +186,36 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return errorLiveData;
+    }
+    
+    /**
+     * ✅ NEW: Load inbox tasks for user
+     * This replaces the manual load pattern in InboxActivity
+     * @param userId User ID to load tasks for (can be empty for all tasks)
+     */
+    public void loadInboxTasks(String userId) {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+        
+        // Use repository to get all quick tasks (inbox tasks)
+        // These are tasks without a specific board assignment
+        repository.getQuickTasks(new ITaskRepository.RepositoryCallback<List<Task>>() {
+            @Override
+            public void onSuccess(List<Task> result) {
+                loadingLiveData.setValue(false);
+                inboxTasksLiveData.setValue(result != null ? result : new ArrayList<>());
+                android.util.Log.d("TaskViewModel", "✅ Loaded " + 
+                    (result != null ? result.size() : 0) + " inbox tasks");
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+                inboxTasksLiveData.setValue(new ArrayList<>());
+                android.util.Log.e("TaskViewModel", "❌ Failed to load inbox tasks: " + error);
+            }
+        });
     }
 
     public void loadTaskById(String taskId) {
@@ -205,17 +263,64 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
+    /**
+     * ✅ ENHANCED: Create task with optimistic update
+     * Instantly adds task to UI, then syncs with API
+     */
     public void createTask(Task task) {
-        loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-
+        
+        // ✅ Optimistic update: Add task to UI immediately
+        String boardId = task.getBoardId();
+        
+        // Create temp task
+        String tempId = "temp_" + System.currentTimeMillis();
+        Task tempTask = task; // Use the task as-is, will get real ID from server
+        
+        // Add to appropriate LiveData
+        if (boardId != null && !boardId.isEmpty()) {
+            // Board task
+            MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardId);
+            if (boardTasks != null && boardTasks.getValue() != null) {
+                List<Task> updated = new ArrayList<>(boardTasks.getValue());
+                updated.add(0, tempTask); // Add at top
+                boardTasks.setValue(updated);
+            }
+        } else {
+            // Inbox task
+            List<Task> currentInbox = inboxTasksLiveData.getValue();
+            if (currentInbox != null) {
+                List<Task> updated = new ArrayList<>(currentInbox);
+                updated.add(0, tempTask);
+                inboxTasksLiveData.setValue(updated);
+            }
+        }
+        
+        // Now call API
+        loadingLiveData.setValue(true);
         createTaskUseCase.execute(task, new CreateTaskUseCase.Callback<Task>() {
             @Override
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(result);
+                
+                // ✅ Replace temp with real task
                 if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
                     loadTasksByBoard(result.getBoardId());
+                } else {
+                    // Update inbox
+                    List<Task> inbox = inboxTasksLiveData.getValue();
+                    if (inbox != null) {
+                        List<Task> updated = new ArrayList<>();
+                        for (Task t : inbox) {
+                            if (t == tempTask) {
+                                updated.add(result); // Replace temp
+                            } else {
+                                updated.add(t);
+                            }
+                        }
+                        inboxTasksLiveData.setValue(updated);
+                    }
                 }
             }
 
@@ -223,52 +328,311 @@ public class TaskViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Remove temp task
+                if (boardId != null && !boardId.isEmpty()) {
+                    MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardId);
+                    if (boardTasks != null && boardTasks.getValue() != null) {
+                        List<Task> updated = new ArrayList<>();
+                        for (Task t : boardTasks.getValue()) {
+                            if (t != tempTask) {
+                                updated.add(t);
+                            }
+                        }
+                        boardTasks.setValue(updated);
+                    }
+                } else {
+                    List<Task> inbox = inboxTasksLiveData.getValue();
+                    if (inbox != null) {
+                        List<Task> updated = new ArrayList<>();
+                        for (Task t : inbox) {
+                            if (t != tempTask) {
+                                updated.add(t);
+                            }
+                        }
+                        inboxTasksLiveData.setValue(updated);
+                    }
+                }
             }
         });
     }
 
+    /**
+     * ✅ ENHANCED: Update task with optimistic update
+     * Used when editing task fields (title, description, dates, etc.)
+     */
     public void updateTask(String taskId, Task task) {
-        loadingLiveData.setValue(true);
+        if (task == null || taskId == null) return;
+        
         errorLiveData.setValue(null);
-
+        
+        // Find original task for rollback
+        Task originalTask = null;
+        
+        // Find in board tasks
+        String boardId = task.getBoardId();
+        if (boardId != null && !boardId.isEmpty()) {
+            MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardId);
+            if (boardTasks != null && boardTasks.getValue() != null) {
+                for (Task t : boardTasks.getValue()) {
+                    if (t.getId().equals(taskId)) {
+                        originalTask = t;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Find in inbox if not found
+        if (originalTask == null) {
+            List<Task> inbox = inboxTasksLiveData.getValue();
+            if (inbox != null) {
+                for (Task t : inbox) {
+                    if (t.getId().equals(taskId)) {
+                        originalTask = t;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        final Task taskToRollback = originalTask;
+        
+        // ✅ Optimistic update: Show updated task immediately
+        updateTaskInAllLists(originalTask != null ? originalTask : task, t -> task);
+        
+        // Update selected task if it's the same
+        if (selectedTaskLiveData.getValue() != null && 
+            selectedTaskLiveData.getValue().getId().equals(taskId)) {
+            selectedTaskLiveData.setValue(task);
+        }
+        
+        // Now call API
+        loadingLiveData.setValue(true);
         updateTaskUseCase.execute(taskId, task, new UpdateTaskUseCase.Callback<Task>() {
             @Override
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
+                
+                // Update with server version
+                updateTaskInAllLists(task, t -> result);
                 selectedTaskLiveData.setValue(result);
-                if (result.getBoardId() != null && !result.getBoardId().isEmpty()) {
-                    loadTasksByBoard(result.getBoardId());
-                }
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Restore original task
+                if (taskToRollback != null) {
+                    updateTaskInAllLists(task, t -> taskToRollback);
+                    if (selectedTaskLiveData.getValue() != null && 
+                        selectedTaskLiveData.getValue().getId().equals(taskId)) {
+                        selectedTaskLiveData.setValue(taskToRollback);
+                    }
+                }
             }
         });
     }
 
+    /**
+     * ✅ NEW: Toggle task complete status with instant update
+     * Perfect for checkbox in InboxActivity
+     */
+    public void toggleTaskComplete(Task task) {
+        if (task == null) return;
+        
+        errorLiveData.setValue(null);
+        
+        // ✅ Optimistic update: Toggle isDone immediately
+        final boolean newDoneStatus = !task.isDone();
+        final Task.TaskStatus newStatus = newDoneStatus ? Task.TaskStatus.DONE : Task.TaskStatus.TO_DO;
+        
+        // Create updated task with new status (Task is immutable)
+        final Task updatedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            task.getBoardId(),
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            newStatus, // ✅ Changed status
+            task.getPriority(),
+            task.getPosition(),
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt()
+        );
+        
+        // Update in all relevant LiveData
+        updateTaskInAllLists(task, t -> updatedTask);
+        
+        // Update selected task if it's the same
+        if (selectedTaskLiveData.getValue() != null && 
+            selectedTaskLiveData.getValue().getId().equals(task.getId())) {
+            selectedTaskLiveData.setValue(updatedTask);
+        }
+        
+        // Now call API
+        updateTaskUseCase.execute(task.getId(), updatedTask, new UpdateTaskUseCase.Callback<Task>() {
+            @Override
+            public void onSuccess(Task result) {
+                // Already updated optimistically, just refresh with server version
+                updateTaskInAllLists(task, t -> result);
+                if (selectedTaskLiveData.getValue() != null && 
+                    selectedTaskLiveData.getValue().getId().equals(result.getId())) {
+                    selectedTaskLiveData.setValue(result);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Restore original task
+                updateTaskInAllLists(task, t -> task);
+                if (selectedTaskLiveData.getValue() != null && 
+                    selectedTaskLiveData.getValue().getId().equals(task.getId())) {
+                    selectedTaskLiveData.setValue(task);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Helper: Update task in all LiveData lists
+     */
+    private void updateTaskInAllLists(Task task, TaskUpdater updater) {
+        String taskId = task.getId();
+        
+        // Update in board tasks
+        String boardId = task.getBoardId();
+        if (boardId != null && !boardId.isEmpty()) {
+            MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardId);
+            if (boardTasks != null && boardTasks.getValue() != null) {
+                List<Task> updated = new ArrayList<>();
+                for (Task t : boardTasks.getValue()) {
+                    if (t.getId().equals(taskId)) {
+                        updated.add(updater.update(t));
+                    } else {
+                        updated.add(t);
+                    }
+                }
+                boardTasks.setValue(updated);
+            }
+        }
+        
+        // Update in inbox tasks
+        List<Task> inbox = inboxTasksLiveData.getValue();
+        if (inbox != null) {
+            List<Task> updated = new ArrayList<>();
+            for (Task t : inbox) {
+                if (t.getId().equals(taskId)) {
+                    updated.add(updater.update(t));
+                } else {
+                    updated.add(t);
+                }
+            }
+            inboxTasksLiveData.setValue(updated);
+        }
+    }
+    
+    interface TaskUpdater {
+        Task update(Task task);
+    }
+
+    /**
+     * ✅ ENHANCED: Delete task with optimistic update
+     * Instantly removes from UI, then syncs with API
+     */
     public void deleteTask(String taskId) {
-        loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
         Task currentTask = selectedTaskLiveData.getValue();
         final String boardIdToReload = (currentTask != null) ? currentTask.getBoardId() : null;
-
+        
+        // ✅ Optimistic update: Remove from UI immediately
+        Task deletedTask = null;
+        
+        // Remove from board tasks
+        if (boardIdToReload != null && !boardIdToReload.isEmpty()) {
+            MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardIdToReload);
+            if (boardTasks != null && boardTasks.getValue() != null) {
+                List<Task> updated = new ArrayList<>();
+                for (Task t : boardTasks.getValue()) {
+                    if (t.getId().equals(taskId)) {
+                        deletedTask = t; // Save for rollback
+                    } else {
+                        updated.add(t);
+                    }
+                }
+                boardTasks.setValue(updated);
+            }
+        }
+        
+        // Remove from inbox tasks
+        List<Task> inbox = inboxTasksLiveData.getValue();
+        if (inbox != null) {
+            List<Task> updated = new ArrayList<>();
+            for (Task t : inbox) {
+                if (t.getId().equals(taskId)) {
+                    if (deletedTask == null) deletedTask = t;
+                } else {
+                    updated.add(t);
+                }
+            }
+            inboxTasksLiveData.setValue(updated);
+        }
+        
+        final Task taskToRestore = deletedTask;
+        
+        // Now call API
+        loadingLiveData.setValue(true);
         deleteTaskUseCase.execute(taskId, new DeleteTaskUseCase.Callback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
                 selectedTaskLiveData.setValue(null);
-                if (boardIdToReload != null && !boardIdToReload.isEmpty()) {
-                    loadTasksByBoard(boardIdToReload);
-                }
+                // Already removed from UI
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Restore task
+                if (taskToRestore != null) {
+                    if (boardIdToReload != null && !boardIdToReload.isEmpty()) {
+                        MutableLiveData<List<Task>> boardTasks = tasksPerBoardMap.get(boardIdToReload);
+                        if (boardTasks != null && boardTasks.getValue() != null) {
+                            List<Task> updated = new ArrayList<>(boardTasks.getValue());
+                            updated.add(taskToRestore);
+                            boardTasks.setValue(updated);
+                        }
+                    }
+                    
+                    List<Task> inbox = inboxTasksLiveData.getValue();
+                    if (inbox != null) {
+                        List<Task> updated = new ArrayList<>(inbox);
+                        updated.add(taskToRestore);
+                        inboxTasksLiveData.setValue(updated);
+                    }
+                }
             }
         });
     }
@@ -311,14 +675,159 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
+    /**
+     * ✅ ENHANCED: Move task to board with optimistic update
+     * Instant move from Inbox → Board or Board → Board
+     */
     public void moveTaskToBoard(String taskId, String targetBoardId, double position) {
-        loadingLiveData.setValue(true);
+        if (taskId == null || targetBoardId == null) return;
+        
         errorLiveData.setValue(null);
-
+        
+        // Find task to move
+        Task taskToMove = null;
+        String sourceBoardId = null;
+        boolean fromInbox = false;
+        
+        // Check all board tasks
+        for (Map.Entry<String, MutableLiveData<List<Task>>> entry : tasksPerBoardMap.entrySet()) {
+            if (entry.getValue() != null && entry.getValue().getValue() != null) {
+                for (Task t : entry.getValue().getValue()) {
+                    if (t.getId().equals(taskId)) {
+                        taskToMove = t;
+                        sourceBoardId = entry.getKey();
+                        break;
+                    }
+                }
+            }
+            if (taskToMove != null) break;
+        }
+        
+        // Check inbox if not found in boards
+        if (taskToMove == null) {
+            List<Task> inbox = inboxTasksLiveData.getValue();
+            if (inbox != null) {
+                for (Task t : inbox) {
+                    if (t.getId().equals(taskId)) {
+                        taskToMove = t;
+                        fromInbox = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (taskToMove == null) {
+            errorLiveData.setValue("Task not found");
+            return;
+        }
+        
+        final Task originalTask = taskToMove;
+        final String originalBoardId = sourceBoardId;
+        final boolean wasInInbox = fromInbox;
+        
+        // Create moved task with new boardId and position (Task is immutable)
+        final Task movedTask = new Task(
+            originalTask.getId(),
+            originalTask.getProjectId(),
+            targetBoardId, // ✅ New board
+            originalTask.getTitle(),
+            originalTask.getDescription(),
+            originalTask.getIssueKey(),
+            originalTask.getType(),
+            originalTask.getStatus(),
+            originalTask.getPriority(),
+            position, // ✅ New position
+            originalTask.getAssigneeId(),
+            originalTask.getCreatedBy(),
+            originalTask.getSprintId(),
+            originalTask.getEpicId(),
+            originalTask.getParentTaskId(),
+            originalTask.getStartAt(),
+            originalTask.getDueAt(),
+            originalTask.getStoryPoints(),
+            originalTask.getOriginalEstimateSec(),
+            originalTask.getRemainingEstimateSec(),
+            originalTask.getCreatedAt(),
+            originalTask.getUpdatedAt(),
+            originalTask.isCalendarSyncEnabled(),
+            originalTask.getCalendarReminderMinutes(),
+            originalTask.getCalendarEventId(),
+            originalTask.getCalendarSyncedAt()
+        );
+        
+        // ✅ Optimistic update: Remove from source, add to target immediately
+        
+        // Remove from source board
+        if (originalBoardId != null && !originalBoardId.isEmpty()) {
+            MutableLiveData<List<Task>> sourceTasks = tasksPerBoardMap.get(originalBoardId);
+            if (sourceTasks != null && sourceTasks.getValue() != null) {
+                List<Task> updated = new ArrayList<>();
+                for (Task t : sourceTasks.getValue()) {
+                    if (!t.getId().equals(taskId)) {
+                        updated.add(t);
+                    }
+                }
+                sourceTasks.setValue(updated);
+            }
+        }
+        
+        // Remove from inbox if source was inbox
+        if (wasInInbox) {
+            List<Task> inbox = inboxTasksLiveData.getValue();
+            if (inbox != null) {
+                List<Task> updated = new ArrayList<>();
+                for (Task t : inbox) {
+                    if (!t.getId().equals(taskId)) {
+                        updated.add(t);
+                    }
+                }
+                inboxTasksLiveData.setValue(updated);
+            }
+        }
+        
+        // Add to target board
+        MutableLiveData<List<Task>> targetTasks = tasksPerBoardMap.get(targetBoardId);
+        if (targetTasks != null && targetTasks.getValue() != null) {
+            List<Task> updated = new ArrayList<>(targetTasks.getValue());
+            updated.add(movedTask);
+            targetTasks.setValue(updated);
+        } else {
+            // Target board not loaded yet, create new LiveData
+            MutableLiveData<List<Task>> newLiveData = new MutableLiveData<>();
+            List<Task> newList = new ArrayList<>();
+            newList.add(movedTask);
+            newLiveData.setValue(newList);
+            tasksPerBoardMap.put(targetBoardId, newLiveData);
+        }
+        
+        // Update selected task
+        if (selectedTaskLiveData.getValue() != null && 
+            selectedTaskLiveData.getValue().getId().equals(taskId)) {
+            selectedTaskLiveData.setValue(movedTask);
+        }
+        
+        // Now call API
+        loadingLiveData.setValue(true);
         moveTaskToBoardUseCase.execute(taskId, targetBoardId, position, new MoveTaskToBoardUseCase.Callback<Task>() {
             @Override
             public void onSuccess(Task result) {
                 loadingLiveData.setValue(false);
+                
+                // Update with server version in target board
+                MutableLiveData<List<Task>> targetTasks = tasksPerBoardMap.get(targetBoardId);
+                if (targetTasks != null && targetTasks.getValue() != null) {
+                    List<Task> updated = new ArrayList<>();
+                    for (Task t : targetTasks.getValue()) {
+                        if (t.getId().equals(taskId)) {
+                            updated.add(result); // Replace with server version
+                        } else {
+                            updated.add(t);
+                        }
+                    }
+                    targetTasks.setValue(updated);
+                }
+                
                 selectedTaskLiveData.setValue(result);
             }
 
@@ -326,6 +835,46 @@ public class TaskViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Restore to original location
+                
+                // Remove from target board
+                MutableLiveData<List<Task>> targetTasks = tasksPerBoardMap.get(targetBoardId);
+                if (targetTasks != null && targetTasks.getValue() != null) {
+                    List<Task> updated = new ArrayList<>();
+                    for (Task t : targetTasks.getValue()) {
+                        if (!t.getId().equals(taskId)) {
+                            updated.add(t);
+                        }
+                    }
+                    targetTasks.setValue(updated);
+                }
+                
+                // Restore to source board
+                if (originalBoardId != null && !originalBoardId.isEmpty()) {
+                    MutableLiveData<List<Task>> sourceTasks = tasksPerBoardMap.get(originalBoardId);
+                    if (sourceTasks != null && sourceTasks.getValue() != null) {
+                        List<Task> updated = new ArrayList<>(sourceTasks.getValue());
+                        updated.add(originalTask);
+                        sourceTasks.setValue(updated);
+                    }
+                }
+                
+                // Restore to inbox if it was from inbox
+                if (wasInInbox) {
+                    List<Task> inbox = inboxTasksLiveData.getValue();
+                    if (inbox != null) {
+                        List<Task> updated = new ArrayList<>(inbox);
+                        updated.add(originalTask);
+                        inboxTasksLiveData.setValue(updated);
+                    }
+                }
+                
+                // Restore selected task
+                if (selectedTaskLiveData.getValue() != null && 
+                    selectedTaskLiveData.getValue().getId().equals(taskId)) {
+                    selectedTaskLiveData.setValue(originalTask);
+                }
             }
         });
     }
