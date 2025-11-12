@@ -30,6 +30,27 @@ public class ProjectDTO {
 
     @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
+    
+    // Nested workspace object for workspaceName
+    @SerializedName("workspaces")
+    private WorkspaceInfo workspaces;
+    
+    // Inner class for workspace info
+    public static class WorkspaceInfo {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        public String getId() {
+            return id;
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
 
     public String getId() {
         return id;
@@ -101,5 +122,13 @@ public class ProjectDTO {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public WorkspaceInfo getWorkspaces() {
+        return workspaces;
+    }
+    
+    public void setWorkspaces(WorkspaceInfo workspaces) {
+        this.workspaces = workspaces;
     }
 }

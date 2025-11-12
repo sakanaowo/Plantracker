@@ -6,7 +6,8 @@ public class Project {
     private final String name;
     private final String description;
     private final String key; 
-    private final String boardType; 
+    private final String boardType;
+    private String workspaceName; // Name of the workspace (for display)
 
     public Project(String id, String workspaceId, String name, String description,
                    String key, String boardType) {
@@ -16,6 +17,17 @@ public class Project {
         this.description = description;
         this.key = key;
         this.boardType = boardType;
+    }
+    
+    public Project(String id, String workspaceId, String name, String description,
+                   String key, String boardType, String workspaceName) {
+        this.id = id;
+        this.workspaceId = workspaceId;
+        this.name = name;
+        this.description = description;
+        this.key = key;
+        this.boardType = boardType;
+        this.workspaceName = workspaceName;
     }
 
     public String getId() {
@@ -40,6 +52,14 @@ public class Project {
 
     public String getBoardType() {
         return boardType;
+    }
+    
+    public String getWorkspaceName() {
+        return workspaceName;
+    }
+    
+    public void setWorkspaceName(String workspaceName) {
+        this.workspaceName = workspaceName;
     }
 
     public boolean isKanban() {

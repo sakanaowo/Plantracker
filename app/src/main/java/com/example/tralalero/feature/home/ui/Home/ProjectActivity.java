@@ -62,7 +62,7 @@ import java.util.Map;
 
 import com.google.android.material.tabs.TabLayout;
 
-public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener, BoardAdapter.OnTaskBoardChangeListener {
+public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener, BoardAdapter.OnTaskBoardChangeListener, BoardAdapter.OnTaskStatusChangeListener {
     private static final String TAG = "ProjectActivity";
     private static final int REQUEST_CODE_CREATE_TASK = 2001;
     private static final int REQUEST_CODE_EDIT_TASK = 2002;
@@ -615,5 +615,18 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         // ❌ OLD: Update tasksPerBoard map manually
         // ❌ OLD: boardAdapter.notifyDataSetChanged()
         // Observer will auto-update when ProjectViewModel.tasksPerBoardLiveData changes
+    }
+    
+    @Override
+    public void onTaskStatusChanged(Task task, boolean isDone) {
+        Log.d(TAG, "onTaskStatusChanged: task=" + task.getTitle() + ", isDone=" + isDone);
+        
+        // Update task status to DONE or TO_DO
+        Task.TaskStatus newStatus = isDone ? Task.TaskStatus.DONE : Task.TaskStatus.TO_DO;
+        
+        // Update via ViewModel (Task is immutable, ViewModel will create new instance)
+        taskViewModel.updateTaskStatus(task.getId(), newStatus);
+        
+        Toast.makeText(this, isDone ? "✅ Marked as done" : "⬜ Marked as to-do", Toast.LENGTH_SHORT).show();
     }
 }

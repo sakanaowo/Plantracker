@@ -449,6 +449,77 @@ public class TaskViewModel extends ViewModel {
     }
 
     /**
+     * ✅ Update task status (for checkbox toggle)
+     */
+    public void updateTaskStatus(String taskId, Task.TaskStatus newStatus) {
+        if (taskId == null || newStatus == null) return;
+        
+        // Find task
+        Task originalTask = findTaskById(taskId);
+        if (originalTask == null) {
+            return;
+        }
+        
+        // Create new task with updated status (Task is immutable)
+        Task updatedTask = new Task(
+            originalTask.getId(),
+            originalTask.getProjectId(),
+            originalTask.getBoardId(),
+            originalTask.getTitle(),
+            originalTask.getDescription(),
+            originalTask.getIssueKey(),
+            originalTask.getType(),
+            newStatus,  // Updated status
+            originalTask.getPriority(),
+            originalTask.getPosition(),
+            originalTask.getAssigneeId(),
+            originalTask.getCreatedBy(),
+            originalTask.getSprintId(),
+            originalTask.getEpicId(),
+            originalTask.getParentTaskId(),
+            originalTask.getStartAt(),
+            originalTask.getDueAt(),
+            originalTask.getStoryPoints(),
+            originalTask.getOriginalEstimateSec(),
+            originalTask.getRemainingEstimateSec(),
+            originalTask.getCreatedAt(),
+            originalTask.getUpdatedAt(),
+            originalTask.isCalendarSyncEnabled(),
+            originalTask.getCalendarReminderMinutes(),
+            originalTask.getCalendarEventId(),
+            originalTask.getCalendarSyncedAt()
+        );
+        
+        // Call API to persist
+        updateTask(taskId, updatedTask);
+    }
+    
+    private Task findTaskById(String taskId) {
+        // Search in board tasks
+        for (MutableLiveData<List<Task>> boardTasks : tasksPerBoardMap.values()) {
+            if (boardTasks.getValue() != null) {
+                for (Task t : boardTasks.getValue()) {
+                    if (t.getId().equals(taskId)) {
+                        return t;
+                    }
+                }
+            }
+        }
+        
+        // Search in inbox
+        List<Task> inbox = inboxTasksLiveData.getValue();
+        if (inbox != null) {
+            for (Task t : inbox) {
+                if (t.getId().equals(taskId)) {
+                    return t;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * ✅ NEW: Toggle task complete status with instant update
      * Perfect for checkbox in InboxActivity
      */

@@ -143,6 +143,13 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
             Intent intent = new Intent(AccountActivity.this, SettingsActivity.class);
             startActivity(intent);
         });
+        
+        // Workspace button
+        LinearLayout layoutWorkspaces = findViewById(R.id.layoutWorkspaces);
+        layoutWorkspaces.setOnClickListener(v -> {
+            Intent intent = new Intent(AccountActivity.this, WorkspaceListActivity.class);
+            startActivity(intent);
+        });
 
         setupBottomNavigation(3);
 

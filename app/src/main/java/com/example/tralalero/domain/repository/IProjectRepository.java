@@ -20,6 +20,11 @@ public interface IProjectRepository {
      * Get project summary statistics
      */
     void getProjectSummary(String projectId, RepositoryCallback<ProjectSummaryResponse> callback);
+    
+    /**
+     * Get all projects accessible by the current user (across all workspaces)
+     */
+    void getAllUserProjects(RepositoryCallback<java.util.List<Project>> callback);
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);

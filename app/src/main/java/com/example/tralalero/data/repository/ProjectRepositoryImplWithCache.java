@@ -489,6 +489,51 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
         }
     }
     
+    // ==================== GET ALL USER PROJECTS ====================
+    
+    @Override
+    public void getAllUserProjects(RepositoryCallback<List<Project>> callback) {
+        if (callback == null) {
+            Log.e(TAG, "getAllUserProjects: callback is null");
+            return;
+        }
+        
+        // This cached repository doesn't support getAllUserProjects yet
+        // Delegate to API-only implementation
+        try {
+            apiService.getAllUserProjects().enqueue(new Callback<List<ProjectDTO>>() {
+                @Override
+                public void onResponse(Call<List<ProjectDTO>> call, Response<List<ProjectDTO>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        try {
+                            List<Project> projects = new ArrayList<>();
+                            for (ProjectDTO dto : response.body()) {
+                                projects.add(ProjectMapper.toDomain(dto));
+                            }
+                            mainHandler.post(() -> callback.onSuccess(projects));
+                            
+                            // TODO: Cache all projects if needed
+                            Log.d(TAG, "✓ Loaded " + projects.size() + " user projects from API");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error processing projects", e);
+                            mainHandler.post(() -> callback.onError("Error processing projects: " + e.getMessage()));
+                        }
+                    } else {
+                        mainHandler.post(() -> callback.onError("Failed to get user projects: " + response.code()));
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<List<ProjectDTO>> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all user projects", e);
+            mainHandler.post(() -> callback.onError("Error: " + e.getMessage()));
+        }
+    }
+    
     // ==================== CACHE MANAGEMENT ====================
     
     /**

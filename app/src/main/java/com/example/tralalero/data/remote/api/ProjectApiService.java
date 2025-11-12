@@ -15,6 +15,13 @@ public interface ProjectApiService {
     @GET("projects")
     Call<List<ProjectDTO>> getProjectsByWorkspace(@Query("workspaceId") String workspaceId);
 
+    /**
+     * Get all projects accessible by the current user (across all workspaces)
+     * @return List of all projects
+     */
+    @GET("projects")
+    Call<List<ProjectDTO>> getAllUserProjects();
+
 
     @GET("projects/{id}")
     Call<ProjectDTO> getProjectById(@Path("id") String projectId);

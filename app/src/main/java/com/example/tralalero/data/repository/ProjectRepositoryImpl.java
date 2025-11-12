@@ -170,4 +170,27 @@ public class ProjectRepositoryImpl implements IProjectRepository {
             }
         });
     }
+    
+    @Override
+    public void getAllUserProjects(RepositoryCallback<java.util.List<Project>> callback) {
+        apiService.getAllUserProjects().enqueue(new Callback<java.util.List<ProjectDTO>>() {
+            @Override
+            public void onResponse(Call<java.util.List<ProjectDTO>> call, Response<java.util.List<ProjectDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    java.util.List<Project> projects = new java.util.ArrayList<>();
+                    for (ProjectDTO dto : response.body()) {
+                        projects.add(ProjectMapper.toDomain(dto));
+                    }
+                    callback.onSuccess(projects);
+                } else {
+                    callback.onError("Failed to get user projects: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<java.util.List<ProjectDTO>> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
 }

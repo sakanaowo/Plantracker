@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -31,35 +32,33 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.App.App;
 import com.example.tralalero.R;
-import com.example.tralalero.adapter.HomeAdapter;
-import com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache;
-import com.example.tralalero.domain.model.Workspace;
-import com.example.tralalero.domain.repository.IWorkspaceRepository;
+import com.example.tralalero.adapter.ProjectAdapter;
+import com.example.tralalero.data.repository.ProjectRepositoryImpl;
+import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.domain.repository.IProjectRepository;
 import com.example.tralalero.feature.home.ui.BaseActivity;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.service.MyFirebaseMessagingService;
-import com.example.tralalero.test.RepositoryTestActivity;
 import com.example.tralalero.util.FCMHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 
 import java.util.List;
 
 public class HomeActivity extends BaseActivity {
     private RecyclerView recyclerBoard;
-    private HomeAdapter homeAdapter;
-    private SwipeRefreshLayout swipeRefreshLayout;  // ← ADDED
+    private ProjectAdapter projectAdapter;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private static final String TAG = "HomeActivity";
-    private WorkspaceViewModel workspaceViewModel;
+    private IProjectRepository projectRepository;
     private AuthViewModel authViewModel;
     
-    // Broadcast receiver for workspace updates
-    private BroadcastReceiver workspaceUpdateReceiver = new BroadcastReceiver() {
+    // Broadcast receiver for project updates
+    private BroadcastReceiver projectUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "Received WORKSPACE_UPDATED broadcast");
-            forceRefreshWorkspaces();
+            Log.d(TAG, "Received PROJECT_UPDATED broadcast");
+            loadProjects();
         }
     };
 
@@ -76,96 +75,56 @@ public class HomeActivity extends BaseActivity {
                 }
             });
     private void setupViewModels() {
-        workspaceViewModel = new ViewModelProvider(
-                this,
-                ViewModelFactoryProvider.provideWorkspaceViewModelFactory()
-        ).get(WorkspaceViewModel.class);
+        projectRepository = new ProjectRepositoryImpl(this);
         authViewModel = new ViewModelProvider(
                 this,
                 ViewModelFactoryProvider.provideAuthViewModelFactory()
         ).get(AuthViewModel.class);
     }
-    private void observeWorkspaceViewModel() {
-        workspaceViewModel.getWorkspaces().observe(this, workspaces -> {
-            if (workspaces != null && !workspaces.isEmpty()) {
-                Log.d(TAG, "Loaded " + workspaces.size() + " workspaces from ViewModel");
-                homeAdapter.setWorkspaceList(workspaces);
-            } else {
-                Log.d(TAG, "No workspaces found");
-            }
-        });
-        workspaceViewModel.isLoading().observe(this, isLoading -> {
-            if (isLoading) {
-                // TODO: show loading indicator
-                Log.d(TAG, "Loading workspaces...");
-            } else {
-                // TODO: hide loading indicator
-                Log.d(TAG, "Finished loading workspaces.");
-            }
-        });
-        workspaceViewModel.getError().observe(this, error -> {
-            if (error != null) {
-                Toast.makeText(this, "Error loading workspaces: " + error, Toast.LENGTH_SHORT).show();
-                workspaceViewModel.clearError();
-            }
-        });
-    }
 
-    private void loadWorkspacesWithCache() {
-        Log.d(TAG, "Loading workspaces with cache...");
+    private void loadProjects() {
+        Log.d(TAG, "Loading all user projects...");
         final long startTime = System.currentTimeMillis();
+        
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(true);
+        }
 
-        App.dependencyProvider.getWorkspaceRepositoryWithCache()
-            .getWorkspaces(new WorkspaceRepositoryImplWithCache.WorkspaceCallback() {
-                @Override
-                public void onSuccess(List<Workspace> workspaces) {
-                    long duration = System.currentTimeMillis() - startTime;
+        projectRepository.getAllUserProjects(new IProjectRepository.RepositoryCallback<List<Project>>() {
+            @Override
+            public void onSuccess(List<Project> projects) {
+                long duration = System.currentTimeMillis() - startTime;
+                
+                runOnUiThread(() -> {
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
 
-                    runOnUiThread(() -> {
-                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
+                    if (projects != null && !projects.isEmpty()) {
+                        projectAdapter.setProjectList(projects);
+                        String message = "✓ Loaded " + projects.size() + " projects (" + duration + "ms)";
+                        Log.i(TAG, message);
+                        Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.d(TAG, "No projects found");
+                        Toast.makeText(HomeActivity.this, "No projects available", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
 
-                        if (workspaces != null && !workspaces.isEmpty()) {
-                            homeAdapter.setWorkspaceList(workspaces);
-                            String message;
-                            if (duration < 100) {
-                                message = "⚡ Cache: " + duration + "ms (" + workspaces.size() + " workspaces)";
-                                Log.i(TAG, "CACHE HIT: " + duration + "ms");
-                            } else {
-                                message = "🌐 API: " + duration + "ms (" + workspaces.size() + " workspaces)";
-                                Log.i(TAG, "API CALL: " + duration + "ms");
-                            }
-                            Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.d(TAG, "No workspaces found");
-                        }
-                    });
-                }
-
-                @Override
-                public void onCacheEmpty() {
-                    Log.d(TAG, "Cache empty, falling back to API...");
-                    runOnUiThread(() -> {
-                        workspaceViewModel.loadWorkspaces();
-                    });
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Log.e(TAG, "Cache error: " + e.getMessage());
-                    runOnUiThread(() -> {
-                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
-
-                        Toast.makeText(HomeActivity.this,
-                            "Error loading from cache, trying API...", 
-                            Toast.LENGTH_SHORT).show();
-                        workspaceViewModel.loadWorkspaces();
-                    });
-                }
-            });
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error loading projects: " + error);
+                runOnUiThread(() -> {
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                    Toast.makeText(HomeActivity.this,
+                        "Error loading projects: " + error, 
+                        Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void setupSwipeRefresh() {
@@ -178,24 +137,9 @@ public class HomeActivity extends BaseActivity {
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "User triggered pull-to-refresh");
-                forceRefreshWorkspaces();
+                loadProjects();
             });
         }
-    }
-
-    private void forceRefreshWorkspaces() {
-        Log.d(TAG, "Force refreshing workspaces from API...");
-        App.dependencyProvider.clearWorkspaceCache();
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setRefreshing(true);
-        }
-        loadWorkspacesWithCache();
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
-                swipeRefreshLayout.setRefreshing(false);
-                Log.d(TAG, "Refresh timeout");
-            }
-        }, 5000);
     }
 
     @Override
@@ -219,18 +163,18 @@ public class HomeActivity extends BaseActivity {
         });
 
         setupViewModels();
-        observeWorkspaceViewModel();
         setupRecyclerView();
         setupSwipeRefresh();
-        loadWorkspacesWithCache();  // Person 1: Cache-first approach
+        loadProjects();  // Load all user projects
         
-        // Register broadcast receiver for workspace updates
+        // Register broadcast receiver for project updates
         androidx.localbroadcastmanager.content.LocalBroadcastManager
                 .getInstance(this)
-                .registerReceiver(workspaceUpdateReceiver, new IntentFilter("WORKSPACE_UPDATED"));
+                .registerReceiver(projectUpdateReceiver, new IntentFilter("PROJECT_UPDATED"));
 
         setupTestRepositoryButton();
         setupNotificationPermission(); // Request notification permission
+        setupAddProjectButton();
 
         EditText cardNew = findViewById(R.id.cardNew);
         LinearLayout inboxForm = findViewById(R.id.inboxForm);
@@ -258,17 +202,21 @@ public class HomeActivity extends BaseActivity {
     private void setupRecyclerView() {
         recyclerBoard = findViewById(R.id.recyclerBoard);
         recyclerBoard.setLayoutManager(new LinearLayoutManager(this));
-        homeAdapter = new HomeAdapter(this);
-        homeAdapter.setOnWorkspaceClickListener(workspace -> {
-            String workspaceId = workspace.getId();
-            String workspaceName = workspace.getName();
-            Log.d(TAG, "Clicked workspace: " + workspaceName + " (ID: " + workspaceId + ")");
+        projectAdapter = new ProjectAdapter(this);
+        projectAdapter.setOnProjectClickListener(project -> {
+            String projectId = project.getId();
+            String projectName = project.getName();
+            String workspaceId = project.getWorkspaceId();
+            Log.d(TAG, "Clicked project: " + projectName + " (ID: " + projectId + ")");
+            
+            // Navigate to WorkspaceActivity with project selected
             Intent intent = new Intent(HomeActivity.this, WorkspaceActivity.class);
             intent.putExtra("WORKSPACE_ID", workspaceId);
-            intent.putExtra("WORKSPACE_NAME", workspaceName);
+            intent.putExtra("PROJECT_ID", projectId);
+            intent.putExtra("PROJECT_NAME", projectName);
             startActivity(intent);
         });
-        recyclerBoard.setAdapter(homeAdapter);
+        recyclerBoard.setAdapter(projectAdapter);
     }
     private void setupTestRepositoryButton() {
         FloatingActionButton fabTest = findViewById(R.id.fabTestRepository);
@@ -277,6 +225,111 @@ public class HomeActivity extends BaseActivity {
 
             fabTest.setVisibility(View.GONE);
         }
+    }
+    
+    /**
+     * Setup add project button to show workspace selection dialog
+     */
+    private void setupAddProjectButton() {
+        ImageButton btnAddProject = findViewById(R.id.btnAddProject);
+        if (btnAddProject != null) {
+            btnAddProject.setOnClickListener(v -> {
+                showCreateProjectDialog();
+            });
+        }
+    }
+    
+    /**
+     * Show dialog to create a new project
+     * User needs to select a workspace first
+     */
+    private void showCreateProjectDialog() {
+        // First, get list of workspaces to let user choose
+        App.dependencyProvider.getWorkspaceRepositoryWithCache()
+            .getWorkspaces(new com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache.WorkspaceCallback() {
+                @Override
+                public void onSuccess(List<com.example.tralalero.domain.model.Workspace> workspaces) {
+                    runOnUiThread(() -> {
+                        if (workspaces == null || workspaces.isEmpty()) {
+                            Toast.makeText(HomeActivity.this, 
+                                "No workspace available. Please create a workspace first.", 
+                                Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        showWorkspaceSelectionDialog(workspaces);
+                    });
+                }
+                
+                @Override
+                public void onCacheEmpty() {
+                    runOnUiThread(() -> {
+                        Toast.makeText(HomeActivity.this, 
+                            "Loading workspaces...", 
+                            Toast.LENGTH_SHORT).show();
+                    });
+                }
+                
+                @Override
+                public void onError(Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(HomeActivity.this, 
+                            "Error loading workspaces: " + e.getMessage(), 
+                            Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+    }
+    
+    /**
+     * Show dialog to select workspace and create project
+     */
+    private void showWorkspaceSelectionDialog(List<com.example.tralalero.domain.model.Workspace> workspaces) {
+        String[] workspaceNames = new String[workspaces.size()];
+        for (int i = 0; i < workspaces.size(); i++) {
+            workspaceNames[i] = workspaces.get(i).getName();
+        }
+        
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Select Workspace")
+            .setItems(workspaceNames, (dialog, which) -> {
+                com.example.tralalero.domain.model.Workspace selectedWorkspace = workspaces.get(which);
+                showProjectNameDialog(selectedWorkspace.getId(), selectedWorkspace.getName());
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Show dialog to enter project name and description
+     */
+    private void showProjectNameDialog(String workspaceId, String workspaceName) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_create_project, null);
+        EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
+        EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
+        
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Create Project in " + workspaceName)
+            .setView(dialogView)
+            .setPositiveButton("Create", (dialog, which) -> {
+                String projectName = etProjectName.getText().toString().trim();
+                String projectDescription = etProjectDescription.getText().toString().trim();
+                
+                if (projectName.isEmpty()) {
+                    Toast.makeText(this, "Project name cannot be empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Navigate to WorkspaceActivity to create project
+                Intent intent = new Intent(this, WorkspaceActivity.class);
+                intent.putExtra("WORKSPACE_ID", workspaceId);
+                intent.putExtra("WORKSPACE_NAME", workspaceName);
+                intent.putExtra("CREATE_PROJECT", true);
+                intent.putExtra("PROJECT_NAME", projectName);
+                intent.putExtra("PROJECT_DESCRIPTION", projectDescription);
+                startActivity(intent);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     /**
@@ -332,6 +385,6 @@ public class HomeActivity extends BaseActivity {
         // Unregister broadcast receiver
         androidx.localbroadcastmanager.content.LocalBroadcastManager
                 .getInstance(this)
-                .unregisterReceiver(workspaceUpdateReceiver);
+                .unregisterReceiver(projectUpdateReceiver);
     }
 }

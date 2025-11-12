@@ -22,6 +22,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     private List<Task> taskList;
     private OnTaskClickListener listener;
     private OnTaskMoveListener moveListener;
+    private OnTaskStatusChangeListener statusChangeListener;
 
     public interface OnTaskClickListener {
         void onTaskClick(Task task);
@@ -30,6 +31,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     public interface OnTaskMoveListener {
         void onMoveLeft(Task task, int position);
         void onMoveRight(Task task, int position);
+    }
+    
+    public interface OnTaskStatusChangeListener {
+        void onTaskStatusChanged(Task task, boolean isDone);
     }
 
     public TaskAdapter(List<Task> taskList) {
@@ -42,6 +47,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
 
     public void setOnTaskMoveListener(OnTaskMoveListener moveListener) {
         this.moveListener = moveListener;
+    }
+    
+    public void setOnTaskStatusChangeListener(OnTaskStatusChangeListener statusChangeListener) {
+        this.statusChangeListener = statusChangeListener;
     }
 
     @NonNull
@@ -57,7 +66,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         Task task = taskList.get(position);
         boolean isFirst = position == 0;
         boolean isLast = position == taskList.size() - 1;
-        holder.bind(task, listener, moveListener, isFirst, isLast);
+        holder.bind(task, listener, moveListener, statusChangeListener, isFirst, isLast);
     }
 
     @Override
@@ -114,7 +123,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         }
 
         void bind(Task task, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
-                  boolean isFirst, boolean isLast) {
+                  OnTaskStatusChangeListener statusChangeListener, boolean isFirst, boolean isLast) {
             tvTaskTitle.setText(task.getTitle());
 
             // ✅ FIX: Check actual task status (enum comparison)
@@ -122,20 +131,26 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             checkBox.setChecked(isCompleted);
             tvTaskTitle.setAlpha(isCompleted ? 0.5f : 1f);
 
+            // Clear previous listeners to avoid duplicate callbacks
+            checkBox.setOnCheckedChangeListener(null);
+            checkBox.setOnClickListener(null);
+            
+            // Set new listener for checkbox
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                tvTaskTitle.setAlpha(isChecked ? 0.5f : 1f);
+                // Only trigger if user actually changed it (not programmatic)
+                if (buttonView.isPressed()) {
+                    tvTaskTitle.setAlpha(isChecked ? 0.5f : 1f);
+                    if (statusChangeListener != null) {
+                        Log.d(TAG, "Checkbox changed: task=" + task.getTitle() + ", isDone=" + isChecked);
+                        statusChangeListener.onTaskStatusChanged(task, isChecked);
+                    }
+                }
             });
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onTaskClick(task);
                 }
-            });
-
-            // Stop checkbox from consuming clicks
-            checkBox.setOnClickListener(v -> {
-                // Prevent propagation to itemView
-                v.setClickable(true);
             });
             
             // Setup move left button

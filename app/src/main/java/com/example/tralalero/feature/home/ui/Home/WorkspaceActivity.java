@@ -58,6 +58,11 @@ public class WorkspaceActivity extends HomeActivity {
         });
         workspaceId = getIntent().getStringExtra("WORKSPACE_ID");
         workspaceName = getIntent().getStringExtra("WORKSPACE_NAME");
+        String projectId = getIntent().getStringExtra("PROJECT_ID");
+        String projectName = getIntent().getStringExtra("PROJECT_NAME");
+        boolean shouldCreateProject = getIntent().getBooleanExtra("CREATE_PROJECT", false);
+        String newProjectName = getIntent().getStringExtra("PROJECT_NAME");
+        String newProjectDescription = getIntent().getStringExtra("PROJECT_DESCRIPTION");
 
         if (workspaceId == null || workspaceId.isEmpty()) {
             Toast.makeText(this, "Error: No workspace ID provided", Toast.LENGTH_SHORT).show();
@@ -68,6 +73,15 @@ public class WorkspaceActivity extends HomeActivity {
         Log.d(TAG, "=== WorkspaceActivity Started ===");
         Log.d(TAG, "Workspace ID: " + workspaceId);
         Log.d(TAG, "Workspace Name: " + workspaceName);
+        Log.d(TAG, "Project ID: " + projectId);
+        Log.d(TAG, "Should Create Project: " + shouldCreateProject);
+        
+        // Check if we should open a specific project directly
+        if (projectId != null && !projectId.isEmpty() && !shouldCreateProject) {
+            Log.d(TAG, "Opening project directly: " + projectName);
+            openProjectActivity(projectId, projectName != null ? projectName : "Project");
+            return; // Don't show workspace list
+        }
         
         setupViewModels();
         setupUI();
@@ -76,6 +90,12 @@ public class WorkspaceActivity extends HomeActivity {
         
         // ✅ Trigger initial load once - selectWorkspace auto-loads projects
         workspaceViewModel.selectWorkspace(workspaceId);
+        
+        // Check if we should create a new project automatically
+        if (shouldCreateProject && newProjectName != null && !newProjectName.isEmpty()) {
+            Log.d(TAG, "Auto-creating project: " + newProjectName);
+            createProject(newProjectName, newProjectDescription != null ? newProjectDescription : "");
+        }
         
         LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
         btnCreateBoard.setOnClickListener(v -> showCreateProjectDialog());
@@ -229,6 +249,20 @@ public class WorkspaceActivity extends HomeActivity {
         intent.putExtra("project_name", projectName);
         intent.putExtra("workspace_id", workspaceId);
         startActivity(intent);
+    }
+    
+    /**
+     * Open ProjectActivity directly (when coming from HomeActivity with specific project)
+     */
+    private void openProjectActivity(String projectId, String projectName) {
+        Log.d(TAG, "Opening ProjectActivity directly: " + projectName);
+        
+        Intent intent = new Intent(this, ProjectActivity.class);
+        intent.putExtra("project_id", projectId);
+        intent.putExtra("project_name", projectName);
+        intent.putExtra("workspace_id", workspaceId);
+        startActivity(intent);
+        finish(); // Close WorkspaceActivity since we're going directly to project
     }
 
     // ❌ DELETE onActivityResult - LiveData auto-updates, no manual reload needed

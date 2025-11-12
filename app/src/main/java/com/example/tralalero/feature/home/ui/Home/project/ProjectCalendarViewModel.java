@@ -31,6 +31,7 @@ public class ProjectCalendarViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> syncSuccessLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> calendarNotConnectedLiveData = new MutableLiveData<>();
     
     private List<CalendarEvent> cachedEvents = new ArrayList<>();
     private SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -58,6 +59,10 @@ public class ProjectCalendarViewModel extends ViewModel {
     
     public LiveData<Boolean> getSyncSuccess() {
         return syncSuccessLiveData;
+    }
+    
+    public LiveData<Boolean> getCalendarNotConnected() {
+        return calendarNotConnectedLiveData;
     }
     
     /**
@@ -99,8 +104,15 @@ public class ProjectCalendarViewModel extends ViewModel {
                 @Override
                 public void onError(String error) {
                     loadingLiveData.postValue(false);
-                    errorLiveData.postValue(error);
-                    Log.e(TAG, "Error loading events: " + error);
+                    
+                    // Check if it's "not connected" case
+                    if ("CALENDAR_NOT_CONNECTED".equals(error)) {
+                        Log.w(TAG, "Google Calendar not connected - prompting user");
+                        calendarNotConnectedLiveData.postValue(true);
+                    } else {
+                        errorLiveData.postValue(error);
+                        Log.e(TAG, "Error loading events: " + error);
+                    }
                     
                     // Fallback to empty list
                     cachedEvents = new ArrayList<>();

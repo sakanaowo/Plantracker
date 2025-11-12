@@ -27,6 +27,7 @@
         <activity android:name=".feature.auth.ui.forgot.ForgotPasswordActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.Home.HomeActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.AccountActivity" android:exported="false" />
+        <activity android:name=".feature.home.ui.WorkspaceListActivity" android:exported="false" android:label="Workspaces" />
         <activity android:name=".feature.home.ui.EditProfileActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.InboxActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.ActivityActivity" android:exported="false" />

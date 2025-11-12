@@ -164,11 +164,12 @@ public class CalendarRepositoryImpl implements ICalendarRepository {
                         Log.d(TAG, "✅ Imported " + events.size() + " events from Google Calendar");
                         callback.onSuccess(events);
                     } else {
-                        // Return empty list if user hasn't connected Google Calendar
+                        // Check if user hasn't connected Google Calendar
                         String message = syncResponse.getMessage();
                         if (message != null && message.contains("not connected")) {
                             Log.w(TAG, "⚠️ Google Calendar not connected: " + message);
-                            callback.onSuccess(new ArrayList<>());  // Return empty list, not error
+                            // Use special error code to trigger UI prompt
+                            callback.onError("CALENDAR_NOT_CONNECTED");
                         } else {
                             Log.e(TAG, "❌ Failed to sync: " + message);
                             callback.onError(message != null ? message : "Failed to sync events");

@@ -29,7 +29,7 @@ android {
             buildConfigField(
                 "String",
                 "WS_URL",
-                "\"wss://plantracker-backend.onrender.com/notifications\""
+                "\"wss://plantracker-backend-1.onrender.com/notifications\""
             )
 //            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:3000/notifications\"")
         }

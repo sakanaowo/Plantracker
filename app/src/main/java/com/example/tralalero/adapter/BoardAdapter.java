@@ -174,6 +174,16 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                         }
                     }
                 });
+                
+                // Setup checkbox status change listener
+                taskAdapter.setOnTaskStatusChangeListener(new TaskAdapter.OnTaskStatusChangeListener() {
+                    @Override
+                    public void onTaskStatusChanged(Task task, boolean isDone) {
+                        if (listener instanceof OnTaskStatusChangeListener) {
+                            ((OnTaskStatusChangeListener) listener).onTaskStatusChanged(task, isDone);
+                        }
+                    }
+                });
 
                 btnAddCard.setOnClickListener(v -> {
                     listener.onAddCardClick(board);
@@ -194,5 +204,14 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
          * @param direction -1 for left (previous board), +1 for right (next board)
          */
         void onMoveTaskToBoard(Task task, Board currentBoard, int direction);
+    }
+    
+    public interface OnTaskStatusChangeListener {
+        /**
+         * Called when task checkbox is toggled
+         * @param task The task whose status changed
+         * @param isDone true if marked as done, false otherwise
+         */
+        void onTaskStatusChanged(Task task, boolean isDone);
     }
 }

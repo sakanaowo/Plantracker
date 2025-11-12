@@ -209,6 +209,15 @@ public class ProjectCalendarFragment extends Fragment {
                 Toast.makeText(getContext(), "Calendar synced successfully", Toast.LENGTH_SHORT).show();
             }
         });
+        
+        // Observe calendar not connected
+        viewModel.getCalendarNotConnected().observe(getViewLifecycleOwner(), notConnected -> {
+            if (notConnected != null && notConnected) {
+                Toast.makeText(getContext(), 
+                    "Connect Google Calendar in Account settings to sync events", 
+                    Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void updateDateDisplay() {

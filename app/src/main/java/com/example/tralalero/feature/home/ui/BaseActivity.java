@@ -31,7 +31,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     private void navigateToScreen(int position) {
         Intent intent = null;
         switch (position) {
-            case 0: // Workspace
+            case 0: // Home (Projects)
                 intent = new Intent(this, HomeActivity.class);
                 break;
             case 1: // Quick Access
