@@ -42,4 +42,7 @@
     <color name="priority_low">#4CAF50</color> <!-- green -->
     <color name="priority_medium">#FF9800</color> <!-- orange -->
     <color name="priority_high">#F44336</color> <!-- red -->
+    
+    <!-- Drag & Drop colors -->
+    <color name="drag_target_highlight">#E3F2FD</color> <!-- Light blue highlight -->
 </resources>

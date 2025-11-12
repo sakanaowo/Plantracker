@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.util.CrossBoardDragHelper;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.List;
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     private static final String TAG = "TaskAdapter";
     private List<Task> taskList;
+    private String boardId; // ✅ NEW: Track which board this adapter belongs to
     private OnTaskClickListener listener;
     private OnTaskMoveListener moveListener;
     private OnTaskStatusChangeListener statusChangeListener;
@@ -39,6 +41,12 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
 
     public TaskAdapter(List<Task> taskList) {
         this.taskList = taskList;
+    }
+    
+    // ✅ NEW: Constructor with boardId for cross-board drag
+    public TaskAdapter(List<Task> taskList, String boardId) {
+        this.taskList = taskList;
+        this.boardId = boardId;
     }
 
     public void setOnTaskClickListener(OnTaskClickListener listener) {
@@ -66,7 +74,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         Task task = taskList.get(position);
         boolean isFirst = position == 0;
         boolean isLast = position == taskList.size() - 1;
-        holder.bind(task, listener, moveListener, statusChangeListener, isFirst, isLast);
+        holder.bind(task, boardId, listener, moveListener, statusChangeListener, isFirst, isLast);
     }
 
     @Override
@@ -122,7 +130,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             btnMoveRight = itemView.findViewById(R.id.btnMoveRight);
         }
 
-        void bind(Task task, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
+        void bind(Task task, String boardId, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
                   OnTaskStatusChangeListener statusChangeListener, boolean isFirst, boolean isLast) {
             tvTaskTitle.setText(task.getTitle());
 
@@ -153,41 +161,18 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
                 }
             });
             
-            // Setup move left button
-            btnMoveLeft.setVisibility(View.VISIBLE);
-            btnMoveLeft.setClickable(true);
-            btnMoveLeft.setFocusable(true);
-            btnMoveLeft.setOnClickListener(v -> {
-                Log.d(TAG, "btnMoveLeft clicked at position " + getAdapterPosition());
-                if (moveListener != null) {
-                    int position = getAdapterPosition();
-                    if (position != RecyclerView.NO_POSITION) {
-                        Log.d(TAG, "Calling moveListener.onMoveLeft(" + position + ")");
-                        moveListener.onMoveLeft(task, position);
-                    } else {
-                        Log.w(TAG, "Position is NO_POSITION, cannot move");
-                    }
-                } else {
-                    Log.w(TAG, "Cannot move left: moveListener is null");
-                }
-            });
+            // ✅ REMOVED: Arrow buttons - replaced with drag & drop
+            btnMoveLeft.setVisibility(View.GONE);
+            btnMoveRight.setVisibility(View.GONE);
             
-            // Setup move right button
-            btnMoveRight.setVisibility(View.VISIBLE);
-            btnMoveRight.setClickable(true);
-            btnMoveRight.setFocusable(true);
-            btnMoveRight.setOnClickListener(v -> {
-                Log.d(TAG, "btnMoveRight clicked at position " + getAdapterPosition());
-                if (moveListener != null) {
-                    int position = getAdapterPosition();
-                    if (position != RecyclerView.NO_POSITION) {
-                        Log.d(TAG, "Calling moveListener.onMoveRight(" + position + ")");
-                        moveListener.onMoveRight(task, position);
-                    } else {
-                        Log.w(TAG, "Position is NO_POSITION, cannot move");
-                    }
+            // ✅ NEW: Enable cross-board drag on long press
+            itemView.setOnLongClickListener(v -> {
+                if (boardId != null) {
+                    Log.d(TAG, "Starting drag for task: " + task.getTitle() + " from board: " + boardId);
+                    return CrossBoardDragHelper.startDrag(itemView, task, boardId);
                 } else {
-                    Log.w(TAG, "Cannot move right: moveListener is null");
+                    Log.w(TAG, "Cannot start drag: boardId is null");
+                    return false;
                 }
             });
         }

@@ -1,5 +1,6 @@
 package com.example.tralalero.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHolder> {
+    private static final String TAG = "BoardAdapter";
 
     private List<Board> boards = new ArrayList<>();
     private OnBoardActionListener listener;
@@ -76,7 +78,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             btnAddCard = itemView.findViewById(R.id.btnAddCard);
 
             taskRecycler.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-            taskAdapter = new TaskAdapter(new ArrayList<>());
+            taskAdapter = new TaskAdapter(new ArrayList<>()); // Will be replaced in bind()
             taskRecycler.setAdapter(taskAdapter);
         }
 
@@ -84,9 +86,11 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             tvBoardTitle.setText(board.getName());
 
             if (listener != null) {
+                // ✅ NEW: Create TaskAdapter with boardId for cross-board drag
                 List<Task> tasks = listener.getTasksForBoard(board.getId());
                 if (tasks != null) {
-                    taskAdapter.updateTasks(tasks);
+                    taskAdapter = new TaskAdapter(tasks, board.getId());
+                    taskRecycler.setAdapter(taskAdapter);
                 }
 
                 taskAdapter.setOnTaskClickListener(task -> {
@@ -149,31 +153,26 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     }
                 };
                 
-                TaskItemTouchHelper touchHelper = new TaskItemTouchHelper(dragListener);
-                if (itemTouchHelper != null) {
-                    itemTouchHelper.attachToRecyclerView(null); // Detach old one
+                // ✅ REMOVED: ItemTouchHelper for within-board drag (replaced with cross-board drag)
+                // ✅ REMOVED: TaskAdapter.OnTaskMoveListener (arrow buttons removed)
+                
+                // ✅ NEW: Setup cross-board drag listener on RecyclerView
+                if (listener instanceof OnCrossBoardDragListener) {
+                    com.example.tralalero.util.CrossBoardDragHelper.BoardDragListener dragDropListener = 
+                        new com.example.tralalero.util.CrossBoardDragHelper.BoardDragListener(
+                            board.getId(), 
+                            taskRecycler,
+                            (taskId, sourceBoardId, targetBoardId, position) -> {
+                                Log.d(TAG, "Task dropped: taskId=" + taskId + 
+                                    ", from=" + sourceBoardId + ", to=" + targetBoardId + 
+                                    ", position=" + position);
+                                ((OnCrossBoardDragListener) listener).onTaskDroppedOnBoard(
+                                    taskId, sourceBoardId, targetBoardId, position
+                                );
+                            }
+                        );
+                    taskRecycler.setOnDragListener(dragDropListener);
                 }
-                itemTouchHelper = new ItemTouchHelper(touchHelper);
-                itemTouchHelper.attachToRecyclerView(taskRecycler);
-
-                // Setup move left/right listeners
-                taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
-                    @Override
-                    public void onMoveLeft(Task task, int position) {
-                        // Move task to previous board (left)
-                        if (listener instanceof OnTaskBoardChangeListener) {
-                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, -1);
-                        }
-                    }
-
-                    @Override
-                    public void onMoveRight(Task task, int position) {
-                        // Move task to next board (right)
-                        if (listener instanceof OnTaskBoardChangeListener) {
-                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, +1);
-                        }
-                    }
-                });
                 
                 // Setup checkbox status change listener
                 taskAdapter.setOnTaskStatusChangeListener(new TaskAdapter.OnTaskStatusChangeListener() {
@@ -196,14 +195,20 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         void onTaskPositionChanged(Task task, double newPosition, Board board);
     }
 
-    public interface OnTaskBoardChangeListener {
+    // ✅ REMOVED: OnTaskBoardChangeListener (arrow buttons removed)
+    
+    /**
+     * ✅ NEW: Interface for cross-board drag & drop
+     */
+    public interface OnCrossBoardDragListener {
         /**
-         * Move task to adjacent board
-         * @param task The task to move
-         * @param currentBoard The current board containing the task
-         * @param direction -1 for left (previous board), +1 for right (next board)
+         * Called when a task is dropped on a board
+         * @param taskId ID of the task being moved
+         * @param sourceBoardId ID of the board the task came from
+         * @param targetBoardId ID of the board the task was dropped on
+         * @param position Position in the target board where task was dropped
          */
-        void onMoveTaskToBoard(Task task, Board currentBoard, int direction);
+        void onTaskDroppedOnBoard(String taskId, String sourceBoardId, String targetBoardId, int position);
     }
     
     public interface OnTaskStatusChangeListener {

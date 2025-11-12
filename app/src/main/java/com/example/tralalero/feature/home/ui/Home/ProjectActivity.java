@@ -62,7 +62,11 @@ import java.util.Map;
 
 import com.google.android.material.tabs.TabLayout;
 
-public class ProjectActivity extends AppCompatActivity implements BoardAdapter.OnBoardActionListener, BoardAdapter.OnTaskPositionChangeListener, BoardAdapter.OnTaskBoardChangeListener, BoardAdapter.OnTaskStatusChangeListener {
+public class ProjectActivity extends AppCompatActivity implements 
+    BoardAdapter.OnBoardActionListener, 
+    BoardAdapter.OnTaskPositionChangeListener, 
+    BoardAdapter.OnCrossBoardDragListener, // ✅ NEW: Cross-board drag support
+    BoardAdapter.OnTaskStatusChangeListener {
     private static final String TAG = "ProjectActivity";
     private static final int REQUEST_CODE_CREATE_TASK = 2001;
     private static final int REQUEST_CODE_EDIT_TASK = 2002;
@@ -524,6 +528,24 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
                     Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
+            
+            // ✅ Observe task moved event to refresh boards
+            taskViewModel.getTaskMovedEvent().observe(this, event -> {
+                if (event != null) {
+                    Log.d(TAG, "Task moved event received: taskId=" + event.taskId + 
+                        ", source=" + event.sourceBoardId + ", target=" + event.targetBoardId);
+                    
+                    // Refresh both source and target boards
+                    if (event.sourceBoardId != null && !event.sourceBoardId.isEmpty()) {
+                        projectViewModel.refreshBoardTasks(event.sourceBoardId);
+                    }
+                    if (event.targetBoardId != null && !event.targetBoardId.isEmpty()) {
+                        projectViewModel.refreshBoardTasks(event.targetBoardId);
+                    }
+                    
+                    Toast.makeText(this, "✅ Task moved successfully", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
         
         bottomSheet.show(getSupportFragmentManager(), "CreateTaskBottomSheet");
@@ -561,60 +583,58 @@ public class ProjectActivity extends AppCompatActivity implements BoardAdapter.O
         }
     }
 
+    // ✅ REMOVED: onMoveTaskToBoard (arrow buttons removed, replaced with drag & drop)
+    
+    /**
+     * ✅ NEW: Handle cross-board drag & drop
+     */
     @Override
-    public void onMoveTaskToBoard(Task task, Board currentBoard, int direction) {
-        Log.d(TAG, "onMoveTaskToBoard: task=" + task.getTitle() + ", currentBoard=" + currentBoard.getName() + ", direction=" + direction);
+    public void onTaskDroppedOnBoard(String taskId, String sourceBoardId, String targetBoardId, int position) {
+        Log.d(TAG, "onTaskDroppedOnBoard: taskId=" + taskId + 
+            ", from=" + sourceBoardId + ", to=" + targetBoardId + ", position=" + position);
         
-        // ✅ Get boards from ViewModel
-        List<Board> boards = projectViewModel.getBoards().getValue();
-        if (boards == null || boards.isEmpty()) {
-            Toast.makeText(this, "Error: No boards loaded", Toast.LENGTH_SHORT).show();
+        if (sourceBoardId.equals(targetBoardId)) {
+            Log.d(TAG, "Task dropped on same board - no action needed");
             return;
         }
         
-        int currentBoardIndex = -1;
-        for (int i = 0; i < boards.size(); i++) {
-            if (boards.get(i).getId().equals(currentBoard.getId())) {
-                currentBoardIndex = i;
-                break;
-            }
-        }
-
-        if (currentBoardIndex == -1) {
-            Log.e(TAG, "Current board not found in boards list");
-            Toast.makeText(this, "Error: Board not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Calculate new position based on drop location
+        List<Task> targetBoardTasks = getTasksForBoard(targetBoardId);
+        double newPosition = calculateDropPosition(targetBoardTasks, position);
         
-        int targetBoardIndex = currentBoardIndex + direction;
-        if (targetBoardIndex < 0) {
-            Toast.makeText(this, "Cannot move left - already at first board", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (targetBoardIndex >= boards.size()) {
-            Toast.makeText(this, "Cannot move right - already at last board", Toast.LENGTH_SHORT).show();
-            return;
+        Log.d(TAG, "Moving task from board " + sourceBoardId + " to " + targetBoardId + " at position " + newPosition);
+        
+        // ✅ MVVM: Call TaskViewModel to move
+        // TaskMovedEvent will be emitted on success, triggering board refresh via observer
+        taskViewModel.moveTaskToBoard(taskId, targetBoardId, newPosition);
+        
+        Toast.makeText(this, "✅ Moving task...", Toast.LENGTH_SHORT).show();
+    }
+    
+    /**
+     * Calculate position for dropped task
+     */
+    private double calculateDropPosition(List<Task> tasks, int dropIndex) {
+        if (tasks == null || tasks.isEmpty()) {
+            return 1000.0;
         }
         
-        Board targetBoard = boards.get(targetBoardIndex);
-        Log.d(TAG, "Moving task '" + task.getTitle() + "' from '" + currentBoard.getName() + "' to '" + targetBoard.getName() + "'");
+        // Drop at beginning
+        if (dropIndex == 0) {
+            Task firstTask = tasks.get(0);
+            return firstTask.getPosition() / 2.0;
+        }
         
-        // ✅ MVVM: Call TaskViewModel to move, then refresh affected boards in ProjectViewModel
-        taskViewModel.moveTaskToBoard(task.getId(), targetBoard.getId(), 0.0);
+        // Drop at end
+        if (dropIndex >= tasks.size()) {
+            Task lastTask = tasks.get(tasks.size() - 1);
+            return lastTask.getPosition() + 1024.0;
+        }
         
-        // ✅ Refresh both boards to sync with server
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            projectViewModel.refreshBoardTasks(currentBoard.getId());
-            projectViewModel.refreshBoardTasks(targetBoard.getId());
-        }, 500);
-        
-        Toast.makeText(this, "✅ Moved to " + targetBoard.getName(), Toast.LENGTH_SHORT).show();
-        
-        // ✅ REMOVED: No manual UI update, no local state manipulation
-        // ❌ OLD: Update tasksPerBoard map manually
-        // ❌ OLD: boardAdapter.notifyDataSetChanged()
-        // Observer will auto-update when ProjectViewModel.tasksPerBoardLiveData changes
+        // Drop in middle
+        Task prevTask = tasks.get(dropIndex - 1);
+        Task nextTask = tasks.get(dropIndex);
+        return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
     }
     
     @Override

@@ -83,6 +83,20 @@ public class TaskViewModel extends ViewModel {
     private final MutableLiveData<List<com.example.tralalero.domain.model.ChecklistItem>> checklistItemsLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
+    
+    // ✅ Event for task moved successfully (contains source and target board IDs)
+    public static class TaskMovedEvent {
+        public final String taskId;
+        public final String sourceBoardId;
+        public final String targetBoardId;
+        
+        public TaskMovedEvent(String taskId, String sourceBoardId, String targetBoardId) {
+            this.taskId = taskId;
+            this.sourceBoardId = sourceBoardId;
+            this.targetBoardId = targetBoardId;
+        }
+    }
+    private final MutableLiveData<TaskMovedEvent> taskMovedEventLiveData = new MutableLiveData<>();
 
     public TaskViewModel(
             GetTaskByIdUseCase getTaskByIdUseCase,
@@ -186,6 +200,10 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return errorLiveData;
+    }
+    
+    public LiveData<TaskMovedEvent> getTaskMovedEvent() {
+        return taskMovedEventLiveData;
     }
     
     /**
@@ -454,11 +472,16 @@ public class TaskViewModel extends ViewModel {
     public void updateTaskStatus(String taskId, Task.TaskStatus newStatus) {
         if (taskId == null || newStatus == null) return;
         
+        android.util.Log.d("TaskViewModel", "updateTaskStatus: taskId=" + taskId + ", newStatus=" + newStatus);
+        
         // Find task
         Task originalTask = findTaskById(taskId);
         if (originalTask == null) {
+            android.util.Log.e("TaskViewModel", "Task not found: " + taskId);
             return;
         }
+        
+        android.util.Log.d("TaskViewModel", "Found task: " + originalTask.getTitle() + ", current status=" + originalTask.getStatus());
         
         // Create new task with updated status (Task is immutable)
         Task updatedTask = new Task(
@@ -489,6 +512,8 @@ public class TaskViewModel extends ViewModel {
             originalTask.getCalendarEventId(),
             originalTask.getCalendarSyncedAt()
         );
+        
+        android.util.Log.d("TaskViewModel", "Calling updateTask API with new status=" + newStatus);
         
         // Call API to persist
         updateTask(taskId, updatedTask);
@@ -912,6 +937,9 @@ public class TaskViewModel extends ViewModel {
                 }
                 
                 selectedTaskLiveData.setValue(result);
+                
+                // ✅ Emit event for UI to refresh boards if needed
+                taskMovedEventLiveData.setValue(new TaskMovedEvent(taskId, originalBoardId, targetBoardId));
             }
 
             @Override
