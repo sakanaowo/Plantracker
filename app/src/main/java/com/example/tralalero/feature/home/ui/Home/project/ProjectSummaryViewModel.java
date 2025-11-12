@@ -76,14 +76,13 @@ public class ProjectSummaryViewModel extends AndroidViewModel {
      */
     public void loadSummary(String projectId, boolean isRefresh) {
         if (projectId == null || projectId.isEmpty()) {
-            Log.e(TAG, "loadSummary - Project ID is required!");
             error.setValue("Project ID is required");
             return;
         }
         
         // Check cache validity (skip cache if manual refresh or different project)
         if (!isRefresh && projectId.equals(cachedProjectId) && isCacheValid()) {
-            Log.d(TAG, "loadSummary - Using cached data for project: " + projectId);
+            Log.d(TAG, "Using cached data for project: " + projectId);
             // Data is already in LiveData, no need to fetch
             return;
         }
@@ -94,8 +93,8 @@ public class ProjectSummaryViewModel extends AndroidViewModel {
             refreshSuccess.setValue(false);
         }
         
-        Log.d(TAG, "loadSummary - API call for project: " + projectId + " (Refresh: " + isRefresh + 
-            ", Cache: " + (isCacheValid() ? "valid" : "invalid") + ")");
+        Log.d(TAG, "Loading summary for project: " + projectId + " (Cache: " + 
+            (isCacheValid() ? "valid" : "invalid") + ")");
         
         repository.getProjectSummary(projectId, new IProjectRepository.RepositoryCallback<ProjectSummaryResponse>() {
             @Override
@@ -110,17 +109,10 @@ public class ProjectSummaryViewModel extends AndroidViewModel {
                 if (isRefresh) {
                     refreshSuccess.postValue(true);
                 }
-                Log.d(TAG, "✅ SUCCESS - Done: " + data.getDone() + 
+                Log.d(TAG, "Summary loaded - Done: " + data.getDone() + 
                     ", Due: " + data.getDue() + 
                     ", Created: " + data.getCreated() + 
                     ", Updated: " + data.getUpdated());
-                
-                if (data.getStatusOverview() != null) {
-                    Log.d(TAG, "Status Overview - Total: " + data.getStatusOverview().getTotal() + 
-                        ", ToDo: " + data.getStatusOverview().getToDo() + 
-                        ", InProgress: " + data.getStatusOverview().getInProgress() + 
-                        ", Done: " + data.getStatusOverview().getDone());
-                }
             }
             
             @Override
@@ -130,7 +122,6 @@ public class ProjectSummaryViewModel extends AndroidViewModel {
                 if (isRefresh) {
                     refreshSuccess.postValue(false);
                 }
-                Log.e(TAG, "❌ ERROR: " + errorMsg);
             }
         });
     }
