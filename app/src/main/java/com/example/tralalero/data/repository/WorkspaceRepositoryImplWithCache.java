@@ -186,7 +186,7 @@ public class WorkspaceRepositoryImplWithCache {
         executorService.execute(() -> {
             try {
                 workspaceDao.deleteAll();
-                cacheMetadataDao.deleteMetadata(CACHE_KEY); // ← FIXED: delete() → deleteMetadata()
+                cacheMetadataDao.deleteMetadata(CACHE_KEY);
                 Log.d(TAG, "✓ Workspace cache cleared");
             } catch (Exception e) {
                 Log.e(TAG, "Error clearing workspace cache", e);

@@ -45,7 +45,11 @@ import java.util.Map;
  * - Move task to board with instant UI update
  * - Zero manual reload needed in Activities
  */
+import java.util.function.Function;
+
 public class TaskViewModel extends ViewModel {
+    
+    private static final String TAG = "TaskViewModel";
 
     private final GetTaskByIdUseCase getTaskByIdUseCase;
     private final GetTasksByBoardUseCase getTasksByBoardUseCase;
@@ -468,20 +472,24 @@ public class TaskViewModel extends ViewModel {
 
     /**
      * ✅ Update task status (for checkbox toggle)
+     * Optimistic update with rollback on error
      */
     public void updateTaskStatus(String taskId, Task.TaskStatus newStatus) {
         if (taskId == null || newStatus == null) return;
         
-        android.util.Log.d("TaskViewModel", "updateTaskStatus: taskId=" + taskId + ", newStatus=" + newStatus);
+        android.util.Log.d(TAG, "updateTaskStatus: taskId=" + taskId + ", newStatus=" + newStatus);
+        
+        errorLiveData.setValue(null);
         
         // Find task
         Task originalTask = findTaskById(taskId);
         if (originalTask == null) {
-            android.util.Log.e("TaskViewModel", "Task not found: " + taskId);
+            android.util.Log.e(TAG, "Task not found: " + taskId);
+            errorLiveData.setValue("Task not found");
             return;
         }
         
-        android.util.Log.d("TaskViewModel", "Found task: " + originalTask.getTitle() + ", current status=" + originalTask.getStatus());
+        android.util.Log.d(TAG, "Found task: " + originalTask.getTitle() + ", current status=" + originalTask.getStatus());
         
         // Create new task with updated status (Task is immutable)
         Task updatedTask = new Task(
@@ -492,7 +500,7 @@ public class TaskViewModel extends ViewModel {
             originalTask.getDescription(),
             originalTask.getIssueKey(),
             originalTask.getType(),
-            newStatus,  // Updated status
+            newStatus,  // ✅ Updated status
             originalTask.getPriority(),
             originalTask.getPosition(),
             originalTask.getAssigneeId(),
@@ -513,10 +521,45 @@ public class TaskViewModel extends ViewModel {
             originalTask.getCalendarSyncedAt()
         );
         
-        android.util.Log.d("TaskViewModel", "Calling updateTask API with new status=" + newStatus);
+        android.util.Log.d(TAG, "Calling updateTask API with new status=" + newStatus);
+        
+        // ✅ Optimistic update: Show change immediately
+        updateTaskInAllLists(originalTask, t -> updatedTask);
+        if (selectedTaskLiveData.getValue() != null && 
+            selectedTaskLiveData.getValue().getId().equals(taskId)) {
+            selectedTaskLiveData.setValue(updatedTask);
+        }
         
         // Call API to persist
-        updateTask(taskId, updatedTask);
+        loadingLiveData.setValue(true);
+        updateTaskUseCase.execute(taskId, updatedTask, new UpdateTaskUseCase.Callback<Task>() {
+            @Override
+            public void onSuccess(Task result) {
+                loadingLiveData.setValue(false);
+                android.util.Log.d(TAG, "✅ Task status updated successfully: " + result.getTitle() + " -> " + result.getStatus());
+                
+                // Update with server version
+                updateTaskInAllLists(updatedTask, t -> result);
+                if (selectedTaskLiveData.getValue() != null && 
+                    selectedTaskLiveData.getValue().getId().equals(taskId)) {
+                    selectedTaskLiveData.setValue(result);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                android.util.Log.e(TAG, "❌ Failed to update task status: " + error);
+                errorLiveData.setValue("Failed to update task: " + error);
+                
+                // ✅ Rollback: Restore original task
+                updateTaskInAllLists(updatedTask, t -> originalTask);
+                if (selectedTaskLiveData.getValue() != null && 
+                    selectedTaskLiveData.getValue().getId().equals(taskId)) {
+                    selectedTaskLiveData.setValue(originalTask);
+                }
+            }
+        });
     }
     
     private Task findTaskById(String taskId) {

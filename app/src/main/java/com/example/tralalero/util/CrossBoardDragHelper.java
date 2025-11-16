@@ -26,21 +26,19 @@ public class CrossBoardDragHelper {
      */
     public static boolean startDrag(View itemView, Task task, String sourceBoardId) {
         // Create clip data with task info
-        ClipData.Item item = new ClipData.Item(task.getId());
+        // Format: "taskId|sourceBoardId" in text
+        String dragText = task.getId() + "|" + sourceBoardId;
+        ClipData.Item item = new ClipData.Item(dragText);
         ClipData dragData = new ClipData(
             task.getTitle(),
             new String[] { MIME_TYPE_TASK },
             item
         );
         
-        // Store source board ID and task ID in clip data
-        dragData.getDescription().getExtras().putString(EXTRA_TASK_ID, task.getId());
-        dragData.getDescription().getExtras().putString(EXTRA_SOURCE_BOARD_ID, sourceBoardId);
-        
         // Create drag shadow
         View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(itemView);
         
-        // Start drag
+        // Start drag - pass task as local state
         return itemView.startDragAndDrop(dragData, shadowBuilder, task, 0);
     }
     
@@ -70,8 +68,8 @@ public class CrossBoardDragHelper {
                     return event.getClipDescription().hasMimeType(MIME_TYPE_TASK);
                     
                 case DragEvent.ACTION_DRAG_ENTERED:
-                    // Highlight drop target
-                    v.setBackgroundResource(R.color.drag_target_highlight);
+                    // Highlight drop target with border and background
+                    v.setBackgroundResource(R.drawable.drag_drop_highlight_border);
                     return true;
                     
                 case DragEvent.ACTION_DRAG_EXITED:
@@ -79,12 +77,22 @@ public class CrossBoardDragHelper {
                     v.setBackground(null);
                     return true;
                     
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    // Continuous feedback while dragging over
+                    return true;
+                    
                 case DragEvent.ACTION_DROP:
                     // Handle drop
                     ClipData.Item item = event.getClipData().getItemAt(0);
-                    String taskId = item.getText().toString();
-                    String sourceBoardId = event.getClipDescription().getExtras()
-                        .getString(EXTRA_SOURCE_BOARD_ID);
+                    String dragText = item.getText().toString();
+                    
+                    // Parse "taskId|sourceBoardId"
+                    String[] parts = dragText.split("\\|");
+                    if (parts.length != 2) {
+                        return false; // Invalid format
+                    }
+                    String taskId = parts[0];
+                    String sourceBoardId = parts[1];
                     
                     // Calculate drop position
                     int position = calculateDropPosition(event.getX(), event.getY());

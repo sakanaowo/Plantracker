@@ -67,6 +67,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
     static class BoardViewHolder extends RecyclerView.ViewHolder {
         TextView tvBoardTitle;
         RecyclerView taskRecycler;
+        TextView tvEmptyState;
         LinearLayout btnAddCard;
         TaskAdapter taskAdapter;
         ItemTouchHelper itemTouchHelper; // ✅ ADD: Drag & drop support
@@ -75,6 +76,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             super(itemView);
             tvBoardTitle = itemView.findViewById(R.id.tvBoardTitle);
             taskRecycler = itemView.findViewById(R.id.taskRecycler);
+            tvEmptyState = itemView.findViewById(R.id.tvEmptyState);
             btnAddCard = itemView.findViewById(R.id.btnAddCard);
 
             taskRecycler.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
@@ -91,6 +93,9 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                 if (tasks != null) {
                     taskAdapter = new TaskAdapter(tasks, board.getId());
                     taskRecycler.setAdapter(taskAdapter);
+                    
+                    // Show/hide empty state
+                    updateEmptyState(tasks.isEmpty());
                 }
 
                 taskAdapter.setOnTaskClickListener(task -> {
@@ -187,6 +192,15 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                 btnAddCard.setOnClickListener(v -> {
                     listener.onAddCardClick(board);
                 });
+            }
+        }
+        
+        /**
+         * Update empty state visibility based on task count
+         */
+        void updateEmptyState(boolean isEmpty) {
+            if (tvEmptyState != null) {
+                tvEmptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
             }
         }
     }

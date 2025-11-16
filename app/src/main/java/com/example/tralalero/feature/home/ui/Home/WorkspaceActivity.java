@@ -97,8 +97,7 @@ public class WorkspaceActivity extends HomeActivity {
             createProject(newProjectName, newProjectDescription != null ? newProjectDescription : "");
         }
         
-        LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
-        btnCreateBoard.setOnClickListener(v -> showCreateProjectDialog());
+        setupCreateButton();
         setupBackButton();
         setupBottomNavigation(0);
     }
@@ -143,6 +142,18 @@ public class WorkspaceActivity extends HomeActivity {
             } else {
                 Log.d(TAG, "No projects loaded or list is null");
                 workspaceAdapter.setProjectList(new ArrayList<>());
+            }
+        });
+        
+        // ✅ Workspace observer - check ownership to show/hide create button
+        workspaceViewModel.getSelectedWorkspace().observe(this, workspace -> {
+            if (workspace != null) {
+                LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
+                if (btnCreateBoard != null) {
+                    // Only show create button if user is workspace owner
+                    btnCreateBoard.setVisibility(workspace.isOwner() ? View.VISIBLE : View.GONE);
+                    Log.d(TAG, "Create button visibility: " + (workspace.isOwner() ? "VISIBLE" : "GONE"));
+                }
             }
         });
         
@@ -227,6 +238,14 @@ public class WorkspaceActivity extends HomeActivity {
         
         // Observer auto-updates UI - NO MANUAL RELOAD
         Toast.makeText(this, "Creating project...", Toast.LENGTH_SHORT).show();
+    }
+
+    private void setupCreateButton() {
+        LinearLayout btnCreateBoard = findViewById(R.id.btn_create_board);
+        if (btnCreateBoard != null) {
+            btnCreateBoard.setOnClickListener(v -> showCreateProjectDialog());
+            // Visibility will be controlled by workspace observer
+        }
     }
 
     private void setupBackButton() {

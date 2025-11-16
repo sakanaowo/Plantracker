@@ -483,6 +483,31 @@ public class ProjectActivity extends AppCompatActivity implements
                 boardAdapter.notifyDataSetChanged();
             }
         });
+        
+        // ✅ NEW: Observe task moved event to refresh boards (for drag & drop)
+        taskViewModel.getTaskMovedEvent().observe(this, event -> {
+            if (event != null) {
+                Log.d(TAG, "Task moved event received: taskId=" + event.taskId + 
+                    ", source=" + event.sourceBoardId + ", target=" + event.targetBoardId);
+                
+                // Refresh both source and target boards to get updated task lists
+                if (event.sourceBoardId != null && !event.sourceBoardId.isEmpty()) {
+                    projectViewModel.refreshBoardTasks(event.sourceBoardId);
+                }
+                if (event.targetBoardId != null && !event.targetBoardId.isEmpty()) {
+                    projectViewModel.refreshBoardTasks(event.targetBoardId);
+                }
+                
+                Toast.makeText(this, "✅ Task moved successfully", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // ✅ Observe task errors
+        taskViewModel.getError().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showCreateTaskDialog(Board board) {
@@ -522,30 +547,6 @@ public class ProjectActivity extends AppCompatActivity implements
                 projectViewModel.refreshBoardTasks(board.getId());
                 Toast.makeText(this, "✅ Task created", Toast.LENGTH_SHORT).show();
             }, 300);
-            
-            taskViewModel.getError().observe(this, error -> {
-                if (error != null && !error.isEmpty()) {
-                    Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-            
-            // ✅ Observe task moved event to refresh boards
-            taskViewModel.getTaskMovedEvent().observe(this, event -> {
-                if (event != null) {
-                    Log.d(TAG, "Task moved event received: taskId=" + event.taskId + 
-                        ", source=" + event.sourceBoardId + ", target=" + event.targetBoardId);
-                    
-                    // Refresh both source and target boards
-                    if (event.sourceBoardId != null && !event.sourceBoardId.isEmpty()) {
-                        projectViewModel.refreshBoardTasks(event.sourceBoardId);
-                    }
-                    if (event.targetBoardId != null && !event.targetBoardId.isEmpty()) {
-                        projectViewModel.refreshBoardTasks(event.targetBoardId);
-                    }
-                    
-                    Toast.makeText(this, "✅ Task moved successfully", Toast.LENGTH_SHORT).show();
-                }
-            });
         });
         
         bottomSheet.show(getSupportFragmentManager(), "CreateTaskBottomSheet");
