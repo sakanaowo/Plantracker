@@ -1,5 +1,6 @@
 package com.example.tralalero.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,14 +16,19 @@ import com.example.tralalero.R;
 import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.util.TaskItemTouchHelper;
+import com.example.tralalero.util.CrossBoardDragHelper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHolder> {
+    private static final String TAG = "BoardAdapter";
 
     private List<Board> boards = new ArrayList<>();
     private OnBoardActionListener listener;
+    private Map<String, TaskAdapter> taskAdapterMap = new HashMap<>(); // ✅ Store adapters by boardId
 
     public interface OnBoardActionListener {
         void onAddCardClick(Board board);
@@ -43,6 +49,17 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         notifyDataSetChanged();
     }
 
+    /**
+     * ✅ Update tasks for a specific board without recreating adapter
+     */
+    public void updateTasksForBoard(String boardId, List<Task> tasks) {
+        TaskAdapter adapter = taskAdapterMap.get(boardId);
+        if (adapter != null) {
+            adapter.updateTasks(tasks != null ? tasks : new ArrayList<>());
+            Log.d(TAG, "✅ Updated " + (tasks != null ? tasks.size() : 0) + " tasks for board " + boardId);
+        }
+    }
+
     @NonNull
     @Override
     public BoardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -54,7 +71,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
     @Override
     public void onBindViewHolder(@NonNull BoardViewHolder holder, int position) {
         Board board = boards.get(position);
-        holder.bind(board, listener);
+        holder.bind(board, listener, this); // ✅ Pass BoardAdapter reference
     }
 
     @Override
@@ -65,6 +82,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
     static class BoardViewHolder extends RecyclerView.ViewHolder {
         TextView tvBoardTitle;
         RecyclerView taskRecycler;
+        TextView tvEmptyState;
         LinearLayout btnAddCard;
         TaskAdapter taskAdapter;
         ItemTouchHelper itemTouchHelper; // ✅ ADD: Drag & drop support
@@ -73,21 +91,36 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             super(itemView);
             tvBoardTitle = itemView.findViewById(R.id.tvBoardTitle);
             taskRecycler = itemView.findViewById(R.id.taskRecycler);
+            tvEmptyState = itemView.findViewById(R.id.tvEmptyState);
             btnAddCard = itemView.findViewById(R.id.btnAddCard);
 
             taskRecycler.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-            taskAdapter = new TaskAdapter(new ArrayList<>());
+            taskAdapter = new TaskAdapter(new ArrayList<>()); // Will be replaced in bind()
             taskRecycler.setAdapter(taskAdapter);
         }
 
-        void bind(Board board, OnBoardActionListener listener) {
+        void bind(Board board, OnBoardActionListener listener, BoardAdapter boardAdapter) {
             tvBoardTitle.setText(board.getName());
 
             if (listener != null) {
+                // ✅ Get tasks for this board
                 List<Task> tasks = listener.getTasksForBoard(board.getId());
-                if (tasks != null) {
-                    taskAdapter.updateTasks(tasks);
+                
+                // ✅ Reuse existing TaskAdapter or create new one
+                TaskAdapter adapter = boardAdapter.taskAdapterMap.get(board.getId());
+                if (adapter == null) {
+                    // Create new adapter for this board
+                    adapter = new TaskAdapter(tasks != null ? tasks : new ArrayList<>(), board.getId());
+                    boardAdapter.taskAdapterMap.put(board.getId(), adapter);
+                    taskRecycler.setAdapter(adapter);
+                } else {
+                    // Update existing adapter with new tasks
+                    adapter.updateTasks(tasks != null ? tasks : new ArrayList<>());
                 }
+                taskAdapter = adapter;
+                
+                // Show/hide empty state
+                updateEmptyState(tasks == null || tasks.isEmpty());
 
                 taskAdapter.setOnTaskClickListener(task -> {
                     listener.onTaskClick(task, board);
@@ -149,31 +182,26 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                     }
                 };
                 
-                TaskItemTouchHelper touchHelper = new TaskItemTouchHelper(dragListener);
-                if (itemTouchHelper != null) {
-                    itemTouchHelper.attachToRecyclerView(null); // Detach old one
+                // ✅ REMOVED: ItemTouchHelper for within-board drag (replaced with cross-board drag)
+                // ✅ REMOVED: TaskAdapter.OnTaskMoveListener (arrow buttons removed)
+                
+                // ✅ NEW: Setup cross-board drag listener on RecyclerView
+                if (listener instanceof OnCrossBoardDragListener) {
+                    com.example.tralalero.util.CrossBoardDragHelper.BoardDragListener dragDropListener = 
+                        new CrossBoardDragHelper.BoardDragListener(
+                            board.getId(),
+                            taskRecycler,
+                            (task, sourceBoardId, targetBoardId, position) -> {
+                                Log.d(TAG, "Task dropped: taskId=" + task.getId() + 
+                                    ", from=" + sourceBoardId + ", to=" + targetBoardId + 
+                                    ", position=" + position);
+                                ((OnCrossBoardDragListener) listener).onTaskDroppedOnBoard(
+                                    task, sourceBoardId, targetBoardId, position
+                                );
+                            }
+                        );
+                    taskRecycler.setOnDragListener(dragDropListener);
                 }
-                itemTouchHelper = new ItemTouchHelper(touchHelper);
-                itemTouchHelper.attachToRecyclerView(taskRecycler);
-
-                // Setup move left/right listeners
-                taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
-                    @Override
-                    public void onMoveLeft(Task task, int position) {
-                        // Move task to previous board (left)
-                        if (listener instanceof OnTaskBoardChangeListener) {
-                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, -1);
-                        }
-                    }
-
-                    @Override
-                    public void onMoveRight(Task task, int position) {
-                        // Move task to next board (right)
-                        if (listener instanceof OnTaskBoardChangeListener) {
-                            ((OnTaskBoardChangeListener) listener).onMoveTaskToBoard(task, board, +1);
-                        }
-                    }
-                });
                 
                 // Setup checkbox status change listener
                 taskAdapter.setOnTaskStatusChangeListener(new TaskAdapter.OnTaskStatusChangeListener() {
@@ -190,20 +218,35 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                 });
             }
         }
+        
+        /**
+         * Update empty state visibility based on task count
+         */
+        void updateEmptyState(boolean isEmpty) {
+            if (tvEmptyState != null) {
+                tvEmptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+            }
+        }
     }
 
     public interface OnTaskPositionChangeListener {
         void onTaskPositionChanged(Task task, double newPosition, Board board);
     }
 
-    public interface OnTaskBoardChangeListener {
+    // ✅ REMOVED: OnTaskBoardChangeListener (arrow buttons removed)
+    
+    /**
+     * ✅ NEW: Interface for cross-board drag & drop
+     */
+    public interface OnCrossBoardDragListener {
         /**
-         * Move task to adjacent board
-         * @param task The task to move
-         * @param currentBoard The current board containing the task
-         * @param direction -1 for left (previous board), +1 for right (next board)
+         * Called when a task is dropped on a board
+         * @param task The task being moved
+         * @param sourceBoardId ID of the board the task came from
+         * @param targetBoardId ID of the board the task was dropped on
+         * @param position Position in the target board where task was dropped
          */
-        void onMoveTaskToBoard(Task task, Board currentBoard, int direction);
+        void onTaskDroppedOnBoard(Task task, String sourceBoardId, String targetBoardId, int position);
     }
     
     public interface OnTaskStatusChangeListener {

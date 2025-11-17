@@ -9,6 +9,7 @@ import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.AddCommentUseCase;
 import com.example.tralalero.domain.usecase.task.AssignTaskUseCase;
 import com.example.tralalero.domain.usecase.task.CreateTaskUseCase;
+import com.example.tralalero.domain.usecase.task.CreateQuickTaskUseCase;
 import com.example.tralalero.domain.usecase.task.DeleteTaskUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase;
@@ -29,6 +30,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
     private final GetTaskByIdUseCase getTaskByIdUseCase;
     private final GetTasksByBoardUseCase getTasksByBoardUseCase;
     private final CreateTaskUseCase createTaskUseCase;
+    private final CreateQuickTaskUseCase createQuickTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
     private final DeleteTaskUseCase deleteTaskUseCase;
     private final AssignTaskUseCase assignTaskUseCase;
@@ -51,6 +53,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
             GetTaskByIdUseCase getTaskByIdUseCase,
             GetTasksByBoardUseCase getTasksByBoardUseCase,
             CreateTaskUseCase createTaskUseCase,
+            CreateQuickTaskUseCase createQuickTaskUseCase,
             UpdateTaskUseCase updateTaskUseCase,
             DeleteTaskUseCase deleteTaskUseCase,
             AssignTaskUseCase assignTaskUseCase,
@@ -72,6 +75,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
         this.createTaskUseCase = createTaskUseCase;
+        this.createQuickTaskUseCase = createQuickTaskUseCase;
         this.updateTaskUseCase = updateTaskUseCase;
         this.deleteTaskUseCase = deleteTaskUseCase;
         this.assignTaskUseCase = assignTaskUseCase;
@@ -99,6 +103,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
                     getTaskByIdUseCase,
                     getTasksByBoardUseCase,
                     createTaskUseCase,
+                    createQuickTaskUseCase,
                     updateTaskUseCase,
                     deleteTaskUseCase,
                     assignTaskUseCase,

@@ -35,6 +35,15 @@ public class TaskMapper {
         Date dueAt = parseDate(dto.getDueAt());
         Date createdAt = parseDate(dto.getCreatedAt());
         Date updatedAt = parseDate(dto.getUpdatedAt());
+        Date calendarSyncedAt = parseDate(dto.getLastSyncedAt());
+        
+        // Parse calendar sync fields
+        boolean calendarSyncEnabled = dto.getCalendarReminderEnabled() != null && dto.getCalendarReminderEnabled();
+        List<Integer> calendarReminderMinutes = null;
+        if (calendarSyncEnabled && dto.getCalendarReminderTime() != null) {
+            calendarReminderMinutes = new ArrayList<>();
+            calendarReminderMinutes.add(dto.getCalendarReminderTime());
+        }
         
         return new Task(
             dto.getId(),
@@ -58,7 +67,12 @@ public class TaskMapper {
             dto.getOriginalEstimateSec(),
             dto.getRemainingEstimateSec(),
             createdAt,
-            updatedAt
+            updatedAt,
+            // Calendar sync fields (use full 26-param constructor)
+            calendarSyncEnabled,
+            calendarReminderMinutes,
+            dto.getCalendarEventId(),
+            calendarSyncedAt
         );
     }
     
@@ -90,6 +104,14 @@ public class TaskMapper {
         dto.setRemainingEstimateSec(task.getRemainingEstimateSec());
         dto.setCreatedAt(formatDate(task.getCreatedAt()));
         dto.setUpdatedAt(formatDate(task.getUpdatedAt()));
+        
+        // Calendar sync fields
+        dto.setCalendarReminderEnabled(task.isCalendarSyncEnabled());
+        if (task.getCalendarReminderMinutes() != null && !task.getCalendarReminderMinutes().isEmpty()) {
+            dto.setCalendarReminderTime(task.getCalendarReminderMinutes().get(0));
+        }
+        dto.setCalendarEventId(task.getCalendarEventId());
+        dto.setLastSyncedAt(formatDate(task.getCalendarSyncedAt()));
         
         return dto;
     }

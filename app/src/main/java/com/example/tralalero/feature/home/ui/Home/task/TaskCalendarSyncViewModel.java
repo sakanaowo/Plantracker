@@ -86,18 +86,22 @@ public class TaskCalendarSyncViewModel extends AndroidViewModel {
      * @param taskId Task ID
      * @param enabled Enable/disable calendar sync
      * @param reminderMinutes Minutes before due date to remind (15/30/60)
+     * @param dueAt Due date in ISO format (nullable)
      */
-    public void updateCalendarSync(String taskId, boolean enabled, int reminderMinutes) {
+    public void updateCalendarSync(String taskId, boolean enabled, int reminderMinutes, String dueAt) {
         isUpdating.setValue(true);
         syncError.setValue(null);
         
         Log.d(TAG, "Updating calendar sync for task " + taskId + 
-                   ": enabled=" + enabled + ", reminder=" + reminderMinutes);
+                   ": enabled=" + enabled + ", reminder=" + reminderMinutes + ", dueAt=" + dueAt);
         
         // Prepare request body
         Map<String, Object> syncData = new HashMap<>();
         syncData.put("calendarReminderEnabled", enabled);
         syncData.put("calendarReminderTime", reminderMinutes);
+        if (dueAt != null) {
+            syncData.put("dueAt", dueAt);
+        }
         
         // API call
         taskApiService.updateCalendarSync(taskId, syncData).enqueue(new Callback<TaskDTO>() {

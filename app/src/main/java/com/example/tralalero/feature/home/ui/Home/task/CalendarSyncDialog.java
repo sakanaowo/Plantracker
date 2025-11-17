@@ -2,6 +2,7 @@ package com.example.tralalero.feature.home.ui.Home.task;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ import java.util.Locale;
  */
 public class CalendarSyncDialog extends DialogFragment {
     
+    private static final String TAG = "CalendarSyncDialog";
     private static final String ARG_TASK_ID = "task_id";
     private static final String ARG_TASK_TITLE = "task_title";
     private static final String ARG_DUE_DATE = "due_date";
@@ -150,6 +152,12 @@ public class CalendarSyncDialog extends DialogFragment {
         if (lastSyncedTimestamp != -1) {
             lastSyncedAt = new Date(lastSyncedTimestamp);
         }
+        
+        // Log loaded settings
+        Log.d(TAG, "Calendar sync dialog opened for task: " + taskId);
+        Log.d(TAG, "Sync enabled: " + calendarSyncEnabled);
+        Log.d(TAG, "Reminder time: " + reminderTimeMinutes + " minutes");
+        Log.d(TAG, "Last synced: " + (lastSyncedAt != null ? dateFormat.format(lastSyncedAt) : "Never"));
     }
     
     private void initializeViews(View view) {
@@ -273,6 +281,11 @@ public class CalendarSyncDialog extends DialogFragment {
         } else if (checkedId == R.id.rb60Minutes) {
             reminderMinutes = 60;
         }
+        
+        Log.d(TAG, "Saving calendar sync settings:");
+        Log.d(TAG, "  Task ID: " + taskId);
+        Log.d(TAG, "  Enabled: " + enabled);
+        Log.d(TAG, "  Reminder: " + reminderMinutes + " minutes");
         
         // Callback to listener
         if (listener != null) {

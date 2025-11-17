@@ -244,92 +244,79 @@ public class HomeActivity extends BaseActivity {
      * User needs to select a workspace first
      */
     private void showCreateProjectDialog() {
-        // First, get list of workspaces to let user choose
-        App.dependencyProvider.getWorkspaceRepositoryWithCache()
-            .getWorkspaces(new com.example.tralalero.data.repository.WorkspaceRepositoryImplWithCache.WorkspaceCallback() {
-                @Override
-                public void onSuccess(List<com.example.tralalero.domain.model.Workspace> workspaces) {
-                    runOnUiThread(() -> {
-                        if (workspaces == null || workspaces.isEmpty()) {
-                            Toast.makeText(HomeActivity.this, 
-                                "No workspace available. Please create a workspace first.", 
-                                Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        showWorkspaceSelectionDialog(workspaces);
-                    });
-                }
-                
-                @Override
-                public void onCacheEmpty() {
-                    runOnUiThread(() -> {
-                        Toast.makeText(HomeActivity.this, 
-                            "Loading workspaces...", 
-                            Toast.LENGTH_SHORT).show();
-                    });
-                }
-                
-                @Override
-                public void onError(Exception e) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(HomeActivity.this, 
-                            "Error loading workspaces: " + e.getMessage(), 
-                            Toast.LENGTH_SHORT).show();
-                    });
-                }
-            });
-    }
-    
-    /**
-     * Show dialog to select workspace and create project
-     */
-    private void showWorkspaceSelectionDialog(List<com.example.tralalero.domain.model.Workspace> workspaces) {
-        String[] workspaceNames = new String[workspaces.size()];
-        for (int i = 0; i < workspaces.size(); i++) {
-            workspaceNames[i] = workspaces.get(i).getName();
-        }
-        
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("Select Workspace")
-            .setItems(workspaceNames, (dialog, which) -> {
-                com.example.tralalero.domain.model.Workspace selectedWorkspace = workspaces.get(which);
-                showProjectNameDialog(selectedWorkspace.getId(), selectedWorkspace.getName());
-            })
-            .setNegativeButton("Cancel", null)
-            .show();
-    }
-    
-    /**
-     * Show dialog to enter project name and description
-     */
-    private void showProjectNameDialog(String workspaceId, String workspaceName) {
+        // Show dialog directly - will use user's first owned workspace
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_create_project, null);
         EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
         EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
         
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("Create Project in " + workspaceName)
-            .setView(dialogView)
-            .setPositiveButton("Create", (dialog, which) -> {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Create New Project");
+        builder.setView(dialogView);
+        builder.setPositiveButton("Create", null); // Set null first
+        builder.setNegativeButton("Cancel", null);
+        
+        android.app.AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 String projectName = etProjectName.getText().toString().trim();
                 String projectDescription = etProjectDescription.getText().toString().trim();
                 
                 if (projectName.isEmpty()) {
+                    etProjectName.setError("Project name cannot be empty");
                     Toast.makeText(this, "Project name cannot be empty", Toast.LENGTH_SHORT).show();
-                    return;
+                    return; // Don't close dialog
                 }
                 
-                // Navigate to WorkspaceActivity to create project
-                Intent intent = new Intent(this, WorkspaceActivity.class);
-                intent.putExtra("WORKSPACE_ID", workspaceId);
-                intent.putExtra("WORKSPACE_NAME", workspaceName);
-                intent.putExtra("CREATE_PROJECT", true);
-                intent.putExtra("PROJECT_NAME", projectName);
-                intent.putExtra("PROJECT_DESCRIPTION", projectDescription);
-                startActivity(intent);
-            })
-            .setNegativeButton("Cancel", null)
-            .show();
+                Log.d(TAG, "Dialog Create button clicked - calling createProjectInOwnedWorkspace");
+                createProjectInOwnedWorkspace(projectName, projectDescription);
+                dialog.dismiss();
+            });
+        });
+        
+        dialog.show();
+    }
+    
+    /**
+     * Create project directly - backend will auto-find user's workspace
+     */
+    private void createProjectInOwnedWorkspace(String projectName, String projectDescription) {
+        Log.d(TAG, "Creating project: " + projectName);
+        
+        // Show loading
+        Toast.makeText(this, "Creating project...", Toast.LENGTH_SHORT).show();
+        
+        // Create Project object (null for id, workspaceId, key, boardType - backend will fill these)
+        Project newProject = new Project(
+            null,              // id - backend generates
+            null,              // workspaceId - backend auto-finds from user
+            projectName, 
+            projectDescription,
+            null,              // key - backend generates from name
+            "KANBAN"           // boardType - default to KANBAN
+        );
+        
+        // Call repository to create project (pass null for workspaceId - backend will auto-find)
+        IProjectRepository projectRepository = new ProjectRepositoryImpl(this);
+        projectRepository.createProject(null, newProject, new IProjectRepository.RepositoryCallback<Project>() {
+            @Override
+            public void onSuccess(Project project) {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "✓ Project created successfully: " + project.getName());
+                    Toast.makeText(HomeActivity.this, "Project created!", Toast.LENGTH_SHORT).show();
+                    
+                    // Refresh project list
+                    loadProjects();
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Log.e(TAG, "✗ Failed to create project: " + error);
+                    Toast.makeText(HomeActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     /**

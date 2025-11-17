@@ -1,6 +1,7 @@
 package com.example.tralalero.feature.home.ui.Home.project;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,6 +81,8 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     
     private TaskCalendarSyncViewModel calendarSyncViewModel;
     private TaskDTO currentTaskDTO; // For calendar sync
+    private TaskApiService taskApiService; // For fetching task details
+    private boolean isTaskDetailLoaded = false; // Track if task details from API are loaded
     
     public interface OnActionClickListener {
         void onAssignTask(Task task);
@@ -88,6 +91,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         void onDeleteTask(Task task);
         void onUpdateStartDate(Task task, Date startDate);
         void onUpdateDueDate(Task task, Date dueDate);
+        void onUpdateTask(Task task, String newTitle, String newDescription); // ✅ NEW: Save title & description
     }
     public static TaskDetailBottomSheet newInstance(Task task) {
         TaskDetailBottomSheet fragment = new TaskDetailBottomSheet();
@@ -287,6 +291,27 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                 dismiss();
             });
         }
+        
+        // ✅ NEW: Save Changes button
+        if (btnConfirm != null) {
+            btnConfirm.setOnClickListener(v -> {
+                if (listener != null && task != null) {
+                    String newTitle = rbTaskTitle != null ? rbTaskTitle.getText().toString().trim() : task.getTitle();
+                    String newDescription = etDescription != null ? etDescription.getText().toString().trim() : "";
+                    
+                    if (newTitle.isEmpty()) {
+                        Toast.makeText(requireContext(), "Title cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    
+                    listener.onUpdateTask(task, newTitle, newDescription);
+                    Toast.makeText(requireContext(), "Saving changes...", Toast.LENGTH_SHORT).show();
+                    dismiss();
+                } else {
+                    Toast.makeText(requireContext(), "Cannot save: task data missing", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
     
     private void showStartDatePicker() {
@@ -392,6 +417,14 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
      */
     private void initViewModel() {
         calendarSyncViewModel = new ViewModelProvider(this).get(TaskCalendarSyncViewModel.class);
+        
+        // Initialize API service
+        taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        
+        // Fetch current task details if task has ID (edit mode)
+        if (task != null && task.getId() != null && !task.getId().isEmpty()) {
+            fetchTaskDetails(task.getId());
+        }
     }
     
     /**
@@ -402,10 +435,17 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         calendarSyncViewModel.getSyncUpdatedTask().observe(getViewLifecycleOwner(), updatedTask -> {
             if (updatedTask != null) {
                 currentTaskDTO = updatedTask;
+                isTaskDetailLoaded = true;
+                
+                Log.d("TaskDetailBottomSheet", "Sync update successful. New state: " +
+                    "enabled=" + updatedTask.getCalendarReminderEnabled() +
+                    ", eventId=" + updatedTask.getCalendarEventId() +
+                    ", lastSynced=" + updatedTask.getLastSyncedAt());
+                
                 Toast.makeText(requireContext(), 
                     updatedTask.getCalendarReminderEnabled() 
-                        ? "Calendar sync enabled" 
-                        : "Calendar sync disabled", 
+                        ? "✅ Calendar sync enabled" 
+                        : "❌ Calendar sync disabled", 
                     Toast.LENGTH_SHORT).show();
             }
         });
@@ -433,9 +473,25 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             return;
         }
         
+        // If task details not loaded yet, show loading and wait
+        if (!isTaskDetailLoaded) {
+            Toast.makeText(requireContext(), "Loading task details...", Toast.LENGTH_SHORT).show();
+            // Fetch again to ensure we have latest data
+            fetchTaskDetails(task.getId());
+            return;
+        }
+        
+        // After check, open with data
+        openCalendarSyncDialogWithData();
+    }
+    
+    /**
+     * Open calendar sync dialog with loaded data
+     */
+    private void openCalendarSyncDialogWithData() {
         // Get current sync settings from TaskDTO (if available) or defaults
         boolean currentSyncEnabled = false;
-        int currentReminderTime = 15;
+        int currentReminderTime = 30; // Default changed to 30
         Date lastSyncedAtDate = null;
         
         if (currentTaskDTO != null) {
@@ -454,10 +510,13 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                     SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
                     lastSyncedAtDate = isoFormat.parse(lastSyncedAt);
                 } catch (Exception e) {
-                    // Ignore parse errors
+                    Log.w("TaskDetailBottomSheet", "Failed to parse last synced date: " + lastSyncedAt, e);
                 }
             }
         }
+        
+        Log.d("TaskDetailBottomSheet", "Opening calendar sync dialog with: enabled=" + 
+            currentSyncEnabled + ", reminder=" + currentReminderTime + "min");
         
         // Show dialog
         CalendarSyncDialog dialog = CalendarSyncDialog.newInstance(
@@ -471,10 +530,58 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         dialog.setOnSyncSettingsChangedListener((taskId, enabled, reminderMinutes) -> {
             // Call ViewModel to update calendar sync
-            calendarSyncViewModel.updateCalendarSync(taskId, enabled, reminderMinutes);
+            Log.d("TaskDetailBottomSheet", "Calendar sync changed: taskId=" + taskId +
+                ", enabled=" + enabled + ", reminder=" + reminderMinutes + "min");
+            
+            // Convert task's dueAt to ISO string for backend
+            String dueAtISO = null;
+            if (task.getDueAt() != null) {
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                dueAtISO = isoFormat.format(task.getDueAt());
+            }
+            
+            calendarSyncViewModel.updateCalendarSync(taskId, enabled, reminderMinutes, dueAtISO);
         });
         
         dialog.show(getParentFragmentManager(), "calendar_sync");
+    }
+    
+    /**
+     * Fetch full task details from API (including calendar sync settings)
+     */
+    private void fetchTaskDetails(String taskId) {
+        Log.d("TaskDetailBottomSheet", "Fetching task details for: " + taskId);
+        
+        taskApiService.getTaskById(taskId).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<TaskDTO> call, @NonNull Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentTaskDTO = response.body();
+                    isTaskDetailLoaded = true;
+                    
+                    Log.d("TaskDetailBottomSheet", "Task fetched successfully. Calendar sync: " + 
+                        currentTaskDTO.getCalendarReminderEnabled() + 
+                        ", Event ID: " + currentTaskDTO.getCalendarEventId() +
+                        ", Reminder time: " + currentTaskDTO.getCalendarReminderTime() +
+                        ", Last synced: " + currentTaskDTO.getLastSyncedAt());
+                    
+                    // If user clicked calendar sync before data loaded, open it now
+                    if (btnCalendarSync != null && btnCalendarSync.isPressed()) {
+                        openCalendarSyncDialogWithData();
+                    }
+                } else {
+                    Log.e("TaskDetailBottomSheet", "Failed to fetch task: " + response.code());
+                    Toast.makeText(requireContext(), "Failed to load task details", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<TaskDTO> call, @NonNull Throwable t) {
+                Log.e("TaskDetailBottomSheet", "Error fetching task details", t);
+                Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 

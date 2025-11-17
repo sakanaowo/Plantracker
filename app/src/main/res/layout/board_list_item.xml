@@ -12,8 +12,11 @@
 
         </LinearLayout>
 
-        <!-- Task RecyclerView - wrap_content instead of match_parent -->
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/taskRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxHeight="600dp" android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:clipToPadding="false" android:nestedScrollingEnabled="false" android:overScrollMode="never" android:scrollbars="vertical" tools:listitem="@layout/board_detail_item" />
+        <!-- Task RecyclerView - with minHeight for better drop target -->
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/taskRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="200dp" android:maxHeight="600dp" android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:clipToPadding="false" android:nestedScrollingEnabled="false" android:overScrollMode="never" android:scrollbars="vertical" tools:listitem="@layout/board_detail_item" />
+
+        <!-- Empty state for better drop visibility -->
+        <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Drop tasks here" android:textSize="12sp" android:textColor="#9AA5B1" android:gravity="center" android:paddingVertical="40dp" android:visibility="gone" />
 
         <!-- Add card button -->
         <LinearLayout android:id="@+id/btnAddCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingVertical="8dp" android:paddingHorizontal="4dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">

@@ -182,6 +182,7 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
         com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase getTaskByIdUseCase = new com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase(repository);
         com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase getTasksByBoardUseCase = new com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase(repository);
         com.example.tralalero.domain.usecase.task.CreateTaskUseCase createTaskUseCase = new com.example.tralalero.domain.usecase.task.CreateTaskUseCase(repository);
+        com.example.tralalero.domain.usecase.task.CreateQuickTaskUseCase createQuickTaskUseCase = new com.example.tralalero.domain.usecase.task.CreateQuickTaskUseCase(repository);
         com.example.tralalero.domain.usecase.task.UpdateTaskUseCase updateTaskUseCase = new com.example.tralalero.domain.usecase.task.UpdateTaskUseCase(repository);
         com.example.tralalero.domain.usecase.task.DeleteTaskUseCase deleteTaskUseCase = new com.example.tralalero.domain.usecase.task.DeleteTaskUseCase(repository);
         com.example.tralalero.domain.usecase.task.AssignTaskUseCase assignTaskUseCase = new com.example.tralalero.domain.usecase.task.AssignTaskUseCase(repository);
@@ -203,6 +204,7 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
                 getTaskByIdUseCase,
                 getTasksByBoardUseCase,
                 createTaskUseCase,
+                createQuickTaskUseCase,
                 updateTaskUseCase,
                 deleteTaskUseCase,
                 assignTaskUseCase,
