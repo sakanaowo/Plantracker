@@ -40,6 +40,7 @@ import com.example.tralalero.domain.model.GoogleCalendarStatusResponse;
 import com.example.tralalero.domain.model.AuthUrlResponse;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
+import com.example.tralalero.feature.home.ui.Home.task.TaskCalendarSyncViewModel;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
@@ -72,6 +73,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private String projectId;
     private boolean isEditMode;
     private TaskViewModel taskViewModel;
+    private TaskCalendarSyncViewModel calendarSyncViewModel;
     private com.example.tralalero.presentation.viewmodel.LabelViewModel labelViewModel;
     private ImageView ivClose;
     private EditText etTaskTitle; // Changed from RadioButton to EditText
@@ -298,6 +300,7 @@ public class CardDetailActivity extends AppCompatActivity {
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(repository);
         UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(repository);
         DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(repository);
         AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(repository);
@@ -318,6 +321,7 @@ public class CardDetailActivity extends AppCompatActivity {
                 getTaskByIdUseCase,
                 getTasksByBoardUseCase,
                 createTaskUseCase,
+                createQuickTaskUseCase,
                 updateTaskUseCase,
                 deleteTaskUseCase,
                 assignTaskUseCase,
@@ -337,6 +341,7 @@ public class CardDetailActivity extends AppCompatActivity {
                 repository
         );
         taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
+        calendarSyncViewModel = new ViewModelProvider(this).get(TaskCalendarSyncViewModel.class);
         
         // Setup AttachmentUploader
         attachmentUploader = new AttachmentUploader(attachmentApiService, this);
@@ -421,6 +426,20 @@ public class CardDetailActivity extends AppCompatActivity {
     }
 
     private void observeViewModel() {
+        // Observe calendar sync updates
+        calendarSyncViewModel.getSyncUpdatedTask().observe(this, updatedTask -> {
+            if (updatedTask != null) {
+                android.util.Log.d("CardDetailActivity", "✅ Calendar sync successful: enabled=" + 
+                    updatedTask.getCalendarReminderEnabled() + ", eventId=" + updatedTask.getCalendarEventId());
+            }
+        });
+        
+        calendarSyncViewModel.getSyncError().observe(this, error -> {
+            if (error != null) {
+                Toast.makeText(this, "Calendar sync error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+        
         taskViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, error, Toast.LENGTH_LONG).show();
@@ -685,6 +704,23 @@ public class CardDetailActivity extends AppCompatActivity {
                 null             // calendarSyncedAt (backend will update)
         );
         taskViewModel.updateTask(taskId, updatedTask);
+        
+        // After updating task, sync calendar settings if task has due date
+        String dueDate = etDueDate.getText().toString().trim();
+        if (isCalendarSyncEnabled && !TextUtils.isEmpty(dueDate)) {
+            android.util.Log.d("CardDetailActivity", "📅 Syncing calendar: taskId=" + taskId + 
+                ", enabled=" + isCalendarSyncEnabled + ", reminder=" + (reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)));
+            calendarSyncViewModel.updateCalendarSync(
+                taskId, 
+                isCalendarSyncEnabled, 
+                reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)
+            );
+        } else if (!isCalendarSyncEnabled) {
+            // Disable sync if toggle is OFF
+            android.util.Log.d("CardDetailActivity", "🗑️ Disabling calendar sync: taskId=" + taskId);
+            calendarSyncViewModel.updateCalendarSync(taskId, false, 30);
+        }
+        
         Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show();
         Intent resultIntent = new Intent();
         resultIntent.putExtra("board_id_for_reload", boardId);

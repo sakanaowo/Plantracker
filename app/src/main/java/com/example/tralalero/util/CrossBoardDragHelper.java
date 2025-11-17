@@ -51,7 +51,7 @@ public class CrossBoardDragHelper {
         private final RecyclerView recyclerView;
         
         public interface OnTaskDroppedListener {
-            void onTaskDropped(String taskId, String sourceBoardId, String targetBoardId, int position);
+            void onTaskDropped(Task task, String sourceBoardId, String targetBoardId, int position);
         }
         
         public BoardDragListener(String targetBoardId, RecyclerView recyclerView, OnTaskDroppedListener listener) {
@@ -91,15 +91,20 @@ public class CrossBoardDragHelper {
                     if (parts.length != 2) {
                         return false; // Invalid format
                     }
-                    String taskId = parts[0];
                     String sourceBoardId = parts[1];
+                    
+                    // Retrieve Task object from local state
+                    Task task = (Task) event.getLocalState();
+                    if (task == null) {
+                        return false; // No task data
+                    }
                     
                     // Calculate drop position
                     int position = calculateDropPosition(event.getX(), event.getY());
                     
-                    // Notify listener
+                    // Notify listener with Task object
                     if (listener != null) {
-                        listener.onTaskDropped(taskId, sourceBoardId, targetBoardId, position);
+                        listener.onTaskDropped(task, sourceBoardId, targetBoardId, position);
                     }
                     
                     // Remove highlight

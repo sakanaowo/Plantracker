@@ -322,6 +322,110 @@ public class ProjectViewModel extends ViewModel {
         });
     }
     
+    /**
+     * ✅ NEW: Optimistic move task between boards (for drag & drop)
+     * Updates UI immediately, then syncs with backend
+     */
+    public void moveTaskOptimistically(Task task, String targetBoardId, double newPosition) {
+        if (task == null || targetBoardId == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = task.getBoardId();
+        if (sourceBoardId == null || sourceBoardId.equals(targetBoardId)) return;
+        
+        // ✅ Clone the map to trigger LiveData update
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks != null) {
+            sourceTasks.removeIf(t -> t.getId().equals(task.getId()));
+        }
+        
+        // ✅ Add to target board with new position
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks == null) {
+            targetTasks = new ArrayList<>();
+            updatedMap.put(targetBoardId, targetTasks);
+        }
+        
+        // Create moved task with new boardId and position
+        Task movedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            targetBoardId, // ✅ New board
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            newPosition, // ✅ New position
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt()
+        );
+        
+        targetTasks.add(movedTask);
+        
+        // ✅ Update LiveData immediately
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
+    /**
+     * ✅ NEW: Rollback optimistic move if API fails
+     */
+    public void rollbackTaskMove(Task originalTask, String targetBoardId) {
+        if (originalTask == null || targetBoardId == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = originalTask.getBoardId();
+        if (sourceBoardId == null) return;
+        
+        // ✅ Clone the map
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from target board (where we optimistically added it)
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks != null) {
+            targetTasks.removeIf(t -> t.getId().equals(originalTask.getId()));
+        }
+        
+        // ✅ Restore to source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks == null) {
+            sourceTasks = new ArrayList<>();
+            updatedMap.put(sourceBoardId, sourceTasks);
+        }
+        sourceTasks.add(originalTask);
+        
+        // ✅ Update LiveData
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
     @Override
     protected void onCleared() {
         super.onCleared();

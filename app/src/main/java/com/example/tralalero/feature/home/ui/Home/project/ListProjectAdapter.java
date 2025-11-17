@@ -73,6 +73,7 @@ public class ListProjectAdapter extends FragmentStateAdapter {
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(repository);
         UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(repository);
         DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(repository);
         AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(repository);
@@ -93,6 +94,7 @@ public class ListProjectAdapter extends FragmentStateAdapter {
                 getTaskByIdUseCase,
                 getTasksByBoardUseCase,
                 createTaskUseCase,
+                createQuickTaskUseCase,
                 updateTaskUseCase,
                 deleteTaskUseCase,
                 assignTaskUseCase,

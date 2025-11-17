@@ -1,5 +1,6 @@
 package com.example.tralalero.presentation.viewmodel;
 
+import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -10,6 +11,7 @@ import com.example.tralalero.domain.model.Checklist;
 import com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase;
 import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
 import com.example.tralalero.domain.usecase.task.CreateTaskUseCase;
+import com.example.tralalero.domain.usecase.task.CreateQuickTaskUseCase;
 import com.example.tralalero.domain.usecase.task.UpdateTaskUseCase;
 import com.example.tralalero.domain.usecase.task.DeleteTaskUseCase;
 import com.example.tralalero.domain.usecase.task.AssignTaskUseCase;
@@ -54,6 +56,7 @@ public class TaskViewModel extends ViewModel {
     private final GetTaskByIdUseCase getTaskByIdUseCase;
     private final GetTasksByBoardUseCase getTasksByBoardUseCase;
     private final CreateTaskUseCase createTaskUseCase;
+    private final CreateQuickTaskUseCase createQuickTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
     private final DeleteTaskUseCase deleteTaskUseCase;
     private final AssignTaskUseCase assignTaskUseCase;
@@ -100,12 +103,29 @@ public class TaskViewModel extends ViewModel {
             this.targetBoardId = targetBoardId;
         }
     }
+    
+    public static class TaskMoveFailedEvent {
+        public final Task originalTask;
+        public final String sourceBoardId;
+        public final String targetBoardId;
+        public final String error;
+        
+        public TaskMoveFailedEvent(Task originalTask, String sourceBoardId, String targetBoardId, String error) {
+            this.originalTask = originalTask;
+            this.sourceBoardId = sourceBoardId;
+            this.targetBoardId = targetBoardId;
+            this.error = error;
+        }
+    }
+    
     private final MutableLiveData<TaskMovedEvent> taskMovedEventLiveData = new MutableLiveData<>();
+    private final MutableLiveData<TaskMoveFailedEvent> taskMoveFailedEventLiveData = new MutableLiveData<>();
 
     public TaskViewModel(
             GetTaskByIdUseCase getTaskByIdUseCase,
             GetTasksByBoardUseCase getTasksByBoardUseCase,
             CreateTaskUseCase createTaskUseCase,
+            CreateQuickTaskUseCase createQuickTaskUseCase,
             UpdateTaskUseCase updateTaskUseCase,
             DeleteTaskUseCase deleteTaskUseCase,
             AssignTaskUseCase assignTaskUseCase,
@@ -127,6 +147,7 @@ public class TaskViewModel extends ViewModel {
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
         this.createTaskUseCase = createTaskUseCase;
+        this.createQuickTaskUseCase = createQuickTaskUseCase;
         this.updateTaskUseCase = updateTaskUseCase;
         this.deleteTaskUseCase = deleteTaskUseCase;
         this.assignTaskUseCase = assignTaskUseCase;
@@ -208,6 +229,10 @@ public class TaskViewModel extends ViewModel {
     
     public LiveData<TaskMovedEvent> getTaskMovedEvent() {
         return taskMovedEventLiveData;
+    }
+    
+    public LiveData<TaskMoveFailedEvent> getTaskMoveFailedEvent() {
+        return taskMoveFailedEventLiveData;
     }
     
     /**
@@ -386,6 +411,95 @@ public class TaskViewModel extends ViewModel {
                         }
                         inboxTasksLiveData.setValue(updated);
                     }
+                }
+            }
+        });
+    }
+
+    /**
+     * ✅ NEW: Create quick task (inbox task without project/board ID)
+     * Uses POST /api/tasks/quick endpoint
+     * Backend auto-assigns to user's default project and inbox board
+     */
+    public void createQuickTask(String title, String description) {
+        errorLiveData.setValue(null);
+        
+        // ✅ Optimistic update: Add temp task to inbox immediately
+        String tempId = "temp_" + System.currentTimeMillis();
+        java.util.Date now = new java.util.Date();
+        
+        // Create temp task with minimal data (projectId/boardId will be assigned by backend)
+        Task tempTask = new Task(
+            tempId,          // id (temp)
+            null,            // projectId (backend assigns)
+            null,            // boardId (backend assigns)
+            title,           // title
+            description != null ? description : "",  // description
+            null,            // issueKey
+            Task.TaskType.TASK,
+            Task.TaskStatus.TO_DO,
+            Task.TaskPriority.MEDIUM,
+            0.0,             // position
+            null,            // assigneeId
+            null,            // createdBy
+            null,            // sprintId
+            null,            // epicId
+            null,            // parentTaskId
+            null,            // startAt
+            null,            // dueAt
+            null,            // storyPoints
+            null,            // originalEstimateSec
+            null,            // remainingEstimateSec
+            now,             // createdAt
+            now              // updatedAt
+        );
+        
+        // Add to inbox immediately
+        List<Task> currentInbox = inboxTasksLiveData.getValue();
+        if (currentInbox != null) {
+            List<Task> updated = new ArrayList<>(currentInbox);
+            updated.add(0, tempTask);
+            inboxTasksLiveData.setValue(updated);
+        }
+        
+        // Now call API
+        loadingLiveData.setValue(true);
+        createQuickTaskUseCase.execute(title, description, new CreateQuickTaskUseCase.Callback<Task>() {
+            @Override
+            public void onSuccess(Task result) {
+                loadingLiveData.setValue(false);
+                selectedTaskLiveData.setValue(result);
+                
+                // ✅ Replace temp with real task
+                List<Task> inbox = inboxTasksLiveData.getValue();
+                if (inbox != null) {
+                    List<Task> updated = new ArrayList<>();
+                    for (Task t : inbox) {
+                        if (t == tempTask) {
+                            updated.add(result); // Replace temp with real
+                        } else {
+                            updated.add(t);
+                        }
+                    }
+                    inboxTasksLiveData.setValue(updated);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+                
+                // ✅ Rollback: Remove temp task
+                List<Task> inbox = inboxTasksLiveData.getValue();
+                if (inbox != null) {
+                    List<Task> updated = new ArrayList<>();
+                    for (Task t : inbox) {
+                        if (t != tempTask) {
+                            updated.add(t);
+                        }
+                    }
+                    inboxTasksLiveData.setValue(updated);
                 }
             }
         });
@@ -824,6 +938,45 @@ public class TaskViewModel extends ViewModel {
                 errorLiveData.setValue(error);
             }
         });
+    }
+
+    /**
+     * ✅ SIMPLIFIED: Move task to board (for drag & drop in ProjectActivity)
+     * NO optimistic update here - ProjectViewModel handles it
+     * This only calls API and emits success/error events
+     */
+    public void moveTaskToBoard(Task task, String targetBoardId, double position) {
+        if (task == null || targetBoardId == null) return;
+        
+        errorLiveData.setValue(null);
+        
+        final String sourceBoardId = task.getBoardId();
+        final Task originalTask = task;
+        
+        // ✅ Call UseCase - ProjectViewModel already did optimistic update
+        moveTaskToBoardUseCase.execute(
+            task.getId(), targetBoardId, position,
+            new MoveTaskToBoardUseCase.Callback<Task>() {
+                @Override
+                public void onSuccess(Task updatedTask) {
+                    // Backend confirmed - emit success event
+                    taskMovedEventLiveData.setValue(new TaskMovedEvent(
+                        task.getId(), sourceBoardId, targetBoardId
+                    ));
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "❌ moveTaskToBoard failed: " + error);
+                    errorLiveData.setValue(error);
+                    
+                    // ✅ Emit rollback event with original task data
+                    taskMoveFailedEventLiveData.setValue(new TaskMoveFailedEvent(
+                        originalTask, sourceBoardId, targetBoardId, error
+                    ));
+                }
+            }
+        );
     }
 
     /**

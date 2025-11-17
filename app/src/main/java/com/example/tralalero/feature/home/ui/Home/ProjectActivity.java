@@ -183,6 +183,7 @@ public class ProjectActivity extends AppCompatActivity implements
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(repository);
         UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(repository);
         DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(repository);
         AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(repository);
@@ -202,7 +203,7 @@ public class ProjectActivity extends AppCompatActivity implements
 
         TaskViewModelFactory taskFactory = new TaskViewModelFactory(
                 getTaskByIdUseCase, getTasksByBoardUseCase, createTaskUseCase,
-                updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
+                createQuickTaskUseCase, updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase,
                 unassignTaskUseCase, moveTaskToBoardUseCase, updateTaskPositionUseCase,
                 addCommentUseCase, getTaskCommentsUseCase, addAttachmentUseCase,
                 getTaskAttachmentsUseCase, addChecklistUseCase, getTaskChecklistsUseCase,
@@ -480,25 +481,31 @@ public class ProjectActivity extends AppCompatActivity implements
         projectViewModel.getTasksPerBoard().observe(this, tasksMap -> {
             if (tasksMap != null) {
                 Log.d(TAG, "📋 Loaded tasks for " + tasksMap.size() + " boards from ProjectViewModel");
+                
+                // ✅ Update each board's tasks in adapter
+                for (Map.Entry<String, List<Task>> entry : tasksMap.entrySet()) {
+                    boardAdapter.updateTasksForBoard(entry.getKey(), entry.getValue());
+                }
+                
+                // ✅ Also notify to rebind ViewHolders for visible boards
                 boardAdapter.notifyDataSetChanged();
             }
         });
         
-        // ✅ NEW: Observe task moved event to refresh boards (for drag & drop)
+        // ✅ Observe task moved event - just show success message (no refresh needed)
         taskViewModel.getTaskMovedEvent().observe(this, event -> {
             if (event != null) {
-                Log.d(TAG, "Task moved event received: taskId=" + event.taskId + 
-                    ", source=" + event.sourceBoardId + ", target=" + event.targetBoardId);
-                
-                // Refresh both source and target boards to get updated task lists
-                if (event.sourceBoardId != null && !event.sourceBoardId.isEmpty()) {
-                    projectViewModel.refreshBoardTasks(event.sourceBoardId);
-                }
-                if (event.targetBoardId != null && !event.targetBoardId.isEmpty()) {
-                    projectViewModel.refreshBoardTasks(event.targetBoardId);
-                }
-                
+                Log.d(TAG, "✅ Task moved confirmed by backend: taskId=" + event.taskId);
                 Toast.makeText(this, "✅ Task moved successfully", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // ✅ Observe task move failed event - rollback optimistic update
+        taskViewModel.getTaskMoveFailedEvent().observe(this, event -> {
+            if (event != null) {
+                Log.e(TAG, "❌ Task move failed, rolling back: " + event.error);
+                projectViewModel.rollbackTaskMove(event.originalTask, event.targetBoardId);
+                Toast.makeText(this, "❌ Failed to move task: " + event.error, Toast.LENGTH_LONG).show();
             }
         });
         
@@ -590,8 +597,8 @@ public class ProjectActivity extends AppCompatActivity implements
      * ✅ NEW: Handle cross-board drag & drop
      */
     @Override
-    public void onTaskDroppedOnBoard(String taskId, String sourceBoardId, String targetBoardId, int position) {
-        Log.d(TAG, "onTaskDroppedOnBoard: taskId=" + taskId + 
+    public void onTaskDroppedOnBoard(Task task, String sourceBoardId, String targetBoardId, int position) {
+        Log.d(TAG, "onTaskDroppedOnBoard: taskId=" + task.getId() + 
             ", from=" + sourceBoardId + ", to=" + targetBoardId + ", position=" + position);
         
         if (sourceBoardId.equals(targetBoardId)) {
@@ -605,9 +612,11 @@ public class ProjectActivity extends AppCompatActivity implements
         
         Log.d(TAG, "Moving task from board " + sourceBoardId + " to " + targetBoardId + " at position " + newPosition);
         
-        // ✅ MVVM: Call TaskViewModel to move
-        // TaskMovedEvent will be emitted on success, triggering board refresh via observer
-        taskViewModel.moveTaskToBoard(taskId, targetBoardId, newPosition);
+        // ✅ OPTIMISTIC UPDATE: Update UI immediately
+        projectViewModel.moveTaskOptimistically(task, targetBoardId, newPosition);
+        
+        // ✅ Then call API in background
+        taskViewModel.moveTaskToBoard(task, targetBoardId, newPosition);
         
         Toast.makeText(this, "✅ Moving task...", Toast.LENGTH_SHORT).show();
     }

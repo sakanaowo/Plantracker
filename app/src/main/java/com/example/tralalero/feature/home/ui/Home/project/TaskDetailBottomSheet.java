@@ -91,6 +91,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         void onDeleteTask(Task task);
         void onUpdateStartDate(Task task, Date startDate);
         void onUpdateDueDate(Task task, Date dueDate);
+        void onUpdateTask(Task task, String newTitle, String newDescription); // ✅ NEW: Save title & description
     }
     public static TaskDetailBottomSheet newInstance(Task task) {
         TaskDetailBottomSheet fragment = new TaskDetailBottomSheet();
@@ -288,6 +289,27 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                     listener.onDeleteTask(task);
                 }
                 dismiss();
+            });
+        }
+        
+        // ✅ NEW: Save Changes button
+        if (btnConfirm != null) {
+            btnConfirm.setOnClickListener(v -> {
+                if (listener != null && task != null) {
+                    String newTitle = rbTaskTitle != null ? rbTaskTitle.getText().toString().trim() : task.getTitle();
+                    String newDescription = etDescription != null ? etDescription.getText().toString().trim() : "";
+                    
+                    if (newTitle.isEmpty()) {
+                        Toast.makeText(requireContext(), "Title cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    
+                    listener.onUpdateTask(task, newTitle, newDescription);
+                    Toast.makeText(requireContext(), "Saving changes...", Toast.LENGTH_SHORT).show();
+                    dismiss();
+                } else {
+                    Toast.makeText(requireContext(), "Cannot save: task data missing", Toast.LENGTH_SHORT).show();
+                }
             });
         }
     }

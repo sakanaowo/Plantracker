@@ -104,6 +104,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(apiRepository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(apiRepository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(apiRepository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(apiRepository);
         UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(apiRepository);
         DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(apiRepository);
         AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(apiRepository);
@@ -125,6 +126,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             getTaskByIdUseCase,
             getTasksByBoardUseCase,
             createTaskUseCase,
+            createQuickTaskUseCase,
             updateTaskUseCase,
             deleteTaskUseCase,
             assignTaskUseCase,
@@ -268,49 +270,22 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     // All replaced by taskViewModel.loadInboxTasks() + observer pattern
 
     /**
-     * ✅ NEW: Create task via ViewModel with optimistic update
-     * This replaces direct API call pattern
+     * ✅ NEW: Create quick task via ViewModel with optimistic update
+     * Uses POST /api/tasks/quick (no projectId/boardId required)
      */
     private void createTask(String title) {
         Log.d(TAG, "✅ Creating quick task via ViewModel: " + title);
         
-        // Create new task object using immutable constructor (optimistic temp task)
-        String tempId = "temp_" + System.currentTimeMillis();
-        java.util.Date now = new java.util.Date();
-        Task newTask = new Task(
-            tempId,          // id (temp)
-            null,            // projectId
-            null,            // boardId (inbox)
-            title,           // title
-            "",             // description
-            null,            // issueKey
-            Task.TaskType.TASK,
-            Task.TaskStatus.TO_DO,
-            Task.TaskPriority.MEDIUM,
-            0.0,             // position
-            null,            // assigneeId
-            null,            // createdBy
-            null,            // sprintId
-            null,            // epicId
-            null,            // parentTaskId
-            null,            // startAt
-            null,            // dueAt
-            null,            // storyPoints
-            null,            // originalEstimateSec
-            null,            // remainingEstimateSec
-            now,             // createdAt
-            now              // updatedAt
-        );
-
         // ✅ Call ViewModel - optimistic update will show instantly
-        taskViewModel.createTask(newTask);
+        // Backend will auto-assign to user's default project and inbox board
+        taskViewModel.createQuickTask(title, "");
         
         // Observer auto-updates UI via inboxTasksLiveData
         android.widget.Toast.makeText(this, 
             "✓ Creating task...", 
             android.widget.Toast.LENGTH_SHORT).show();
         
-        Log.d(TAG, "✅ Task creation delegated to ViewModel (optimistic update)");
+        Log.d(TAG, "✅ Quick task creation delegated to ViewModel (optimistic update)");
     }
 
     private void showTaskDetailBottomSheet(Task task) {
@@ -339,6 +314,10 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             @Override
             public void onUpdateDueDate(Task task, java.util.Date dueDate) {
                 handleUpdateDueDate(task, dueDate);
+            }
+            @Override
+            public void onUpdateTask(Task task, String newTitle, String newDescription) {
+                handleUpdateTask(task, newTitle, newDescription);
             }
         });
         bottomSheet.show(getSupportFragmentManager(), "TaskDetailBottomSheet");
@@ -507,6 +486,44 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         
         // Observer automatically updates UI
         Toast.makeText(this, "✓ Task toggled", Toast.LENGTH_SHORT).show();
+    }
+    
+    /**
+     * ✅ NEW: Handle task title and description update from bottom sheet
+     */
+    private void handleUpdateTask(Task task, String newTitle, String newDescription) {
+        Log.d(TAG, "✅ Updating task title and description: " + task.getId());
+        
+        // Create updated task with new title and description
+        Task updatedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            task.getBoardId(),
+            newTitle,           // ✅ Updated title
+            newDescription,     // ✅ Updated description
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            task.getPosition(),
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt()
+        );
+        
+        // ✅ Update via ViewModel - optimistic update handles UI instantly
+        taskViewModel.updateTask(task.getId(), updatedTask);
+        
+        Toast.makeText(this, "✓ Task updated", Toast.LENGTH_SHORT).show();
     }
 }
 
