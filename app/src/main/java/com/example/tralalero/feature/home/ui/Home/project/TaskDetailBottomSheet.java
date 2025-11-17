@@ -532,7 +532,16 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             // Call ViewModel to update calendar sync
             Log.d("TaskDetailBottomSheet", "Calendar sync changed: taskId=" + taskId +
                 ", enabled=" + enabled + ", reminder=" + reminderMinutes + "min");
-            calendarSyncViewModel.updateCalendarSync(taskId, enabled, reminderMinutes);
+            
+            // Convert task's dueAt to ISO string for backend
+            String dueAtISO = null;
+            if (task.getDueAt() != null) {
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                dueAtISO = isoFormat.format(task.getDueAt());
+            }
+            
+            calendarSyncViewModel.updateCalendarSync(taskId, enabled, reminderMinutes, dueAtISO);
         });
         
         dialog.show(getParentFragmentManager(), "calendar_sync");

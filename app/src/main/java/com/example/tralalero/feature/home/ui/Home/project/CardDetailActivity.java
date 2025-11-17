@@ -29,6 +29,10 @@ import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import com.example.tralalero.data.remote.api.UserApiService;
 import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.feature.task.attachments.AttachmentUploader;
@@ -124,6 +128,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private TextView tvCalendarEventInfo;
     private LinearLayout layoutCalendarDetails;
     private boolean isCalendarSyncEnabled = false;
+    private boolean isPopulatingCalendarUI = false; // ✅ Flag to prevent listener trigger during UI population
     private List<Integer> reminderMinutes = new ArrayList<>(Arrays.asList(15, 60, 1440));
     private GoogleAuthApiService googleAuthApiService;
 
@@ -426,6 +431,18 @@ public class CardDetailActivity extends AppCompatActivity {
     }
 
     private void observeViewModel() {
+        // ✅ Observe task details (for loading calendar sync state)
+        taskViewModel.getSelectedTask().observe(this, task -> {
+            if (task != null && isEditMode) {
+                android.util.Log.d(TAG, "✅ Task loaded: calendarSyncEnabled=" + task.isCalendarSyncEnabled() + 
+                    ", reminderMinutes=" + task.getCalendarReminderMinutes() + 
+                    ", eventId=" + task.getCalendarEventId());
+                
+                // Populate calendar sync UI
+                populateCalendarSyncUI(task);
+            }
+        });
+        
         // Observe calendar sync updates
         calendarSyncViewModel.getSyncUpdatedTask().observe(this, updatedTask -> {
             if (updatedTask != null) {
@@ -535,6 +552,7 @@ public class CardDetailActivity extends AppCompatActivity {
             loadTaskComments();
             loadChecklistItems();
             loadTaskLabels();
+            loadTaskDetails(); // ✅ Load full task data including calendar sync
         }
         
         // Display selected labels (initial state)
@@ -570,6 +588,16 @@ public class CardDetailActivity extends AppCompatActivity {
         // Load task labels from API via ViewModel
         if (taskId != null && !taskId.isEmpty() && labelViewModel != null) {
             labelViewModel.loadTaskLabels(taskId);
+        }
+    }
+    
+    /**
+     * ✅ NEW: Load full task details from API (for calendar sync fields)
+     */
+    private void loadTaskDetails() {
+        if (taskId != null && !taskId.isEmpty()) {
+            android.util.Log.d(TAG, "Loading task details for taskId: " + taskId);
+            taskViewModel.loadTaskById(taskId);
         }
     }
 
@@ -642,6 +670,34 @@ public class CardDetailActivity extends AppCompatActivity {
         }
 
         String description = etDescription.getText().toString().trim();
+        
+        // ✅ Parse dates from EditTexts with time to avoid timezone issues
+        Date dueAt = null;
+        Date startAt = null;
+        SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
+        
+        String dueDateStr = etDueDate.getText().toString().trim();
+        if (!TextUtils.isEmpty(dueDateStr)) {
+            try {
+                // Append default time (12:00) if no time specified to avoid timezone shift
+                String dateTimeStr = dueDateStr.contains(" ") ? dueDateStr : dueDateStr + " 12:00";
+                dueAt = displayFormat.parse(dateTimeStr);
+            } catch (Exception e) {
+                android.util.Log.e(TAG, "Error parsing due date: " + dueDateStr, e);
+            }
+        }
+        
+        String startDateStr = etDateStart.getText().toString().trim();
+        if (!TextUtils.isEmpty(startDateStr)) {
+            try {
+                // Append default time (09:00) if no time specified
+                String dateTimeStr = startDateStr.contains(" ") ? startDateStr : startDateStr + " 09:00";
+                startAt = displayFormat.parse(dateTimeStr);
+            } catch (Exception e) {
+                android.util.Log.e(TAG, "Error parsing start date: " + startDateStr, e);
+            }
+        }
+        
         Task newTask = new Task(
                 "",              // id (backend will generate)
                 projectId,       // projectId
@@ -655,7 +711,16 @@ public class CardDetailActivity extends AppCompatActivity {
                 0.0,             // position
                 null,            // assigneeId
                 null,            // createdBy (backend will set)
-                null, null, null, null, null, null, null, null, null, null,
+                null,            // sprintId
+                null,            // epicId
+                null,            // parentTaskId
+                startAt,         // ✅ startAt (Date)
+                dueAt,           // ✅ dueAt (Date)
+                null,            // storyPoints
+                null,            // originalEstimateSec
+                null,            // remainingEstimateSec
+                null,            // createdAt
+                null,            // updatedAt
                 // Calendar sync fields
                 isCalendarSyncEnabled,
                 isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
@@ -683,20 +748,57 @@ public class CardDetailActivity extends AppCompatActivity {
         double position = getIntent().getDoubleExtra(EXTRA_TASK_POSITION, 0);
         String assigneeId = getIntent().getStringExtra(EXTRA_TASK_ASSIGNEE_ID);
         String createdBy = getIntent().getStringExtra(EXTRA_TASK_CREATED_BY);
+        
+        // ✅ Parse dates from EditTexts with time to avoid timezone issues
+        Date dueAt = null;
+        Date startAt = null;
+        SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
+        
+        String dueDateStr = etDueDate.getText().toString().trim();
+        if (!TextUtils.isEmpty(dueDateStr)) {
+            try {
+                // Append default time (12:00) if no time specified to avoid timezone shift
+                String dateTimeStr = dueDateStr.contains(" ") ? dueDateStr : dueDateStr + " 12:00";
+                dueAt = displayFormat.parse(dateTimeStr);
+            } catch (Exception e) {
+                android.util.Log.e(TAG, "Error parsing due date: " + dueDateStr, e);
+            }
+        }
+        
+        String startDateStr = etDateStart.getText().toString().trim();
+        if (!TextUtils.isEmpty(startDateStr)) {
+            try {
+                // Append default time (09:00) if no time specified
+                String dateTimeStr = startDateStr.contains(" ") ? startDateStr : startDateStr + " 09:00";
+                startAt = displayFormat.parse(dateTimeStr);
+            } catch (Exception e) {
+                android.util.Log.e(TAG, "Error parsing start date: " + startDateStr, e);
+            }
+        }
+        
         Task updatedTask = new Task(
                 taskId,
                 projectId,
                 boardId,
                 title,
                 description,
-                null,
-                null,
+                null,            // issueKey
+                null,            // type
                 status != null ? Task.TaskStatus.valueOf(status) : Task.TaskStatus.TO_DO,
                 currentPriority, // Use current selected priority
                 position,
                 assigneeId,
                 createdBy,
-                null, null, null, null, null, null, null, null, null, null,
+                null,            // sprintId
+                null,            // epicId
+                null,            // parentTaskId
+                startAt,         // ✅ startAt (Date)
+                dueAt,           // ✅ dueAt (Date)
+                null,            // storyPoints
+                null,            // originalEstimateSec
+                null,            // remainingEstimateSec
+                null,            // createdAt
+                null,            // updatedAt
                 // Calendar sync fields
                 isCalendarSyncEnabled,
                 isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
@@ -706,19 +808,25 @@ public class CardDetailActivity extends AppCompatActivity {
         taskViewModel.updateTask(taskId, updatedTask);
         
         // After updating task, sync calendar settings if task has due date
-        String dueDate = etDueDate.getText().toString().trim();
-        if (isCalendarSyncEnabled && !TextUtils.isEmpty(dueDate)) {
+        if (isCalendarSyncEnabled && dueAt != null) {
             android.util.Log.d("CardDetailActivity", "📅 Syncing calendar: taskId=" + taskId + 
                 ", enabled=" + isCalendarSyncEnabled + ", reminder=" + (reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)));
+            
+            // Convert Date to ISO string for backend
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            String dueAtISO = isoFormat.format(dueAt);
+            
             calendarSyncViewModel.updateCalendarSync(
                 taskId, 
                 isCalendarSyncEnabled, 
-                reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)
+                reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0),
+                dueAtISO
             );
         } else if (!isCalendarSyncEnabled) {
             // Disable sync if toggle is OFF
             android.util.Log.d("CardDetailActivity", "🗑️ Disabling calendar sync: taskId=" + taskId);
-            calendarSyncViewModel.updateCalendarSync(taskId, false, 30);
+            calendarSyncViewModel.updateCalendarSync(taskId, false, 30, null);
         }
         
         Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show();
@@ -981,6 +1089,13 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Toggle calendar sync
         switchCalendarSync.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // ✅ Skip if we're populating UI from loaded task data
+            if (isPopulatingCalendarUI) {
+                android.util.Log.d(TAG, "⏭️ Skipping listener callback - populating UI");
+                return;
+            }
+            
+            android.util.Log.d(TAG, "👆 User toggled calendar sync: " + isChecked);
             isCalendarSyncEnabled = isChecked;
             layoutCalendarDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             
@@ -1044,6 +1159,79 @@ public class CardDetailActivity extends AppCompatActivity {
                 updateReminderInfoText();
             }
         }
+    }
+    
+    /**
+     * ✅ NEW: Populate calendar sync UI from loaded task data
+     */
+    private void populateCalendarSyncUI(Task task) {
+        // ⚠️ CRITICAL: Set flag to prevent listener from triggering during UI population
+        isPopulatingCalendarUI = true;
+        
+        // Check if task has due date - REQUIRED for calendar sync
+        String dueDate = "";
+        if (task.getDueAt() != null) {
+            SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+            dueDate = displayFormat.format(task.getDueAt());
+            etDueDate.setText(dueDate);
+        }
+        
+        // Only enable calendar sync if Google Calendar connected AND task has due date
+        boolean canEnableSync = isGoogleCalendarConnected() && !TextUtils.isEmpty(dueDate);
+        
+        if (!canEnableSync) {
+            switchCalendarSync.setEnabled(false);
+            switchCalendarSync.setChecked(false);
+            
+            if (TextUtils.isEmpty(dueDate)) {
+                tvCalendarEventInfo.setText("⚠️ Cần thêm due date để sync với Calendar");
+            } else {
+                tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar");
+            }
+            layoutCalendarDetails.setVisibility(View.GONE);
+            
+            // Clear flag
+            isPopulatingCalendarUI = false;
+            return;
+        }
+        
+        // Task has due date and calendar connected - populate sync state
+        switchCalendarSync.setEnabled(true);
+        
+        if (task.isCalendarSyncEnabled()) {
+            switchCalendarSync.setChecked(true);
+            isCalendarSyncEnabled = true;
+            layoutCalendarDetails.setVisibility(View.VISIBLE);
+            
+            // Set reminder minutes
+            if (task.getCalendarReminderMinutes() != null && !task.getCalendarReminderMinutes().isEmpty()) {
+                reminderMinutes.clear();
+                reminderMinutes.addAll(task.getCalendarReminderMinutes());
+            } else {
+                reminderMinutes.clear();
+                reminderMinutes.add(30); // Default
+            }
+            
+            updateReminderInfoText();
+            
+            // Show event info if synced
+            if (task.getCalendarEventId() != null && task.getCalendarSyncedAt() != null) {
+                SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
+                String syncTime = displayFormat.format(task.getCalendarSyncedAt());
+                tvCalendarEventInfo.setText("✅ Đã đồng bộ lúc: " + syncTime);
+                btnViewInCalendar.setVisibility(View.VISIBLE);
+            } else {
+                tvCalendarEventInfo.setText("📅 Sẽ tự động đồng bộ khi lưu");
+            }
+        } else {
+            switchCalendarSync.setChecked(false);
+            isCalendarSyncEnabled = false;
+            layoutCalendarDetails.setVisibility(View.GONE);
+            tvCalendarEventInfo.setText("📅 Bật để đồng bộ với Google Calendar");
+        }
+        
+        // ✅ Clear flag - listener can now respond to user interactions
+        isPopulatingCalendarUI = false;
     }
     
     private void showConnectGoogleCalendarDialog() {
@@ -1158,18 +1346,69 @@ public class CardDetailActivity extends AppCompatActivity {
         android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog(
                 this,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    String date = String.format(Locale.getDefault(), 
-                            "%02d/%02d/%d", selectedDay, selectedMonth + 1, selectedYear);
-                    if (isStartDate) {
-                        etDateStart.setText(date);
-                    } else {
-                        etDueDate.setText(date);
-                    }
+                    // After date selected, show time picker
+                    showTimePickerDialog(isStartDate, selectedYear, selectedMonth, selectedDay);
                 },
                 year, month, day
         );
 
         datePickerDialog.show();
+    }
+    
+    /**
+     * Show time picker after date selection
+     */
+    private void showTimePickerDialog(boolean isStartDate, int year, int month, int day) {
+        int defaultHour = isStartDate ? 9 : 17; // Default: 9 AM for start, 5 PM for due
+        int defaultMinute = 0;
+        
+        android.app.TimePickerDialog timePickerDialog = new android.app.TimePickerDialog(
+                this,
+                (view, selectedHour, selectedMinute) -> {
+                    // Format: dd/MM/yyyy HH:mm
+                    String date = String.format(Locale.getDefault(), 
+                            "%02d/%02d/%d %02d:%02d", day, month + 1, year, selectedHour, selectedMinute);
+                    if (isStartDate) {
+                        etDateStart.setText(date);
+                    } else {
+                        etDueDate.setText(date);
+                        // ✅ Check calendar sync availability when due date changes
+                        updateCalendarSyncAvailability();
+                    }
+                },
+                defaultHour, defaultMinute, true // 24-hour format
+        );
+        
+        timePickerDialog.show();
+    }
+    
+    /**
+     * ✅ NEW: Update calendar sync toggle based on due date availability
+     */
+    private void updateCalendarSyncAvailability() {
+        String dueDate = etDueDate.getText().toString().trim();
+        boolean hasDueDate = !TextUtils.isEmpty(dueDate);
+        boolean isCalendarConnected = isGoogleCalendarConnected();
+        
+        if (!hasDueDate) {
+            // No due date - disable calendar sync
+            switchCalendarSync.setEnabled(false);
+            switchCalendarSync.setChecked(false);
+            isCalendarSyncEnabled = false;
+            layoutCalendarDetails.setVisibility(View.GONE);
+            tvCalendarEventInfo.setText("⚠️ Cần thêm due date để sync với Calendar");
+        } else if (!isCalendarConnected) {
+            // Has due date but not connected
+            switchCalendarSync.setEnabled(false);
+            switchCalendarSync.setChecked(false);
+            isCalendarSyncEnabled = false;
+            layoutCalendarDetails.setVisibility(View.GONE);
+            tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar. Nhấn vào switch để kết nối.");
+        } else {
+            // Has due date AND connected - enable toggle
+            switchCalendarSync.setEnabled(true);
+            tvCalendarEventInfo.setText("📅 Bật để đồng bộ với Google Calendar");
+        }
     }
 
     /**
