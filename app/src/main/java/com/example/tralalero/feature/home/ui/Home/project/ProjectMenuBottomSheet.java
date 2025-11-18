@@ -46,20 +46,16 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     
     private String projectName;
     private String projectId;
-    private boolean isStarred = false;
-    private String currentVisibility = "WORKSPACE"; // PRIVATE, WORKSPACE, PUBLIC
-    
     private IMemberRepository memberRepository;
     private IActivityLogRepository activityLogRepository;
-    
     private TextView tvMenuTitle;
-    private ImageButton btnClose, btnShare, btnStar, btnVisibility, btnCopy, btnMore;
+    private ImageButton btnClose, btnShare;
     private RecyclerView rvMembers, rvActivity;
     private MaterialButton btnInvite;
     private View layoutSynced;
     
     private MemberAdapter memberAdapter;
-    private ActivityLogAdapter activityAdapter;  // FIXED: Use ActivityLogAdapter instead of ActivityAdapter
+    private ActivityLogAdapter activityAdapter;
 
     public static ProjectMenuBottomSheet newInstance(String projectId, String projectName) {
         ProjectMenuBottomSheet fragment = new ProjectMenuBottomSheet();
@@ -104,12 +100,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private void initViews(View view) {
         tvMenuTitle = view.findViewById(R.id.tvMenuTitle);
         btnClose = view.findViewById(R.id.btnClose);
-        btnShare = view.findViewById(R.id.btnShare);
-        btnStar = view.findViewById(R.id.btnStar);
-        btnVisibility = view.findViewById(R.id.btnVisibility);
-        btnCopy = view.findViewById(R.id.btnCopy);
-        btnMore = view.findViewById(R.id.btnMore);
-        
+
         rvMembers = view.findViewById(R.id.rvMembers);
         rvActivity = view.findViewById(R.id.rvActivity);
         btnInvite = view.findViewById(R.id.btnInvite);
@@ -119,37 +110,10 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         if (projectName != null) {
             tvMenuTitle.setText("Board menu");
         }
-        
-        // Load saved states from SharedPreferences
-        loadSavedStates();
-        
-        // Update star icon
-        updateStarIcon();
     }
 
     private void setupListeners() {
         btnClose.setOnClickListener(v -> dismiss());
-        
-        btnShare.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Share project link", Toast.LENGTH_SHORT).show();
-            // TODO: Implement share functionality
-        });
-        
-        btnStar.setOnClickListener(v -> {
-            toggleStar();
-        });
-        
-        btnVisibility.setOnClickListener(v -> {
-            showVisibilityDialog();
-        });
-        
-        btnCopy.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Copy project", Toast.LENGTH_SHORT).show();
-        });
-        
-        btnMore.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "More options", Toast.LENGTH_SHORT).show();
-        });
         
         btnInvite.setOnClickListener(v -> {
             showInviteDialog();
@@ -172,139 +136,6 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             getActivity().runOnUiThread(() -> {
                 Toast.makeText(getContext(), "✅ Data synced successfully", Toast.LENGTH_SHORT).show();
             });
-        }
-    }
-    
-    private void toggleStar() {
-        isStarred = !isStarred;
-        updateStarIcon();
-        
-        // Save to SharedPreferences
-        SharedPreferences prefs = requireContext().getSharedPreferences("ProjectData", Context.MODE_PRIVATE);
-        prefs.edit().putBoolean("starred_" + projectId, isStarred).apply();
-        
-        String message = isStarred ? "Starred project" : "Unstarred project";
-        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-        
-        // TODO: Call API to save star status
-        // projectViewModel.toggleStarProject(projectId, isStarred);
-    }
-    
-    private void loadSavedStates() {
-        if (getContext() == null) return;
-        
-        SharedPreferences prefs = requireContext().getSharedPreferences("ProjectData", Context.MODE_PRIVATE);
-        
-        // Load star state
-        isStarred = prefs.getBoolean("starred_" + projectId, false);
-        
-        // Load visibility state
-        currentVisibility = prefs.getString("visibility_" + projectId, "WORKSPACE");
-    }
-    
-    private void updateStarIcon() {
-        if (btnStar != null) {
-            if (isStarred) {
-                btnStar.setImageResource(android.R.drawable.star_big_on);
-            } else {
-                btnStar.setImageResource(R.drawable.ic_star_outline);
-            }
-        }
-    }
-    
-    private void showVisibilityDialog() {
-        Dialog dialog = new Dialog(requireContext());
-        dialog.setContentView(R.layout.dialog_visibility);
-        
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-        
-        com.google.android.material.card.MaterialCardView cardPrivate = dialog.findViewById(R.id.cardPrivate);
-        com.google.android.material.card.MaterialCardView cardWorkspace = dialog.findViewById(R.id.cardWorkspace);
-        com.google.android.material.card.MaterialCardView cardPublic = dialog.findViewById(R.id.cardPublic);
-        
-        RadioButton rbPrivate = dialog.findViewById(R.id.rbPrivate);
-        RadioButton rbWorkspace = dialog.findViewById(R.id.rbWorkspace);
-        RadioButton rbPublic = dialog.findViewById(R.id.rbPublic);
-        MaterialButton btnSave = dialog.findViewById(R.id.btnSaveVisibility);
-        
-        // Set current selection
-        updateCardSelection(cardPrivate, cardWorkspace, cardPublic, rbPrivate, rbWorkspace, rbPublic, currentVisibility);
-        
-        // Card click listeners
-        cardPrivate.setOnClickListener(v -> {
-            currentVisibility = "PRIVATE";
-            updateCardSelection(cardPrivate, cardWorkspace, cardPublic, rbPrivate, rbWorkspace, rbPublic, currentVisibility);
-        });
-        
-        cardWorkspace.setOnClickListener(v -> {
-            currentVisibility = "WORKSPACE";
-            updateCardSelection(cardPrivate, cardWorkspace, cardPublic, rbPrivate, rbWorkspace, rbPublic, currentVisibility);
-        });
-        
-        cardPublic.setOnClickListener(v -> {
-            currentVisibility = "PUBLIC";
-            updateCardSelection(cardPrivate, cardWorkspace, cardPublic, rbPrivate, rbWorkspace, rbPublic, currentVisibility);
-        });
-        
-        btnSave.setOnClickListener(v -> {
-            // Save to SharedPreferences
-            SharedPreferences prefs = requireContext().getSharedPreferences("ProjectData", Context.MODE_PRIVATE);
-            prefs.edit().putString("visibility_" + projectId, currentVisibility).apply();
-            
-            Toast.makeText(getContext(), "Visibility updated to: " + currentVisibility, Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
-            
-            // TODO: Call API to save visibility
-            // projectViewModel.updateVisibility(projectId, currentVisibility);
-        });
-        
-        dialog.show();
-    }
-    
-    private void updateCardSelection(
-            com.google.android.material.card.MaterialCardView cardPrivate,
-            com.google.android.material.card.MaterialCardView cardWorkspace,
-            com.google.android.material.card.MaterialCardView cardPublic,
-            RadioButton rbPrivate,
-            RadioButton rbWorkspace,
-            RadioButton rbPublic,
-            String selectedVisibility) {
-        
-        // Reset all cards
-        cardPrivate.setStrokeWidth(1);
-        cardPrivate.setStrokeColor(android.graphics.Color.parseColor("#DFE1E6"));
-        cardPrivate.setCardBackgroundColor(android.graphics.Color.WHITE);
-        rbPrivate.setChecked(false);
-        
-        cardWorkspace.setStrokeWidth(1);
-        cardWorkspace.setStrokeColor(android.graphics.Color.parseColor("#DFE1E6"));
-        cardWorkspace.setCardBackgroundColor(android.graphics.Color.WHITE);
-        rbWorkspace.setChecked(false);
-        
-        cardPublic.setStrokeWidth(1);
-        cardPublic.setStrokeColor(android.graphics.Color.parseColor("#DFE1E6"));
-        cardPublic.setCardBackgroundColor(android.graphics.Color.WHITE);
-        rbPublic.setChecked(false);
-        
-        // Highlight selected card
-        if ("PRIVATE".equals(selectedVisibility)) {
-            cardPrivate.setStrokeWidth(4);
-            cardPrivate.setStrokeColor(android.graphics.Color.parseColor("#0079BF"));
-            cardPrivate.setCardBackgroundColor(android.graphics.Color.parseColor("#DEEBFF"));
-            rbPrivate.setChecked(true);
-        } else if ("WORKSPACE".equals(selectedVisibility)) {
-            cardWorkspace.setStrokeWidth(4);
-            cardWorkspace.setStrokeColor(android.graphics.Color.parseColor("#0079BF"));
-            cardWorkspace.setCardBackgroundColor(android.graphics.Color.parseColor("#DEEBFF"));
-            rbWorkspace.setChecked(true);
-        } else if ("PUBLIC".equals(selectedVisibility)) {
-            cardPublic.setStrokeWidth(4);
-            cardPublic.setStrokeColor(android.graphics.Color.parseColor("#0079BF"));
-            cardPublic.setCardBackgroundColor(android.graphics.Color.parseColor("#DEEBFF"));
-            rbPublic.setChecked(true);
         }
     }
     

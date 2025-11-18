@@ -11,35 +11,10 @@
 
             <TextView android:id="@+id/tvMenuTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" android:text="Board menu" android:textSize="16sp" android:textColor="#172B4D" android:fontFamily="sans-serif-medium"/>
 
-            <ImageButton android:id="@+id/btnShare" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_share" app:tint="#5E6C84" android:contentDescription="Share"/>
         </RelativeLayout>
 
         <!-- Divider -->
         <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#091E4221"/>
-
-        <!-- Icon Buttons Row -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:paddingTop="20dp" android:paddingBottom="20dp" android:gravity="center" android:background="#F4F5F7">
-
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-
-                <ImageButton android:id="@+id/btnStar" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_star_outline" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Star"/>
-            </LinearLayout>
-
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-
-                <ImageButton android:id="@+id/btnVisibility" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_people" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Members"/>
-            </LinearLayout>
-
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-
-                <ImageButton android:id="@+id/btnCopy" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/ic_copy" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="Copy"/>
-            </LinearLayout>
-
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-
-                <ImageButton android:id="@+id/btnMore" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_menu_button" android:src="@drawable/three_dots_icon" android:scaleType="centerInside" android:padding="12dp" app:tint="#5E6C84" android:contentDescription="More"/>
-            </LinearLayout>
-        </LinearLayout>
 
         <!-- Divider -->
         <View android:layout_width="match_parent" android:layout_height="8dp" android:background="#091E4221"/>
