@@ -129,6 +129,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private LinearLayout layoutCalendarDetails;
     private boolean isCalendarSyncEnabled = false;
     private boolean isPopulatingCalendarUI = false; // ✅ Flag to prevent listener trigger during UI population
+    private boolean isGoogleCalendarConnected = false; // ✅ Store actual connection state from API
     private List<Integer> reminderMinutes = new ArrayList<>(Arrays.asList(15, 60, 1440));
     private GoogleAuthApiService googleAuthApiService;
 
@@ -168,6 +169,7 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Reload data when returning to this activity
         if (isEditMode && taskId != null && !taskId.isEmpty()) {
+            loadTaskDetails();     // ✅ Reload task details (description, dates, calendar sync)
             loadTaskAttachments();
             loadTaskComments();
             loadChecklistItems();  // CRITICAL - Reload checklist items!
@@ -434,12 +436,33 @@ public class CardDetailActivity extends AppCompatActivity {
         // ✅ Observe task details (for loading calendar sync state)
         taskViewModel.getSelectedTask().observe(this, task -> {
             if (task != null && isEditMode) {
-                android.util.Log.d(TAG, "✅ Task loaded: calendarSyncEnabled=" + task.isCalendarSyncEnabled() + 
-                    ", reminderMinutes=" + task.getCalendarReminderMinutes() + 
-                    ", eventId=" + task.getCalendarEventId());
+                android.util.Log.d(TAG, "✅ Task loaded from API - ID: " + task.getId());
+                android.util.Log.d(TAG, "  Description: " + (task.getDescription() != null ? task.getDescription().substring(0, Math.min(50, task.getDescription().length())) : "null"));
+                android.util.Log.d(TAG, "  StartAt: " + task.getStartAt());
+                android.util.Log.d(TAG, "  DueAt: " + task.getDueAt());
+                android.util.Log.d(TAG, "  CalendarSyncEnabled: " + task.isCalendarSyncEnabled());
+                
+                // ✅ FIX: Populate ALL task fields in UI
+                if (task.getDescription() != null) {
+                    etDescription.setText(task.getDescription());
+                    android.util.Log.d(TAG, "  ✅ Description populated in UI");
+                }
+                
+                SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+                if (task.getStartAt() != null) {
+                    etDateStart.setText(displayFormat.format(task.getStartAt()));
+                    android.util.Log.d(TAG, "  ✅ Start date populated: " + displayFormat.format(task.getStartAt()));
+                }
+                if (task.getDueAt() != null) {
+                    etDueDate.setText(displayFormat.format(task.getDueAt()));
+                    android.util.Log.d(TAG, "  ✅ Due date populated: " + displayFormat.format(task.getDueAt()));
+                }
                 
                 // Populate calendar sync UI
                 populateCalendarSyncUI(task);
+                
+                // ✅ FIX: Update calendar sync availability after populating UI
+                updateCalendarSyncAvailability();
             }
         });
         
@@ -520,7 +543,8 @@ public class CardDetailActivity extends AppCompatActivity {
     private void setupUI() {
         if (isEditMode) {
             etTaskTitle.setText(getIntent().getStringExtra(EXTRA_TASK_TITLE));
-            etDescription.setText(getIntent().getStringExtra(EXTRA_TASK_DESCRIPTION));
+            // ✅ FIX: Don't populate description/dates from Intent - they will be loaded from API via observer
+            // etDescription.setText(getIntent().getStringExtra(EXTRA_TASK_DESCRIPTION));
             String priorityStr = getIntent().getStringExtra(EXTRA_TASK_PRIORITY);
             if (priorityStr != null) {
                 try {
@@ -743,7 +767,10 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
 
+        // ✅ FIX: Get description from EditText UI
         String description = etDescription.getText().toString().trim();
+        
+        // ✅ FIX: Get other fields from Intent (these don't change in UI)
         String status = getIntent().getStringExtra(EXTRA_TASK_STATUS);
         double position = getIntent().getDoubleExtra(EXTRA_TASK_POSITION, 0);
         String assigneeId = getIntent().getStringExtra(EXTRA_TASK_ASSIGNEE_ID);
@@ -1128,9 +1155,11 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onResponse(retrofit2.Call<GoogleCalendarStatusResponse> call, 
                                  retrofit2.Response<GoogleCalendarStatusResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    updateCalendarSyncUI(response.body().isConnected());
+                    isGoogleCalendarConnected = response.body().isConnected(); // ✅ Store state
+                    updateCalendarSyncUI(isGoogleCalendarConnected);
                 } else {
                     // Default to not connected
+                    isGoogleCalendarConnected = false;
                     updateCalendarSyncUI(false);
                 }
             }
@@ -1138,14 +1167,15 @@ public class CardDetailActivity extends AppCompatActivity {
             @Override
             public void onFailure(retrofit2.Call<GoogleCalendarStatusResponse> call, Throwable t) {
                 android.util.Log.e(TAG, "Failed to check calendar connection", t);
+                isGoogleCalendarConnected = false;
                 updateCalendarSyncUI(false);
             }
         });
     }
     
     private boolean isGoogleCalendarConnected() {
-        // This will be set by checkGoogleCalendarConnection
-        return switchCalendarSync.isEnabled();
+        // ✅ Return stored connection state instead of UI state
+        return isGoogleCalendarConnected;
     }
     
     private void updateCalendarSyncUI(boolean connected) {
@@ -1640,9 +1670,19 @@ public class CardDetailActivity extends AppCompatActivity {
             
             @Override
             public void onError(String error) {
-                android.util.Log.e("CardDetail", "Failed to get attachment view URL: " + error);
-                Toast.makeText(CardDetailActivity.this, "Failed to get download URL: " + error, Toast.LENGTH_SHORT).show();
-                callback.accept(null);
+                android.util.Log.e("CardDetail", "Failed to get signed URL from backend: " + error);
+                
+                // ✅ FALLBACK: Use URL from DB if backend API fails
+                String dbUrl = attachment.getUrl();
+                if (dbUrl != null && !dbUrl.isEmpty() && 
+                    (dbUrl.startsWith("http://") || dbUrl.startsWith("https://"))) {
+                    android.util.Log.d("CardDetail", "Using fallback URL from DB: " + dbUrl);
+                    callback.accept(dbUrl);
+                } else {
+                    android.util.Log.e("CardDetail", "No valid URL available (backend failed, DB URL empty)");
+                    Toast.makeText(CardDetailActivity.this, "Failed to fetch file: " + error, Toast.LENGTH_SHORT).show();
+                    callback.accept(null);
+                }
             }
         });
     }

@@ -29,7 +29,7 @@
         <activity android:name=".feature.home.ui.AccountActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.WorkspaceListActivity" android:exported="false" android:label="Workspaces" />
         <activity android:name=".feature.home.ui.EditProfileActivity" android:exported="false" />
-        <activity android:name=".feature.home.ui.InboxActivity" android:exported="false" />
+        <activity android:name=".feature.home.ui.InboxActivity" android:windowSoftInputMode="adjustPan" android:exported="false" />
         <activity android:name=".feature.home.ui.ActivityActivity" android:exported="false" />
         <activity android:name=".feature.home.ui.NewBoard" android:exported="false" />
         <activity android:name=".feature.auth.ui.login.ContinueWithGoogle" android:exported="false" />

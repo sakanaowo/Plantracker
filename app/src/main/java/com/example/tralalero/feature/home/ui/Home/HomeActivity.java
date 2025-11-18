@@ -43,6 +43,10 @@ import com.example.tralalero.service.MyFirebaseMessagingService;
 import com.example.tralalero.util.FCMHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
+import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.repository.TaskRepositoryImpl;
+import com.example.tralalero.domain.repository.ITaskRepository;
+import com.example.tralalero.network.ApiClient;
 
 import java.util.List;
 
@@ -203,8 +207,8 @@ public class HomeActivity extends BaseActivity {
         btnAdd.setOnClickListener(v -> {
             String text = cardNew.getText().toString().trim();
             if (!text.isEmpty()) {
-                // TODO: lưu vào database
-                Toast.makeText(this, "Đã thêm: " + text, Toast.LENGTH_SHORT).show();
+                // Create quick task via repository (same as InboxActivity)
+                createQuickTask(text);
                 inboxForm.setVisibility(View.GONE);
                 cardNew.setText(""); // clear sau khi lưu
                 hideKeyboard(v);
@@ -377,6 +381,37 @@ public class HomeActivity extends BaseActivity {
             public void onFailure(Exception e) {
                 Log.e(TAG, "Failed to get FCM token", e);
                 Toast.makeText(HomeActivity.this, "Không thể lấy FCM token", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Create quick task in inbox via API (same logic as InboxActivity)
+     */
+    private void createQuickTask(String title) {
+        Log.d(TAG, "Creating quick task: " + title);
+        Toast.makeText(this, "Creating task...", Toast.LENGTH_SHORT).show();
+        
+        // Create task repository
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(apiService, null, null);
+        
+        // Call create quick task API
+        taskRepository.createQuickTask(title, "", new ITaskRepository.RepositoryCallback<com.example.tralalero.domain.model.Task>() {
+            @Override
+            public void onSuccess(com.example.tralalero.domain.model.Task task) {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "✓ Quick task created: " + task.getTitle());
+                    Toast.makeText(HomeActivity.this, "✓ Task added to inbox", Toast.LENGTH_SHORT).show();
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Log.e(TAG, "✗ Failed to create quick task: " + error);
+                    Toast.makeText(HomeActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
+                });
             }
         });
     }

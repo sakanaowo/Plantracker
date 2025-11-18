@@ -566,6 +566,9 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                         ", Reminder time: " + currentTaskDTO.getCalendarReminderTime() +
                         ", Last synced: " + currentTaskDTO.getLastSyncedAt());
                     
+                    // ✅ FIX: Populate UI with fresh data from API
+                    populateTaskUI(currentTaskDTO);
+                    
                     // If user clicked calendar sync before data loaded, open it now
                     if (btnCalendarSync != null && btnCalendarSync.isPressed()) {
                         openCalendarSyncDialogWithData();
@@ -582,6 +585,48 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                 Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * ✅ NEW: Populate UI fields with task data from API
+     */
+    private void populateTaskUI(TaskDTO taskDTO) {
+        if (taskDTO == null) return;
+        
+        // Update description
+        if (etDescription != null && taskDTO.getDescription() != null) {
+            etDescription.setText(taskDTO.getDescription());
+        }
+        
+        // Update start date - parse from ISO string to Date
+        if (etDateStart != null && taskDTO.getStartAt() != null) {
+            try {
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                selectedStartDate = isoFormat.parse(taskDTO.getStartAt());
+                if (selectedStartDate != null) {
+                    etDateStart.setText(dateFormat.format(selectedStartDate));
+                }
+            } catch (Exception e) {
+                Log.e("TaskDetailBottomSheet", "Error parsing start date", e);
+            }
+        }
+        
+        // Update due date - parse from ISO string to Date
+        if (etDueDate != null && taskDTO.getDueAt() != null) {
+            try {
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                selectedDueDate = isoFormat.parse(taskDTO.getDueAt());
+                if (selectedDueDate != null) {
+                    etDueDate.setText(dateFormat.format(selectedDueDate));
+                }
+            } catch (Exception e) {
+                Log.e("TaskDetailBottomSheet", "Error parsing due date", e);
+            }
+        }
+        
+        Log.d("TaskDetailBottomSheet", "✅ UI populated with task data");
     }
 }
 

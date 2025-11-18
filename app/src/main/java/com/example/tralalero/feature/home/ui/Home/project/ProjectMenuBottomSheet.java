@@ -108,7 +108,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         layoutSynced = view.findViewById(R.id.layoutSynced);
         
         if (projectName != null) {
-            tvMenuTitle.setText("Board menu");
+            tvMenuTitle.setText("Project menu");
         }
     }
 
