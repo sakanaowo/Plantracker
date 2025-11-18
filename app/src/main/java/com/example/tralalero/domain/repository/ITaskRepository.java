@@ -83,6 +83,11 @@ public interface ITaskRepository {
     void addLabel(String taskId, String labelId, RepositoryCallback<Void> callback);
 
     void removeLabel(String taskId, String labelId, RepositoryCallback<Void> callback);
+    
+    /**
+     * Clear all cached tasks - forces fresh fetch from API on next load
+     */
+    void clearCache();
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);

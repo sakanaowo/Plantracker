@@ -33,6 +33,9 @@ public class EventDTO {
     
     @SerializedName("createdBy")  // ✅ Changed from created_by to createdBy
     private String createdBy;
+    
+    @SerializedName("participants")
+    private java.util.List<ParticipantDTO> participants;
 
     public String getId() {
         return id;
@@ -112,5 +115,51 @@ public class EventDTO {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+    }
+    
+    public java.util.List<ParticipantDTO> getParticipants() {
+        return participants;
+    }
+    
+    public void setParticipants(java.util.List<ParticipantDTO> participants) {
+        this.participants = participants;
+    }
+    
+    /**
+     * Nested DTO for participant data
+     */
+    public static class ParticipantDTO {
+        @SerializedName("userId")
+        private String userId;
+        
+        @SerializedName("email")
+        private String email;
+        
+        @SerializedName("status")
+        private String status;
+        
+        public String getUserId() {
+            return userId;
+        }
+        
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+        
+        public String getEmail() {
+            return email;
+        }
+        
+        public void setEmail(String email) {
+            this.email = email;
+        }
+        
+        public String getStatus() {
+            return status;
+        }
+        
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 }

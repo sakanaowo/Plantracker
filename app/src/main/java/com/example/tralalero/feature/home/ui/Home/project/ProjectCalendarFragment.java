@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CalendarEvent;
@@ -43,6 +44,7 @@ public class ProjectCalendarFragment extends Fragment {
     private TextView tvEventCount;
     private LinearLayout layoutEmptyState;
     private CalendarView calendarView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     
     private Button btnPreviousMonth;
     private Button btnNextMonth;
@@ -99,6 +101,7 @@ public class ProjectCalendarFragment extends Fragment {
         tvEventCount = view.findViewById(R.id.tvEventCount);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         calendarView = view.findViewById(R.id.calendarView);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         
         btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth);
         btnNextMonth = view.findViewById(R.id.btnNextMonth);
@@ -108,8 +111,22 @@ public class ProjectCalendarFragment extends Fragment {
         monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
         dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         
+        setupSwipeRefresh();
         setupCalendarView();
         setupFabButton();
+    }
+
+    private void setupSwipeRefresh() {
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent
+            );
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                android.util.Log.d("ProjectCalendar", "🔄 Pull-to-refresh - reloading calendar data");
+                loadCalendarData();
+            });
+        }
     }
 
     private void setupFabButton() {
@@ -191,6 +208,9 @@ public class ProjectCalendarFragment extends Fragment {
         viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (isLoading != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+                if (swipeRefreshLayout != null && !isLoading) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
             }
         });
         

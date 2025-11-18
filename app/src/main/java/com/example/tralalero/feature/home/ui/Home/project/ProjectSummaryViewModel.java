@@ -83,7 +83,8 @@ public class ProjectSummaryViewModel extends AndroidViewModel {
         // Check cache validity (skip cache if manual refresh or different project)
         if (!isRefresh && projectId.equals(cachedProjectId) && isCacheValid()) {
             Log.d(TAG, "Using cached data for project: " + projectId);
-            // Data is already in LiveData, no need to fetch
+            // Data is already in LiveData, but need to signal loading is complete
+            isLoading.setValue(false);
             return;
         }
         

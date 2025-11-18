@@ -214,7 +214,8 @@ public class ProjectCalendarViewModel extends ViewModel {
      * Format date to ISO 8601 format for API
      */
     private String formatDateTime(Date date) {
-        SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        // Use RFC3339 format with timezone as required by Google Calendar API
+        SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US);
         return iso8601Format.format(date);
     }
     

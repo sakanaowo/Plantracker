@@ -193,4 +193,9 @@ public class ProjectRepositoryImpl implements IProjectRepository {
             }
         });
     }
+    
+    @Override
+    public void clearCache() {
+        // No cache in this implementation, do nothing
+    }
 }

@@ -737,4 +737,9 @@ public class TaskRepositoryImpl implements ITaskRepository {
     public void removeLabel(String taskId, String labelId, RepositoryCallback<Void> callback) {
         callback.onError("Remove label not yet implemented in API");
     }
+    
+    @Override
+    public void clearCache() {
+        // No cache in this implementation, do nothing
+    }
 }

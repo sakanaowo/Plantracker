@@ -136,7 +136,9 @@ public class HomeActivity extends BaseActivity {
                 R.color.colorAccent
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "User triggered pull-to-refresh");
+                Log.d(TAG, "🔄 User triggered pull-to-refresh - clearing cache");
+                // Clear cache to force fresh data from API
+                projectRepository.clearCache();
                 loadProjects();
             });
         }

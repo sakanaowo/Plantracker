@@ -239,10 +239,17 @@ public class TaskViewModel extends ViewModel {
      * ✅ NEW: Load inbox tasks for user
      * This replaces the manual load pattern in InboxActivity
      * @param userId User ID to load tasks for (can be empty for all tasks)
+     * @param clearCache If true, clears cache before loading to force fresh data
      */
-    public void loadInboxTasks(String userId) {
+    public void loadInboxTasks(String userId, boolean clearCache) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
+        
+        // Clear cache if requested (for pull-to-refresh)
+        if (clearCache) {
+            android.util.Log.d(TAG, "🔄 Clearing task cache for fresh data");
+            repository.clearCache();
+        }
         
         // Use repository to get all quick tasks (inbox tasks)
         // These are tasks without a specific board assignment

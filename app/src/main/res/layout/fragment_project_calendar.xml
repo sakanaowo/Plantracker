@@ -28,8 +28,12 @@
         <!-- Calendar View -->
         <CalendarView android:id="@+id/calendarView" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/white" android:layout_marginTop="4dp"/>
 
-        <!-- Events List -->
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarEvents" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp" android:clipToPadding="false"/>
+        <!-- Events List with Pull-to-Refresh -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarEvents" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="8dp" android:clipToPadding="false"/>
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         <!-- Empty State -->
         <LinearLayout android:id="@+id/layoutEmptyState" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="32dp" android:visibility="gone">

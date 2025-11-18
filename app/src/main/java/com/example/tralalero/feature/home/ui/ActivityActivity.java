@@ -12,6 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthManager;
@@ -35,6 +36,7 @@ public class ActivityActivity extends BaseActivity {
     private static final String TAG = "ActivityActivity";
     
     private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private ActivityLogAdapter adapter;
     private ActivityLogApiService activityLogApiService;
     private String currentUserId;
@@ -60,10 +62,21 @@ public class ActivityActivity extends BaseActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
-        // Initialize RecyclerView
+        // Initialize SwipeRefreshLayout and RecyclerView
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ActivityLogAdapter(this);
+        
+        // Setup SwipeRefreshLayout
+        swipeRefreshLayout.setColorSchemeResources(
+            R.color.colorPrimary,
+            R.color.colorAccent
+        );
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            Log.d(TAG, "🔄 Pull-to-refresh - reloading activity feed");
+            loadUserActivityFeed();
+        });
         
         // Set invitation click listener
         adapter.setOnInvitationClickListener(log -> {
@@ -112,6 +125,10 @@ public class ActivityActivity extends BaseActivity {
                             
                             adapter.setActivityLogs(activityLogs);
                             
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                            
                             if (activityLogs.isEmpty()) {
                                 Toast.makeText(ActivityActivity.this, 
                                         "No activities yet. Start creating tasks!", 
@@ -119,6 +136,9 @@ public class ActivityActivity extends BaseActivity {
                             }
                         } else {
                             Log.e(TAG, "Failed to load activities: " + response.code() + " - " + response.message());
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
                             Toast.makeText(ActivityActivity.this, 
                                     "Failed to load activities", 
                                     Toast.LENGTH_SHORT).show();
@@ -128,6 +148,9 @@ public class ActivityActivity extends BaseActivity {
                     @Override
                     public void onFailure(Call<List<ActivityLogDTO>> call, Throwable t) {
                         Log.e(TAG, "Error loading activities", t);
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                         Toast.makeText(ActivityActivity.this, 
                                 "Error: " + t.getMessage(), 
                                 Toast.LENGTH_SHORT).show();

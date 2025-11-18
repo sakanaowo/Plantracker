@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CreateEventRequest;
@@ -38,14 +39,13 @@ import java.util.Locale;
 public class ProjectEventsFragment extends Fragment {
     private RecyclerView rvEvents;
     private ProjectEventAdapter eventAdapter;
-    private TabLayout tabLayoutEvents;
     private View layoutEmptyState;
     private ProgressBar progressBar;
     private FloatingActionButton fabCreateEvent;
+    private SwipeRefreshLayout swipeRefreshLayout;
     
     private ProjectEventsViewModel viewModel;
     private String projectId;
-    private ProjectEventsViewModel.EventFilter currentFilter = ProjectEventsViewModel.EventFilter.UPCOMING;
     
     public static ProjectEventsFragment newInstance(String projectId) {
         ProjectEventsFragment fragment = new ProjectEventsFragment();
@@ -72,7 +72,6 @@ public class ProjectEventsFragment extends Fragment {
         initViews(view);
         setupViewModel();
         setupRecyclerView();
-        setupTabs();
         setupButtons(view);
         loadEvents();
         
@@ -81,19 +80,34 @@ public class ProjectEventsFragment extends Fragment {
     
     private void initViews(View view) {
         rvEvents = view.findViewById(R.id.rvEvents);
-        tabLayoutEvents = view.findViewById(R.id.tabLayoutEvents);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         progressBar = view.findViewById(R.id.progressBar);
         fabCreateEvent = view.findViewById(R.id.fabCreateEvent);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
     }
     
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(ProjectEventsViewModel.class);
         
+        // Setup SwipeRefreshLayout
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent
+            );
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                android.util.Log.d("ProjectEvents", "🔄 Pull-to-refresh - reloading events");
+                loadEvents();
+            });
+        }
+        
         // Observe loading state
         viewModel.getLoadingState().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
+            if (swipeRefreshLayout != null && !isLoading) {
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
         
@@ -151,32 +165,7 @@ public class ProjectEventsFragment extends Fragment {
         });
     }
     
-    private void setupTabs() {
-        tabLayoutEvents.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                int position = tab.getPosition();
-                switch (position) {
-                    case 0:
-                        currentFilter = ProjectEventsViewModel.EventFilter.UPCOMING;
-                        break;
-                    case 1:
-                        currentFilter = ProjectEventsViewModel.EventFilter.PAST;
-                        break;
-                    case 2:
-                        currentFilter = ProjectEventsViewModel.EventFilter.RECURRING;
-                        break;
-                }
-                loadEvents();
-            }
-            
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {}
-            
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {}
-        });
-    }
+
     
     private void setupButtons(View view) {
         // FAB
@@ -206,7 +195,8 @@ public class ProjectEventsFragment extends Fragment {
     private void loadEvents() {
         if (projectId == null) return;
         
-        viewModel.loadProjectEvents(projectId, currentFilter)
+        // Load all events without filter
+        viewModel.loadProjectEvents(projectId, null)
             .observe(getViewLifecycleOwner(), result -> {
                 if (result.isSuccess()) {
                     java.util.List<ProjectEvent> events = result.getData();

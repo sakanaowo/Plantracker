@@ -25,6 +25,11 @@ public interface IProjectRepository {
      * Get all projects accessible by the current user (across all workspaces)
      */
     void getAllUserProjects(RepositoryCallback<java.util.List<Project>> callback);
+    
+    /**
+     * Clear all cached projects - forces fresh fetch from API on next load
+     */
+    void clearCache();
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);

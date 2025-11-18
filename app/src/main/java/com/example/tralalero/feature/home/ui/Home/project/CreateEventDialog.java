@@ -94,7 +94,6 @@ public class CreateEventDialog extends DialogFragment {
         
         initViews(view);
         setupDateTimePickers();
-        setupEventTypeUI();
         setupAttendees(view);
         setupRecurrence();
         setupButtons(view);
@@ -117,103 +116,10 @@ public class CreateEventDialog extends DialogFragment {
         cardGoogleMeet = view.findViewById(R.id.cardGoogleMeet);
         progressBarLoading = view.findViewById(R.id.progressBarLoading);
         
-        // Find or create dynamic fields for meeting link and location
-        ViewGroup parent = (ViewGroup) etEventDescription.getParent().getParent();
-        int descIndex = parent.indexOfChild((View) etEventDescription.getParent().getParent());
-        
-        // Create Meeting Link field (initially visible)
-        tilMeetingLink = new com.google.android.material.textfield.TextInputLayout(getContext());
-        tilMeetingLink.setBoxBackgroundMode(com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE);
-        tilMeetingLink.setHint("Meeting Link");
-        tilMeetingLink.setId(View.generateViewId());
-        LinearLayout.LayoutParams linkParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        linkParams.bottomMargin = 16 * (int) getResources().getDisplayMetrics().density;
-        tilMeetingLink.setLayoutParams(linkParams);
-        
-        etMeetingLink = new TextInputEditText(getContext());
-        etMeetingLink.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
-        etMeetingLink.setMaxLines(1);
-        tilMeetingLink.addView(etMeetingLink);
-        
-        // Create Location field (initially hidden)
-        tilLocation = new com.google.android.material.textfield.TextInputLayout(getContext());
-        tilLocation.setBoxBackgroundMode(com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE);
-        tilLocation.setHint("Địa điểm");
-        tilLocation.setId(View.generateViewId());
-        tilLocation.setVisibility(View.GONE);
-        LinearLayout.LayoutParams locParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        locParams.bottomMargin = 16 * (int) getResources().getDisplayMetrics().density;
-        tilLocation.setLayoutParams(locParams);
-        
-        etLocation = new TextInputEditText(getContext());
-        etLocation.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
-        etLocation.setMaxLines(2);
-        tilLocation.addView(etLocation);
-        
-        // Insert after description field
-        parent.addView(tilMeetingLink, descIndex + 1);
-        parent.addView(tilLocation, descIndex + 2);
-        
-        // Setup text change listener to clear errors
-        if (etMeetingLink != null) {
-            etMeetingLink.addTextChangedListener(new android.text.TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (tilMeetingLink != null && tilMeetingLink.getError() != null) {
-                        tilMeetingLink.setError(null);
-                    }
-                }
-                
-                @Override
-                public void afterTextChanged(android.text.Editable s) {}
-            });
-        }
+        // ✅ SIMPLIFIED: No longer need meeting link and location fields
     }
     
-    private void setupEventTypeUI() {
-        // Listen to radio button changes to show/hide appropriate fields
-        rgEventType.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rbMeeting) {
-                // MEETING: Show meeting link + Google Meet card, hide location
-                tilMeetingLink.setVisibility(View.VISIBLE);
-                cardGoogleMeet.setVisibility(View.VISIBLE);
-                tilLocation.setVisibility(View.GONE);
-                // Clear error when switching to meeting type
-                if (tilMeetingLink != null) tilMeetingLink.setError(null);
-            } else if (checkedId == R.id.rbMilestone) {
-                // MILESTONE: Show location, hide meeting link + Google Meet
-                tilMeetingLink.setVisibility(View.GONE);
-                cardGoogleMeet.setVisibility(View.GONE);
-                tilLocation.setVisibility(View.VISIBLE);
-            } else {
-                // OTHER: Show location, hide meeting link + Google Meet
-                tilMeetingLink.setVisibility(View.GONE);
-                cardGoogleMeet.setVisibility(View.GONE);
-                tilLocation.setVisibility(View.VISIBLE);
-            }
-        });
-        
-        // Listen to Google Meet switch to clear meeting link error
-        switchCreateMeet.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked && tilMeetingLink != null) {
-                tilMeetingLink.setError(null);
-            }
-        });
-        
-        // Set default state (MEETING is checked by default in XML)
-        tilMeetingLink.setVisibility(View.VISIBLE);
-        cardGoogleMeet.setVisibility(View.VISIBLE);
-        tilLocation.setVisibility(View.GONE);
-    }
+
     
     private void setupDateTimePickers() {
         Calendar calendar = Calendar.getInstance();
@@ -428,33 +334,9 @@ public class CreateEventDialog extends DialogFragment {
             event.setDescription(etEventDescription.getText().toString());
         }
         
-        // Set event type and related fields
-        String eventType = getSelectedEventType();
-        event.setType(eventType);
-        
-        if ("MEETING".equals(eventType)) {
-            // For meetings: meeting link is required if not auto-creating Google Meet
-            String meetLink = etMeetingLink.getText() != null ? 
-                            etMeetingLink.getText().toString().trim() : "";
-            boolean autoCreateMeet = switchCreateMeet.isChecked();
-            
-            if (!autoCreateMeet && meetLink.isEmpty()) {
-                tilMeetingLink.setError("Meeting link is required (or enable Google Meet)");
-                etMeetingLink.requestFocus();
-                return;
-            }
-            
-            if (!meetLink.isEmpty()) {
-                event.setMeetingLink(meetLink);
-            }
-            event.setCreateGoogleMeet(autoCreateMeet);
-        } else {
-            // For milestones/other: set location if provided
-            if (etLocation.getText() != null && !etLocation.getText().toString().trim().isEmpty()) {
-                event.setLocation(etLocation.getText().toString());
-            }
-            event.setCreateGoogleMeet(false);
-        }
+        // ✅ SIMPLIFIED: Always create MEETING type with optional Google Meet
+        event.setType("MEETING");
+        event.setCreateGoogleMeet(switchCreateMeet != null && switchCreateMeet.isChecked());
         
         event.setAttendeeIds(selectedAttendeeIds);
         event.setRecurrence(getSelectedRecurrence());
@@ -541,14 +423,6 @@ public class CreateEventDialog extends DialogFragment {
         } catch (Exception e) {
             return new Date();
         }
-    }
-    
-    private String getSelectedEventType() {
-        int selectedId = rgEventType.getCheckedRadioButtonId();
-        if (selectedId == R.id.rbMeeting) return "MEETING";
-        if (selectedId == R.id.rbMilestone) return "MILESTONE";
-        if (selectedId == R.id.rbOther) return "OTHER";
-        return "MEETING";
     }
     
     private String getSelectedRecurrence() {

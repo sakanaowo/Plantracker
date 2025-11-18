@@ -85,6 +85,19 @@ public class ProjectSummaryFragment extends Fragment {
         loadSummaryData();
     }
     
+    @Override
+    public void onResume() {
+        super.onResume();
+        
+        Log.d(TAG, "onResume - Clearing cache and refreshing summary");
+        
+        // Clear cache to force fresh data when user returns to this tab
+        if (viewModel != null) {
+            viewModel.clearCache();
+            loadSummaryData();
+        }
+    }
+    
     private void initializeViews(View view) {
         // Stats card views
         tvDoneCount = view.findViewById(R.id.tvDoneCount);
@@ -159,8 +172,9 @@ public class ProjectSummaryFragment extends Fragment {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             }
-            if (swipeRefreshLayout != null) {
-                swipeRefreshLayout.setRefreshing(isLoading);
+            // Only stop refresh animation, don't start it (user gesture already started it)
+            if (swipeRefreshLayout != null && !isLoading) {
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
         

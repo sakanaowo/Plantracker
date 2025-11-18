@@ -85,9 +85,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         observeViewModel(); // ✅ Must be BEFORE loadInboxTasks
         setupBottomNavigation(1);
         
-        // ✅ NEW: Load inbox tasks once via ViewModel
-        // Note: loadInboxTasks is currently a stub, will be implemented later
-        taskViewModel.loadInboxTasks("");
+        // ✅ NEW: Load inbox tasks once via ViewModel (no cache clear on first load)
+        taskViewModel.loadInboxTasks("", false);
     }
 
     // ✅ REMOVED: No more onResume reload!
@@ -235,8 +234,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 R.color.colorAccent
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "✅ Pull-to-refresh via ViewModel");
-                taskViewModel.loadInboxTasks("");
+                Log.d(TAG, "🔄 Pull-to-refresh - clearing cache and reloading");
+                taskViewModel.loadInboxTasks("", true); // Clear cache = true
                 // Stop refreshing animation (observer will update UI)
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     swipeRefreshLayout.setRefreshing(false);

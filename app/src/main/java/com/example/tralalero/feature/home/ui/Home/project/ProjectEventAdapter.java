@@ -85,6 +85,8 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
         TextView tvEventTime;
         TextView tvEventAttendees;
         TextView tvMeetLink;
+        TextView tvEventStatus;
+        LinearLayout layoutDateBox;
         LinearLayout layoutEventActions;
         LinearLayout layoutMeetLink;
         Button btnJoinMeeting;
@@ -102,6 +104,8 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
             tvEventTime = itemView.findViewById(R.id.tvEventTime);
             tvEventAttendees = itemView.findViewById(R.id.tvEventAttendees);
             tvMeetLink = itemView.findViewById(R.id.tvMeetLink);
+            tvEventStatus = itemView.findViewById(R.id.tvEventStatus);
+            layoutDateBox = itemView.findViewById(R.id.layoutDateBox);
             layoutEventActions = itemView.findViewById(R.id.layoutEventActions);
             layoutMeetLink = itemView.findViewById(R.id.layoutMeetLink);
             btnJoinMeeting = itemView.findViewById(R.id.btnJoinMeeting);
@@ -113,7 +117,19 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
         void bind(ProjectEvent event) {
             if (event == null) return;
             
-            // Format date
+            // ✅ FIX: Check if event is past using current timestamp (includes time)
+            boolean isPastEvent = false;
+            if (event.getDate() != null) {
+                Date now = new Date();
+                isPastEvent = event.getDate().before(now);
+            }
+            
+            // Status badge (HIDDEN - no longer needed)
+            if (tvEventStatus != null) {
+                tvEventStatus.setVisibility(View.GONE);
+            }
+            
+            // Format date with color coding
             if (event.getDate() != null) {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(event.getDate());
@@ -121,6 +137,11 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
                 
                 SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
                 tvEventMonth.setText(monthFormat.format(event.getDate()).toUpperCase());
+                
+                // Keep date box color consistent (blue gradient)
+                if (layoutDateBox != null) {
+                    layoutDateBox.setBackgroundResource(R.drawable.rounded_background_gradient_blue);
+                }
             } else {
                 tvEventDay.setText("--");
                 tvEventMonth.setText("---");

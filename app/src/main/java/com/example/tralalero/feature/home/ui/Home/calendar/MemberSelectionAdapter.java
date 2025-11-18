@@ -118,14 +118,10 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
                 ivAvatar.setImageResource(R.drawable.ic_person);
             }
 
-            // ✅ FIX: Set listener AFTER checkbox state is set
-            // Handle click on entire item
+            // ✅ FIX: Only handle click on item view (not checkbox separately)
+            // This prevents double toggle bug
             itemView.setOnClickListener(v -> toggleSelection(member));
-            
-            // Handle checkbox click
-            checkbox.setOnCheckedChangeListener((buttonView, checked) -> {
-                toggleSelection(member);
-            });
+            checkbox.setClickable(false); // Disable checkbox direct clicks
         }
         
         private void toggleSelection(User member) {

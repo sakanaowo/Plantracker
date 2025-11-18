@@ -302,10 +302,16 @@ public class ProjectEventsViewModel extends ViewModel {
             e.printStackTrace();
         }
         
+        // ✅ FIX: Parse attendee count from participants array
+        int attendeeCount = 0;
+        if (dto.getParticipants() != null) {
+            attendeeCount = dto.getParticipants().size();
+        }
+        
         // Set defaults for fields not in DTO
         event.setType("MEETING");
         event.setRecurrence("NONE");
-        event.setAttendeeCount(0);
+        event.setAttendeeCount(attendeeCount);
         event.setCreateGoogleMeet(dto.getMeetLink() != null && !dto.getMeetLink().isEmpty());
         
         return event;

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="280dp" android:layout_height="wrap_content" android:layout_marginEnd="12dp" android:minHeight="400dp" app:cardCornerRadius="8dp" app:cardElevation="2dp" android:background="@android:color/white">
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="280dp" android:layout_height="wrap_content" android:layout_marginEnd="12dp" android:layout_marginVertical="4dp" app:cardCornerRadius="8dp" app:cardElevation="2dp" android:background="@android:color/white">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
 
         <!-- Board Title with menu -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingVertical="12dp" android:paddingHorizontal="8dp">
@@ -12,11 +12,8 @@
 
         </LinearLayout>
 
-        <!-- Task RecyclerView - with minHeight for better drop target -->
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/taskRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="200dp" android:maxHeight="600dp" android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:clipToPadding="false" android:nestedScrollingEnabled="false" android:overScrollMode="never" android:scrollbars="vertical" tools:listitem="@layout/board_detail_item" />
-
-        <!-- Empty state for better drop visibility -->
-        <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Drop tasks here" android:textSize="12sp" android:textColor="#9AA5B1" android:gravity="center" android:paddingVertical="40dp" android:visibility="gone" />
+        <!-- Task RecyclerView - wraps content like Trello -->
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/taskRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:clipToPadding="false" android:nestedScrollingEnabled="false" android:overScrollMode="never" android:scrollbars="none" tools:listitem="@layout/board_detail_item" />
 
         <!-- Add card button -->
         <LinearLayout android:id="@+id/btnAddCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingVertical="8dp" android:paddingHorizontal="4dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
