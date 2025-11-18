@@ -42,9 +42,6 @@ import java.util.List;
 
 public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseActivity {
     private static final String TAG = "InboxActivity";
-    public static final String EXTRA_TASK_ID = "task_id";
-    public static final String EXTRA_BOARD_ID = "board_id";
-
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
@@ -54,7 +51,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     private SwipeRefreshLayout swipeRefreshLayout;
     private View loadingView;
     private View emptyView;
-    private boolean isInitialLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,15 +78,11 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         setupSwipeRefresh();
         setupNotificationCard();
         setupQuickAddTask();
-        observeViewModel(); // ✅ Must be BEFORE loadInboxTasks
+        observeViewModel();
         setupBottomNavigation(1);
         
-        // ✅ NEW: Load inbox tasks once via ViewModel (no cache clear on first load)
         taskViewModel.loadInboxTasks("", false);
     }
-
-    // ✅ REMOVED: No more onResume reload!
-    // ViewModel keeps state, no need to reload on resume
 
     private void setupViewModel() {
         TaskRepositoryImplWithCache repositoryWithCache = 
@@ -196,30 +188,28 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         });
     }
     private void observeViewModel() {
-        // ✅ NEW: Observe inbox tasks from ViewModel (single source of truth)
         taskViewModel.getInboxTasks().observe(this, tasks -> {
             if (tasks != null && !tasks.isEmpty()) {
                 taskAdapter.setTasks(tasks);
                 showContent();
-                Log.d(TAG, "✅ Inbox tasks updated: " + tasks.size());
+                //Log.d(TAG, "Inbox tasks updated: " + tasks.size());
             } else {
                 taskAdapter.setTasks(new ArrayList<>());
                 showEmpty();
-                Log.d(TAG, "No inbox tasks");
+                //Log.d(TAG, "No inbox tasks");
             }
         });
         
-        // ✅ Observe loading state (optional - can show spinner)
-        taskViewModel.isLoading().observe(this, isLoading -> {
-            if (isLoading != null && isLoading) {
-                Log.d(TAG, "Loading tasks...");
-            } else {
-                Log.d(TAG, "Loading complete");
-            }
-        });
+//        taskViewModel.isLoading().observe(this, isLoading -> {
+//            if (isLoading != null && isLoading) {
+//                Log.d(TAG, "Loading tasks...");
+//            } else {
+//                Log.d(TAG, "Loading complete");
+//            }
+//        });
         taskViewModel.getError().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(this, "❌ Error: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Error: " + error);
             }
         });
@@ -234,9 +224,8 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 R.color.colorAccent
             );
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "🔄 Pull-to-refresh - clearing cache and reloading");
-                taskViewModel.loadInboxTasks("", true); // Clear cache = true
-                // Stop refreshing animation (observer will update UI)
+                Log.d(TAG, "Pull-to-refresh - clearing cache and reloading");
+                taskViewModel.loadInboxTasks("", true);
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     swipeRefreshLayout.setRefreshing(false);
                 }, 500);
@@ -265,26 +254,17 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
         Log.d(TAG, "Showing empty view");
     }
 
-    // ✅ REMOVED: loadAllTasks(), loadQuickTasksFromApi(), forceRefreshTasks()
-    // All replaced by taskViewModel.loadInboxTasks() + observer pattern
-
-    /**
-     * ✅ NEW: Create quick task via ViewModel with optimistic update
-     * Uses POST /api/tasks/quick (no projectId/boardId required)
-     */
     private void createTask(String title) {
-        Log.d(TAG, "✅ Creating quick task via ViewModel: " + title);
-        
-        // ✅ Call ViewModel - optimistic update will show instantly
-        // Backend will auto-assign to user's default project and inbox board
+        Log.d(TAG, "Creating quick task via ViewModel: " + title);
+
         taskViewModel.createQuickTask(title, "");
         
         // Observer auto-updates UI via inboxTasksLiveData
         android.widget.Toast.makeText(this, 
-            "✓ Creating task...", 
+            "Creating task...",
             android.widget.Toast.LENGTH_SHORT).show();
         
-        Log.d(TAG, "✅ Quick task creation delegated to ViewModel (optimistic update)");
+        Log.d(TAG, "Quick task creation delegated to ViewModel (optimistic update)");
     }
 
     private void showTaskDetailBottomSheet(Task task) {
@@ -332,7 +312,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 String userId = input.getText().toString().trim();
                 if (!userId.isEmpty()) {
                     taskViewModel.assignTask(task.getId(), userId);
-                    // ✅ REMOVED: loadAllTasks() - observer auto-updates
                     Toast.makeText(this, "Task assigned successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "User ID cannot be empty", Toast.LENGTH_SHORT).show();
@@ -352,7 +331,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
                 String targetBoardId = input.getText().toString().trim();
                 if (!targetBoardId.isEmpty()) {
                     taskViewModel.moveTaskToBoard(task.getId(), targetBoardId, 0);
-                    // ✅ REMOVED: loadAllTasks() - optimistic update handles it
                     Toast.makeText(this, "Task moved successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Board ID cannot be empty", Toast.LENGTH_SHORT).show();
@@ -396,7 +374,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             .setMessage("Are you sure you want to delete \"" + task.getTitle() + "\"?")
             .setPositiveButton("Delete", (dialog, which) -> {
                 taskViewModel.deleteTask(task.getId());
-                // ✅ REMOVED: loadAllTasks() - optimistic delete removes instantly
                 Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("Cancel", null)
@@ -404,7 +381,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
     }
     
     private void handleUpdateStartDate(Task task, java.util.Date startDate) {
-        Log.d(TAG, "✅ handleUpdateStartDate via ViewModel: " + task.getId() + " -> " + startDate);
+        //Log.d(TAG, "handleUpdateStartDate via ViewModel: " + task.getId() + " -> " + startDate);
         
         // Create updated task with new start date
         Task updatedTask = new Task(
@@ -432,14 +409,13 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getUpdatedAt()
         );
         
-        // ✅ Update via ViewModel - optimistic update handles UI instantly
         taskViewModel.updateTask(task.getId(), updatedTask);
         
         Toast.makeText(this, "✓ Start date updated", Toast.LENGTH_SHORT).show();
     }
     
     private void handleUpdateDueDate(Task task, java.util.Date dueDate) {
-        Log.d(TAG, "✅ handleUpdateDueDate via ViewModel: " + task.getId() + " -> " + dueDate);
+        //Log.d(TAG, "✅ handleUpdateDueDate via ViewModel: " + task.getId() + " -> " + dueDate);
         
         // Create updated task with new due date
         Task updatedTask = new Task(
@@ -459,7 +435,7 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getEpicId(),
             task.getParentTaskId(),
             task.getStartAt(),
-            dueDate,  // Updated due date
+            dueDate,
             task.getStoryPoints(),
             task.getOriginalEstimateSec(),
             task.getRemainingEstimateSec(),
@@ -467,39 +443,28 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getUpdatedAt()
         );
         
-        // ✅ Update via ViewModel - optimistic update handles UI instantly
         taskViewModel.updateTask(task.getId(), updatedTask);
         
-        Toast.makeText(this, "✓ Due date updated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Due date updated", Toast.LENGTH_SHORT).show();
     }
-    
-    /**
-     * ✅ REFACTORED: Use ViewModel's toggleTaskComplete for instant checkbox
-     * No manual UI update needed - observer auto-updates!
-     */
+
     private void handleTaskCompleted(Task task) {
-        Log.d(TAG, "✅ Toggle task complete via ViewModel: " + task.getId());
+        //Log.d(TAG, "Toggle task complete via ViewModel: " + task.getId());
         
-        // ✅ Single line! ViewModel handles optimistic update + API + rollback
         taskViewModel.toggleTaskComplete(task);
         
-        // Observer automatically updates UI
-        Toast.makeText(this, "✓ Task toggled", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show();
     }
-    
-    /**
-     * ✅ NEW: Handle task title and description update from bottom sheet
-     */
+
     private void handleUpdateTask(Task task, String newTitle, String newDescription) {
-        Log.d(TAG, "✅ Updating task title and description: " + task.getId());
+        //Log.d(TAG, "Updating task title and description: " + task.getId());
         
-        // Create updated task with new title and description
         Task updatedTask = new Task(
             task.getId(),
             task.getProjectId(),
             task.getBoardId(),
-            newTitle,           // ✅ Updated title
-            newDescription,     // ✅ Updated description
+            newTitle,
+            newDescription,
             task.getIssueKey(),
             task.getType(),
             task.getStatus(),
@@ -519,7 +484,6 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getUpdatedAt()
         );
         
-        // ✅ Update via ViewModel - optimistic update handles UI instantly
         taskViewModel.updateTask(task.getId(), updatedTask);
         
         Toast.makeText(this, "✓ Task updated", Toast.LENGTH_SHORT).show();
