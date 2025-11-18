@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -144,6 +145,16 @@ public class HomeActivity extends BaseActivity {
         }
     }
 
+    private void hideKeyboard(View view) {
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                view.clearFocus();
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -185,6 +196,7 @@ public class HomeActivity extends BaseActivity {
         btnCancel.setOnClickListener(v -> {
                     inboxForm.setVisibility(View.GONE);
                     cardNew.setText("");
+                    hideKeyboard(v);
                 }
         );
         Button btnAdd = findViewById(R.id.btnAdd);
@@ -195,6 +207,7 @@ public class HomeActivity extends BaseActivity {
                 Toast.makeText(this, "Đã thêm: " + text, Toast.LENGTH_SHORT).show();
                 inboxForm.setVisibility(View.GONE);
                 cardNew.setText(""); // clear sau khi lưu
+                hideKeyboard(v);
             } else {
                 Toast.makeText(this, "Vui lòng nhập dữ liệu!", Toast.LENGTH_SHORT).show();
             }

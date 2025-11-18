@@ -34,7 +34,7 @@
         <activity android:name=".feature.home.ui.NewBoard" android:exported="false" />
         <activity android:name=".feature.auth.ui.login.ContinueWithGoogle" android:exported="false" />
         <activity android:name=".feature.home.ui.Home.WorkspaceActivity" android:exported="false" />
-        <activity android:name=".feature.home.ui.Home.ProjectActivity" android:exported="false" />
+        <activity android:name=".feature.home.ui.Home.ProjectActivity" android:windowSoftInputMode="adjustResize" android:exported="false" />
         <activity android:name=".feature.home.ui.Home.project.AboutBoardActivity" android:exported="false" android:label="About this board" />
         <activity android:name=".feature.home.ui.Home.project.CardDetailActivity" android:exported="false" android:label="Task Details" />
         <activity android:name=".feature.home.ui.ActivityTimer" android:exported="false" />
