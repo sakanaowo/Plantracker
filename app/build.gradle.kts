@@ -102,7 +102,6 @@ dependencies {
     // Chrome Custom Tabs for OAuth flow
     implementation("androidx.browser:browser:1.8.0")
 
-
     implementation(platform(libs.firebase.bom))
     implementation(libs.appcompat)
     implementation(libs.material)

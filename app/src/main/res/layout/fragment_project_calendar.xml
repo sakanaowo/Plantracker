@@ -26,7 +26,29 @@
         </LinearLayout>
 
         <!-- Calendar View -->
-        <CalendarView android:id="@+id/calendarView" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/white" android:layout_marginTop="4dp"/>
+        <CalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Event Dates Indicator (tap to open MaterialDatePicker) -->
+        <TextView
+            android:id="@+id/tvEventDatesIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:text="Dates with events: Loading..."
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorAccent"
+            android:drawablePadding="8dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
 
         <!-- Events List with Pull-to-Refresh -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">

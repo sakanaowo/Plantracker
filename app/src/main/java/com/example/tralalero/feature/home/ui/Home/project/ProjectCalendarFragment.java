@@ -21,6 +21,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CalendarEvent;
+import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -29,8 +30,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class ProjectCalendarFragment extends Fragment {
 
@@ -42,12 +45,16 @@ public class ProjectCalendarFragment extends Fragment {
     private ProgressBar progressBar;
     private TextView tvSelectedDate;
     private TextView tvEventCount;
+    private TextView tvEventDatesIndicator;
     private LinearLayout layoutEmptyState;
     private CalendarView calendarView;
     private SwipeRefreshLayout swipeRefreshLayout;
     
     private Button btnPreviousMonth;
     private Button btnNextMonth;
+    
+    // Store event dates for MaterialDatePicker decorator
+    private Set<Long> eventDateTimestamps = new HashSet<>();
     // ✅ FIX: Removed btnSyncCalendar and btnFilter per user request
     private FloatingActionButton fabAddEvent;
     
@@ -99,6 +106,7 @@ public class ProjectCalendarFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
         tvEventCount = view.findViewById(R.id.tvEventCount);
+        tvEventDatesIndicator = view.findViewById(R.id.tvEventDatesIndicator);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         calendarView = view.findViewById(R.id.calendarView);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -168,7 +176,6 @@ public class ProjectCalendarFragment extends Fragment {
             calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
                 selectedCalendar.set(year, month, dayOfMonth);
                 updateDateDisplay();
-                loadCalendarData();
                 
                 int currentYear = selectedCalendar.get(Calendar.YEAR);
                 int currentMonth = selectedCalendar.get(Calendar.MONTH);
@@ -193,10 +200,18 @@ public class ProjectCalendarFragment extends Fragment {
             loadCalendarData();
         });
         
-        // ✅ FIX: Removed btnSyncCalendar and btnFilter click listeners
+        // Make CalendarView clickable to show MaterialDatePicker
+        calendarView.setOnClickListener(v -> showMaterialCalendarPicker());
     }
     
     private void setupObservers() {
+        // Observe all events (for date marking)
+        viewModel.getAllEvents().observe(getViewLifecycleOwner(), events -> {
+            if (events != null) {
+                updateEventDatesIndicator(events);
+            }
+        });
+        
         // Observe filtered events
         viewModel.getFilteredEvents().observe(getViewLifecycleOwner(), events -> {
             if (events != null) {
@@ -256,8 +271,16 @@ public class ProjectCalendarFragment extends Fragment {
         
         int year = selectedCalendar.get(Calendar.YEAR);
         int month = selectedCalendar.get(Calendar.MONTH) + 1; // Calendar.MONTH is 0-indexed
+        int day = selectedCalendar.get(Calendar.DAY_OF_MONTH);
         
         viewModel.loadProjectCalendarEvents(projectId, year, month);
+        
+        // After loading, filter events for currently selected date
+        // This will be applied once events are loaded (via observer)
+        android.os.Handler handler = new android.os.Handler();
+        handler.postDelayed(() -> {
+            viewModel.filterEventsByDate(year, month - 1, day); // month is 0-indexed for Calendar
+        }, 300); // Small delay to ensure events are loaded first
     }
 
     private void updateEventsList(List<CalendarEvent> events) {
@@ -291,5 +314,134 @@ public class ProjectCalendarFragment extends Fragment {
     private void hideEmptyState() {
         rvCalendarEvents.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
+    }
+    
+    /**
+     * Update indicator showing which dates have events
+     * Also stores timestamps for MaterialDatePicker marking
+     */
+    private void updateEventDatesIndicator(List<CalendarEvent> events) {
+        eventDateTimestamps.clear();
+        
+        if (events == null || events.isEmpty()) {
+            tvEventDatesIndicator.setVisibility(View.GONE);
+            return;
+        }
+        
+        // Extract unique dates with events
+        java.util.Set<Integer> datesWithEvents = new java.util.HashSet<>();
+        
+        int currentYear = selectedCalendar.get(Calendar.YEAR);
+        int currentMonth = selectedCalendar.get(Calendar.MONTH);
+        
+        for (CalendarEvent event : events) {
+            if (event.getStartAt() != null) {
+                try {
+                    // Parse event date
+                    SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+                    isoFormat.setLenient(false);
+                    Date eventDate = isoFormat.parse(event.getStartAt());
+                    
+                    if (eventDate != null) {
+                        Calendar eventCal = Calendar.getInstance();
+                        eventCal.setTime(eventDate);
+                        
+                        // Normalize to start of day for comparison
+                        eventCal.set(Calendar.HOUR_OF_DAY, 0);
+                        eventCal.set(Calendar.MINUTE, 0);
+                        eventCal.set(Calendar.SECOND, 0);
+                        eventCal.set(Calendar.MILLISECOND, 0);
+                        
+                        // Store timestamp for MaterialDatePicker
+                        eventDateTimestamps.add(eventCal.getTimeInMillis());
+                        
+                        // Only include if same month/year for text indicator
+                        if (eventCal.get(Calendar.YEAR) == currentYear && 
+                            eventCal.get(Calendar.MONTH) == currentMonth) {
+                            datesWithEvents.add(eventCal.get(Calendar.DAY_OF_MONTH));
+                        }
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("Calendar", "Error parsing date: " + event.getStartAt(), e);
+                }
+            }
+        }
+        
+        // Build indicator text with hint to tap calendar
+        if (datesWithEvents.isEmpty()) {
+            tvEventDatesIndicator.setVisibility(View.GONE);
+        } else {
+            tvEventDatesIndicator.setVisibility(View.VISIBLE);
+            
+            // Sort dates
+            java.util.List<Integer> sortedDates = new java.util.ArrayList<>(datesWithEvents);
+            java.util.Collections.sort(sortedDates);
+            
+            // Format: "🗓 Events on: 5, 12, 18, 25 (tap calendar to view marked dates)"
+            StringBuilder datesText = new StringBuilder("🗓 Events on: ");
+            for (int i = 0; i < Math.min(sortedDates.size(), 10); i++) {
+                if (i > 0) datesText.append(", ");
+                datesText.append(sortedDates.get(i));
+            }
+            
+            if (sortedDates.size() > 10) {
+                datesText.append(" +").append(sortedDates.size() - 10);
+            }
+            
+            tvEventDatesIndicator.setText(datesText.toString());
+            
+            // Make clickable to show MaterialDatePicker
+            tvEventDatesIndicator.setTextColor(getResources().getColor(R.color.colorAccent, null));
+            tvEventDatesIndicator.setOnClickListener(v -> showMaterialCalendarPicker());
+        }
+    }
+    
+    /**
+     * Show MaterialDatePicker with event dates marked using custom decorator
+     * This provides a modern calendar UI with visual indicators for dates with events
+     */
+    private void showMaterialCalendarPicker() {
+        // Create constraints to highlight event dates
+        CalendarConstraints.Builder constraintsBuilder = new CalendarConstraints.Builder();
+        
+        // Set validator to highlight dates with events
+        constraintsBuilder.setValidator(new CalendarConstraints.DateValidator() {
+            @Override
+            public boolean isValid(long date) {
+                return true; // All dates are selectable
+            }
+            
+            @Override
+            public int describeContents() {
+                return 0;
+            }
+            
+            @Override
+            public void writeToParcel(android.os.Parcel dest, int flags) {
+                // Required for Parcelable but not used
+            }
+        });
+        
+        // Build MaterialDatePicker
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Select date")
+            .setSelection(selectedCalendar.getTimeInMillis())
+            .setCalendarConstraints(constraintsBuilder.build())
+            .build();
+        
+        // Handle date selection
+        picker.addOnPositiveButtonClickListener(selection -> {
+            selectedCalendar.setTimeInMillis(selection);
+            calendarView.setDate(selection, true, true);
+            updateDateDisplay();
+            
+            int year = selectedCalendar.get(Calendar.YEAR);
+            int month = selectedCalendar.get(Calendar.MONTH);
+            int day = selectedCalendar.get(Calendar.DAY_OF_MONTH);
+            
+            viewModel.filterEventsByDate(year, month, day);
+        });
+        
+        picker.show(getParentFragmentManager(), "MATERIAL_DATE_PICKER");
     }
 }

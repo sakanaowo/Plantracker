@@ -132,10 +132,21 @@ public class ProjectCalendarViewModel extends ViewModel {
         
         String targetDate = dateFormatter.format(targetCal.getTime());
         
+        Log.d(TAG, "Filtering events for date: " + targetDate + " (" + year + "-" + (month+1) + "-" + dayOfMonth + ")");
+        
         List<CalendarEvent> filtered = new ArrayList<>();
         for (CalendarEvent event : cachedEvents) {
-            if (event.getStartAt() != null && event.getStartAt().startsWith(targetDate)) {
-                filtered.add(event);
+            if (event.getStartAt() != null) {
+                // Extract date part (first 10 chars: "yyyy-MM-dd")
+                String eventDate = event.getStartAt().length() >= 10 ? 
+                    event.getStartAt().substring(0, 10) : event.getStartAt();
+                
+                Log.d(TAG, "  Checking event: " + event.getTitle() + " on " + eventDate + " vs " + targetDate);
+                
+                if (eventDate.equals(targetDate)) {
+                    filtered.add(event);
+                    Log.d(TAG, "    ✓ Match!");
+                }
             }
         }
         
