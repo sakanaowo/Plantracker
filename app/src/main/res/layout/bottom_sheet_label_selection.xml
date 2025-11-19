@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Nhãn"
+            android:text="Label"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
@@ -41,58 +41,6 @@
             android:padding="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Add label"/>
-    </LinearLayout>
-
-    <!-- Options -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="16dp">
-
-        <!-- Chế độ mù màu switch -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="12dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Chế độ mù màu"
-                android:textSize="16sp"
-                android:textColor="@android:color/black"/>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchColorBlindMode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
-
-        <!-- Hiển thị tên nhãn trên mặt trước thẻ switch -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="12dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Hiển thị tên nhãn trên mặt trước thẻ"
-                android:textSize="16sp"
-                android:textColor="@android:color/black"/>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchShowLabelNames"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
     </LinearLayout>
 
     <!-- Labels RecyclerView -->

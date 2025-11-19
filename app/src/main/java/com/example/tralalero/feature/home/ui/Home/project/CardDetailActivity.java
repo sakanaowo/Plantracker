@@ -192,8 +192,7 @@ public class CardDetailActivity extends AppCompatActivity {
         etTaskTitle = findViewById(R.id.etTaskTitle); // Changed from rbTaskTitle
         tvBoardName = findViewById(R.id.tvBoardName); // NEW
         btnMembers = findViewById(R.id.btnMembers);
-        btnAddAttachment = findViewById(R.id.btnAddAttachment);
-        btnAddComment = findViewById(R.id.btnAddComment);
+
         btnDeleteTask = findViewById(R.id.btnDeleteTask);
         btnConfirm = findViewById(R.id.btnConfirm);
         etDescription = findViewById(R.id.etDescription);
@@ -424,9 +423,15 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Observe task labels
         labelViewModel.getTaskLabels().observe(this, labels -> {
+            android.util.Log.d("CardDetailActivity", "📋 Labels observer triggered: " + (labels != null ? labels.size() : 0) + " labels");
             if (labels != null) {
                 selectedLabels.clear();
                 selectedLabels.addAll(labels);
+                android.util.Log.d("CardDetailActivity", "  ✅ Updating UI with " + selectedLabels.size() + " labels");
+                displaySelectedLabels();
+            } else {
+                android.util.Log.d("CardDetailActivity", "  ⚠️ Labels is null, clearing UI");
+                selectedLabels.clear();
                 displaySelectedLabels();
             }
         });
@@ -543,8 +548,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private void setupUI() {
         if (isEditMode) {
             etTaskTitle.setText(getIntent().getStringExtra(EXTRA_TASK_TITLE));
-            // ✅ FIX: Don't populate description/dates from Intent - they will be loaded from API via observer
-            // etDescription.setText(getIntent().getStringExtra(EXTRA_TASK_DESCRIPTION));
+
             String priorityStr = getIntent().getStringExtra(EXTRA_TASK_PRIORITY);
             if (priorityStr != null) {
                 try {
@@ -576,7 +580,7 @@ public class CardDetailActivity extends AppCompatActivity {
             loadTaskComments();
             loadChecklistItems();
             loadTaskLabels();
-            loadTaskDetails(); // ✅ Load full task data including calendar sync
+            loadTaskDetails();
         }
         
         // Display selected labels (initial state)
@@ -609,15 +613,17 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     private void loadTaskLabels() {
+        android.util.Log.d("CardDetailActivity", "📋 loadTaskLabels called - taskId: " + taskId + ", labelViewModel: " + (labelViewModel != null ? "initialized" : "NULL"));
         // Load task labels from API via ViewModel
         if (taskId != null && !taskId.isEmpty() && labelViewModel != null) {
+            android.util.Log.d("CardDetailActivity", "  ✅ Loading labels from API");
             labelViewModel.loadTaskLabels(taskId);
+        } else {
+            android.util.Log.e("CardDetailActivity", "  ❌ Cannot load labels - conditions not met");
         }
     }
     
-    /**
-     * ✅ NEW: Load full task details from API (for calendar sync fields)
-     */
+
     private void loadTaskDetails() {
         if (taskId != null && !taskId.isEmpty()) {
             android.util.Log.d(TAG, "Loading task details for taskId: " + taskId);
@@ -631,23 +637,6 @@ public class CardDetailActivity extends AppCompatActivity {
         });
         btnMembers.setOnClickListener(v -> {
             showAssignTaskDialog();
-        });
-        btnAddAttachment.setOnClickListener(v -> {
-            // Direct file picker - no toggle needed
-            android.util.Log.d("CardDetail", "btnAddAttachment clicked - isEditMode: " + isEditMode + ", taskId: " + taskId);
-            if (!isEditMode || taskId == null || taskId.isEmpty()) {
-                Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            pickFile();
-        });
-        btnAddComment.setOnClickListener(v -> {
-            // Focus on comment input - no toggle needed
-            if (!isEditMode || taskId == null || taskId.isEmpty()) {
-                Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            etNewComment.requestFocus();
         });
         ivAddChecklist.setOnClickListener(v -> {
             showAddChecklistDialog();
@@ -1035,9 +1024,12 @@ public class CardDetailActivity extends AppCompatActivity {
         );
         
         dialog.setOnLabelsUpdatedListener(() -> {
+            android.util.Log.d("CardDetailActivity", "🔄 Labels updated callback triggered, reloading labels for task: " + taskId);
             // Reload task labels from backend to ensure sync
             if (labelViewModel != null && taskId != null) {
                 labelViewModel.loadTaskLabels(taskId);
+            } else {
+                android.util.Log.e("CardDetailActivity", "❌ Cannot reload labels - labelViewModel or taskId is null");
             }
         });
         
@@ -1045,16 +1037,20 @@ public class CardDetailActivity extends AppCompatActivity {
     }
 
     private void displaySelectedLabels() {
+        android.util.Log.d("CardDetailActivity", "🎨 displaySelectedLabels called with " + selectedLabels.size() + " labels");
         layoutSelectedLabels.removeAllViews();
 
         if (selectedLabels.isEmpty()) {
+            android.util.Log.d("CardDetailActivity", "  ℹ️ No labels, showing empty state");
             scrollViewLabels.setVisibility(View.GONE);
             tvNoLabels.setVisibility(View.VISIBLE);
         } else {
+            android.util.Log.d("CardDetailActivity", "  ✅ Showing " + selectedLabels.size() + " labels");
             scrollViewLabels.setVisibility(View.VISIBLE);
             tvNoLabels.setVisibility(View.GONE);
 
             for (Label label : selectedLabels) {
+                android.util.Log.d("CardDetailActivity", "    - Adding label: " + label.getName() + " (" + label.getColor() + ")");
                 View labelChip = createLabelChip(label);
                 layoutSelectedLabels.addView(labelChip);
             }

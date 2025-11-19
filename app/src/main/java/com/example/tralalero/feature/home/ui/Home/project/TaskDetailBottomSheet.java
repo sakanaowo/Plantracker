@@ -142,10 +142,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         etDescription = view.findViewById(R.id.etDescription);
         etDateStart = view.findViewById(R.id.etDateStart);
         etDueDate = view.findViewById(R.id.etDueDate);
-        btnMembers = view.findViewById(R.id.btnMembers); 
-        btnAddAttachment = view.findViewById(R.id.btnAddAttachment); 
-        btnAddComment = view.findViewById(R.id.btnAddComment); 
-        btnCalendarSync = view.findViewById(R.id.btnCalendarSync);
+        btnMembers = view.findViewById(R.id.btnMembers);
         btnDeleteTask = view.findViewById(R.id.btnDeleteTask);
         btnConfirm = view.findViewById(R.id.btnConfirm);
         
@@ -480,76 +477,8 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             fetchTaskDetails(task.getId());
             return;
         }
-        
-        // After check, open with data
-        openCalendarSyncDialogWithData();
+
     }
-    
-    /**
-     * Open calendar sync dialog with loaded data
-     */
-    private void openCalendarSyncDialogWithData() {
-        // Get current sync settings from TaskDTO (if available) or defaults
-        boolean currentSyncEnabled = false;
-        int currentReminderTime = 30; // Default changed to 30
-        Date lastSyncedAtDate = null;
-        
-        if (currentTaskDTO != null) {
-            Boolean reminderEnabled = currentTaskDTO.getCalendarReminderEnabled();
-            currentSyncEnabled = reminderEnabled != null && reminderEnabled;
-            
-            Integer reminderTime = currentTaskDTO.getCalendarReminderTime();
-            if (reminderTime != null) {
-                currentReminderTime = reminderTime;
-            }
-            
-            // Parse ISO string to Date
-            String lastSyncedAt = currentTaskDTO.getLastSyncedAt();
-            if (lastSyncedAt != null && !lastSyncedAt.isEmpty()) {
-                try {
-                    SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-                    lastSyncedAtDate = isoFormat.parse(lastSyncedAt);
-                } catch (Exception e) {
-                    Log.w("TaskDetailBottomSheet", "Failed to parse last synced date: " + lastSyncedAt, e);
-                }
-            }
-        }
-        
-        Log.d("TaskDetailBottomSheet", "Opening calendar sync dialog with: enabled=" + 
-            currentSyncEnabled + ", reminder=" + currentReminderTime + "min");
-        
-        // Show dialog
-        CalendarSyncDialog dialog = CalendarSyncDialog.newInstance(
-            task.getId(),
-            task.getTitle(),
-            task.getDueAt(),
-            currentSyncEnabled,
-            currentReminderTime,
-            lastSyncedAtDate
-        );
-        
-        dialog.setOnSyncSettingsChangedListener((taskId, enabled, reminderMinutes) -> {
-            // Call ViewModel to update calendar sync
-            Log.d("TaskDetailBottomSheet", "Calendar sync changed: taskId=" + taskId +
-                ", enabled=" + enabled + ", reminder=" + reminderMinutes + "min");
-            
-            // Convert task's dueAt to ISO string for backend
-            String dueAtISO = null;
-            if (task.getDueAt() != null) {
-                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-                dueAtISO = isoFormat.format(task.getDueAt());
-            }
-            
-            calendarSyncViewModel.updateCalendarSync(taskId, enabled, reminderMinutes, dueAtISO);
-        });
-        
-        dialog.show(getParentFragmentManager(), "calendar_sync");
-    }
-    
-    /**
-     * Fetch full task details from API (including calendar sync settings)
-     */
     private void fetchTaskDetails(String taskId) {
         Log.d("TaskDetailBottomSheet", "Fetching task details for: " + taskId);
         
@@ -568,11 +497,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                     
                     // ✅ FIX: Populate UI with fresh data from API
                     populateTaskUI(currentTaskDTO);
-                    
-                    // If user clicked calendar sync before data loaded, open it now
-                    if (btnCalendarSync != null && btnCalendarSync.isPressed()) {
-                        openCalendarSyncDialogWithData();
-                    }
+
                 } else {
                     Log.e("TaskDetailBottomSheet", "Failed to fetch task: " + response.code());
                     Toast.makeText(requireContext(), "Failed to load task details", Toast.LENGTH_SHORT).show();

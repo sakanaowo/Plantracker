@@ -157,11 +157,6 @@ public class AccountActivity extends com.example.tralalero.feature.home.ui.BaseA
         layoutOfflineBoards.setOnClickListener(v -> {
             // TODO: Implement offline boards
         });
-
-        LinearLayout layoutBrowseTemplates = findViewById(R.id.layoutBrowseTemplates);
-        layoutBrowseTemplates.setOnClickListener(v -> {
-            // TODO: Implement browse templates
-        });
         
         // Setup Google Calendar integration
         setupGoogleCalendar();
