@@ -61,7 +61,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private static final String TAG = "CardDetailActivity";
     public static final String EXTRA_TASK_ID = "task_id";
     public static final String EXTRA_BOARD_ID = "board_id";
-    public static final String EXTRA_BOARD_NAME = "board_name"; // NEW: Board name to display
+    public static final String EXTRA_BOARD_NAME = "board_name"; 
     public static final String EXTRA_PROJECT_ID = "project_id";
     public static final String EXTRA_IS_EDIT_MODE = "is_edit_mode";
     public static final String EXTRA_TASK_TITLE = "task_title";
@@ -1798,14 +1798,39 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // Check if it's an image file
+        String mimeType = attachment.getMimeType();
+        boolean isImage = mimeType != null && mimeType.startsWith("image/");
+        
         // Get signed URL for viewing
         getAttachmentViewUrl(attachment, (signedUrl) -> {
             if (signedUrl != null && !signedUrl.isEmpty()) {
-                openWithIntent(signedUrl, fileName);
+                if (isImage) {
+                    // Show image preview dialog
+                    showImagePreview(signedUrl, fileName);
+                } else {
+                    // Open with system intent for non-images
+                    openWithIntent(signedUrl, fileName);
+                }
             } else {
                 Toast.makeText(this, "Cannot open file - backend integration needed", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * Show image preview dialog
+     */
+    private void showImagePreview(String imageUrl, String fileName) {
+        com.example.tralalero.feature.task.attachments.ImagePreviewDialog dialog = 
+            new com.example.tralalero.feature.task.attachments.ImagePreviewDialog(this, imageUrl, fileName);
+        
+        // Set download listener
+        dialog.setOnDownloadClickListener(() -> {
+            performDownload(imageUrl, fileName);
+        });
+        
+        dialog.show();
     }
     
     /**
@@ -1911,22 +1936,9 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
                 android.util.Log.d("CardDetail", "Upload success! File: " + attachmentDTO.fileName);
                 runOnUiThread(() -> {
-                    // Map DTO to domain model
-                    com.example.tralalero.domain.model.Attachment attachment = 
-                        new com.example.tralalero.domain.model.Attachment(
-                            attachmentDTO.id,
-                            taskId,
-                            attachmentDTO.url != null ? attachmentDTO.url : "",
-                            attachmentDTO.fileName,
-                            attachmentDTO.mimeType,
-                            attachmentDTO.size,
-                            null,
-                            new java.util.Date()
-                        );
-                    
-                    // Add to ViewModel and reload list
-                    taskViewModel.addAttachment(taskId, attachment);
-                    loadTaskAttachments(); // Reload to refresh UI
+                    // ✅ Just reload attachments from server (which has full data including URL)
+                    // Don't manually add attachment as attachmentDTO from upload doesn't have URL
+                    loadTaskAttachments(); // Reload to refresh UI with complete data from backend
                     
                     Toast.makeText(CardDetailActivity.this, 
                         "File uploaded successfully!", 

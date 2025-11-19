@@ -75,17 +75,17 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
         adapter = new AttachmentAdapter(new AttachmentAdapter.OnAttachmentClickListener() {
             @Override
             public void onDownloadClick(Attachment attachment) {
-                // TODO: Open or download using View URL
+                handleAttachmentDownload(attachment);
             }
 
             @Override
             public void onDeleteClick(Attachment attachment) {
-                // TODO: Delete via ViewModel
+                handleAttachmentDelete(attachment);
             }
 
             @Override
             public void onAttachmentClick(Attachment attachment) {
-                // no-op
+                handleAttachmentClick(attachment);
             }
         });
         rv.setAdapter(adapter);
@@ -132,20 +132,7 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
                     @Override
                     public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
                         android.util.Log.d("AttachmentsFragment", "Upload success! File: " + attachmentDTO.fileName);
-                        // Map to domain Attachment minimally and register via ViewModel
-                        Attachment a = new Attachment(
-                                attachmentDTO.id,
-                                taskId,
-                                attachmentDTO.url != null ? attachmentDTO.url : "",
-                                attachmentDTO.fileName,
-                                attachmentDTO.mimeType,
-                                attachmentDTO.size,
-                                null,
-                                new Date()
-                        );
-                        taskViewModel.addAttachment(taskId, a);
-                        
-                        // Reload attachments to refresh UI
+                        // ✅ Just reload attachments from server (which has full data including URL)
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
                                 android.widget.Toast.makeText(getContext(), 
@@ -228,5 +215,165 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
 
         // Attachment uploader uses AttachmentApiService and context
         uploader = new AttachmentUploader(attachmentApi, requireContext());
+    }
+    
+    /**
+     * Handle attachment click - preview image or open other files
+     */
+    private void handleAttachmentClick(Attachment attachment) {
+        String fileName = attachment.getFileName();
+        if (fileName == null || fileName.isEmpty()) {
+            android.widget.Toast.makeText(getContext(), "Invalid file name", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Check if it's an image
+        String mimeType = attachment.getMimeType();
+        boolean isImage = mimeType != null && mimeType.startsWith("image/");
+        
+        // Get signed URL from backend
+        taskViewModel.getAttachmentViewUrl(attachment.getId(), new com.example.tralalero.presentation.viewmodel.TaskViewModel.AttachmentViewUrlCallback() {
+            @Override
+            public void onSuccess(String viewUrl) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (isImage) {
+                            showImagePreview(viewUrl, fileName);
+                        } else {
+                            openWithIntent(viewUrl, fileName);
+                        }
+                    });
+                }
+            }
+            
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        android.widget.Toast.makeText(getContext(), "Failed to get file URL: " + error, android.widget.Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+    
+    /**
+     * Show image preview dialog
+     */
+    private void showImagePreview(String imageUrl, String fileName) {
+        if (getActivity() == null) return;
+        
+        ImagePreviewDialog dialog = new ImagePreviewDialog(getActivity(), imageUrl, fileName);
+        dialog.setOnDownloadClickListener(() -> {
+            performDownload(imageUrl, fileName);
+        });
+        dialog.show();
+    }
+    
+    /**
+     * Open file with system intent
+     */
+    private void openWithIntent(String url, String fileName) {
+        if (getActivity() == null) return;
+        
+        try {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            android.net.Uri uri = android.net.Uri.parse(url);
+            String mimeType = getMimeType(fileName);
+            intent.setDataAndType(uri, mimeType);
+            intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            android.widget.Toast.makeText(getContext(), "Cannot open file: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Handle attachment download
+     */
+    private void handleAttachmentDownload(Attachment attachment) {
+        taskViewModel.getAttachmentViewUrl(attachment.getId(), new com.example.tralalero.presentation.viewmodel.TaskViewModel.AttachmentViewUrlCallback() {
+            @Override
+            public void onSuccess(String viewUrl) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        performDownload(viewUrl, attachment.getFileName());
+                    });
+                }
+            }
+            
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        android.widget.Toast.makeText(getContext(), "Failed to download: " + error, android.widget.Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+    
+    /**
+     * Perform actual download
+     */
+    private void performDownload(String url, String fileName) {
+        if (getActivity() == null) return;
+        
+        try {
+            android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(android.net.Uri.parse(url));
+            request.setTitle(fileName);
+            request.setDescription("Downloading attachment");
+            request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, fileName);
+            
+            android.app.DownloadManager dm = (android.app.DownloadManager) getActivity().getSystemService(android.content.Context.DOWNLOAD_SERVICE);
+            if (dm != null) {
+                dm.enqueue(request);
+                android.widget.Toast.makeText(getContext(), "Downloading " + fileName, android.widget.Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            android.widget.Toast.makeText(getContext(), "Download failed: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Handle attachment delete
+     */
+    private void handleAttachmentDelete(Attachment attachment) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Attachment")
+            .setMessage("Are you sure you want to delete '" + attachment.getFileName() + "'?")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                taskViewModel.deleteAttachment(attachment.getId(), taskId);
+                android.widget.Toast.makeText(getContext(), "Attachment deleted", android.widget.Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Get MIME type from file name
+     */
+    private String getMimeType(String fileName) {
+        if (fileName == null || fileName.isEmpty()) return "*/*";
+        
+        int lastDot = fileName.lastIndexOf('.');
+        if (lastDot <= 0 || lastDot >= fileName.length() - 1) return "*/*";
+        
+        String ext = fileName.substring(lastDot + 1).toLowerCase();
+        
+        switch (ext) {
+            case "jpg":
+            case "jpeg": return "image/jpeg";
+            case "png": return "image/png";
+            case "gif": return "image/gif";
+            case "pdf": return "application/pdf";
+            case "doc":
+            case "docx": return "application/msword";
+            case "xls":
+            case "xlsx": return "application/vnd.ms-excel";
+            case "txt": return "text/plain";
+            default: return "*/*";
+        }
     }
 }
