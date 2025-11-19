@@ -150,7 +150,6 @@ public class AuthViewModel extends ViewModel {
             public void onSuccess(User result) {
                 loadingLiveData.setValue(false);
                 currentUserLiveData.setValue(result);
-                // ✅ Ensure authState is LOGIN_SUCCESS only when user data loaded
                 authStateLiveData.setValue(AuthState.LOGIN_SUCCESS);
             }
 
@@ -158,7 +157,6 @@ public class AuthViewModel extends ViewModel {
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
-                // ✅ FIX ERROR HANDLING: Set state to LOGGED_OUT if can't load user
                 authStateLiveData.setValue(AuthState.LOGGED_OUT);
                 isLoggedInLiveData.setValue(false);
             }

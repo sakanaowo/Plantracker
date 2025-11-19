@@ -47,7 +47,6 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_SELECTED_LABEL_IDS = "selected_label_ids";
 
     private ImageView ivClose, ivAddLabel;
-    private SwitchCompat switchColorBlindMode, switchShowLabelNames;
     private RecyclerView rvLabels;
     private TextView tvNoLabels;
 
@@ -107,8 +106,6 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
     private void initViews(View view) {
         ivClose = view.findViewById(R.id.ivClose);
         ivAddLabel = view.findViewById(R.id.ivAddLabel);
-        switchColorBlindMode = view.findViewById(R.id.switchColorBlindMode);
-        switchShowLabelNames = view.findViewById(R.id.switchShowLabelNames);
         rvLabels = view.findViewById(R.id.rvLabels);
         tvNoLabels = view.findViewById(R.id.tvNoLabels);
     }
@@ -248,16 +245,6 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
         });
 
         ivAddLabel.setOnClickListener(v -> showLabelFormDialog(null));
-
-        switchColorBlindMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // TODO: Implement color blind mode
-            Toast.makeText(requireContext(), "Color blind mode: " + isChecked, Toast.LENGTH_SHORT).show();
-        });
-
-        switchShowLabelNames.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // TODO: Implement show label names on cards
-            Toast.makeText(requireContext(), "Show label names: " + isChecked, Toast.LENGTH_SHORT).show();
-        });
     }
 
     private void loadLabels() {
@@ -287,7 +274,7 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
         // Mock data for testing
         List<Label> labels = new ArrayList<>();
         labels.add(new Label("1", projectId, "Copy Request", "#C9B53B"));
-        labels.add(new Label("2", projectId, "Hehe", "#F2D600"));
+        labels.add(new Label("2", projectId, "Important", "#F2D600"));
         labels.add(new Label("3", projectId, "One more step", "#FF9F1A"));
         labels.add(new Label("4", projectId, "Priority", "#EB5A46"));
         labels.add(new Label("5", projectId, "Design Team", "#C377E0"));

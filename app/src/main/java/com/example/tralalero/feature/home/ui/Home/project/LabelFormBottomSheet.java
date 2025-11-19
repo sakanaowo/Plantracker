@@ -139,13 +139,13 @@ public class LabelFormBottomSheet extends BottomSheetDialogFragment {
     private void populateData() {
         if (existingLabel != null) {
             // Edit mode
-            tvTitle.setText("Sửa nhãn");
+            tvTitle.setText("Edit Label");
             etLabelName.setText(existingLabel.getName());
             selectedColor = existingLabel.getColor();
             btnDeleteLabel.setVisibility(View.VISIBLE);
         } else {
             // Add mode
-            tvTitle.setText("Thêm nhãn");
+            tvTitle.setText("Add Label");
             btnDeleteLabel.setVisibility(View.GONE);
         }
 
