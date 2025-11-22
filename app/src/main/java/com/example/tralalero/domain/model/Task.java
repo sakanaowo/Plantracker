@@ -37,6 +37,9 @@ public class Task {
     private final List<Integer> calendarReminderMinutes;
     private final String calendarEventId;
     private final Date calendarSyncedAt;
+    
+    // Labels
+    private final List<Label> labels;
 
     public Task(String id, String projectId, String boardId, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
@@ -47,7 +50,7 @@ public class Task {
         this(id, projectId, boardId, title, description, issueKey, type, status, priority,
              position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
              storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
-             false, null, null, null);
+             false, null, null, null, null);
     }
     
     public Task(String id, String projectId, String boardId, String title, String description,
@@ -57,7 +60,7 @@ public class Task {
                 Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
                 Date createdAt, Date updatedAt,
                 boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
-                String calendarEventId, Date calendarSyncedAt) {
+                String calendarEventId, Date calendarSyncedAt, List<Label> labels) {
         this.id = id;
         this.projectId = projectId;
         this.boardId = boardId;
@@ -84,6 +87,7 @@ public class Task {
         this.calendarReminderMinutes = calendarReminderMinutes;
         this.calendarEventId = calendarEventId;
         this.calendarSyncedAt = calendarSyncedAt;
+        this.labels = labels;
     }
 
     public String getId() {
@@ -252,6 +256,14 @@ public class Task {
     
     public boolean hasCalendarEvent() {
         return calendarEventId != null && !calendarEventId.isEmpty();
+    }
+    
+    public List<Label> getLabels() {
+        return labels;
+    }
+    
+    public boolean hasLabels() {
+        return labels != null && !labels.isEmpty();
     }
 
     @Override

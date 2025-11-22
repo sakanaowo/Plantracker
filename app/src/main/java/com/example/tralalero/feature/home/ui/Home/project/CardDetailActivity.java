@@ -374,6 +374,10 @@ public class CardDetailActivity extends AppCompatActivity {
                 // Optional: Handle comment click
             }
         }, userApiService);
+        
+        // Set context for avatar loading (like ActivityLogAdapter)
+        commentAdapter.setContext(this);
+        
         rvComments.setAdapter(commentAdapter);
     }
     
@@ -738,7 +742,8 @@ public class CardDetailActivity extends AppCompatActivity {
                 isCalendarSyncEnabled,
                 isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
                 null,            // calendarEventId (backend will generate)
-                null             // calendarSyncedAt (backend will set)
+                null,            // calendarSyncedAt (backend will set)
+                null             // labels
         );
         taskViewModel.createTask(newTask);
         Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show();
@@ -819,7 +824,8 @@ public class CardDetailActivity extends AppCompatActivity {
                 isCalendarSyncEnabled,
                 isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
                 null,            // calendarEventId (preserve existing or backend will set)
-                null             // calendarSyncedAt (backend will update)
+                null,            // calendarSyncedAt (backend will update)
+                null             // labels
         );
         taskViewModel.updateTask(taskId, updatedTask);
         
@@ -885,7 +891,8 @@ public class CardDetailActivity extends AppCompatActivity {
                 position,
                 assigneeId,
                 createdBy,
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null,
+                false, null, null, null, null  // calendar sync + labels
             );
             taskViewModel.setSelectedTask(taskToDelete);
             taskViewModel.deleteTask(taskId);

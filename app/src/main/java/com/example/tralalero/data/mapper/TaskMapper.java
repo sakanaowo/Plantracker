@@ -2,6 +2,7 @@ package com.example.tralalero.data.mapper;
 
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.model.Label;
 import com.example.tralalero.domain.model.Task.TaskType;
 import com.example.tralalero.domain.model.Task.TaskStatus;
 import com.example.tralalero.domain.model.Task.TaskPriority;
@@ -45,6 +46,22 @@ public class TaskMapper {
             calendarReminderMinutes.add(dto.getCalendarReminderTime());
         }
         
+        // Parse labels from task_labels nested structure
+        List<Label> labels = new ArrayList<>();
+        if (dto.getTaskLabels() != null) {
+            for (TaskDTO.TaskLabelDTO taskLabel : dto.getTaskLabels()) {
+                if (taskLabel.getLabels() != null) {
+                    TaskDTO.LabelDTO labelDto = taskLabel.getLabels();
+                    labels.add(new Label(
+                        labelDto.getId(),
+                        dto.getProjectId(), // projectId
+                        labelDto.getName(),
+                        labelDto.getColor()
+                    ));
+                }
+            }
+        }
+        
         return new Task(
             dto.getId(),
             dto.getProjectId(),
@@ -68,11 +85,13 @@ public class TaskMapper {
             dto.getRemainingEstimateSec(),
             createdAt,
             updatedAt,
-            // Calendar sync fields (use full 26-param constructor)
+            // Calendar sync fields
             calendarSyncEnabled,
             calendarReminderMinutes,
             dto.getCalendarEventId(),
-            calendarSyncedAt
+            calendarSyncedAt,
+            // Labels
+            labels
         );
     }
     

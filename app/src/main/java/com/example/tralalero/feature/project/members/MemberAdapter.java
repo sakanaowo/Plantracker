@@ -18,14 +18,23 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
     
     private List<MemberDTO> members = new ArrayList<>();
     private OnMemberActionListener listener;
+    private OnMemberClickListener clickListener;
 
     public interface OnMemberActionListener {
         void onChangeRole(MemberDTO member);
         void onRemoveMember(MemberDTO member);
     }
+    
+    public interface OnMemberClickListener {
+        void onMemberClick(MemberDTO member);
+    }
 
     public void setOnMemberActionListener(OnMemberActionListener listener) {
         this.listener = listener;
+    }
+    
+    public void setOnMemberClickListener(OnMemberClickListener clickListener) {
+        this.clickListener = clickListener;
     }
 
     public void setMembers(List<MemberDTO> members) {
@@ -49,15 +58,23 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
         holder.tvEmail.setText(member.getUser().getEmail());
         holder.chipRole.setText(member.getRole());
         
+        // Set click listener for entire item
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onMemberClick(member);
+            }
+        });
+        
         // Set role color
         int roleColor = getRoleColor(holder.itemView.getContext(), member.getRole());
         holder.chipRole.setChipBackgroundColor(ColorStateList.valueOf(roleColor));
         
-        // Load avatar
+        // Load avatar with circle crop
         if (member.getUser().getAvatarUrl() != null && !member.getUser().getAvatarUrl().isEmpty()) {
             Glide.with(holder.itemView.getContext())
                 .load(member.getUser().getAvatarUrl())
                 .placeholder(R.drawable.ic_person)
+                .error(R.drawable.ic_person)
                 .into(holder.ivAvatar);
         } else {
             holder.ivAvatar.setImageResource(R.drawable.ic_person);

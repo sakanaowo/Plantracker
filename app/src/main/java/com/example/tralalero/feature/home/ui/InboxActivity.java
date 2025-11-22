@@ -406,12 +406,17 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getOriginalEstimateSec(),
             task.getRemainingEstimateSec(),
             task.getCreatedAt(),
-            task.getUpdatedAt()
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels()
         );
         
         taskViewModel.updateTask(task.getId(), updatedTask);
         
-        Toast.makeText(this, "✓ Start date updated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "✓ Task updated", Toast.LENGTH_SHORT).show();
     }
     
     private void handleUpdateDueDate(Task task, java.util.Date dueDate) {
@@ -440,7 +445,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getOriginalEstimateSec(),
             task.getRemainingEstimateSec(),
             task.getCreatedAt(),
-            task.getUpdatedAt()
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels()
         );
         
         taskViewModel.updateTask(task.getId(), updatedTask);
@@ -481,7 +491,12 @@ public class InboxActivity extends com.example.tralalero.feature.home.ui.BaseAct
             task.getOriginalEstimateSec(),
             task.getRemainingEstimateSec(),
             task.getCreatedAt(),
-            task.getUpdatedAt()
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels()
         );
         
         taskViewModel.updateTask(task.getId(), updatedTask);

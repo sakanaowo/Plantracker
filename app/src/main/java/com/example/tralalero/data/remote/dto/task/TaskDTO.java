@@ -89,6 +89,36 @@ public class TaskDTO {
 
     @SerializedName(value = "lastSyncedAt", alternate = {"last_synced_at"})
     private String lastSyncedAt;
+    
+    // Labels - nested object from backend
+    @SerializedName("task_labels")
+    private java.util.List<TaskLabelDTO> taskLabels;
+    
+    // Nested DTO for task_labels relation
+    public static class TaskLabelDTO {
+        @SerializedName("labels")
+        private LabelDTO labels;
+        
+        public LabelDTO getLabels() {
+            return labels;
+        }
+    }
+    
+    // Nested DTO for label info
+    public static class LabelDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        @SerializedName("color")
+        private String color;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getColor() { return color; }
+    }
 
     public String getId() {
         return id;
@@ -304,5 +334,13 @@ public class TaskDTO {
 
     public void setLastSyncedAt(String lastSyncedAt) {
         this.lastSyncedAt = lastSyncedAt;
+    }
+    
+    public java.util.List<TaskLabelDTO> getTaskLabels() {
+        return taskLabels;
+    }
+    
+    public void setTaskLabels(java.util.List<TaskLabelDTO> taskLabels) {
+        this.taskLabels = taskLabels;
     }
 }

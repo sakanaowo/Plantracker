@@ -543,7 +543,12 @@ public class ProjectActivity extends AppCompatActivity implements
                 null,              // originalEstimateSec
                 null,              // remainingEstimateSec
                 null,              // createdAt
-                null               // updatedAt
+                null,              // updatedAt
+                false,             // calendarSyncEnabled
+                null,              // calendarReminderMinutes
+                null,              // calendarEventId
+                null,              // calendarSyncedAt
+                null               // labels
             );
 
             // Create task via API

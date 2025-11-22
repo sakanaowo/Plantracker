@@ -15,22 +15,34 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
-        <!-- User Avatar -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- User Avatar Container -->
+        <FrameLayout
             android:layout_width="40dp"
-            android:layout_height="40dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#E0E0E0">
+            android:layout_height="40dp">
 
-            <ImageView
+            <!-- Avatar Image -->
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/ivUserAvatar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/acc_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:scaleType="centerCrop"
-                android:padding="8dp"/>
-        </com.google.android.material.card.MaterialCardView>
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                android:visibility="visible"
+                android:contentDescription="User avatar"
+                android:src="@drawable/ic_avatar_placeholder"/>
+
+            <!-- Fallback Initials -->
+            <TextView
+                android:id="@+id/tvUserInitials"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:background="@drawable/circle_background"
+                android:visibility="gone"/>
+        </FrameLayout>
 
         <!-- Comment Content -->
         <LinearLayout

@@ -59,6 +59,20 @@ public class TaskComment {
         if (body.length() <= maxLength) return body;
         return body.substring(0, maxLength) + "...";
     }
+    
+    /**
+     * Get user initials for avatar fallback
+     * E.g. "John Doe" -> "JD"
+     * Similar to ActivityLog.getUserInitials()
+     */
+    public String getUserInitials() {
+        String displayName = userName != null && !userName.isEmpty() ? userName : "Unknown User";
+        String[] parts = displayName.trim().split("\\s+");
+        if (parts.length >= 2) {
+            return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+        }
+        return displayName.substring(0, Math.min(2, displayName.length())).toUpperCase();
+    }
 
     @Override
     public boolean equals(Object o) {

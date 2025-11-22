@@ -31,7 +31,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     private OnCommentClickListener listener;
     private UserApiService userApiService;
     private UserCache userCache;
-    private Set<String> fetchingUsers = new HashSet<>(); // Track ongoing API calls
+    private Set<String> fetchingUsers = new HashSet<>();
+    private android.content.Context context;
     
     public interface OnCommentClickListener {
         void onOptionsClick(TaskComment comment, int position);
@@ -42,6 +43,10 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         this.listener = listener;
         this.userApiService = userApiService;
         this.userCache = UserCache.getInstance();
+    }
+    
+    public void setContext(android.content.Context context) {
+        this.context = context;
     }
     
     @NonNull
@@ -128,6 +133,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     
     class ViewHolder extends RecyclerView.ViewHolder {
         private final ImageView ivUserAvatar;
+        private final TextView tvUserInitials;
         private final TextView tvUserName;
         private final TextView tvCommentTime;
         private final TextView tvCommentBody;
@@ -136,6 +142,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivUserAvatar = itemView.findViewById(R.id.ivUserAvatar);
+            tvUserInitials = itemView.findViewById(R.id.tvUserInitials);
             tvUserName = itemView.findViewById(R.id.tvUserName);
             tvCommentTime = itemView.findViewById(R.id.tvCommentTime);
             tvCommentBody = itemView.findViewById(R.id.tvCommentBody);
@@ -143,15 +150,37 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         }
         
         public void bind(TaskComment comment) {
+            if (comment == null) {
+                android.util.Log.e("CommentAdapter", "❌ Comment is null!");
+                return;
+            }
+            
+            android.util.Log.d("CommentAdapter", "=== BINDING COMMENT ===");
+            android.util.Log.d("CommentAdapter", "Comment ID: " + comment.getId());
+            android.util.Log.d("CommentAdapter", "UserName: " + comment.getUserName());
+            android.util.Log.d("CommentAdapter", "AvatarUrl: " + comment.getUserAvatarUrl());
+            android.util.Log.d("CommentAdapter", "CreatedAt Date: " + comment.getCreatedAt());
+            
             // Set user name
             String userName = getUserDisplayName(comment);
             tvUserName.setText(userName);
+            android.util.Log.d("CommentAdapter", "✅ Set userName: " + userName);
             
             // Set user avatar
-            setUserAvatar(comment);
+            loadUserAvatar(comment);
             
-            // Set time and body
-            tvCommentTime.setText(getRelativeTime(comment.getCreatedAt()));
+            // Set time (handle null date)
+            String timeText = "";
+            if (comment.getCreatedAt() != null) {
+                timeText = getRelativeTime(comment.getCreatedAt());
+                android.util.Log.d("CommentAdapter", "✅ Set time: " + timeText);
+            } else {
+                android.util.Log.e("CommentAdapter", "❌ CreatedAt is null!");
+                timeText = "Unknown time";
+            }
+            tvCommentTime.setText(timeText);
+            
+            // Set body
             tvCommentBody.setText(comment.getBody());
             
             // Options button
@@ -173,62 +202,73 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         }
         
         /**
-         * Set user avatar - NO LOOP, check cache then Firebase then default
+         * Load user avatar - EXACTLY like ActivityLogAdapter
          */
-        private void setUserAvatar(TaskComment comment) {
+        private void loadUserAvatar(TaskComment comment) {
             String userId = comment.getUserId();
-            android.util.Log.d("CommentAdapter", "🖼️ setUserAvatar for userId: " + userId);
+            android.util.Log.d("CommentAdapter", "🖼️ loadUserAvatar for userId: " + userId);
             
-            // No userId? Default avatar
-            if (userId == null || userId.isEmpty()) {
-                android.util.Log.w("CommentAdapter", "❌ No userId, using default");
-                ivUserAvatar.setImageResource(R.drawable.acc_icon);
-                return;
-            }
+            // Get avatar URL - prioritize comment data first
+            String avatarUrl = comment.getUserAvatarUrl();
+            android.util.Log.d("CommentAdapter", "Avatar from comment: " + avatarUrl);
             
-            // Check cache for avatar URL
-            String avatarUrl = null;
-            if (userCache.hasUser(userId)) {
-                UserDTO user = userCache.getUser(userId);
-                avatarUrl = user.getAvatarUrl();
-                android.util.Log.d("CommentAdapter", "📦 Cached avatar URL: " + avatarUrl);
-            } else {
-                android.util.Log.d("CommentAdapter", "❌ User not in cache");
-            }
-            
-            // If have valid avatar URL, load it
-            if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                android.util.Log.d("CommentAdapter", "✅ Loading avatar from cache: " + avatarUrl);
-                loadAvatarWithGlide(avatarUrl);
-                return;
-            }
-            
-            // Try Firebase photo for CURRENT user only
-            // (Backend /api/users/{id} returns null, but Firebase has the photo)
-            try {
-                com.google.firebase.auth.FirebaseUser currentUser = 
-                    com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                if (currentUser != null && userId.equals(currentUser.getUid())) {
-                    android.net.Uri photoUrl = currentUser.getPhotoUrl();
-                    android.util.Log.d("CommentAdapter", "🔥 Current user Firebase photo: " + photoUrl);
-                    if (photoUrl != null) {
-                        android.util.Log.d("CommentAdapter", "✅ Loading Firebase avatar");
-                        loadAvatarWithGlide(photoUrl.toString());
-                        return;
-                    }
+            // If no avatar from comment, try cache
+            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+                if (userId != null && userCache.hasUser(userId)) {
+                    UserDTO user = userCache.getUser(userId);
+                    avatarUrl = user.getAvatarUrl();
+                    android.util.Log.d("CommentAdapter", "Avatar from cache: " + avatarUrl);
                 }
-            } catch (Exception e) {
-                android.util.Log.e("CommentAdapter", "Error checking Firebase: " + e.getMessage());
             }
             
-            // Default avatar (for users with no avatar or backend returns null)
-            android.util.Log.d("CommentAdapter", "🔸 Using default avatar (no URL available)");
-            ivUserAvatar.setImageResource(R.drawable.acc_icon);
+            // If no avatar from cache, try Firebase for current user
+            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+                try {
+                    com.google.firebase.auth.FirebaseUser currentUser = 
+                        com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                    if (currentUser != null && userId != null && userId.equals(currentUser.getUid())) {
+                        android.net.Uri photoUrl = currentUser.getPhotoUrl();
+                        if (photoUrl != null) {
+                            avatarUrl = photoUrl.toString();
+                            android.util.Log.d("CommentAdapter", "Avatar from Firebase: " + avatarUrl);
+                        }
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("CommentAdapter", "Error checking Firebase: " + e.getMessage());
+                }
+            }
             
-            // Fetch user info ONLY if not in cache at all
-            // Do NOT fetch if cached with null avatar (to prevent loop)
-            if (!userCache.hasUser(userId) && !fetchingUsers.contains(userId)) {
-                android.util.Log.d("CommentAdapter", "🌐 Fetching user info (not in cache)");
+            // Load avatar or show initials (EXACTLY like ActivityLogAdapter)
+            if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                // Show ImageView, hide initials
+                ivUserAvatar.setVisibility(android.view.View.VISIBLE);
+                tvUserInitials.setVisibility(android.view.View.GONE);
+                
+                android.util.Log.d("CommentAdapter", "✅ Loading avatar with Glide");
+                
+                // Use context from adapter (like ActivityLogAdapter uses 'context')
+                android.content.Context ctx = context != null ? context : itemView.getContext();
+                com.bumptech.glide.Glide.with(ctx)
+                    .load(avatarUrl.trim())
+                    .transform(new com.bumptech.glide.load.resource.bitmap.CircleCrop())
+                    .placeholder(R.drawable.ic_avatar_placeholder)
+                    .error(R.drawable.ic_avatar_placeholder)
+                    .into(ivUserAvatar);
+            } else {
+                // Hide ImageView, show initials
+                ivUserAvatar.setVisibility(android.view.View.GONE);
+                tvUserInitials.setVisibility(android.view.View.VISIBLE);
+                
+                // Use comment's getUserInitials() method (like ActivityLog)
+                String initials = comment.getUserInitials();
+                tvUserInitials.setText(initials);
+                
+                android.util.Log.d("CommentAdapter", "✅ Showing initials: " + initials);
+            }
+            
+            // Fetch user info if not in cache
+            if (userId != null && !userCache.hasUser(userId) && !fetchingUsers.contains(userId)) {
+                android.util.Log.d("CommentAdapter", "🌐 Fetching user info");
                 fetchUserInfo(userId);
             }
         }
@@ -264,92 +304,53 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         }
         
         /**
-         * Get user display name - cache or fallback only, NO API fetch
+         * Get user display name - PRIORITIZE comment data, then cache, then Firebase, then fallback
          */
         private String getUserDisplayName(TaskComment comment) {
-            String userId = comment.getUserId();
+            // FIRST: Check if comment already has userName (from backend response)
+            String userName = comment.getUserName();
+            if (userName != null && !userName.trim().isEmpty()) {
+                android.util.Log.d("CommentAdapter", "✅ Using userName from comment: " + userName);
+                return userName;
+            }
             
+            // SECOND: Check cache
+            String userId = comment.getUserId();
             if (userId == null || userId.isEmpty()) {
                 return "Unknown User";
             }
             
-            // Check cache first
             if (userCache.hasUser(userId)) {
                 UserDTO user = userCache.getUser(userId);
                 String name = user.getName();
-                return (name != null && !name.isEmpty()) ? name : "User";
+                if (name != null && !name.isEmpty()) {
+                    android.util.Log.d("CommentAdapter", "✅ Using userName from cache: " + name);
+                    return name;
+                }
             }
             
-            // Check Firebase current user
+            // THIRD: Check Firebase current user
             try {
                 com.google.firebase.auth.FirebaseUser currentUser = 
                     com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
                 if (currentUser != null && userId.equals(currentUser.getUid())) {
                     String displayName = currentUser.getDisplayName();
                     if (displayName != null && !displayName.isEmpty()) {
+                        android.util.Log.d("CommentAdapter", "✅ Using displayName from Firebase: " + displayName);
                         return displayName;
                     }
                     String email = currentUser.getEmail();
                     if (email != null) {
-                        return email.split("@")[0];
+                        String emailName = email.split("@")[0];
+                        android.util.Log.d("CommentAdapter", "✅ Using email name from Firebase: " + emailName);
+                        return emailName;
                     }
                 }
             } catch (Exception ignored) {}
             
             // Fallback
+            android.util.Log.d("CommentAdapter", "⚠️ Using fallback: User");
             return "User";
-        }
-        
-        /**
-         * Load avatar with Glide
-         */
-        private void loadAvatarWithGlide(String imageUrl) {
-            android.util.Log.d("CommentAdapter", "🎨 loadAvatarWithGlide called with: " + imageUrl);
-            
-            if (itemView.getContext() == null) {
-                android.util.Log.w("CommentAdapter", "❌ Context is null");
-                return;
-            }
-            
-            // Check if Activity is still alive
-            if (itemView.getContext() instanceof android.app.Activity) {
-                android.app.Activity activity = (android.app.Activity) itemView.getContext();
-                if (activity.isFinishing() || activity.isDestroyed()) {
-                    android.util.Log.w("CommentAdapter", "❌ Activity is finishing/destroyed");
-                    return;
-                }
-            }
-            
-            android.util.Log.d("CommentAdapter", "✅ Loading with Glide...");
-            com.bumptech.glide.Glide.with(itemView.getContext())
-                .load(imageUrl)
-                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
-                .circleCrop()
-                .error(R.drawable.acc_icon)
-                .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
-                    @Override
-                    public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e,
-                                              Object model,
-                                              com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,
-                                              boolean isFirstResource) {
-                        android.util.Log.e("CommentAdapter", "❌ Glide load FAILED for: " + imageUrl);
-                        if (e != null) {
-                            android.util.Log.e("CommentAdapter", "Error: " + e.getMessage());
-                        }
-                        return false;
-                    }
-                    
-                    @Override
-                    public boolean onResourceReady(android.graphics.drawable.Drawable resource,
-                                                 Object model,
-                                                 com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,
-                                                 com.bumptech.glide.load.DataSource dataSource,
-                                                 boolean isFirstResource) {
-                        android.util.Log.d("CommentAdapter", "✅ Glide load SUCCESS for: " + imageUrl);
-                        return false;
-                    }
-                })
-                .into(ivUserAvatar);
         }
     }
     

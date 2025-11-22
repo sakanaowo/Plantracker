@@ -174,11 +174,24 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 
                 case "ASSIGNED":
                     if ("TASK".equals(entityType)) {
-                        // Check if assigning to self
-                        if (isSelf) {
-                            return "You assigned task \"" + entityName + "\"";
+                        // Check if current user is the assignee (received the task)
+                        String assigneeId = log.getAssigneeId();
+                        if (assigneeId != null && assigneeId.equals(currentUserId)) {
+                            // Current user received the task
+                            if (isSelf) {
+                                // User assigned task to themselves
+                                return "You assigned yourself task \"" + entityName + "\"";
+                            } else {
+                                // Someone else assigned task to current user
+                                return "You received task \"" + entityName + "\" from " + userName;
+                            }
+                        } else {
+                            // Current user assigned task to someone else, or viewing someone else's assignment
+                            if (isSelf) {
+                                return "You assigned task \"" + entityName + "\"";
+                            }
+                            return userName + " assigned task \"" + entityName + "\"";
                         }
-                        return userName + " assigned task \"" + entityName + "\"";
                     }
                     return userName + " assigned " + entityName;
                 

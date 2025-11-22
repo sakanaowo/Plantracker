@@ -205,7 +205,12 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                     null, // originalEstimateSec - not editable here
                     null, // remainingEstimateSec - not editable here
                     null, // createdAt - backend handles
-                    null  // updatedAt - backend handles
+                    null, // updatedAt - backend handles
+                    false, // calendarSyncEnabled - not editable here
+                    null, // calendarReminderMinutes - not editable here
+                    null, // calendarEventId - not editable here
+                    null, // calendarSyncedAt - not editable here
+                    null  // labels - not editable here
                 );
 
                 if (listener != null) {
@@ -235,7 +240,12 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                 null, // originalEstimateSec
                 null, // remainingEstimateSec
                 null, // createdAt (backend will set)
-                null  // updatedAt (backend will set)
+                null, // updatedAt (backend will set)
+                false, // calendarSyncEnabled
+                null, // calendarReminderMinutes
+                null, // calendarEventId
+                null, // calendarSyncedAt
+                null  // labels
             );
 
             if (listener != null) {

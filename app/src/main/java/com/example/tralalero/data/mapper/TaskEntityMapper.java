@@ -76,7 +76,7 @@ public class TaskEntityMapper {
         TaskStatus status = parseTaskStatus(entity.getStatus());
         TaskPriority priority = parseTaskPriority(entity.getPriority());
 
-        // Create domain Task with all 23 fields
+        // Create domain Task with all 27 fields
         return new Task(
             entity.getId(),
             entity.getProjectId(),
@@ -99,7 +99,12 @@ public class TaskEntityMapper {
             entity.getOriginalEstimateSec(),
             entity.getRemainingEstimateSec(),
             entity.getCreatedAt(),
-            entity.getUpdatedAt()
+            entity.getUpdatedAt(),
+            false, // calendarSyncEnabled - not yet in entity
+            null,  // calendarReminderMinutes - not yet in entity
+            null,  // calendarEventId - not yet in entity
+            null,  // calendarSyncedAt - not yet in entity
+            null   // labels - not yet in entity
         );
     }
 
