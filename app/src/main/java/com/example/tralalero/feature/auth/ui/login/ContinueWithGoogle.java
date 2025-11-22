@@ -13,7 +13,7 @@ import com.example.tralalero.auth.repository.FirebaseAuthRepository;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.data.remote.dto.auth.FirebaseAuthResponse;
 import com.example.tralalero.auth.storage.TokenManager;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -135,7 +135,7 @@ public class ContinueWithGoogle extends AppCompatActivity {
         });
     }
     private void navigateToHome(FirebaseUser user) {
-        Intent intent = new Intent(this, HomeActivity.class);
+        Intent intent = new Intent(this, MainContainerActivity.class);
         intent.putExtra("user_name", user.getDisplayName());
         intent.putExtra("user_email", user.getEmail());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

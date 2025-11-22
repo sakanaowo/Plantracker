@@ -22,7 +22,7 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.feature.auth.ui.login.ContinueWithGoogle;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -96,8 +96,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
-        Log.d(TAG, "Navigating to HomeActivity");
-        Intent intent = new Intent(this, HomeActivity.class);
+        Log.d(TAG, "Navigating to MainContainerActivity");
+        Intent intent = new Intent(this, MainContainerActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
