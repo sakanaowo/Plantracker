@@ -26,7 +26,7 @@ import com.example.tralalero.domain.usecase.auth.IsLoggedInUseCase;
 import com.example.tralalero.domain.usecase.auth.LoginUseCase;
 import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.AuthViewModelFactory;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
@@ -175,7 +175,7 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
-        Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
+        Intent intent = new Intent(SignupActivity.this, MainContainerActivity.class);
         com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
         if (user != null) {
             intent.putExtra("user_name", user.getName());

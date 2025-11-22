@@ -41,8 +41,13 @@ public class App extends Application {
         
         instance = this;
 
-        FirebaseApp.initializeApp(this);
+        // Initialize Firebase first
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseApp.initializeApp(this);
+            Log.d(TAG, "Firebase initialized");
+        }
 
+        // Initialize AppCheck after Firebase is ready
         initializeAppCheck();
 
         loadLanguagePreference();

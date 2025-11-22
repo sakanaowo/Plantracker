@@ -23,7 +23,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.tralalero.R;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.auth.ui.forgot.ForgotPasswordActivity;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.auth.repository.FirebaseAuthRepository;
@@ -186,7 +186,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
-        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+        Intent intent = new Intent(LoginActivity.this, MainContainerActivity.class);
         com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
         if (user != null) {
             intent.putExtra("user_name", user.getName());
@@ -343,7 +343,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHomeWithUserData(String userName, String userEmail) {
-        Intent intent = new Intent(this, HomeActivity.class);
+        Intent intent = new Intent(this, MainContainerActivity.class);
         intent.putExtra("user_name", userName);
         intent.putExtra("user_email", userEmail);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

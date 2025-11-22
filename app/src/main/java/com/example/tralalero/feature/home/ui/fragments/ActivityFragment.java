@@ -1,15 +1,16 @@
-package com.example.tralalero.feature.home.ui;
+package com.example.tralalero.feature.home.ui.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -32,8 +33,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class ActivityActivity extends BaseActivity {
-    private static final String TAG = "ActivityActivity";
+public class ActivityFragment extends Fragment {
+    private static final String TAG = "ActivityFragment";
     
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -41,34 +42,21 @@ public class ActivityActivity extends BaseActivity {
     private ActivityLogApiService activityLogApiService;
     private String currentUserId;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_activity_notification);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_activity, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         
-        View titleView = findViewById(R.id.tvTitle);
-        View bottomNav = findViewById(R.id.bottomNavigation);
-
-        ViewCompat.setOnApplyWindowInsetsListener(titleView, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
-            return WindowInsetsCompat.CONSUMED;
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(0, 0, 0, systemBars.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
-
-        // Initialize SwipeRefreshLayout and RecyclerView
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ActivityLogAdapter(this);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        recyclerView = view.findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new ActivityLogAdapter(getContext());
         
-        // Setup SwipeRefreshLayout
         swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
             R.color.colorAccent
@@ -78,33 +66,27 @@ public class ActivityActivity extends BaseActivity {
             loadUserActivityFeed();
         });
         
-        // Set invitation click listener
         adapter.setOnInvitationClickListener(log -> {
-            // Navigate to InvitationsActivity to respond
-            Intent intent = new Intent(this, com.example.tralalero.feature.invitations.InvitationsActivity.class);
+            Intent intent = new Intent(getContext(), com.example.tralalero.feature.invitations.InvitationsActivity.class);
             startActivity(intent);
         });
         
         recyclerView.setAdapter(adapter);
 
-        // Initialize API service with authentication
-        AuthManager authManager = new AuthManager(getApplication());
+        AuthManager authManager = new AuthManager(requireActivity().getApplication());
         activityLogApiService = ApiClient.get(authManager).create(ActivityLogApiService.class);
 
-        // Get current user
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser != null) {
             currentUserId = firebaseUser.getUid();
             loadUserActivityFeed();
         } else {
-            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
         }
-        
-        setupBottomNavigation(2); 
     }
 
     private void loadUserActivityFeed() {
-        if (currentUserId == null) {
+        if (currentUserId == null || getContext() == null) {
             return;
         }
 
@@ -129,19 +111,21 @@ public class ActivityActivity extends BaseActivity {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
                             
-                            if (activityLogs.isEmpty()) {
-                                Toast.makeText(ActivityActivity.this, 
+                            if (activityLogs.isEmpty() && getContext() != null) {
+                                Toast.makeText(getContext(), 
                                         "No activities yet. Start creating tasks!", 
                                         Toast.LENGTH_LONG).show();
                             }
                         } else {
-                            Log.e(TAG, "Failed to load activities: " + response.code() + " - " + response.message());
+                            Log.e(TAG, "Failed to load activities: " + response.code());
                             if (swipeRefreshLayout != null) {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
-                            Toast.makeText(ActivityActivity.this, 
-                                    "Failed to load activities", 
-                                    Toast.LENGTH_SHORT).show();
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), 
+                                        "Failed to load activities", 
+                                        Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
 
@@ -151,9 +135,11 @@ public class ActivityActivity extends BaseActivity {
                         if (swipeRefreshLayout != null) {
                             swipeRefreshLayout.setRefreshing(false);
                         }
-                        Toast.makeText(ActivityActivity.this, 
-                                "Error: " + t.getMessage(), 
-                                Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), 
+                                    "Error: " + t.getMessage(), 
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
     }

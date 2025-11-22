@@ -14,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -33,7 +34,7 @@ import com.example.tralalero.presentation.viewmodel.WorkspaceViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WorkspaceActivity extends HomeActivity {
+public class WorkspaceActivity extends AppCompatActivity {
 
     private static final String TAG = "WorkspaceActivity";
 
@@ -99,7 +100,6 @@ public class WorkspaceActivity extends HomeActivity {
         
         setupCreateButton();
         setupBackButton();
-        setupBottomNavigation(0);
     }
 
     private void setupUI() {
