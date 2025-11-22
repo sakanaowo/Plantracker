@@ -1,8 +1,10 @@
 package com.example.tralalero.data.remote.dto.member;
 
 import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
+import java.util.Date;
 
-public class MemberDTO {
+public class MemberDTO implements Serializable {
     @SerializedName("id")
     private String id;
 
@@ -22,7 +24,7 @@ public class MemberDTO {
     private String createdAt;
 
     // Nested class for user info
-    public static class UserInfo {
+    public static class UserInfo implements Serializable {
         @SerializedName("id")
         private String id;
 

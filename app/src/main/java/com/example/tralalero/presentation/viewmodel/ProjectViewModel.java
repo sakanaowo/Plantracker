@@ -381,7 +381,8 @@ public class ProjectViewModel extends ViewModel {
             task.isCalendarSyncEnabled(),
             task.getCalendarReminderMinutes(),
             task.getCalendarEventId(),
-            task.getCalendarSyncedAt()
+            task.getCalendarSyncedAt(),
+            task.getLabels()  // preserve labels
         );
         
         targetTasks.add(movedTask);

@@ -7,7 +7,10 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
     app:cardElevation="2dp"
-    app:cardCornerRadius="8dp">
+    app:cardCornerRadius="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,13 +20,20 @@
         android:gravity="center_vertical">
 
         <!-- Avatar -->
-        <ImageView
-            android:id="@+id/ivMemberAvatar"
+        <androidx.cardview.widget.CardView
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_person"
-            android:scaleType="centerCrop"
-            android:contentDescription="Member avatar"/>
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+            
+            <ImageView
+                android:id="@+id/ivMemberAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_person"
+                android:scaleType="centerCrop"
+                android:contentDescription="Member avatar"/>
+        </androidx.cardview.widget.CardView>
 
         <!-- Member Info -->
         <LinearLayout

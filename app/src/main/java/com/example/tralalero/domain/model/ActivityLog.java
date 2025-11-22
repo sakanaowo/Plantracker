@@ -16,6 +16,9 @@ public class ActivityLog {
     // User info
     private String userName;
     private String userAvatar;
+    
+    // For ASSIGNED action - the person who received the task
+    private String assigneeId;
 
     public ActivityLog(String id, String userId, String action, String entityType, 
                       String entityName, String createdAt, String userName, String userAvatar) {
@@ -27,6 +30,12 @@ public class ActivityLog {
         this.createdAt = createdAt;
         this.userName = userName;
         this.userAvatar = userAvatar;
+    }
+    
+    public ActivityLog(String id, String userId, String action, String entityType, 
+                      String entityName, String createdAt, String userName, String userAvatar, String assigneeId) {
+        this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar);
+        this.assigneeId = assigneeId;
     }
 
     // Getters
@@ -60,6 +69,10 @@ public class ActivityLog {
 
     public String getUserAvatar() {
         return userAvatar;
+    }
+    
+    public String getAssigneeId() {
+        return assigneeId;
     }
 
     /**

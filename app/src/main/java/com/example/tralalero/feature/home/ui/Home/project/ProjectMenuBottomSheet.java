@@ -31,6 +31,9 @@ import com.example.tralalero.data.repository.MemberRepositoryImpl;
 import com.example.tralalero.domain.repository.IActivityLogRepository;
 import com.example.tralalero.domain.repository.IMemberRepository;
 import com.example.tralalero.feature.project.members.InviteMemberDialog;
+import com.example.tralalero.feature.project.members.MemberDetailsBottomSheet;
+import com.example.tralalero.data.remote.dto.member.MemberDTO;
+import com.example.tralalero.data.mapper.MemberMapper;
 import com.example.tralalero.feature.home.ui.adapter.ActivityLogAdapter;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
@@ -223,6 +226,125 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show();
     }
+    
+    private void showMemberDetailsForProjectMenu(UIMember uiMember) {
+        if (uiMember == null || uiMember.memberData == null) {
+            Toast.makeText(getContext(), "Unable to load member details", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Convert domain Member to MemberDTO
+        MemberDTO memberDTO = MemberMapper.toDTO(uiMember.memberData);
+        
+        // Show member details bottom sheet
+        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(memberDTO);
+        bottomSheet.setOnMemberActionListener(new MemberDetailsBottomSheet.OnMemberActionListener() {
+            @Override
+            public void onChangeRole(MemberDTO member) {
+                showChangeRoleDialogForMember(member);
+            }
+
+            @Override
+            public void onRemoveMember(MemberDTO member) {
+                showRemoveMemberConfirmation(member);
+            }
+        });
+        
+        if (getChildFragmentManager() != null) {
+            bottomSheet.show(getChildFragmentManager(), "MemberDetailsBottomSheet");
+        }
+    }
+    
+    private void showChangeRoleDialogForMember(MemberDTO member) {
+        String[] roles = {"MEMBER", "ADMIN", "VIEWER"};
+        int currentRoleIndex = 0;
+        
+        // Find current role index
+        for (int i = 0; i < roles.length; i++) {
+            if (roles[i].equals(member.getRole())) {
+                currentRoleIndex = i;
+                break;
+            }
+        }
+        
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Change Role for " + member.getUser().getName())
+                .setSingleChoiceItems(roles, currentRoleIndex, null)
+                .setPositiveButton("Update", (dialog, which) -> {
+                    android.widget.ListView lv = ((androidx.appcompat.app.AlertDialog) dialog).getListView();
+                    int selectedPosition = lv.getCheckedItemPosition();
+                    if (selectedPosition >= 0) {
+                        String newRole = roles[selectedPosition];
+                        updateMemberRole(member.getId(), newRole);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    private void updateMemberRole(String memberId, String newRole) {
+        if (memberRepository == null || projectId == null) {
+            Toast.makeText(getContext(), "Unable to update role", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        memberRepository.updateMemberRole(projectId, memberId, newRole, 
+            new IMemberRepository.RepositoryCallback<com.example.tralalero.domain.model.Member>() {
+                @Override
+                public void onSuccess(com.example.tralalero.domain.model.Member data) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Role updated successfully!", Toast.LENGTH_SHORT).show();
+                        loadProjectMembers(); // Refresh member list
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        );
+    }
+    
+    private void showRemoveMemberConfirmation(MemberDTO member) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Remove Member")
+                .setMessage("Are you sure you want to remove " + member.getUser().getName() + " from this project?")
+                .setPositiveButton("Remove", (dialog, which) -> {
+                    removeMember(member.getId());
+                })
+                .setNegativeButton("Cancel", null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+    
+    private void removeMember(String memberId) {
+        if (memberRepository == null || projectId == null) {
+            Toast.makeText(getContext(), "Unable to remove member", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        memberRepository.removeMember(projectId, memberId,
+            new IMemberRepository.RepositoryCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Member removed successfully!", Toast.LENGTH_SHORT).show();
+                        loadProjectMembers(); // Refresh member list
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        );
+    }
 
     private void setupRecyclerViews() {
         Log.d("ProjectMenuBottomSheet", "🔧 Setting up RecyclerViews");
@@ -242,6 +364,10 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         Log.d("ProjectMenuBottomSheet", "   rvActivity visibility: " + rvActivity.getVisibility());
         
         memberAdapter = new MemberAdapter();
+        memberAdapter.setOnMemberClickListener(member -> {
+            // Open member details bottom sheet
+            showMemberDetailsForProjectMenu(member);
+        });
         rvMembers.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvMembers.setAdapter(memberAdapter);
         Log.d("ProjectMenuBottomSheet", "✅ Member adapter initialized and set");
@@ -346,7 +472,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                         boolean isAdmin = domainMember.isAdmin() || domainMember.isOwner();
                         String avatarUrl = domainMember.getUser().getAvatarUrl();
                         
-                        UIMember uiMember = new UIMember(initials, domainMember.getUser().getName(), avatarUrl, isAdmin);
+                        UIMember uiMember = new UIMember(initials, domainMember.getUser().getName(), avatarUrl, isAdmin, domainMember.getId(), domainMember);
                         uiMembers.add(uiMember);
                         
                         Log.d("ProjectMenuBottomSheet", "   Member: " + domainMember.getUser().getName() + " (initials: " + initials + ", avatar: " + (avatarUrl != null ? "YES" : "NO") + ")");
@@ -477,17 +603,30 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         String name;
         String avatarUrl;
         boolean isAdmin;
+        String memberId;
+        com.example.tralalero.domain.model.Member memberData; // Store full member data
 
-        UIMember(String initials, String name, String avatarUrl, boolean isAdmin) {
+        UIMember(String initials, String name, String avatarUrl, boolean isAdmin, String memberId, com.example.tralalero.domain.model.Member memberData) {
             this.initials = initials;
             this.name = name;
             this.avatarUrl = avatarUrl;
             this.isAdmin = isAdmin;
+            this.memberId = memberId;
+            this.memberData = memberData;
         }
     }
 
     static class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder> {
         private List<UIMember> members = new ArrayList<>();
+        private OnMemberClickListener clickListener;
+        
+        interface OnMemberClickListener {
+            void onMemberClick(UIMember member);
+        }
+        
+        void setOnMemberClickListener(OnMemberClickListener listener) {
+            this.clickListener = listener;
+        }
 
         void setMembers(List<UIMember> members) {
             Log.d("MemberAdapter", "📝 setMembers called with " + members.size() + " members");
@@ -510,6 +649,13 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             UIMember member = members.get(position);
             
             Log.d("MemberAdapter", "   Member: " + member.name + ", avatar=" + member.avatarUrl);
+            
+            // Set click listener for entire item
+            holder.itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onMemberClick(member);
+                }
+            });
             
             // Load avatar or show initials
             if (member.avatarUrl != null && !member.avatarUrl.isEmpty()) {

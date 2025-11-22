@@ -98,13 +98,8 @@ public class LabelSelectionAdapter extends RecyclerView.Adapter<LabelSelectionAd
                 if (listener != null) {
                     listener.onLabelChecked(label, isChecked);
                 }
-                if (isChecked) {
-                    if (!selectedLabelIds.contains(label.getId())) {
-                        selectedLabelIds.add(label.getId());
-                    }
-                } else {
-                    selectedLabelIds.remove(label.getId());
-                }
+                // Note: selectedLabelIds will be updated via setSelectedLabels() 
+                // after backend sync, no need for optimistic update here
             });
 
             // Edit button listener

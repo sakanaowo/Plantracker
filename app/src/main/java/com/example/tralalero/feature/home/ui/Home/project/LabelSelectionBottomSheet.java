@@ -170,30 +170,43 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
             }
         });
         
+        // Observe task labels - used for syncing after operations
+        labelViewModel.getTaskLabels().observe(getViewLifecycleOwner(), taskLabels -> {
+            if (taskLabels != null) {
+                android.util.Log.d("LabelBottomSheet", "📋 Task labels updated: " + taskLabels.size() + " labels");
+                selectedLabelIds.clear();
+                for (Label label : taskLabels) {
+                    selectedLabelIds.add(label.getId());
+                }
+                adapter.setSelectedLabels(selectedLabelIds);
+            }
+        });
+        
         // Observe operation success/failure for rollback
         labelViewModel.getOperationSuccess().observe(getViewLifecycleOwner(), success -> {
             if (success != null) {
+                android.util.Log.d("LabelBottomSheet", "🔄 Operation success: " + success);
                 if (success) {
-                    // Operation succeeded
-                    // Reload labels after create/update/delete operations
+                    // Operation succeeded - reload task labels to sync UI
+                    if (taskId != null) {
+                        android.util.Log.d("LabelBottomSheet", "✅ Operation succeeded, reloading task labels");
+                        labelViewModel.loadTaskLabels(taskId);
+                    }
+                    // Also reload project labels if needed
                     if (projectId != null) {
                         labelViewModel.loadLabelsByProject(projectId);
                     }
+                    
+                    // Notify parent activity to refresh labels
+                    if (listener != null) {
+                        android.util.Log.d("LabelBottomSheet", "📢 Notifying parent activity to refresh labels");
+                        listener.onLabelsUpdated();
+                    }
                 } else {
                     // Operation failed - reload to sync with backend
-                    // This will update checkboxes to reflect actual backend state
+                    android.util.Log.w("LabelBottomSheet", "❌ Operation failed, reloading to rollback");
                     if (taskId != null) {
                         labelViewModel.loadTaskLabels(taskId);
-                        // Update local selectedLabelIds from backend
-                        labelViewModel.getTaskLabels().observe(getViewLifecycleOwner(), taskLabels -> {
-                            if (taskLabels != null) {
-                                selectedLabelIds.clear();
-                                for (Label label : taskLabels) {
-                                    selectedLabelIds.add(label.getId());
-                                }
-                                adapter.setSelectedLabels(selectedLabelIds);
-                            }
-                        });
                     }
                 }
                 labelViewModel.resetOperationSuccess();
@@ -205,8 +218,10 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
         adapter = new LabelSelectionAdapter(new LabelSelectionAdapter.OnLabelActionListener() {
             @Override
             public void onLabelChecked(Label label, boolean isChecked) {
+                android.util.Log.d("LabelBottomSheet", "🏷️ Label " + label.getName() + " checked: " + isChecked);
+                
                 if (isChecked) {
-                    // Optimistic update
+                    // Add to selected list immediately for UI responsiveness
                     if (!selectedLabelIds.contains(label.getId())) {
                         selectedLabelIds.add(label.getId());
                     }
@@ -216,7 +231,7 @@ public class LabelSelectionBottomSheet extends BottomSheetDialogFragment {
                         labelViewModel.assignLabelToTask(taskId, label.getId());
                     }
                 } else {
-                    // Optimistic update
+                    // Remove from selected list immediately for UI responsiveness
                     selectedLabelIds.remove(label.getId());
                     
                     // Call API to remove label from task

@@ -83,6 +83,13 @@ public class MembersFragment extends Fragment {
 
     private void setupAdapter() {
         adapter = new MemberAdapter();
+        
+        // Handle member item click - show details
+        adapter.setOnMemberClickListener(member -> {
+            showMemberDetails(member);
+        });
+        
+        // Handle member actions from menu
         adapter.setOnMemberActionListener(new MemberAdapter.OnMemberActionListener() {
             @Override
             public void onChangeRole(MemberDTO member) {
@@ -138,6 +145,22 @@ public class MembersFragment extends Fragment {
             inviteMember(email, role);
         });
         dialog.show(getChildFragmentManager(), "InviteMemberDialog");
+    }
+    
+    private void showMemberDetails(MemberDTO member) {
+        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(member);
+        bottomSheet.setOnMemberActionListener(new MemberDetailsBottomSheet.OnMemberActionListener() {
+            @Override
+            public void onChangeRole(MemberDTO member) {
+                showChangeRoleDialog(member);
+            }
+
+            @Override
+            public void onRemoveMember(MemberDTO member) {
+                showRemoveConfirmation(member);
+            }
+        });
+        bottomSheet.show(getChildFragmentManager(), "MemberDetailsBottomSheet");
     }
 
     private void inviteMember(String email, String role) {

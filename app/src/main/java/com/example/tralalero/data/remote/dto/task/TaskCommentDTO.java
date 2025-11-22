@@ -29,7 +29,7 @@ public class TaskCommentDTO {
         @SerializedName("name")
         private String name;
         
-        @SerializedName("avatar_url")
+        @SerializedName("avatarUrl")
         private String avatarUrl;
 
         public String getId() { return id; }

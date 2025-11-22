@@ -212,7 +212,12 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             null,                                   // originalEstimateSec
             null,                                   // remainingEstimateSec
             null,                                   // createdAt
-            null                                    // updatedAt
+            null,                                   // updatedAt
+            false,                                  // calendarSyncEnabled
+            null,                                   // calendarReminderMinutes
+            null,                                   // calendarEventId
+            null,                                   // calendarSyncedAt
+            null                                    // labels
         );
         
         if (rbTaskTitle != null) {

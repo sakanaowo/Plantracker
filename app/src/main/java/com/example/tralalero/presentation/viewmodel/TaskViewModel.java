@@ -458,7 +458,8 @@ public class TaskViewModel extends ViewModel {
             null,            // originalEstimateSec
             null,            // remainingEstimateSec
             now,             // createdAt
-            now              // updatedAt
+            now,             // updatedAt
+            false, null, null, null, null  // calendar sync + labels
         );
         
         // Add to inbox immediately
@@ -639,7 +640,8 @@ public class TaskViewModel extends ViewModel {
             originalTask.isCalendarSyncEnabled(),
             originalTask.getCalendarReminderMinutes(),
             originalTask.getCalendarEventId(),
-            originalTask.getCalendarSyncedAt()
+            originalTask.getCalendarSyncedAt(),
+            originalTask.getLabels()  // preserve labels
         );
         
         android.util.Log.d(TAG, "Calling updateTask API with new status=" + newStatus);
@@ -748,7 +750,8 @@ public class TaskViewModel extends ViewModel {
             task.isCalendarSyncEnabled(),
             task.getCalendarReminderMinutes(),
             task.getCalendarEventId(),
-            task.getCalendarSyncedAt()
+            task.getCalendarSyncedAt(),
+            task.getLabels()  // preserve labels
         );
         
         // Update in all relevant LiveData
@@ -1064,7 +1067,8 @@ public class TaskViewModel extends ViewModel {
             originalTask.isCalendarSyncEnabled(),
             originalTask.getCalendarReminderMinutes(),
             originalTask.getCalendarEventId(),
-            originalTask.getCalendarSyncedAt()
+            originalTask.getCalendarSyncedAt(),
+            originalTask.getLabels()  // preserve labels
         );
         
         // ✅ Optimistic update: Remove from source, add to target immediately

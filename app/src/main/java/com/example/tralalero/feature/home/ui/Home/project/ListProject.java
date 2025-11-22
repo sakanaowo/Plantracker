@@ -24,7 +24,16 @@ import static android.app.Activity.RESULT_OK;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.TaskAdapter;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.model.Label;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
+import com.example.tralalero.presentation.viewmodel.LabelViewModel;
+import com.example.tralalero.presentation.viewmodel.LabelViewModelFactory;
+import com.example.tralalero.data.repository.LabelRepositoryImpl;
+import com.example.tralalero.domain.repository.ILabelRepository;
+import com.example.tralalero.data.remote.api.LabelApiService;
+import com.example.tralalero.domain.usecase.label.*;
+import com.google.android.material.button.MaterialButton;
+import android.widget.ImageButton;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
@@ -51,11 +60,20 @@ public class ListProject extends Fragment {
     private String projectId;
     private String boardId;
     private TaskViewModel taskViewModel;
+    private LabelViewModel labelViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView emptyView;
     private TaskAdapter taskAdapter;
     private FloatingActionButton fabAddTask;
+    
+    // Filter related
+    private MaterialButton btnFilterLabel;
+    private TextView tvFilterStatus;
+    private ImageButton btnClearFilter;
+    private List<Task> allTasks = new ArrayList<>();
+    private String selectedLabelId = null;
+    private String selectedLabelName = null;
 
     public static ListProject newInstance(String type, String projectId, String boardId) {
         ListProject fragment = new ListProject();
@@ -114,8 +132,20 @@ public class ListProject extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
         fabAddTask = view.findViewById(R.id.fabAddTask);
+        btnFilterLabel = view.findViewById(R.id.btnFilterLabel);
+        tvFilterStatus = view.findViewById(R.id.tvFilterStatus);
+        btnClearFilter = view.findViewById(R.id.btnClearFilter);
+        
         if (fabAddTask != null) {
             fabAddTask.setOnClickListener(v -> showCreateTaskDialog());
+        }
+        
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setOnClickListener(v -> showLabelFilterDialog());
+        }
+        
+        if (btnClearFilter != null) {
+            btnClearFilter.setOnClickListener(v -> clearFilter());
         }
     }
 
@@ -248,18 +278,13 @@ public class ListProject extends Fragment {
         if (boardId != null && !boardId.isEmpty()) {
             taskViewModel.getTasksForBoard(boardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
-                    taskAdapter.updateTasks(tasks);
+                    allTasks.clear();
+                    allTasks.addAll(tasks);
+                    applyFilter();
                     Log.d(TAG, "Loaded " + tasks.size() + " tasks for board: " + boardId);
-                    recyclerView.setVisibility(View.VISIBLE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.GONE);
-                    }
                 } else {
-                    recyclerView.setVisibility(View.GONE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.VISIBLE);
-                        emptyView.setText(getEmptyMessage());
-                    }
+                    allTasks.clear();
+                    applyFilter();
                     Log.d(TAG, "No tasks found for board: " + boardId);
                 }
             });
@@ -360,23 +385,22 @@ public class ListProject extends Fragment {
         if (newBoardId != null && !newBoardId.isEmpty() && !newBoardId.equals(this.boardId)) {
             Log.d(TAG, "Updating boardId from " + this.boardId + " to " + newBoardId);
             this.boardId = newBoardId;
+            
+            // Clear filter when switching boards
+            clearFilter();
+            
             if (getArguments() != null) {
                 getArguments().putString(ARG_BOARD_ID, newBoardId);
             }
             taskViewModel.getTasksForBoard(newBoardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
-                    taskAdapter.updateTasks(tasks);
+                    allTasks.clear();
+                    allTasks.addAll(tasks);
+                    applyFilter();
                     Log.d(TAG, "Loaded " + tasks.size() + " tasks for updated board: " + newBoardId);
-                    recyclerView.setVisibility(View.VISIBLE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.GONE);
-                    }
                 } else {
-                    recyclerView.setVisibility(View.GONE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.VISIBLE);
-                        emptyView.setText(getEmptyMessage());
-                    }
+                    allTasks.clear();
+                    applyFilter();
                     Log.d(TAG, "No tasks found for updated board: " + newBoardId);
                 }
             });
@@ -386,6 +410,174 @@ public class ListProject extends Fragment {
 
     public String getBoardId() {
         return boardId;
+    }
+    
+    // ==================== FILTER METHODS ====================
+    
+    private void setupLabelViewModel() {
+        if (projectId == null) return;
+        
+        LabelApiService apiService = ApiClient.get(App.authManager).create(LabelApiService.class);
+        ILabelRepository repository = new LabelRepositoryImpl(apiService);
+        
+        GetLabelsByWorkspaceUseCase getLabelsByWorkspaceUseCase = new GetLabelsByWorkspaceUseCase(repository);
+        GetLabelsByProjectUseCase getLabelsByProjectUseCase = new GetLabelsByProjectUseCase(repository);
+        GetLabelByIdUseCase getLabelByIdUseCase = new GetLabelByIdUseCase(repository);
+        CreateLabelUseCase createLabelUseCase = new CreateLabelUseCase(repository);
+        CreateLabelInProjectUseCase createLabelInProjectUseCase = new CreateLabelInProjectUseCase(repository);
+        UpdateLabelUseCase updateLabelUseCase = new UpdateLabelUseCase(repository);
+        DeleteLabelUseCase deleteLabelUseCase = new DeleteLabelUseCase(repository);
+        GetTaskLabelsUseCase getTaskLabelsUseCase = new GetTaskLabelsUseCase(repository);
+        AssignLabelToTaskUseCase assignLabelToTaskUseCase = new AssignLabelToTaskUseCase(repository);
+        RemoveLabelFromTaskUseCase removeLabelFromTaskUseCase = new RemoveLabelFromTaskUseCase(repository);
+        
+        LabelViewModelFactory factory = new LabelViewModelFactory(
+                getLabelsByWorkspaceUseCase,
+                getLabelsByProjectUseCase,
+                getLabelByIdUseCase,
+                createLabelUseCase,
+                createLabelInProjectUseCase,
+                updateLabelUseCase,
+                deleteLabelUseCase,
+                getTaskLabelsUseCase,
+                assignLabelToTaskUseCase,
+                removeLabelFromTaskUseCase
+        );
+        
+        labelViewModel = new ViewModelProvider(this, factory).get(LabelViewModel.class);
+    }
+    
+    private void showLabelFilterDialog() {
+        if (projectId == null) {
+            Toast.makeText(getContext(), "Project ID not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (labelViewModel == null) {
+            setupLabelViewModel();
+        }
+        
+        // Load labels and show dialog
+        labelViewModel.loadLabelsByProject(projectId);
+        
+        labelViewModel.getLabels().observe(getViewLifecycleOwner(), labels -> {
+            if (labels != null && !labels.isEmpty()) {
+                showLabelSelectionDialog(labels);
+            } else {
+                Toast.makeText(getContext(), "No labels found in this project", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void showLabelSelectionDialog(List<Label> labels) {
+        if (getContext() == null) return;
+        
+        String[] labelNames = new String[labels.size() + 1];
+        labelNames[0] = "All tasks (No filter)";
+        for (int i = 0; i < labels.size(); i++) {
+            labelNames[i + 1] = labels.get(i).getName();
+        }
+        
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+        builder.setTitle("Filter by Label");
+        builder.setItems(labelNames, (dialog, which) -> {
+            if (which == 0) {
+                // Clear filter
+                clearFilter();
+            } else {
+                // Apply label filter
+                Label selectedLabel = labels.get(which - 1);
+                applyLabelFilter(selectedLabel.getId(), selectedLabel.getName());
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+    
+    private void applyLabelFilter(String labelId, String labelName) {
+        this.selectedLabelId = labelId;
+        this.selectedLabelName = labelName;
+        
+        Log.d(TAG, "Applying filter for label: " + labelName + " (ID: " + labelId + ")");
+        
+        // Update filter status UI
+        if (tvFilterStatus != null) {
+            tvFilterStatus.setVisibility(View.VISIBLE);
+            tvFilterStatus.setText("Filtered by: " + labelName);
+        }
+        if (btnClearFilter != null) {
+            btnClearFilter.setVisibility(View.VISIBLE);
+        }
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setText("Change Filter");
+        }
+        
+        applyFilter();
+    }
+    
+    private void clearFilter() {
+        this.selectedLabelId = null;
+        this.selectedLabelName = null;
+        
+        Log.d(TAG, "Clearing filter");
+        
+        // Update UI
+        if (tvFilterStatus != null) {
+            tvFilterStatus.setVisibility(View.GONE);
+        }
+        if (btnClearFilter != null) {
+            btnClearFilter.setVisibility(View.GONE);
+        }
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setText("Filter by Label");
+        }
+        
+        applyFilter();
+    }
+    
+    private void applyFilter() {
+        List<Task> filteredTasks;
+        
+        if (selectedLabelId == null) {
+            // No filter - show all tasks
+            filteredTasks = new ArrayList<>(allTasks);
+        } else {
+            // Filter by label
+            filteredTasks = new ArrayList<>();
+            for (Task task : allTasks) {
+                if (task.getLabels() != null) {
+                    for (Label label : task.getLabels()) {
+                        if (label.getId().equals(selectedLabelId)) {
+                            filteredTasks.add(task);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update adapter
+        taskAdapter.updateTasks(filteredTasks);
+        
+        // Update UI visibility
+        if (filteredTasks.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            if (emptyView != null) {
+                emptyView.setVisibility(View.VISIBLE);
+                if (selectedLabelId != null) {
+                    emptyView.setText("No tasks with label: " + selectedLabelName);
+                } else {
+                    emptyView.setText(getEmptyMessage());
+                }
+            }
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            if (emptyView != null) {
+                emptyView.setVisibility(View.GONE);
+            }
+        }
+        
+        Log.d(TAG, "Applied filter - showing " + filteredTasks.size() + " of " + allTasks.size() + " tasks");
     }
 }
 

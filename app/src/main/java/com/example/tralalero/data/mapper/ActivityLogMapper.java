@@ -26,6 +26,22 @@ public class ActivityLogMapper {
             userName = dto.getUsers().getName() != null ? dto.getUsers().getName() : "Unknown User";
             userAvatar = dto.getUsers().getAvatarUrl();
         }
+        
+        // Extract assigneeId from newValue for ASSIGNED action
+        String assigneeId = null;
+        if ("ASSIGNED".equals(dto.getAction()) && dto.getNewValue() != null) {
+            try {
+                if (dto.getNewValue() instanceof java.util.Map) {
+                    java.util.Map<String, Object> newValueMap = (java.util.Map<String, Object>) dto.getNewValue();
+                    Object assigneeIdObj = newValueMap.get("assigneeId");
+                    if (assigneeIdObj != null) {
+                        assigneeId = assigneeIdObj.toString();
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parsing errors
+            }
+        }
 
         return new ActivityLog(
             dto.getId(),
@@ -35,7 +51,8 @@ public class ActivityLogMapper {
             dto.getEntityName(),
             dto.getCreatedAt(),
             userName,
-            userAvatar
+            userAvatar,
+            assigneeId
         );
     }
 
