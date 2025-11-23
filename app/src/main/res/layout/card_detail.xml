@@ -743,6 +743,34 @@
                     android:nestedScrollingEnabled="true"
                     android:maxHeight="300dp"/>
 
+                <!-- Upload Progress Section -->
+                <LinearLayout
+                    android:id="@+id/layoutCardUploadProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/tvCardUploadProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Uploading..."
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"/>
+
+                    <ProgressBar
+                        android:id="@+id/progressBarCardUpload"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:max="100"
+                        android:progress="0"/>
+                </LinearLayout>
+
                 <TextView 
                     android:id="@+id/tvNoAttachments" 
                     android:layout_width="match_parent" 

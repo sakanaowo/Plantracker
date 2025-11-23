@@ -52,6 +52,8 @@ public class CalendarMapper {
         event.setStatus(dto.getStatus());
         event.setCreatedAt(dto.getCreatedAt());
         event.setUpdatedAt(dto.getUpdatedAt());
+        event.setProjectId(dto.getProjectId()); // ✅ Map projectId
+        event.setEventType(dto.getEventType()); // ✅ Map eventType
 
         return event;
     }
@@ -120,6 +122,8 @@ public class CalendarMapper {
         dto.setStatus(event.getStatus());
         dto.setCreatedAt(event.getCreatedAt());
         dto.setUpdatedAt(event.getUpdatedAt());
+        dto.setProjectId(event.getProjectId()); // ✅ Map projectId
+        dto.setEventType(event.getEventType()); // ✅ Map eventType
 
         return dto;
     }

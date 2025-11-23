@@ -1925,13 +1925,26 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // Get progress views
+        View layoutCardUploadProgress = findViewById(R.id.layoutCardUploadProgress);
+        TextView tvCardUploadProgress = findViewById(R.id.tvCardUploadProgress);
+        android.widget.ProgressBar progressBarCardUpload = findViewById(R.id.progressBarCardUpload);
+        
+        // Show progress UI
+        if (layoutCardUploadProgress != null) {
+            layoutCardUploadProgress.setVisibility(View.VISIBLE);
+            progressBarCardUpload.setProgress(0);
+        }
+        
         attachmentUploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
             @Override
             public void onProgress(int percent) {
                 android.util.Log.d("CardDetail", "Upload progress: " + percent + "%");
                 runOnUiThread(() -> {
-                    // TODO: Show progress bar UI
-                    // For now just log progress
+                    if (progressBarCardUpload != null) {
+                        progressBarCardUpload.setProgress(percent);
+                        tvCardUploadProgress.setText("Uploading... " + percent + "%");
+                    }
                 });
             }
 
@@ -1939,6 +1952,12 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
                 android.util.Log.d("CardDetail", "Upload success! File: " + attachmentDTO.fileName);
                 runOnUiThread(() -> {
+                    // Hide progress UI
+                    if (layoutCardUploadProgress != null) {
+                        layoutCardUploadProgress.setVisibility(View.GONE);
+                        progressBarCardUpload.setProgress(0);
+                    }
+                    
                     // ✅ Just reload attachments from server (which has full data including URL)
                     // Don't manually add attachment as attachmentDTO from upload doesn't have URL
                     loadTaskAttachments(); // Reload to refresh UI with complete data from backend
@@ -1953,6 +1972,12 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onError(String error) {
                 android.util.Log.e("CardDetail", "Upload error: " + error);
                 runOnUiThread(() -> {
+                    // Hide progress UI
+                    if (layoutCardUploadProgress != null) {
+                        layoutCardUploadProgress.setVisibility(View.GONE);
+                        progressBarCardUpload.setProgress(0);
+                    }
+                    
                     Toast.makeText(CardDetailActivity.this, 
                         "Upload failed: " + error, 
                         Toast.LENGTH_LONG).show();

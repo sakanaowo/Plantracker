@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class ProjectCalendarFragment extends Fragment {
@@ -46,8 +48,10 @@ public class ProjectCalendarFragment extends Fragment {
     private TextView tvSelectedDate;
     private TextView tvEventCount;
     private TextView tvEventDatesIndicator;
+    private View cardEventIndicator;
     private LinearLayout layoutEmptyState;
     private CalendarView calendarView;
+    private CalendarDecorator calendarDecorator;
     private SwipeRefreshLayout swipeRefreshLayout;
     
     private Button btnPreviousMonth;
@@ -107,8 +111,10 @@ public class ProjectCalendarFragment extends Fragment {
         tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
         tvEventCount = view.findViewById(R.id.tvEventCount);
         tvEventDatesIndicator = view.findViewById(R.id.tvEventDatesIndicator);
+        cardEventIndicator = view.findViewById(R.id.cardEventIndicator);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         calendarView = view.findViewById(R.id.calendarView);
+        calendarDecorator = view.findViewById(R.id.calendarDecorator);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         
         btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth);
@@ -288,12 +294,34 @@ public class ProjectCalendarFragment extends Fragment {
             // Show empty state
             rvCalendarEvents.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
-            tvEventCount.setText("0 events");
+            tvEventCount.setText("0 items");
         } else {
             // Show events list
             rvCalendarEvents.setVisibility(View.VISIBLE);
             layoutEmptyState.setVisibility(View.GONE);
-            tvEventCount.setText(events.size() + " event" + (events.size() > 1 ? "s" : ""));
+            
+            // Count tasks and events separately
+            int taskCount = 0;
+            int eventCount = 0;
+            for (CalendarEvent event : events) {
+                if (event.isTask()) {
+                    taskCount++;
+                } else {
+                    eventCount++;
+                }
+            }
+            
+            String countText;
+            if (taskCount > 0 && eventCount > 0) {
+                countText = taskCount + " task" + (taskCount > 1 ? "s" : "") + ", " +
+                           eventCount + " event" + (eventCount > 1 ? "s" : "");
+            } else if (taskCount > 0) {
+                countText = taskCount + " task" + (taskCount > 1 ? "s" : "");
+            } else {
+                countText = eventCount + " event" + (eventCount > 1 ? "s" : "");
+            }
+            tvEventCount.setText(countText);
+            
             eventAdapter.setEvents(events);
         }
     }
@@ -317,83 +345,182 @@ public class ProjectCalendarFragment extends Fragment {
     }
     
     /**
-     * Update indicator showing which dates have events
-     * Also stores timestamps for MaterialDatePicker marking
+     * Update indicator showing which dates have tasks (from eventType)
      */
+    private Set<Integer> taskDates = new HashSet<>();
+    private Set<Integer> eventDates = new HashSet<>();
+    
     private void updateEventDatesIndicator(List<CalendarEvent> events) {
         eventDateTimestamps.clear();
+        taskDates.clear();
+        eventDates.clear();
         
         if (events == null || events.isEmpty()) {
-            tvEventDatesIndicator.setVisibility(View.GONE);
+            cardEventIndicator.setVisibility(View.GONE);
             return;
         }
         
-        // Extract unique dates with events
-        java.util.Set<Integer> datesWithEvents = new java.util.HashSet<>();
-        
+        // Extract unique dates with tasks and events
         int currentYear = selectedCalendar.get(Calendar.YEAR);
         int currentMonth = selectedCalendar.get(Calendar.MONTH);
         
-        for (CalendarEvent event : events) {
-            if (event.getStartAt() != null) {
+        for (CalendarEvent item : events) {
+            if (item.getStartAt() != null) {
                 try {
-                    // Parse event date
+                    // Parse date
                     SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
                     isoFormat.setLenient(false);
-                    Date eventDate = isoFormat.parse(event.getStartAt());
+                    Date itemDate = isoFormat.parse(item.getStartAt());
                     
-                    if (eventDate != null) {
-                        Calendar eventCal = Calendar.getInstance();
-                        eventCal.setTime(eventDate);
+                    if (itemDate != null) {
+                        Calendar itemCal = Calendar.getInstance();
+                        itemCal.setTime(itemDate);
                         
                         // Normalize to start of day for comparison
-                        eventCal.set(Calendar.HOUR_OF_DAY, 0);
-                        eventCal.set(Calendar.MINUTE, 0);
-                        eventCal.set(Calendar.SECOND, 0);
-                        eventCal.set(Calendar.MILLISECOND, 0);
+                        itemCal.set(Calendar.HOUR_OF_DAY, 0);
+                        itemCal.set(Calendar.MINUTE, 0);
+                        itemCal.set(Calendar.SECOND, 0);
+                        itemCal.set(Calendar.MILLISECOND, 0);
                         
                         // Store timestamp for MaterialDatePicker
-                        eventDateTimestamps.add(eventCal.getTimeInMillis());
+                        eventDateTimestamps.add(itemCal.getTimeInMillis());
                         
                         // Only include if same month/year for text indicator
-                        if (eventCal.get(Calendar.YEAR) == currentYear && 
-                            eventCal.get(Calendar.MONTH) == currentMonth) {
-                            datesWithEvents.add(eventCal.get(Calendar.DAY_OF_MONTH));
+                        if (itemCal.get(Calendar.YEAR) == currentYear && 
+                            itemCal.get(Calendar.MONTH) == currentMonth) {
+                            
+                            int dayOfMonth = itemCal.get(Calendar.DAY_OF_MONTH);
+                            
+                            // Separate tasks and events based on eventType
+                            if (item.isTask()) {
+                                taskDates.add(dayOfMonth);
+                            } else {
+                                eventDates.add(dayOfMonth);
+                            }
                         }
                     }
                 } catch (Exception e) {
-                    android.util.Log.e("Calendar", "Error parsing date: " + event.getStartAt(), e);
+                    android.util.Log.e("Calendar", "Error parsing date: " + item.getStartAt(), e);
                 }
             }
         }
         
-        // Build indicator text with hint to tap calendar
-        if (datesWithEvents.isEmpty()) {
-            tvEventDatesIndicator.setVisibility(View.GONE);
+        updateCombinedDateIndicator();
+    }
+    
+    /**
+     * Update combined indicator showing dates with both tasks and events
+     */
+    private void updateCombinedDateIndicator() {
+        // Combine all dates
+        Set<Integer> allDates = new HashSet<>();
+        allDates.addAll(taskDates);
+        allDates.addAll(eventDates);
+        
+        if (allDates.isEmpty()) {
+            cardEventIndicator.setVisibility(View.GONE);
         } else {
-            tvEventDatesIndicator.setVisibility(View.VISIBLE);
+            cardEventIndicator.setVisibility(View.VISIBLE);
             
             // Sort dates
-            java.util.List<Integer> sortedDates = new java.util.ArrayList<>(datesWithEvents);
+            List<Integer> sortedDates = new ArrayList<>(allDates);
             java.util.Collections.sort(sortedDates);
             
-            // Format: "🗓 Events on: 5, 12, 18, 25 (tap calendar to view marked dates)"
-            StringBuilder datesText = new StringBuilder("🗓 Events on: ");
-            for (int i = 0; i < Math.min(sortedDates.size(), 10); i++) {
-                if (i > 0) datesText.append(", ");
-                datesText.append(sortedDates.get(i));
+            // Build indicator text with colored markers
+            StringBuilder datesText = new StringBuilder();
+            
+            if (taskDates.size() > 0 && eventDates.size() > 0) {
+                datesText.append("📅 ");
+                datesText.append(taskDates.size()).append(" ngày có task, ");
+                datesText.append(eventDates.size()).append(" ngày có event: ");
+            } else if (taskDates.size() > 0) {
+                datesText.append("🟠 Ngày có task: ");
+            } else {
+                datesText.append("🟢 Ngày có event: ");
             }
             
-            if (sortedDates.size() > 10) {
-                datesText.append(" +").append(sortedDates.size() - 10);
+            for (int i = 0; i < Math.min(sortedDates.size(), 15); i++) {
+                if (i > 0) datesText.append(", ");
+                
+                int date = sortedDates.get(i);
+                boolean hasTask = taskDates.contains(date);
+                boolean hasEvent = eventDates.contains(date);
+                
+                if (hasTask && hasEvent) {
+                    datesText.append(date).append("🔶"); // Both
+                } else if (hasTask) {
+                    datesText.append(date).append("🟠"); // Task only
+                } else {
+                    datesText.append(date).append("🟢"); // Event only
+                }
+            }
+            
+            if (sortedDates.size() > 15) {
+                datesText.append(" +").append(sortedDates.size() - 15).append(" ngày khác");
             }
             
             tvEventDatesIndicator.setText(datesText.toString());
-            
-            // Make clickable to show MaterialDatePicker
+            tvEventDatesIndicator.setTextSize(14);
             tvEventDatesIndicator.setTextColor(getResources().getColor(R.color.colorAccent, null));
             tvEventDatesIndicator.setOnClickListener(v -> showMaterialCalendarPicker());
         }
+        
+        // Update calendar decorations
+        updateCalendarDecorations();
+    }
+    
+    /**
+     * Update calendar decorations (colored dots on dates)
+     */
+    private void updateCalendarDecorations() {
+        if (calendarDecorator == null || calendarView == null) return;
+        
+        // Combine decorations
+        Map<Integer, CalendarDecorator.DateDecoration> decorations = new HashMap<>();
+        
+        for (Integer day : taskDates) {
+            decorations.put(day, new CalendarDecorator.DateDecoration(
+                true, eventDates.contains(day)
+            ));
+        }
+        
+        for (Integer day : eventDates) {
+            if (!decorations.containsKey(day)) {
+                decorations.put(day, new CalendarDecorator.DateDecoration(
+                    false, true
+                ));
+            }
+        }
+        
+        // Calculate cell dimensions (approximate)
+        int calendarWidth = calendarView.getWidth();
+        int calendarHeight = calendarView.getHeight();
+        
+        if (calendarWidth == 0 || calendarHeight == 0) {
+            // Wait for layout
+            calendarView.post(() -> updateCalendarDecorations());
+            return;
+        }
+        
+        // Match decorator height to calendar
+        android.view.ViewGroup.LayoutParams params = calendarDecorator.getLayoutParams();
+        if (params.height != calendarHeight) {
+            params.height = calendarHeight;
+            calendarDecorator.setLayoutParams(params);
+        }
+        
+        int cellWidth = calendarWidth / 7;
+        
+        // Estimate cell height based on calendar height
+        // CalendarView typically shows ~6 weeks
+        int cellHeight = calendarHeight / 8; // Approximate (header + 6 weeks)
+        
+        // Get first day of month offset
+        Calendar firstDay = (Calendar) selectedCalendar.clone();
+        firstDay.set(Calendar.DAY_OF_MONTH, 1);
+        int startOffset = firstDay.get(Calendar.DAY_OF_WEEK) - 1; // Sunday = 0
+        
+        calendarDecorator.setDecorations(decorations, cellWidth, cellHeight, startOffset);
     }
     
     /**

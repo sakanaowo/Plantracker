@@ -18,6 +18,8 @@ public class CalendarEvent {
     private String status;
     private String createdAt;
     private String updatedAt;
+    private String projectId; // ✅ Added for project filtering
+    private String eventType; // ✅ MEETING, OTHER, TASK_REMINDER, etc.
 
     public CalendarEvent() {
     }
@@ -116,5 +118,62 @@ public class CalendarEvent {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+    
+    public String getEventType() {
+        return eventType;
+    }
+    
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+    
+    /**
+     * Check if this is a task (converted from task reminder)
+     * Tasks are identified by:
+     * 1. Title starting with "⏰ Nhắc nhở:"
+     * 2. EventType containing "TASK" or "REMINDER"
+     * 3. EventType is "OTHER" with reminder-like title
+     */
+    public boolean isTask() {
+        // Check title pattern (backend adds "⏰ Nhắc nhở:" prefix for tasks)
+        if (title != null && (title.startsWith("⏰ Nhắc nhở:") || title.startsWith("⏰"))) {
+            return true;
+        }
+        
+        // Check eventType
+        if (eventType != null) {
+            String type = eventType.toUpperCase();
+            if (type.contains("TASK") || type.contains("REMINDER")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if this is a regular calendar event (meeting, deadline, etc.)
+     */
+    public boolean isEvent() {
+        return !isTask();
+    }
+    
+    /**
+     * Get clean title without reminder prefix
+     */
+    public String getCleanTitle() {
+        if (title != null && title.startsWith("⏰ Nhắc nhở: ")) {
+            return title.substring("⏰ Nhắc nhở: ".length());
+        }
+        return title;
     }
 }
