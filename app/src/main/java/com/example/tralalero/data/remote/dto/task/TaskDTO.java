@@ -91,11 +91,11 @@ public class TaskDTO {
     private String lastSyncedAt;
     
     // Labels - nested object from backend
-    @SerializedName("task_labels")
+    @SerializedName(value = "taskLabels", alternate = {"task_labels"})
     private java.util.List<TaskLabelDTO> taskLabels;
     
     // Assignees - nested object from backend
-    @SerializedName("task_assignees")
+    @SerializedName(value = "taskAssignees", alternate = {"task_assignees"})
     private java.util.List<TaskAssigneeDTO> taskAssignees;
     
     // Nested DTO for task_labels relation

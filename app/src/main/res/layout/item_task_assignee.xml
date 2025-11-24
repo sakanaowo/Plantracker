@@ -1,29 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Trello-style Assignee Avatar: Small, circular, with white border for overlap -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginEnd="4dp">
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="-6dp">
 
-    <!-- Avatar Image -->
-    <ImageView
-        android:id="@+id/ivAssigneeAvatar"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_avatar_placeholder"
-        android:background="@drawable/circle_background"
-        android:visibility="gone" />
+    <!-- Avatar Image with border -->
+    <ImageView android:id="@+id/ivAssigneeAvatar" android:layout_width="28dp" android:layout_height="28dp" android:scaleType="centerCrop" android:src="@drawable/ic_avatar_placeholder" android:background="@drawable/circle_background" android:padding="2dp" android:visibility="gone" />
 
-    <!-- Initials TextView (shown when no avatar) -->
-    <TextView
-        android:id="@+id/tvAssigneeInitials"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:gravity="center"
-        android:text="AB"
-        android:textColor="@android:color/white"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:background="@drawable/circle_background" />
+    <!-- Initials TextView with border (shown when no avatar) -->
+    <TextView android:id="@+id/tvAssigneeInitials" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="AB" android:textColor="@android:color/white" android:textSize="10sp" android:textStyle="bold" android:background="@drawable/circle_background" android:padding="2dp" />
 </FrameLayout>
