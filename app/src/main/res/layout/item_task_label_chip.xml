@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/chipLabel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="4dp"
+    android:clickable="false"
+    android:focusable="false"
+    app:chipMinHeight="24dp"
+    app:chipStartPadding="8dp"
+    app:chipEndPadding="8dp"
+    android:textSize="11sp"
+    app:chipBackgroundColor="@android:color/holo_blue_light" />

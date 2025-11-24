@@ -9,53 +9,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Filter bar -->
-        <LinearLayout
-            android:id="@+id/filterBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurface"
-            android:elevation="2dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="8dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFilterLabel"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingTop="6dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="6dp"
-                android:text="Filter by Label"
-                android:textSize="12sp"
-                app:icon="@drawable/ic_label"
-                app:iconSize="18dp" />
-
-            <TextView
-                android:id="@+id/tvFilterStatus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:text="All tasks"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <ImageButton
-                android:id="@+id/btnClearFilter"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Clear filter"
-                android:src="@drawable/ic_close"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
         <!-- RecyclerView for tasks -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"

@@ -68,6 +68,37 @@ public class TaskRepositoryImpl implements ITaskRepository {
             @Override
             public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("TaskRepository", "========== TASKS RESPONSE ==========");
+                    android.util.Log.d("TaskRepository", "Received " + response.body().size() + " tasks");
+                    
+                    // Log raw response using Gson
+                    com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+                    String jsonResponse = gson.toJson(response.body());
+                    android.util.Log.d("TaskRepository", "Raw JSON response:");
+                    // Split long log
+                    int maxLogSize = 4000;
+                    for(int i = 0; i <= jsonResponse.length() / maxLogSize; i++) {
+                        int start = i * maxLogSize;
+                        int end = Math.min((i + 1) * maxLogSize, jsonResponse.length());
+                        android.util.Log.d("TaskRepository", jsonResponse.substring(start, end));
+                    }
+                    
+                    for (TaskDTO dto : response.body()) {
+                        android.util.Log.d("TaskRepository", "Task: " + dto.getTitle());
+                        android.util.Log.d("TaskRepository", "  - taskLabels: " + (dto.getTaskLabels() != null ? dto.getTaskLabels().size() : "null"));
+                        android.util.Log.d("TaskRepository", "  - taskAssignees: " + (dto.getTaskAssignees() != null ? dto.getTaskAssignees().size() : "null"));
+                        
+                        // Try to access via reflection to see if field is actually populated
+                        try {
+                            java.lang.reflect.Field labelsField = dto.getClass().getDeclaredField("taskLabels");
+                            labelsField.setAccessible(true);
+                            Object labels = labelsField.get(dto);
+                            android.util.Log.d("TaskRepository", "  - taskLabels via reflection: " + labels);
+                        } catch (Exception e) {
+                            android.util.Log.e("TaskRepository", "Reflection error: " + e.getMessage());
+                        }
+                    }
+                    android.util.Log.d("TaskRepository", "====================================");
                     callback.onSuccess(TaskMapper.toDomainList(response.body()));
                 } else {
                     callback.onError("Failed to fetch tasks: " + response.code());

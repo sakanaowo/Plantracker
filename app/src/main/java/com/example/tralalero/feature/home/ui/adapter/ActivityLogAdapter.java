@@ -163,10 +163,19 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 
                 case "ADDED":
                     if ("MEMBERSHIP".equals(entityType)) {
-                        // entityName is the invited person's name
+                        // Backend creates this log when user ACCEPTS invitation
+                        // userId is the person who accepted (person who joined)
+                        // invitedBy is the person who sent the invitation
+                        String invitedBy = log.getInvitedBy();
+                        
                         if (isSelf) {
-                            return "You invited " + entityName + " to the project";
+                            // Current user joined the project
+                            return "You joined the project";
+                        } else if (currentUserId != null && currentUserId.equals(invitedBy)) {
+                            // Current user is the person who invited
+                            return entityName + " accepted your invitation and joined the project";
                         } else {
+                            // Someone else joined
                             return entityName + " joined the project";
                         }
                     }

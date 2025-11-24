@@ -95,7 +95,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
             btnAddCard = itemView.findViewById(R.id.btnAddCard);
 
             taskRecycler.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-            taskAdapter = new TaskAdapter(new ArrayList<>()); // Will be replaced in bind()
+            taskAdapter = new TaskAdapter(new ArrayList<>(), null, itemView.getContext());
             taskRecycler.setAdapter(taskAdapter);
         }
 
@@ -110,7 +110,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                 TaskAdapter adapter = boardAdapter.taskAdapterMap.get(board.getId());
                 if (adapter == null) {
                     // Create new adapter for this board
-                    adapter = new TaskAdapter(tasks != null ? tasks : new ArrayList<>(), board.getId());
+                    adapter = new TaskAdapter(tasks != null ? tasks : new ArrayList<>(), board.getId(), itemView.getContext());
                     boardAdapter.taskAdapterMap.put(board.getId(), adapter);
                     taskRecycler.setAdapter(adapter);
                 } else {

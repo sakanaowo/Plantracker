@@ -94,6 +94,10 @@ public class TaskDTO {
     @SerializedName("task_labels")
     private java.util.List<TaskLabelDTO> taskLabels;
     
+    // Assignees - nested object from backend
+    @SerializedName("task_assignees")
+    private java.util.List<TaskAssigneeDTO> taskAssignees;
+    
     // Nested DTO for task_labels relation
     public static class TaskLabelDTO {
         @SerializedName("labels")
@@ -101,6 +105,10 @@ public class TaskDTO {
         
         public LabelDTO getLabels() {
             return labels;
+        }
+        
+        public void setLabels(LabelDTO labels) {
+            this.labels = labels;
         }
     }
     
@@ -118,6 +126,49 @@ public class TaskDTO {
         public String getId() { return id; }
         public String getName() { return name; }
         public String getColor() { return color; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+        public void setColor(String color) { this.color = color; }
+    }
+    
+    // Nested DTO for task_assignees relation
+    public static class TaskAssigneeDTO {
+        @SerializedName("users")
+        private UserDTO users;
+        
+        public UserDTO getUsers() {
+            return users;
+        }
+        
+        public void setUsers(UserDTO users) {
+            this.users = users;
+        }
+    }
+    
+    // Nested DTO for user info
+    public static class UserDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        @SerializedName("email")
+        private String email;
+        
+        @SerializedName(value = "avatarUrl", alternate = {"avatar_url"})
+        private String avatarUrl;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+        public String getAvatarUrl() { return avatarUrl; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+        public void setEmail(String email) { this.email = email; }
+        public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     }
 
     public String getId() {
@@ -342,5 +393,13 @@ public class TaskDTO {
     
     public void setTaskLabels(java.util.List<TaskLabelDTO> taskLabels) {
         this.taskLabels = taskLabels;
+    }
+    
+    public java.util.List<TaskAssigneeDTO> getTaskAssignees() {
+        return taskAssignees;
+    }
+    
+    public void setTaskAssignees(java.util.List<TaskAssigneeDTO> taskAssignees) {
+        this.taskAssignees = taskAssignees;
     }
 }

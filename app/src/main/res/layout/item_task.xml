@@ -13,6 +13,16 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Labels RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTaskLabels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
         <TextView
             android:id="@+id/taskTitle"
             android:layout_width="match_parent"
@@ -61,5 +71,15 @@
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
         </LinearLayout>
+
+        <!-- Assignees RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTaskAssignees"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>
