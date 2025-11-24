@@ -133,10 +133,13 @@ public class InboxFragment extends Fragment {
             }
             
             @Override
-            public void onTaskCompleted(Task task) {
+            public void onTaskCheckboxClick(Task task, String currentBoardType) {
+                // Inbox doesn't have board types, just complete task
                 handleTaskCompleted(task);
             }
         });
+        // Set board type as "Inbox" for checkbox logic
+        taskAdapter.setCurrentBoardType("Inbox");
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(taskAdapter);
     }

@@ -427,6 +427,96 @@ public class ProjectViewModel extends ViewModel {
         tasksPerBoardLiveData.setValue(updatedMap);
     }
     
+    /**
+     * ✅ NEW: Move task to board with status update (for checkbox workflow)
+     * Updates both boardId and status in one optimistic update
+     */
+    public void moveTaskWithStatusUpdate(Task task, String targetBoardId, Task.TaskStatus newStatus, double newPosition) {
+        if (task == null || targetBoardId == null || newStatus == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = task.getBoardId();
+        if (sourceBoardId == null || sourceBoardId.equals(targetBoardId)) return;
+        
+        // ✅ Clone the map to trigger LiveData update
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks != null) {
+            sourceTasks.removeIf(t -> t.getId().equals(task.getId()));
+        }
+        
+        // ✅ Add to target board with new boardId, status, and position
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks == null) {
+            targetTasks = new ArrayList<>();
+            updatedMap.put(targetBoardId, targetTasks);
+        }
+        
+        // Create moved task with updated boardId AND status
+        Task movedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            targetBoardId, // ✅ New board
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            newStatus, // ✅ New status
+            task.getPriority(),
+            newPosition, // ✅ New position
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels()  // preserve labels
+        );
+        
+        targetTasks.add(movedTask);
+        
+        // ✅ Update LiveData immediately
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
+    /**
+     * ✅ Helper: Find task in current tasksPerBoard map
+     */
+    public Task findTaskById(String taskId) {
+        if (taskId == null) return null;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return null;
+        
+        for (List<Task> tasks : currentMap.values()) {
+            if (tasks != null) {
+                for (Task task : tasks) {
+                    if (task.getId().equals(taskId)) {
+                        return task;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
     @Override
     protected void onCleared() {
         super.onCleared();

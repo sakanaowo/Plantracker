@@ -43,6 +43,7 @@ import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
 import com.example.tralalero.domain.usecase.task.*;
+import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -203,12 +204,18 @@ public class ListProject extends Fragment {
 
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        taskAdapter = new TaskAdapter(new ArrayList<>());
+        
+        // Create adapter with board ID
+        taskAdapter = new com.example.tralalero.adapter.TaskAdapter(new ArrayList<>(), boardId);
+        
+        // Set click listener
         taskAdapter.setOnTaskClickListener(task -> {
             showTaskDetailBottomSheet(task);
             Log.d(TAG, "Task clicked: " + task.getId());
         });
-        taskAdapter.setOnTaskMoveListener(new TaskAdapter.OnTaskMoveListener() {
+        
+        // Set move listener
+        taskAdapter.setOnTaskMoveListener(new com.example.tralalero.adapter.TaskAdapter.OnTaskMoveListener() {
             @Override
             public void onMoveLeft(Task task, int position) {
                 Log.d(TAG, "onMoveLeft called for task: " + task.getTitle());
@@ -218,6 +225,11 @@ public class ListProject extends Fragment {
             public void onMoveRight(Task task, int position) {
                 Log.d(TAG, "onMoveRight called for task: " + task.getTitle());
             }
+        });
+        
+        // Set status change listener for checkbox
+        taskAdapter.setOnTaskStatusChangeListener((task, isDone) -> {
+            handleCheckboxClick(task, type);
         });
 
         recyclerView.setAdapter(taskAdapter);
@@ -410,6 +422,89 @@ public class ListProject extends Fragment {
 
     public String getBoardId() {
         return boardId;
+    }
+    
+    /**
+     * Handle checkbox click logic based on current board type:
+     * - To Do → In Progress
+     * - In Progress → Done  
+     * - Done → To Do (reopen task)
+     */
+    private void handleCheckboxClick(Task task, String currentBoardType) {
+        Log.d(TAG, "Checkbox clicked for task: " + task.getTitle() + " in board: " + currentBoardType);
+        
+        // Determine target status based on current board
+        Task.TaskStatus targetStatus;
+        String targetBoardName;
+        
+        if ("To Do".equals(currentBoardType)) {
+            targetStatus = Task.TaskStatus.IN_PROGRESS;
+            targetBoardName = "In Progress";
+        } else if ("In Progress".equals(currentBoardType)) {
+            targetStatus = Task.TaskStatus.DONE;
+            targetBoardName = "Done";
+        } else if ("Done".equals(currentBoardType)) {
+            // Reopen task - move back to To Do
+            targetStatus = Task.TaskStatus.TO_DO;
+            targetBoardName = "To Do";
+        } else {
+            Log.e(TAG, "Unknown board type: " + currentBoardType);
+            return;
+        }
+        
+        // Find target board ID
+        findBoardIdByName(targetBoardName, targetBoardId -> {
+            if (targetBoardId != null) {
+                // Move task to target board
+                Log.d(TAG, "Moving task '" + task.getTitle() + "' from " + currentBoardType + " to " + targetBoardName);
+                taskViewModel.moveTaskToBoard(task.getId(), targetBoardId, 1000.0); // Default position
+                
+                Toast.makeText(getContext(), 
+                    "Task moved to " + targetBoardName, 
+                    Toast.LENGTH_SHORT).show();
+            } else {
+                Log.e(TAG, "Could not find board: " + targetBoardName);
+                Toast.makeText(getContext(), 
+                    "Error: Could not find " + targetBoardName + " board", 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Find board ID by board name
+     */
+    private void findBoardIdByName(String boardName, BoardIdCallback callback) {
+        if (getActivity() == null || projectId == null) {
+            callback.onBoardIdFound(null);
+            return;
+        }
+        
+        // Get BoardViewModel from activity to access all boards
+        BoardViewModel boardViewModel = new ViewModelProvider(requireActivity()).get(BoardViewModel.class);
+        
+        // First load boards for this project
+        boardViewModel.loadBoardsForProject(projectId);
+        
+        // Then observe the boards
+        boardViewModel.getProjectBoards().observe(getViewLifecycleOwner(), boards -> {
+            if (boards != null) {
+                for (com.example.tralalero.domain.model.Board board : boards) {
+                    if (boardName.equalsIgnoreCase(board.getName())) {
+                        callback.onBoardIdFound(board.getId());
+                        return;
+                    }
+                }
+            }
+            callback.onBoardIdFound(null);
+        });
+    }
+    
+    /**
+     * Callback interface for board ID lookup
+     */
+    private interface BoardIdCallback {
+        void onBoardIdFound(String boardId);
     }
     
     // ==================== FILTER METHODS ====================
