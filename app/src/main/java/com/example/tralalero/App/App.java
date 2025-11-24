@@ -50,8 +50,10 @@ public class App extends Application {
         // Initialize AppCheck after Firebase is ready
         initializeAppCheck();
 
+        // Force light mode as default
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
         loadLanguagePreference();
-        loadDarkModePreference();
         
         authManager = new AuthManager(this);
         tokenManager = new TokenManager(this);
@@ -122,17 +124,6 @@ public class App extends Application {
         }
         
         getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
-    }
-    
-    private void loadDarkModePreference() {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isDarkMode = preferences.getBoolean("theme", false);
-        
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
     }
 
     public static App getInstance() {

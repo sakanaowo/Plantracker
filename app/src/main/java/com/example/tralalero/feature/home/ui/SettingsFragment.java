@@ -46,19 +46,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
-        SwitchPreferenceCompat themePref = findPreference("theme");
-        if (themePref != null) {
-            themePref.setOnPreferenceChangeListener((preference, newValue) -> {
-                boolean isDark = (boolean) newValue;
-                if (isDark) {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                } else {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                }
-                getActivity().recreate();
-                return true;
-            });
-        }
+        
         Preference deleteAccountPref = findPreference("delete_account");
         if (deleteAccountPref != null) {
             deleteAccountPref.setOnPreferenceClickListener(preference -> {
