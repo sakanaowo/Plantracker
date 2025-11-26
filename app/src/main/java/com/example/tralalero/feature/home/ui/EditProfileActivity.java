@@ -62,7 +62,6 @@ public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "EditProfileActivity";
     private MaterialToolbar toolbar;
     private FrameLayout avatarContainer;
-    private TextView tvAvatarLetter;
     private ImageView imgAvatar;
     private TextInputEditText etName;
     private TextInputEditText etUsername;
@@ -102,7 +101,6 @@ public class EditProfileActivity extends AppCompatActivity {
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         avatarContainer = findViewById(R.id.avatarContainer);
-        tvAvatarLetter = findViewById(R.id.tvAvatarLetter);
         imgAvatar = findViewById(R.id.imgAvatar);
         etName = findViewById(R.id.etName);
         etUsername = findViewById(R.id.etUsername);
@@ -131,7 +129,6 @@ public class EditProfileActivity extends AppCompatActivity {
                 if (!name.isEmpty()) {
                     String username = "@" + name.toLowerCase().replace(" ", "");
                     etUsername.setText(username);
-                    tvAvatarLetter.setText(String.valueOf(name.charAt(0)).toUpperCase());
                 }
             }
 
@@ -153,12 +150,10 @@ public class EditProfileActivity extends AppCompatActivity {
         if (displayName != null && !displayName.isEmpty()) {
             etName.setText(displayName);
             etUsername.setText("@" + displayName.toLowerCase().replace(" ", ""));
-            tvAvatarLetter.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
         } else if (email != null) {
             String username = email.split("@")[0];
             etName.setText(username);
             etUsername.setText("@" + username);
-            tvAvatarLetter.setText(String.valueOf(username.charAt(0)).toUpperCase());
         }
         fetchUserProfileFromBackend();
     }
@@ -175,13 +170,12 @@ public class EditProfileActivity extends AppCompatActivity {
                     if (user.name != null && !user.name.isEmpty()) {
                         etName.setText(user.name);
                         etUsername.setText("@" + user.name.toLowerCase().replace(" ", ""));
-                        tvAvatarLetter.setText(String.valueOf(user.name.charAt(0)).toUpperCase());
                     }
                     if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
                         Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
                         loadAvatarImage(user.avatarUrl);
                     } else {
-                        Log.d(TAG, "No avatar URL found, showing letter");
+                        Log.d(TAG, "No avatar URL found");
                     }
                 } else {
                     Log.e(TAG, "Failed to fetch profile: " + response.code());
@@ -197,12 +191,24 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private void loadAvatarImage(String avatarUrl) {
         Log.d(TAG, "loadAvatarImage called with URL: " + avatarUrl);
-        tvAvatarLetter.setVisibility(View.VISIBLE);
-        imgAvatar.setVisibility(View.GONE);
-
+        
+        if (avatarUrl == null || avatarUrl.isEmpty()) {
+            Log.w(TAG, "Avatar URL is null or empty, using default background");
+            return;
+        }
+        
+        // Show image view immediately
+        imgAvatar.setVisibility(View.VISIBLE);
+        
+        // Load with cache strategy based on whether it's from backend or newly uploaded
+        DiskCacheStrategy cacheStrategy = avatarChanged 
+            ? DiskCacheStrategy.NONE  // Don't cache newly uploaded images
+            : DiskCacheStrategy.ALL;   // Cache existing images from backend
+        
         Glide.with(this)
             .load(avatarUrl)
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .diskCacheStrategy(cacheStrategy)
+            .skipMemoryCache(avatarChanged) // Skip memory cache only for newly uploaded
             .circleCrop()
             .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
                 @Override
@@ -217,9 +223,8 @@ public class EditProfileActivity extends AppCompatActivity {
                             Log.e(TAG, "Root cause: ", cause);
                         }
                     }
-                    imgAvatar.setVisibility(View.GONE);
-                    tvAvatarLetter.setVisibility(View.VISIBLE);
-                    return true; // handled
+                    // Keep default background on error
+                    return false; // Let Glide handle error drawable
                 }
 
                 @Override
@@ -230,8 +235,8 @@ public class EditProfileActivity extends AppCompatActivity {
                                              boolean isFirstResource) {
                     Log.d(TAG, "✓ Avatar loaded successfully from: " + avatarUrl);
                     Log.d(TAG, "Data source: " + dataSource);
+                    // Ensure image is visible
                     imgAvatar.setVisibility(View.VISIBLE);
-                    tvAvatarLetter.setVisibility(View.GONE);
                     return false; // let Glide handle displaying
                 }
             })
@@ -365,6 +370,16 @@ public class EditProfileActivity extends AppCompatActivity {
         }
 
         showLoading(true);
+        
+        // Show local preview immediately while uploading
+        runOnUiThread(() -> {
+            imgAvatar.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                .load(imageUri)
+                .circleCrop()
+                .into(imgAvatar);
+        });
+        
         Log.d(TAG, "Starting 2-step upload process for user: " + firebaseUser.getUid());
         String fileName = getFileNameFromUri(imageUri);
         Log.d(TAG, "File name: " + fileName);
@@ -458,7 +473,17 @@ public class EditProfileActivity extends AppCompatActivity {
                             newAvatarUrl = publicUrl;
                             avatarChanged = true;
                             runOnUiThread(() -> {
-                                loadAvatarImage(publicUrl);
+                                // Reload from Supabase URL to confirm upload success
+                                imgAvatar.setVisibility(View.VISIBLE);
+                                
+                                // Force reload from network with cache busting
+                                Glide.with(EditProfileActivity.this)
+                                    .load(publicUrl)
+                                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                    .skipMemoryCache(true)
+                                    .circleCrop()
+                                    .into(imgAvatar);
+                                
                                 Toast.makeText(EditProfileActivity.this, 
                                     "Photo uploaded successfully", Toast.LENGTH_SHORT).show();
                             });
@@ -488,9 +513,10 @@ public class EditProfileActivity extends AppCompatActivity {
     private void removeProfilePhoto() {
         newAvatarUrl = null;
         avatarChanged = true;
-
-        tvAvatarLetter.setVisibility(View.VISIBLE);
-        imgAvatar.setVisibility(View.GONE);
+        
+        // Clear the image and show default background
+        imgAvatar.setImageDrawable(null);
+        imgAvatar.setVisibility(View.VISIBLE);
 
         Toast.makeText(this, "Photo will be removed when you save", Toast.LENGTH_SHORT).show();
     }

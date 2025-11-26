@@ -52,24 +52,12 @@
                     android:layout_height="120dp"
                     android:background="@drawable/acc_icon">
 
-                    <!-- Avatar Letter (fallback) -->
-                    <TextView
-                        android:id="@+id/tvAvatarLetter"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="A"
-                        android:textColor="@color/white"
-                        android:textSize="48sp"
-                        android:textStyle="bold" />
-
                     <!-- Avatar Image -->
                     <ImageView
                         android:id="@+id/imgAvatar"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
-                        android:visibility="gone"
                         android:contentDescription="Profile Avatar"
                         tools:src="@drawable/acc_icon" />
 
@@ -77,15 +65,15 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="#66000000" />
+                         />
 
-                    <ImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_camera"
-                        android:tint="@color/white"
-                        tools:ignore="UseAppTint" />
+<!--                    <ImageView-->
+<!--                        android:layout_width="40dp"-->
+<!--                        android:layout_height="40dp"-->
+<!--                        android:layout_gravity="center"-->
+<!--                        android:src="@drawable/ic_camera"-->
+<!--                        android:tint="@color/white"-->
+<!--                        tools:ignore="UseAppTint" />-->
 
                 </FrameLayout>
 

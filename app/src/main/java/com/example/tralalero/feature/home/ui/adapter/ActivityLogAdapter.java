@@ -210,6 +210,22 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 case "DELETED":
                     return userName + " deleted " + entityType.toLowerCase() + " \"" + entityName + "\"";
                 
+                case "REMOVED":
+                    if ("MEMBERSHIP".equals(entityType)) {
+                        if (isSelf) {
+                            return "You removed " + entityName + " from the project";
+                        } else {
+                            return userName + " removed " + entityName + " from the project";
+                        }
+                    }
+                    return userName + " removed " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                
+                case "ATTACHED":
+                    if ("ATTACHMENT".equals(entityType)) {
+                        return userName + " added an attachment";
+                    }
+                    return userName + " attached " + entityType.toLowerCase();
+                
                 case "COMMENTED":
                     return userName + " commented on \"" + entityName + "\"";
                 
