@@ -19,6 +19,11 @@ public class ActivityLog {
     
     // For ASSIGNED action - the person who received the task
     private String assigneeId;
+    
+    // Additional context from backend
+    private Object oldValue;
+    private Object newValue;
+    private Object metadata;
 
     public ActivityLog(String id, String userId, String action, String entityType, 
                       String entityName, String createdAt, String userName, String userAvatar) {
@@ -36,6 +41,15 @@ public class ActivityLog {
                       String entityName, String createdAt, String userName, String userAvatar, String assigneeId) {
         this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar);
         this.assigneeId = assigneeId;
+    }
+    
+    public ActivityLog(String id, String userId, String action, String entityType, 
+                      String entityName, String createdAt, String userName, String userAvatar, 
+                      String assigneeId, Object oldValue, Object newValue, Object metadata) {
+        this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar, assigneeId);
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+        this.metadata = metadata;
     }
 
     // Getters
@@ -73,6 +87,18 @@ public class ActivityLog {
     
     public String getAssigneeId() {
         return assigneeId;
+    }
+    
+    public Object getOldValue() {
+        return oldValue;
+    }
+    
+    public Object getNewValue() {
+        return newValue;
+    }
+    
+    public Object getMetadata() {
+        return metadata;
     }
 
     /**

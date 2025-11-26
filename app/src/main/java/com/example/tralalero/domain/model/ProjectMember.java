@@ -7,14 +7,16 @@ public class ProjectMember {
     private final String email;
     private final String avatarUrl;
     private final String role;
+    private final String firebaseUid;
 
-    public ProjectMember(String id, String userId, String name, String email, String avatarUrl, String role) {
+    public ProjectMember(String id, String userId, String name, String email, String avatarUrl, String role, String firebaseUid) {
         this.id = id;
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.avatarUrl = avatarUrl;
         this.role = role;
+        this.firebaseUid = firebaseUid;
     }
 
     public String getId() {
@@ -39,6 +41,10 @@ public class ProjectMember {
 
     public String getRole() {
         return role;
+    }
+    
+    public String getFirebaseUid() {
+        return firebaseUid;
     }
 
     public String getInitials() {

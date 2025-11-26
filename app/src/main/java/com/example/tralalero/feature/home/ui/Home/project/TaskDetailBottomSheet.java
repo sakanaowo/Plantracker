@@ -21,8 +21,11 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
 import com.example.tralalero.domain.model.ProjectMember;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.feature.home.ui.Home.task.CalendarSyncDialog;
@@ -30,10 +33,18 @@ import com.example.tralalero.feature.home.ui.Home.task.TaskCalendarSyncViewModel
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -265,7 +276,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         if (btnMembers != null) {
             btnMembers.setOnClickListener(v -> {
-                showAssignMemberDialog();
+                selfAssignTask();
             });
         }
         if (btnAddAttachment != null) {
@@ -388,30 +399,43 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         datePickerDialog.show();
     }
     
-    private void showAssignMemberDialog() {
-        if (projectId == null || projectId.isEmpty()) {
-            Toast.makeText(requireContext(), "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
+    /**
+     * Self-assign the task to current user (quick task - no role check needed)
+     */
+    private void selfAssignTask() {
         if (task == null || task.getId() == null) {
             Toast.makeText(requireContext(), "Cannot assign task: Invalid task", Toast.LENGTH_SHORT).show();
             return;
         }
         
-        // Use new multi-select AssignMemberBottomSheet
-        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, task.getId());
-        assignSheet.setOnAssigneesChangedListener(new AssignMemberBottomSheet.OnAssigneesChangedListener() {
+        // Get internal user ID from token manager
+        String internalUserId = App.tokenManager.getInternalUserId();
+        if (internalUserId == null || internalUserId.isEmpty()) {
+            Toast.makeText(requireContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        
+        // Prepare request body with internal user IDs array
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("userIds", Arrays.asList(internalUserId));
+        
+        taskApiService.assignUsers(task.getId(), body).enqueue(new Callback<Void>() {
             @Override
-            public void onAssigneesChanged() {
-                // Reload task details to show updated assignees
-                Toast.makeText(requireContext(), "Assignees updated", Toast.LENGTH_SHORT).show();
-                // TODO: Implement reload task details from API to update UI with new assignees
-                // This will be implemented when updating task cards to show multiple avatars
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(requireContext(), "Task assigned to you", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Failed to assign task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-        
-        assignSheet.show(getParentFragmentManager(), "assign_member");
     }
     
     /**

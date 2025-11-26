@@ -52,7 +52,10 @@ public class ActivityLogMapper {
             dto.getCreatedAt(),
             userName,
             userAvatar,
-            assigneeId
+            assigneeId,
+            dto.getOldValue(),
+            dto.getNewValue(),
+            dto.getMetadata()
         );
     }
 

@@ -21,7 +21,8 @@ public class ProjectMemberMapper {
                 user.getName(),
                 user.getEmail(),
                 user.getAvatarUrl(),
-                dto.getRole()
+                dto.getRole(),
+                user.getFirebaseUid()
         );
     }
 }

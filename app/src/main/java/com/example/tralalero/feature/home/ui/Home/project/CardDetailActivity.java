@@ -29,10 +29,16 @@ import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.ProjectApiService;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
+import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
+import com.example.tralalero.domain.model.ProjectMember;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import com.example.tralalero.data.remote.api.UserApiService;
 import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.feature.task.attachments.AttachmentUploader;
@@ -50,12 +56,19 @@ import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import androidx.annotation.NonNull;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CardDetailActivity extends AppCompatActivity {
     private static final String TAG = "CardDetailActivity";
@@ -640,7 +653,7 @@ public class CardDetailActivity extends AppCompatActivity {
             finish();
         });
         btnMembers.setOnClickListener(v -> {
-            showAssignTaskDialog();
+            checkRoleAndAssign();
         });
         ivAddChecklist.setOnClickListener(v -> {
             showAddChecklistDialog();
@@ -904,6 +917,83 @@ public class CardDetailActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Check user's role and either show AssignMemberBottomSheet (for owners)
+     * or directly self-assign (for non-owners)
+     */
+    private void checkRoleAndAssign() {
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get current user ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String currentUserId = currentUser.getUid();
+        
+        // Fetch project members to check current user's role
+        ProjectApiService projectApiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApiService.getProjectMembers(projectId).enqueue(new Callback<List<ProjectMemberDTO>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ProjectMemberDTO>> call, @NonNull Response<List<ProjectMemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String currentUserRole = null;
+                    String currentUserInternalId = null;
+                    
+                    android.util.Log.d("CardDetailActivity", "Current Firebase UID: " + currentUserId);
+                    android.util.Log.d("CardDetailActivity", "Members count: " + response.body().size());
+                    
+                    // Find current user's role and internal ID using Firebase UID
+                    for (ProjectMemberDTO dto : response.body()) {
+                        ProjectMember member = ProjectMemberMapper.toDomain(dto);
+                        if (member != null) {
+                            android.util.Log.d("CardDetailActivity", "Member: " + member.getName() + 
+                                ", FirebaseUid: " + member.getFirebaseUid() + 
+                                ", Role: " + member.getRole());
+                            
+                            if (member.getFirebaseUid() != null && member.getFirebaseUid().equals(currentUserId)) {
+                                currentUserRole = member.getRole();
+                                currentUserInternalId = member.getUserId();
+                                android.util.Log.d("CardDetailActivity", "✅ Found current user! Role: " + currentUserRole + ", Internal ID: " + currentUserInternalId);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (currentUserRole == null || currentUserInternalId == null) {
+                        android.util.Log.e("CardDetailActivity", "❌ Current user not found in members list!");
+                        Toast.makeText(CardDetailActivity.this, "You are not a member of this project", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    
+                    if ("OWNER".equals(currentUserRole)) {
+                        // Owner: Show member selection dialog
+                        showAssignTaskDialog();
+                    } else {
+                        // Non-owner: Self-assign directly using internal user ID
+                        selfAssignTask(currentUserInternalId);
+                    }
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to check permissions", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<List<ProjectMemberDTO>> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
     private void showAssignTaskDialog() {
         if (projectId == null || projectId.isEmpty()) {
             Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
@@ -931,25 +1021,39 @@ public class CardDetailActivity extends AppCompatActivity {
         assignSheet.show(getSupportFragmentManager(), "assign_member");
     }
 
-    private void selfAssignTask() {
-        if (taskId != null && !taskId.isEmpty()) {
-            // Use internal UUID for backend API (not Firebase UID)
-            String internalUserId = App.tokenManager.getInternalUserId();
-            
-            android.util.Log.d("CardDetailActivity", "Self-assign - TaskId: " + taskId);
-            android.util.Log.d("CardDetailActivity", "Internal UserId: " + internalUserId);
-
-            if (internalUserId != null && !internalUserId.isEmpty()) {
-                taskViewModel.assignTask(taskId, internalUserId);
-                Toast.makeText(this, "Task assigned to you", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Unable to get user ID. Please sign out and sign in again.", 
-                        Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "Task not yet created. Please save the task first.", 
-                    Toast.LENGTH_SHORT).show();
+    private void selfAssignTask(String internalUserId) {
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
         }
+        
+        if (internalUserId == null || internalUserId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid user ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        android.util.Log.d("CardDetailActivity", "Self-assigning task with internal user ID: " + internalUserId);
+        
+        // Call API to assign task using internal user ID
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("userIds", Arrays.asList(internalUserId));
+        
+        taskApiService.assignUsers(taskId, body).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(CardDetailActivity.this, "Task assigned to you", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to assign task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     /**
