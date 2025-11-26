@@ -743,7 +743,8 @@ public class CardDetailActivity extends AppCompatActivity {
                 isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
                 null,            // calendarEventId (backend will generate)
                 null,            // calendarSyncedAt (backend will set)
-                null             // labels
+                null,            // labels
+                null             // assignees
         );
         taskViewModel.createTask(newTask);
         Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show();
@@ -820,16 +821,15 @@ public class CardDetailActivity extends AppCompatActivity {
                 null,            // remainingEstimateSec
                 null,            // createdAt
                 null,            // updatedAt
-                // Calendar sync fields
-                isCalendarSyncEnabled,
-                isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
-                null,            // calendarEventId (preserve existing or backend will set)
-                null,            // calendarSyncedAt (backend will update)
-                null             // labels
-        );
-        taskViewModel.updateTask(taskId, updatedTask);
-        
-        // After updating task, sync calendar settings if task has due date
+            // Calendar sync fields
+            isCalendarSyncEnabled,
+            isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
+            null,            // calendarEventId (preserve existing or backend will set)
+            null,            // calendarSyncedAt (backend will update)
+            null,            // labels
+            null             // assignees
+    );
+    taskViewModel.updateTask(taskId, updatedTask);        // After updating task, sync calendar settings if task has due date
         if (isCalendarSyncEnabled && dueAt != null) {
             android.util.Log.d("CardDetailActivity", "📅 Syncing calendar: taskId=" + taskId + 
                 ", enabled=" + isCalendarSyncEnabled + ", reminder=" + (reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)));
@@ -892,7 +892,7 @@ public class CardDetailActivity extends AppCompatActivity {
                 assigneeId,
                 createdBy,
                 null, null, null, null, null, null, null, null, null, null,
-                false, null, null, null, null  // calendar sync + labels
+                false, null, null, null, null, null  // calendar sync + labels + assignees
             );
             taskViewModel.setSelectedTask(taskToDelete);
             taskViewModel.deleteTask(taskId);

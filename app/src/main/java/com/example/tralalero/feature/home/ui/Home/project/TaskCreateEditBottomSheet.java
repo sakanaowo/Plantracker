@@ -210,7 +210,8 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                     null, // calendarReminderMinutes - not editable here
                     null, // calendarEventId - not editable here
                     null, // calendarSyncedAt - not editable here
-                    null  // labels - not editable here
+                    null, // labels - not editable here
+                    null  // assignees - not editable here
                 );
 
                 if (listener != null) {
@@ -245,7 +246,8 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                 null, // calendarReminderMinutes
                 null, // calendarEventId
                 null, // calendarSyncedAt
-                null  // labels
+                null, // labels
+                null  // assignees
             );
 
             if (listener != null) {

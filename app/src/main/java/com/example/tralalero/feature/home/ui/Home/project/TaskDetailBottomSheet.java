@@ -217,7 +217,8 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             null,                                   // calendarReminderMinutes
             null,                                   // calendarEventId
             null,                                   // calendarSyncedAt
-            null                                    // labels
+            null,                                   // labels
+            null                                    // assignees
         );
         
         if (rbTaskTitle != null) {

@@ -40,6 +40,9 @@ public class Task {
     
     // Labels
     private final List<Label> labels;
+    
+    // Assignees
+    private final List<AssigneeInfo> assignees;
 
     public Task(String id, String projectId, String boardId, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
@@ -50,7 +53,7 @@ public class Task {
         this(id, projectId, boardId, title, description, issueKey, type, status, priority,
              position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
              storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
-             false, null, null, null, null);
+             false, null, null, null, null, null);
     }
     
     public Task(String id, String projectId, String boardId, String title, String description,
@@ -60,7 +63,8 @@ public class Task {
                 Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
                 Date createdAt, Date updatedAt,
                 boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
-                String calendarEventId, Date calendarSyncedAt, List<Label> labels) {
+                String calendarEventId, Date calendarSyncedAt, List<Label> labels, 
+                List<AssigneeInfo> assignees) {
         this.id = id;
         this.projectId = projectId;
         this.boardId = boardId;
@@ -88,6 +92,7 @@ public class Task {
         this.calendarEventId = calendarEventId;
         this.calendarSyncedAt = calendarSyncedAt;
         this.labels = labels;
+        this.assignees = assignees;
     }
 
     public String getId() {
@@ -264,6 +269,14 @@ public class Task {
     
     public boolean hasLabels() {
         return labels != null && !labels.isEmpty();
+    }
+    
+    public List<AssigneeInfo> getAssignees() {
+        return assignees;
+    }
+    
+    public boolean hasAssignees() {
+        return assignees != null && !assignees.isEmpty();
     }
 
     @Override

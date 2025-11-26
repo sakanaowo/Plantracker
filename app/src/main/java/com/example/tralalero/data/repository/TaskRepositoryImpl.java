@@ -68,6 +68,7 @@ public class TaskRepositoryImpl implements ITaskRepository {
             @Override
             public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("TaskRepository", "✅ Loaded " + response.body().size() + " tasks with labels & assignees");
                     callback.onSuccess(TaskMapper.toDomainList(response.body()));
                 } else {
                     callback.onError("Failed to fetch tasks: " + response.code());

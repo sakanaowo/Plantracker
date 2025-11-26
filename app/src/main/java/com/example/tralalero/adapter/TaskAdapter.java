@@ -1,5 +1,6 @@
 package com.example.tralalero.adapter;
 
+import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import com.example.tralalero.R;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.util.CrossBoardDragHelper;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     private static final String TAG = "TaskAdapter";
     private List<Task> taskList;
     private String boardId; // ✅ NEW: Track which board this adapter belongs to
+    private Context context;
     private OnTaskClickListener listener;
     private OnTaskMoveListener moveListener;
     private OnTaskStatusChangeListener statusChangeListener;
@@ -41,12 +44,20 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
 
     public TaskAdapter(List<Task> taskList) {
         this.taskList = taskList;
+        this.context = null;
     }
     
     // ✅ NEW: Constructor with boardId for cross-board drag
     public TaskAdapter(List<Task> taskList, String boardId) {
         this.taskList = taskList;
         this.boardId = boardId;
+        this.context = null;
+    }
+    
+    public TaskAdapter(List<Task> taskList, String boardId, Context context) {
+        this.taskList = taskList;
+        this.boardId = boardId;
+        this.context = context;
     }
 
     public void setOnTaskClickListener(OnTaskClickListener listener) {
@@ -74,7 +85,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         Task task = taskList.get(position);
         boolean isFirst = position == 0;
         boolean isLast = position == taskList.size() - 1;
-        holder.bind(task, boardId, listener, moveListener, statusChangeListener, isFirst, isLast);
+        holder.bind(task, boardId, context, listener, moveListener, statusChangeListener, isFirst, isLast);
     }
 
     @Override
@@ -121,6 +132,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         TextView tvTaskTitle;
         ImageButton btnMoveLeft;
         ImageButton btnMoveRight;
+        RecyclerView rvTaskLabels;
+        RecyclerView rvTaskAssignees;
+        TaskLabelAdapter labelAdapter;
+        TaskAssigneeAdapter assigneeAdapter;
 
         ViewHolder(View itemView) {
             super(itemView);
@@ -128,11 +143,51 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             tvTaskTitle = itemView.findViewById(R.id.tvTaskTitle);
             btnMoveLeft = itemView.findViewById(R.id.btnMoveLeft);
             btnMoveRight = itemView.findViewById(R.id.btnMoveRight);
+            rvTaskLabels = itemView.findViewById(R.id.rvTaskLabels);
+            rvTaskAssignees = itemView.findViewById(R.id.rvTaskAssignees);
+            
+            // Setup label adapter
+            labelAdapter = new TaskLabelAdapter();
+            rvTaskLabels.setAdapter(labelAdapter);
         }
 
-        void bind(Task task, String boardId, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
+        void bind(Task task, String boardId, Context context, OnTaskClickListener listener, OnTaskMoveListener moveListener, 
                   OnTaskStatusChangeListener statusChangeListener, boolean isFirst, boolean isLast) {
             tvTaskTitle.setText(task.getTitle());
+
+            // Setup labels
+            android.util.Log.d("TaskAdapter", "Task: " + task.getTitle() + ", hasLabels: " + task.hasLabels() + 
+                ", hasAssignees: " + task.hasAssignees());
+            if (task.hasLabels()) {
+                android.util.Log.d("TaskAdapter", "Labels count: " + task.getLabels().size());
+                rvTaskLabels.setVisibility(View.VISIBLE);
+                labelAdapter.setLabels(task.getLabels());
+            } else {
+                rvTaskLabels.setVisibility(View.GONE);
+            }
+            
+            // Setup assignees
+            if (task.hasAssignees() && context != null) {
+                android.util.Log.d("TaskAdapter", "Assignees count: " + task.getAssignees().size());
+                rvTaskAssignees.setVisibility(View.VISIBLE);
+                if (assigneeAdapter == null) {
+                    assigneeAdapter = new TaskAssigneeAdapter(context);
+                    rvTaskAssignees.setAdapter(assigneeAdapter);
+                }
+                // Convert AssigneeInfo to adapter's AssigneeInfo
+                List<TaskAssigneeAdapter.AssigneeInfo> assignees = new ArrayList<>();
+                for (com.example.tralalero.domain.model.AssigneeInfo assignee : task.getAssignees()) {
+                    android.util.Log.d("TaskAdapter", "Assignee: " + assignee.getName() + ", avatar: " + assignee.getAvatarUrl());
+                    assignees.add(new TaskAssigneeAdapter.AssigneeInfo(
+                        assignee.getId(),
+                        assignee.getName(),
+                        assignee.getAvatarUrl()
+                    ));
+                }
+                assigneeAdapter.setAssignees(assignees);
+            } else {
+                rvTaskAssignees.setVisibility(View.GONE);
+            }
 
             // ✅ FIX: Check actual task status (enum comparison)
             boolean isCompleted = task.getStatus() == Task.TaskStatus.DONE;

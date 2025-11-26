@@ -104,7 +104,8 @@ public class TaskEntityMapper {
             null,  // calendarReminderMinutes - not yet in entity
             null,  // calendarEventId - not yet in entity
             null,  // calendarSyncedAt - not yet in entity
-            null   // labels - not yet in entity
+            null,  // labels - not yet in entity
+            null   // assignees - not yet in entity
         );
     }
 

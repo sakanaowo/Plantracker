@@ -67,7 +67,7 @@ public class ApiClient {
                 .addInterceptor(logging)
                 .build();
 
-        // ✅ FIXED: Create Gson with proper configuration
+        // ✅ FIXED: Create Gson with proper configuration for nested objects
         Gson gson = new GsonBuilder()
                 .setLenient()
                 .serializeNulls()  // ✅ Include null fields in JSON

@@ -3,6 +3,7 @@ package com.example.tralalero.data.mapper;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.model.Label;
+import com.example.tralalero.domain.model.AssigneeInfo;
 import com.example.tralalero.domain.model.Task.TaskType;
 import com.example.tralalero.domain.model.Task.TaskStatus;
 import com.example.tralalero.domain.model.Task.TaskPriority;
@@ -29,6 +30,10 @@ public class TaskMapper {
             return null;
         }
         
+        android.util.Log.d("TaskMapper", "Converting task: " + dto.getTitle() + 
+            ", taskLabels field: " + dto.getTaskLabels() + 
+            ", taskAssignees field: " + dto.getTaskAssignees());
+        
         TaskType type = parseTaskType(dto.getType());
         TaskStatus status = parseTaskStatus(dto.getStatus());
         TaskPriority priority = parseTaskPriority(dto.getPriority());
@@ -49,14 +54,34 @@ public class TaskMapper {
         // Parse labels from task_labels nested structure
         List<Label> labels = new ArrayList<>();
         if (dto.getTaskLabels() != null) {
+            android.util.Log.d("TaskMapper", "Parsing labels, count: " + dto.getTaskLabels().size());
             for (TaskDTO.TaskLabelDTO taskLabel : dto.getTaskLabels()) {
                 if (taskLabel.getLabels() != null) {
                     TaskDTO.LabelDTO labelDto = taskLabel.getLabels();
+                    android.util.Log.d("TaskMapper", "Label: " + labelDto.getName() + ", color: " + labelDto.getColor());
                     labels.add(new Label(
                         labelDto.getId(),
                         dto.getProjectId(), // projectId
                         labelDto.getName(),
                         labelDto.getColor()
+                    ));
+                }
+            }
+        }
+        
+        // Parse assignees from task_assignees nested structure
+        List<AssigneeInfo> assignees = new ArrayList<>();
+        if (dto.getTaskAssignees() != null) {
+            android.util.Log.d("TaskMapper", "Parsing assignees, count: " + dto.getTaskAssignees().size());
+            for (TaskDTO.TaskAssigneeDTO taskAssignee : dto.getTaskAssignees()) {
+                if (taskAssignee.getUsers() != null) {
+                    TaskDTO.UserDTO userDto = taskAssignee.getUsers();
+                    android.util.Log.d("TaskMapper", "Assignee: " + userDto.getName() + ", avatar: " + userDto.getAvatarUrl());
+                    assignees.add(new AssigneeInfo(
+                        userDto.getId(),
+                        userDto.getName(),
+                        userDto.getEmail(),
+                        userDto.getAvatarUrl()
                     ));
                 }
             }
@@ -91,7 +116,9 @@ public class TaskMapper {
             dto.getCalendarEventId(),
             calendarSyncedAt,
             // Labels
-            labels
+            labels,
+            // Assignees
+            assignees
         );
     }
     

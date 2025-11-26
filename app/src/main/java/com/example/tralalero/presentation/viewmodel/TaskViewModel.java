@@ -457,12 +457,10 @@ public class TaskViewModel extends ViewModel {
             null,            // storyPoints
             null,            // originalEstimateSec
             null,            // remainingEstimateSec
-            now,             // createdAt
-            now,             // updatedAt
-            false, null, null, null, null  // calendar sync + labels
-        );
-        
-        // Add to inbox immediately
+        now,             // createdAt
+        now,             // updatedAt
+        false, null, null, null, null, null  // calendar sync + labels + assignees
+    );        // Add to inbox immediately
         List<Task> currentInbox = inboxTasksLiveData.getValue();
         if (currentInbox != null) {
             List<Task> updated = new ArrayList<>(currentInbox);
@@ -641,7 +639,8 @@ public class TaskViewModel extends ViewModel {
             originalTask.getCalendarReminderMinutes(),
             originalTask.getCalendarEventId(),
             originalTask.getCalendarSyncedAt(),
-            originalTask.getLabels()  // preserve labels
+            originalTask.getLabels(),  // preserve labels
+            originalTask.getAssignees()  // preserve assignees
         );
         
         android.util.Log.d(TAG, "Calling updateTask API with new status=" + newStatus);
@@ -747,17 +746,16 @@ public class TaskViewModel extends ViewModel {
             task.getRemainingEstimateSec(),
             task.getCreatedAt(),
             task.getUpdatedAt(),
-            task.isCalendarSyncEnabled(),
-            task.getCalendarReminderMinutes(),
-            task.getCalendarEventId(),
-            task.getCalendarSyncedAt(),
-            task.getLabels()  // preserve labels
-        );
-        
-        // Update in all relevant LiveData
-        updateTaskInAllLists(task, t -> updatedTask);
-        
-        // Update selected task if it's the same
+        task.isCalendarSyncEnabled(),
+        task.getCalendarReminderMinutes(),
+        task.getCalendarEventId(),
+        task.getCalendarSyncedAt(),
+        task.getLabels(),  // preserve labels
+        task.getAssignees()  // preserve assignees
+    );
+    
+    // Update in all relevant LiveData
+    updateTaskInAllLists(task, t -> updatedTask);        // Update selected task if it's the same
         if (selectedTaskLiveData.getValue() != null && 
             selectedTaskLiveData.getValue().getId().equals(task.getId())) {
             selectedTaskLiveData.setValue(updatedTask);
@@ -1064,16 +1062,15 @@ public class TaskViewModel extends ViewModel {
             originalTask.getRemainingEstimateSec(),
             originalTask.getCreatedAt(),
             originalTask.getUpdatedAt(),
-            originalTask.isCalendarSyncEnabled(),
-            originalTask.getCalendarReminderMinutes(),
-            originalTask.getCalendarEventId(),
-            originalTask.getCalendarSyncedAt(),
-            originalTask.getLabels()  // preserve labels
-        );
-        
-        // ✅ Optimistic update: Remove from source, add to target immediately
-        
-        // Remove from source board
+        originalTask.isCalendarSyncEnabled(),
+        originalTask.getCalendarReminderMinutes(),
+        originalTask.getCalendarEventId(),
+        originalTask.getCalendarSyncedAt(),
+        originalTask.getLabels(),  // preserve labels
+        originalTask.getAssignees()  // preserve assignees
+    );
+    
+    // ✅ Optimistic update: Remove from source, add to target immediately        // Remove from source board
         if (originalBoardId != null && !originalBoardId.isEmpty()) {
             MutableLiveData<List<Task>> sourceTasks = tasksPerBoardMap.get(originalBoardId);
             if (sourceTasks != null && sourceTasks.getValue() != null) {
