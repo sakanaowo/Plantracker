@@ -21,8 +21,11 @@ import com.example.tralalero.R;
 import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
 import com.example.tralalero.domain.model.ProjectMember;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.feature.home.ui.Home.task.CalendarSyncDialog;
@@ -30,10 +33,18 @@ import com.example.tralalero.feature.home.ui.Home.task.TaskCalendarSyncViewModel
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -44,7 +55,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_TASK_DESCRIPTION = "task_description";
     private static final String ARG_TASK_PRIORITY = "task_priority";
     private static final String ARG_TASK_STATUS = "task_status";
-    private static final String ARG_TASK_START_DATE = "task_start_date";
     private static final String ARG_TASK_DUE_DATE = "task_due_date";
     private static final String ARG_IS_EDIT_MODE = "is_edit_mode";
     private static final String ARG_PROJECT_ID = "project_id";
@@ -57,7 +67,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private ImageView ivClose;
     private RadioButton rbTaskTitle;
     private EditText etDescription;
-    private EditText etDateStart;
     private EditText etDueDate;
     private MaterialButton btnMembers;
     private MaterialButton btnAddAttachment;
@@ -75,7 +84,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private CommentAdapter commentAdapter;
     private AttachmentAdapter attachmentAdapter;
     
-    private Date selectedStartDate;
     private Date selectedDueDate;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     
@@ -89,7 +97,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         void onMoveTask(Task task);
         void onAddComment(Task task);
         void onDeleteTask(Task task);
-        void onUpdateStartDate(Task task, Date startDate);
         void onUpdateDueDate(Task task, Date dueDate);
         void onUpdateTask(Task task, String newTitle, String newDescription); // ✅ NEW: Save title & description
     }
@@ -109,10 +116,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         args.putString(ARG_PROJECT_ID, task.getProjectId());
         args.putString(ARG_ASSIGNEE_ID, task.getAssigneeId());
         
-        // Store dates as timestamps
-        if (task.getStartAt() != null) {
-            args.putLong(ARG_TASK_START_DATE, task.getStartAt().getTime());
-        }
+        // Store due date as timestamp
         if (task.getDueAt() != null) {
             args.putLong(ARG_TASK_DUE_DATE, task.getDueAt().getTime());
         }
@@ -140,7 +144,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private void initViews(View view) {
         ivClose = view.findViewById(R.id.ivClose);
         etDescription = view.findViewById(R.id.etDescription);
-        etDateStart = view.findViewById(R.id.etDateStart);
         etDueDate = view.findViewById(R.id.etDueDate);
         btnMembers = view.findViewById(R.id.btnMembers);
         btnDeleteTask = view.findViewById(R.id.btnDeleteTask);
@@ -148,11 +151,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         etDescription.setEnabled(false);
         
-        // Enable date fields for editing
-        etDateStart.setEnabled(true);
-        etDateStart.setFocusable(false);
-        etDateStart.setClickable(true);
-        
+        // Enable date field for editing
         etDueDate.setEnabled(true);
         etDueDate.setFocusable(false);
         etDueDate.setClickable(true);
@@ -178,12 +177,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             }
         }
         
-        // Load start date from timestamp
-        long startDateTimestamp = args.getLong(ARG_TASK_START_DATE, -1);
-        if (startDateTimestamp != -1) {
-            selectedStartDate = new Date(startDateTimestamp);
-        }
-        
         // Load due date from timestamp
         long dueDateTimestamp = args.getLong(ARG_TASK_DUE_DATE, -1);
         if (dueDateTimestamp != -1) {
@@ -206,7 +199,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             null,                                   // sprintId
             null,                                   // epicId
             null,                                   // parentTaskId
-            selectedStartDate,                      // startAt
+            new Date(),                             // startAt - auto-set to current time
             selectedDueDate,                        // dueAt
             null,                                   // storyPoints
             null,                                   // originalEstimateSec
@@ -230,15 +223,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             etDescription.setText(args.getString(ARG_TASK_DESCRIPTION, "No description"));
         }
         
-        // Display start date
-        if (etDateStart != null) {
-            if (selectedStartDate != null) {
-                etDateStart.setText(dateFormat.format(selectedStartDate));
-            } else {
-                etDateStart.setHint("Select start date");
-            }
-        }
-        
         // Display due date
         if (etDueDate != null) {
             if (selectedDueDate != null) {
@@ -254,11 +238,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             ivClose.setOnClickListener(v -> dismiss());
         }
         
-        // Setup start date picker
-        if (etDateStart != null) {
-            etDateStart.setOnClickListener(v -> showStartDatePicker());
-        }
-        
         // Setup due date picker
         if (etDueDate != null) {
             etDueDate.setOnClickListener(v -> showDueDatePicker());
@@ -266,7 +245,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         if (btnMembers != null) {
             btnMembers.setOnClickListener(v -> {
-                showAssignMemberDialog();
+                selfAssignTask();
             });
         }
         if (btnAddAttachment != null) {
@@ -317,42 +296,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         }
     }
     
-    private void showStartDatePicker() {
-        Calendar calendar = Calendar.getInstance();
-        
-        if (selectedStartDate != null) {
-            calendar.setTime(selectedStartDate);
-        }
-        
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-        
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-            requireContext(),
-            (view, selectedYear, selectedMonth, selectedDay) -> {
-                Calendar newDate = Calendar.getInstance();
-                newDate.set(selectedYear, selectedMonth, selectedDay, 0, 0, 0);
-                newDate.set(Calendar.MILLISECOND, 0);
-                
-                selectedStartDate = newDate.getTime();
-                etDateStart.setText(dateFormat.format(selectedStartDate));
-                
-                if (listener != null && task != null) {
-                    listener.onUpdateStartDate(task, selectedStartDate);
-                }
-                
-                Toast.makeText(requireContext(), 
-                    "Start date: " + dateFormat.format(selectedStartDate), 
-                    Toast.LENGTH_SHORT).show();
-            },
-            year, month, day
-        );
-        
-        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
-        datePickerDialog.show();
-    }
-    
     private void showDueDatePicker() {
         Calendar calendar = Calendar.getInstance();
         
@@ -389,30 +332,43 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         datePickerDialog.show();
     }
     
-    private void showAssignMemberDialog() {
-        if (projectId == null || projectId.isEmpty()) {
-            Toast.makeText(requireContext(), "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
+    /**
+     * Self-assign the task to current user (quick task - no role check needed)
+     */
+    private void selfAssignTask() {
         if (task == null || task.getId() == null) {
             Toast.makeText(requireContext(), "Cannot assign task: Invalid task", Toast.LENGTH_SHORT).show();
             return;
         }
         
-        // Use new multi-select AssignMemberBottomSheet
-        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, task.getId());
-        assignSheet.setOnAssigneesChangedListener(new AssignMemberBottomSheet.OnAssigneesChangedListener() {
+        // Get internal user ID from token manager
+        String internalUserId = App.tokenManager.getInternalUserId();
+        if (internalUserId == null || internalUserId.isEmpty()) {
+            Toast.makeText(requireContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        
+        // Prepare request body with internal user IDs array
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("userIds", Arrays.asList(internalUserId));
+        
+        taskApiService.assignUsers(task.getId(), body).enqueue(new Callback<Void>() {
             @Override
-            public void onAssigneesChanged() {
-                // Reload task details to show updated assignees
-                Toast.makeText(requireContext(), "Assignees updated", Toast.LENGTH_SHORT).show();
-                // TODO: Implement reload task details from API to update UI with new assignees
-                // This will be implemented when updating task cards to show multiple avatars
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(requireContext(), "Task assigned to you", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Failed to assign task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-        
-        assignSheet.show(getParentFragmentManager(), "assign_member");
     }
     
     /**
@@ -527,20 +483,6 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         // Update description
         if (etDescription != null && taskDTO.getDescription() != null) {
             etDescription.setText(taskDTO.getDescription());
-        }
-        
-        // Update start date - parse from ISO string to Date
-        if (etDateStart != null && taskDTO.getStartAt() != null) {
-            try {
-                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-                selectedStartDate = isoFormat.parse(taskDTO.getStartAt());
-                if (selectedStartDate != null) {
-                    etDateStart.setText(dateFormat.format(selectedStartDate));
-                }
-            } catch (Exception e) {
-                Log.e("TaskDetailBottomSheet", "Error parsing start date", e);
-            }
         }
         
         // Update due date - parse from ISO string to Date

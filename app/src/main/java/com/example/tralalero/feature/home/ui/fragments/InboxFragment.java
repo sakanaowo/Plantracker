@@ -133,10 +133,13 @@ public class InboxFragment extends Fragment {
             }
             
             @Override
-            public void onTaskCompleted(Task task) {
+            public void onTaskCheckboxClick(Task task, String currentBoardType) {
+                // Inbox doesn't have board types, just complete task
                 handleTaskCompleted(task);
             }
         });
+        // Set board type as "Inbox" for checkbox logic
+        taskAdapter.setCurrentBoardType("Inbox");
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(taskAdapter);
     }
@@ -245,10 +248,6 @@ public class InboxFragment extends Fragment {
             @Override
             public void onDeleteTask(Task task) {
                 taskViewModel.deleteTask(task.getId());
-            }
-            @Override
-            public void onUpdateStartDate(Task task, java.util.Date startDate) {
-                // Handle start date
             }
             @Override
             public void onUpdateDueDate(Task task, java.util.Date dueDate) {

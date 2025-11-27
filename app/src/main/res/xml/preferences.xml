@@ -4,8 +4,6 @@
 
         <ListPreference android:key="language" android:title="Language" android:summary="Change app language" android:entries="@array/lang_names" android:entryValues="@array/lang_values" android:defaultValue="en" />
 
-        <SwitchPreferenceCompat android:key="theme" android:title="Dark Mode" android:summary="Change theme into dark" android:defaultValue="false" />
-
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Integrations" android:key="category_integrations">

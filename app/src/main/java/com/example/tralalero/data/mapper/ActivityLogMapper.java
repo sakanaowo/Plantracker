@@ -26,7 +26,7 @@ public class ActivityLogMapper {
             userName = dto.getUsers().getName() != null ? dto.getUsers().getName() : "Unknown User";
             userAvatar = dto.getUsers().getAvatarUrl();
         }
-        
+
         // Extract assigneeId from newValue for ASSIGNED action
         String assigneeId = null;
         if ("ASSIGNED".equals(dto.getAction()) && dto.getNewValue() != null) {
@@ -42,7 +42,7 @@ public class ActivityLogMapper {
                 // Ignore parsing errors
             }
         }
-        
+
         // Extract invitedBy from metadata for ADDED MEMBERSHIP action (invitation accepted)
         String invitedBy = null;
         if ("ADDED".equals(dto.getAction()) && "MEMBERSHIP".equals(dto.getEntityType()) && dto.getMetadata() != null) {
@@ -69,7 +69,9 @@ public class ActivityLogMapper {
             userName,
             userAvatar,
             assigneeId,
-            invitedBy
+            dto.getOldValue(),
+            dto.getNewValue(),
+            dto.getMetadata()
         );
     }
 

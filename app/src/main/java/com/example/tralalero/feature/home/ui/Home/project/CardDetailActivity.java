@@ -29,10 +29,16 @@ import com.example.tralalero.adapter.AttachmentAdapter;
 import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.ProjectApiService;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
+import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
+import com.example.tralalero.domain.model.ProjectMember;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import com.example.tralalero.data.remote.api.UserApiService;
 import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.feature.task.attachments.AttachmentUploader;
@@ -50,12 +56,19 @@ import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import androidx.annotation.NonNull;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CardDetailActivity extends AppCompatActivity {
     private static final String TAG = "CardDetailActivity";
@@ -88,7 +101,6 @@ public class CardDetailActivity extends AppCompatActivity {
     private MaterialButton btnDeleteTask;
     private MaterialButton btnConfirm;
     private EditText etDescription;
-    private EditText etDateStart;
     private EditText etDueDate;
     private MaterialButton btnLowPriority;
     private MaterialButton btnMediumPriority;
@@ -196,7 +208,6 @@ public class CardDetailActivity extends AppCompatActivity {
         btnDeleteTask = findViewById(R.id.btnDeleteTask);
         btnConfirm = findViewById(R.id.btnConfirm);
         etDescription = findViewById(R.id.etDescription);
-        etDateStart = findViewById(R.id.etDateStart);
         etDueDate = findViewById(R.id.etDueDate);
         
         // RecyclerViews
@@ -458,10 +469,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 }
                 
                 SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
-                if (task.getStartAt() != null) {
-                    etDateStart.setText(displayFormat.format(task.getStartAt()));
-                    android.util.Log.d(TAG, "  ✅ Start date populated: " + displayFormat.format(task.getStartAt()));
-                }
                 if (task.getDueAt() != null) {
                     etDueDate.setText(displayFormat.format(task.getDueAt()));
                     android.util.Log.d(TAG, "  ✅ Due date populated: " + displayFormat.format(task.getDueAt()));
@@ -640,7 +647,7 @@ public class CardDetailActivity extends AppCompatActivity {
             finish();
         });
         btnMembers.setOnClickListener(v -> {
-            showAssignTaskDialog();
+            checkRoleAndAssign();
         });
         ivAddChecklist.setOnClickListener(v -> {
             showAddChecklistDialog();
@@ -673,7 +680,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 createTask();
             }
         });
-        etDateStart.setOnClickListener(v -> showDatePickerDialog(true));
         etDueDate.setOnClickListener(v -> showDatePickerDialog(false));
         
     }
@@ -690,7 +696,7 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // ✅ Parse dates from EditTexts with time to avoid timezone issues
         Date dueAt = null;
-        Date startAt = null;
+        Date startAt = new Date(); // Auto-set start date to current time
         SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
         
         String dueDateStr = etDueDate.getText().toString().trim();
@@ -701,17 +707,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 dueAt = displayFormat.parse(dateTimeStr);
             } catch (Exception e) {
                 android.util.Log.e(TAG, "Error parsing due date: " + dueDateStr, e);
-            }
-        }
-        
-        String startDateStr = etDateStart.getText().toString().trim();
-        if (!TextUtils.isEmpty(startDateStr)) {
-            try {
-                // Append default time (09:00) if no time specified
-                String dateTimeStr = startDateStr.contains(" ") ? startDateStr : startDateStr + " 09:00";
-                startAt = displayFormat.parse(dateTimeStr);
-            } catch (Exception e) {
-                android.util.Log.e(TAG, "Error parsing start date: " + startDateStr, e);
             }
         }
         
@@ -773,7 +768,7 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // ✅ Parse dates from EditTexts with time to avoid timezone issues
         Date dueAt = null;
-        Date startAt = null;
+        Date startAt = new Date(); // Auto-set start date to current time
         SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
         
         String dueDateStr = etDueDate.getText().toString().trim();
@@ -784,17 +779,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 dueAt = displayFormat.parse(dateTimeStr);
             } catch (Exception e) {
                 android.util.Log.e(TAG, "Error parsing due date: " + dueDateStr, e);
-            }
-        }
-        
-        String startDateStr = etDateStart.getText().toString().trim();
-        if (!TextUtils.isEmpty(startDateStr)) {
-            try {
-                // Append default time (09:00) if no time specified
-                String dateTimeStr = startDateStr.contains(" ") ? startDateStr : startDateStr + " 09:00";
-                startAt = displayFormat.parse(dateTimeStr);
-            } catch (Exception e) {
-                android.util.Log.e(TAG, "Error parsing start date: " + startDateStr, e);
             }
         }
         
@@ -904,6 +888,83 @@ public class CardDetailActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Check user's role and either show AssignMemberBottomSheet (for owners)
+     * or directly self-assign (for non-owners)
+     */
+    private void checkRoleAndAssign() {
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get current user ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String currentUserId = currentUser.getUid();
+        
+        // Fetch project members to check current user's role
+        ProjectApiService projectApiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApiService.getProjectMembers(projectId).enqueue(new Callback<List<ProjectMemberDTO>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ProjectMemberDTO>> call, @NonNull Response<List<ProjectMemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String currentUserRole = null;
+                    String currentUserInternalId = null;
+                    
+                    android.util.Log.d("CardDetailActivity", "Current Firebase UID: " + currentUserId);
+                    android.util.Log.d("CardDetailActivity", "Members count: " + response.body().size());
+                    
+                    // Find current user's role and internal ID using Firebase UID
+                    for (ProjectMemberDTO dto : response.body()) {
+                        ProjectMember member = ProjectMemberMapper.toDomain(dto);
+                        if (member != null) {
+                            android.util.Log.d("CardDetailActivity", "Member: " + member.getName() + 
+                                ", FirebaseUid: " + member.getFirebaseUid() + 
+                                ", Role: " + member.getRole());
+                            
+                            if (member.getFirebaseUid() != null && member.getFirebaseUid().equals(currentUserId)) {
+                                currentUserRole = member.getRole();
+                                currentUserInternalId = member.getUserId();
+                                android.util.Log.d("CardDetailActivity", "✅ Found current user! Role: " + currentUserRole + ", Internal ID: " + currentUserInternalId);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (currentUserRole == null || currentUserInternalId == null) {
+                        android.util.Log.e("CardDetailActivity", "❌ Current user not found in members list!");
+                        Toast.makeText(CardDetailActivity.this, "You are not a member of this project", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    
+                    if ("OWNER".equals(currentUserRole)) {
+                        // Owner: Show member selection dialog
+                        showAssignTaskDialog();
+                    } else {
+                        // Non-owner: Self-assign directly using internal user ID
+                        selfAssignTask(currentUserInternalId);
+                    }
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to check permissions", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<List<ProjectMemberDTO>> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
     private void showAssignTaskDialog() {
         if (projectId == null || projectId.isEmpty()) {
             Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
@@ -931,25 +992,39 @@ public class CardDetailActivity extends AppCompatActivity {
         assignSheet.show(getSupportFragmentManager(), "assign_member");
     }
 
-    private void selfAssignTask() {
-        if (taskId != null && !taskId.isEmpty()) {
-            // Use internal UUID for backend API (not Firebase UID)
-            String internalUserId = App.tokenManager.getInternalUserId();
-            
-            android.util.Log.d("CardDetailActivity", "Self-assign - TaskId: " + taskId);
-            android.util.Log.d("CardDetailActivity", "Internal UserId: " + internalUserId);
-
-            if (internalUserId != null && !internalUserId.isEmpty()) {
-                taskViewModel.assignTask(taskId, internalUserId);
-                Toast.makeText(this, "Task assigned to you", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Unable to get user ID. Please sign out and sign in again.", 
-                        Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "Task not yet created. Please save the task first.", 
-                    Toast.LENGTH_SHORT).show();
+    private void selfAssignTask(String internalUserId) {
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
         }
+        
+        if (internalUserId == null || internalUserId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid user ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        android.util.Log.d("CardDetailActivity", "Self-assigning task with internal user ID: " + internalUserId);
+        
+        // Call API to assign task using internal user ID
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("userIds", Arrays.asList(internalUserId));
+        
+        taskApiService.assignUsers(taskId, body).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(CardDetailActivity.this, "Task assigned to you", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to assign task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     /**
@@ -1379,8 +1454,8 @@ public class CardDetailActivity extends AppCompatActivity {
         android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog(
                 this,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // After date selected, show time picker
-                    showTimePickerDialog(isStartDate, selectedYear, selectedMonth, selectedDay);
+                    // After date selected, show time picker (only for due date now)
+                    showTimePickerDialog(false, selectedYear, selectedMonth, selectedDay);
                 },
                 year, month, day
         );
@@ -1389,10 +1464,10 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     /**
-     * Show time picker after date selection
+     * Show time picker after date selection (due date only)
      */
     private void showTimePickerDialog(boolean isStartDate, int year, int month, int day) {
-        int defaultHour = isStartDate ? 9 : 17; // Default: 9 AM for start, 5 PM for due
+        int defaultHour = 17; // Default: 5 PM for due date
         int defaultMinute = 0;
         
         android.app.TimePickerDialog timePickerDialog = new android.app.TimePickerDialog(
@@ -1401,13 +1476,9 @@ public class CardDetailActivity extends AppCompatActivity {
                     // Format: dd/MM/yyyy HH:mm
                     String date = String.format(Locale.getDefault(), 
                             "%02d/%02d/%d %02d:%02d", day, month + 1, year, selectedHour, selectedMinute);
-                    if (isStartDate) {
-                        etDateStart.setText(date);
-                    } else {
-                        etDueDate.setText(date);
-                        // ✅ Check calendar sync availability when due date changes
-                        updateCalendarSyncAvailability();
-                    }
+                    etDueDate.setText(date);
+                    // ✅ Check calendar sync availability when due date changes
+                    updateCalendarSyncAvailability();
                 },
                 defaultHour, defaultMinute, true // 24-hour format
         );
@@ -1925,13 +1996,26 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // Get progress views
+        View layoutCardUploadProgress = findViewById(R.id.layoutCardUploadProgress);
+        TextView tvCardUploadProgress = findViewById(R.id.tvCardUploadProgress);
+        android.widget.ProgressBar progressBarCardUpload = findViewById(R.id.progressBarCardUpload);
+        
+        // Show progress UI
+        if (layoutCardUploadProgress != null) {
+            layoutCardUploadProgress.setVisibility(View.VISIBLE);
+            progressBarCardUpload.setProgress(0);
+        }
+        
         attachmentUploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
             @Override
             public void onProgress(int percent) {
                 android.util.Log.d("CardDetail", "Upload progress: " + percent + "%");
                 runOnUiThread(() -> {
-                    // TODO: Show progress bar UI
-                    // For now just log progress
+                    if (progressBarCardUpload != null) {
+                        progressBarCardUpload.setProgress(percent);
+                        tvCardUploadProgress.setText("Uploading... " + percent + "%");
+                    }
                 });
             }
 
@@ -1939,6 +2023,12 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
                 android.util.Log.d("CardDetail", "Upload success! File: " + attachmentDTO.fileName);
                 runOnUiThread(() -> {
+                    // Hide progress UI
+                    if (layoutCardUploadProgress != null) {
+                        layoutCardUploadProgress.setVisibility(View.GONE);
+                        progressBarCardUpload.setProgress(0);
+                    }
+                    
                     // ✅ Just reload attachments from server (which has full data including URL)
                     // Don't manually add attachment as attachmentDTO from upload doesn't have URL
                     loadTaskAttachments(); // Reload to refresh UI with complete data from backend
@@ -1953,6 +2043,12 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onError(String error) {
                 android.util.Log.e("CardDetail", "Upload error: " + error);
                 runOnUiThread(() -> {
+                    // Hide progress UI
+                    if (layoutCardUploadProgress != null) {
+                        layoutCardUploadProgress.setVisibility(View.GONE);
+                        progressBarCardUpload.setProgress(0);
+                    }
+                    
                     Toast.makeText(CardDetailActivity.this, 
                         "Upload failed: " + error, 
                         Toast.LENGTH_LONG).show();

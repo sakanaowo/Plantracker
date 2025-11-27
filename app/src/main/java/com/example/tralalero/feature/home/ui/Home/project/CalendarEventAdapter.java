@@ -60,6 +60,7 @@ public class CalendarEventAdapter extends RecyclerView.Adapter<CalendarEventAdap
         private final TextView tvEventTime;
         private final TextView tvEventType;
         private final ImageView ivSyncStatus;
+        private final View viewColorIndicator;
         
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -68,10 +69,13 @@ public class CalendarEventAdapter extends RecyclerView.Adapter<CalendarEventAdap
             tvEventTime = itemView.findViewById(R.id.tvEventTime);
             tvEventType = itemView.findViewById(R.id.tvEventType);
             ivSyncStatus = itemView.findViewById(R.id.ivSyncStatus);
+            viewColorIndicator = itemView.findViewById(R.id.viewColorIndicator);
         }
         
         public void bind(CalendarEvent event, OnEventClickListener listener) {
-            tvEventTitle.setText(event.getTitle() != null ? event.getTitle() : "Event");
+            // Use clean title for tasks (remove "⏰ Nhắc nhở:" prefix)
+            String displayTitle = event.isTask() ? event.getCleanTitle() : event.getTitle();
+            tvEventTitle.setText(displayTitle != null ? displayTitle : "Item");
             
             // Format time from startAt
             if (event.getStartAt() != null && !event.getStartAt().isEmpty()) {
@@ -86,29 +90,39 @@ public class CalendarEventAdapter extends RecyclerView.Adapter<CalendarEventAdap
                 tvEventTime.setText("--:--");
             }
             
-            // Set event type based on description or location
-            String typeText = "• Event";
-            if (event.getDescription() != null && event.getDescription().contains("meeting")) {
-                typeText = "• Meeting";
-            } else if (event.getDescription() != null && event.getDescription().contains("deadline")) {
-                typeText = "• Deadline";
-            }
-            tvEventType.setText(typeText);
+            // Set type and color based on eventType
+            String typeText;
+            int iconRes;
+            int colorRes;
             
-            // Set icon and color
-            int iconRes = R.drawable.ic_info;
-            int colorRes = 0xFF2196F3; // Blue
-            
-            if (typeText.contains("Deadline")) {
+            if (event.isTask()) {
+                // 🟠 TASK - Orange color (this is a task reminder, not an event)
+                typeText = "🟠 Task Reminder";
                 iconRes = R.drawable.square_ic;
-                colorRes = 0xFFFF5722; // Red
-            } else if (typeText.contains("Meeting")) {
-                iconRes = R.drawable.ic_people;
-                colorRes = 0xFF2196F3; // Blue
+                colorRes = 0xFFFF9800; // Orange for tasks
+            } else {
+                // 🟢 EVENT - Green color (real calendar events)
+                typeText = "🟢 Event";
+                iconRes = R.drawable.ic_google_calendar;
+                colorRes = 0xFF4CAF50; // Green
+                
+                // Customize based on event type
+                if ("MEETING".equals(event.getEventType())) {
+                    typeText = "🟢 Meeting";
+                    iconRes = R.drawable.ic_people;
+                } else if ("DEADLINE".equals(event.getEventType())) {
+                    typeText = "🟢 Deadline";
+                }
             }
             
+            tvEventType.setText(typeText);
             ivEventTypeIcon.setImageResource(iconRes);
             ivEventTypeIcon.setColorFilter(colorRes);
+            
+            // Set color indicator if view exists
+            if (viewColorIndicator != null) {
+                viewColorIndicator.setBackgroundColor(colorRes);
+            }
             
             // Show/hide sync status based on googleEventId
             ivSyncStatus.setVisibility(event.getGoogleEventId() != null ? View.VISIBLE : View.GONE);

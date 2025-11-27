@@ -141,6 +141,19 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             }
         }
         
+        private String getMetadataValue(Object metadata, String key) {
+            try {
+                if (metadata instanceof java.util.Map) {
+                    java.util.Map<String, Object> metadataMap = (java.util.Map<String, Object>) metadata;
+                    Object value = metadataMap.get(key);
+                    return value != null ? value.toString() : null;
+                }
+            } catch (Exception e) {
+                // Ignore parsing errors
+            }
+            return null;
+        }
+
         private String formatActivityMessage(ActivityLog log) {
             boolean isSelf = currentUserId != null && currentUserId.equals(log.getUserId());
             String userName = isSelf ? "You" : log.getUserName();
@@ -163,20 +176,38 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 
                 case "ADDED":
                     if ("MEMBERSHIP".equals(entityType)) {
-                        // Backend creates this log when user ACCEPTS invitation
-                        // userId is the person who accepted (person who joined)
-                        // invitedBy is the person who sent the invitation
-                        String invitedBy = log.getInvitedBy();
-                        
-                        if (isSelf) {
-                            // Current user joined the project
-                            return "You joined the project";
-                        } else if (currentUserId != null && currentUserId.equals(invitedBy)) {
-                            // Current user is the person who invited
-                            return entityName + " accepted your invitation and joined the project";
+                        // entityName is the invited person's name
+                        // Try to get invitation type from metadata and project name from newValue
+                        String invitationType = getMetadataValue(log.getMetadata(), "type");
+                        String projectName = null;
+
+                        // Try to get project name from newValue
+                        try {
+                            if (log.getNewValue() instanceof java.util.Map) {
+                                java.util.Map<String, Object> newVal = (java.util.Map<String, Object>) log.getNewValue();
+                                Object pName = newVal.get("projectName");
+                                if (pName != null) projectName = pName.toString();
+                            }
+                        } catch (Exception e) {
+                            // Ignore parsing errors
+                        }
+
+                        String projectContext = projectName != null ? " project \"" + projectName + "\"" : " a project";
+
+                        if ("INVITATION_ACCEPTED".equals(invitationType)) {
+                            // Someone accepted invitation
+                            if (isSelf) {
+                                return "You joined" + projectContext;
+                            } else {
+                                return entityName + " joined" + projectContext;
+                            }
                         } else {
-                            // Someone else joined
-                            return entityName + " joined the project";
+                            // Someone was invited
+                            if (isSelf) {
+                                return "You invited " + entityName + " to" + projectContext;
+                            } else {
+                                return userName + " invited " + entityName + " to" + projectContext;
+                            }
                         }
                     }
                     return userName + " added " + entityType.toLowerCase();
@@ -205,6 +236,14 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                     return userName + " assigned " + entityName;
                 
                 case "UPDATED":
+                    if ("TASK".equals(entityType)) {
+                        return userName + " updated task \"" + entityName + "\"";
+                    } else if ("PROJECT".equals(entityType)) {
+                        return userName + " updated project \"" + entityName + "\"";
+                    } else if ("MEMBERSHIP".equals(entityType)) {
+                        // Role change
+                        return userName + " updated membership for " + entityName;
+                    }
                     return userName + " updated " + entityType.toLowerCase() + " \"" + entityName + "\"";
                 
                 case "DELETED":
@@ -219,18 +258,40 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                         }
                     }
                     return userName + " removed " + entityType.toLowerCase() + " \"" + entityName + "\"";
-                
+
                 case "ATTACHED":
                     if ("ATTACHMENT".equals(entityType)) {
                         return userName + " added an attachment";
                     }
                     return userName + " attached " + entityType.toLowerCase();
-                
+
                 case "COMMENTED":
                     return userName + " commented on \"" + entityName + "\"";
                 
                 case "MOVED":
-                    return userName + " moved task \"" + entityName + "\"";
+                    // Try to get board names from oldValue/newValue
+                    String fromBoardName = null;
+                    String toBoardName = null;
+                    try {
+                        if (log.getOldValue() instanceof java.util.Map) {
+                            java.util.Map<String, Object> oldVal = (java.util.Map<String, Object>) log.getOldValue();
+                            Object boardName = oldVal.get("boardName");
+                            if (boardName != null) fromBoardName = boardName.toString();
+                        }
+                        if (log.getNewValue() instanceof java.util.Map) {
+                            java.util.Map<String, Object> newVal = (java.util.Map<String, Object>) log.getNewValue();
+                            Object boardName = newVal.get("boardName");
+                            if (boardName != null) toBoardName = boardName.toString();
+                        }
+                    } catch (Exception e) {
+                        // Ignore parsing errors
+                    }
+
+                    if (fromBoardName != null && toBoardName != null) {
+                        return userName + " moved task \"" + entityName + "\" from " + fromBoardName + " to " + toBoardName;
+                    } else {
+                        return userName + " moved task \"" + entityName + "\"";
+                    }
                 
                 case "COMPLETED":
                     return userName + " completed task \"" + entityName + "\"";
@@ -238,6 +299,9 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 case "REOPENED":
                     return userName + " reopened task \"" + entityName + "\"";
                 
+                case "UNASSIGNED":
+                    return userName + " unassigned task \"" + entityName + "\"";
+
                 default:
                     return userName + " " + action.toLowerCase() + " " + entityType.toLowerCase();
             }

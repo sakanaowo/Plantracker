@@ -30,6 +30,9 @@ public class ProjectMemberDTO {
         
         @SerializedName("avatar_url")
         private String avatarUrl;
+        
+        @SerializedName("firebaseUid")
+        private String firebaseUid;
 
         public String getId() {
             return id;
@@ -45,6 +48,10 @@ public class ProjectMemberDTO {
 
         public String getAvatarUrl() {
             return avatarUrl;
+        }
+        
+        public String getFirebaseUid() {
+            return firebaseUid;
         }
     }
 

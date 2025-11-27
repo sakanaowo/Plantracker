@@ -45,6 +45,12 @@ public class CalendarEventDTO {
     @SerializedName("updatedAt")
     private String updatedAt;
 
+    @SerializedName("projectId")
+    private String projectId; // ✅ Added for project filtering
+    
+    @SerializedName("eventType")
+    private String eventType; // ✅ MEETING, OTHER, TASK_REMINDER, etc.
+
     public CalendarEventDTO() {
     }
 
@@ -142,5 +148,21 @@ public class CalendarEventDTO {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+    
+    public String getEventType() {
+        return eventType;
+    }
+    
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 }

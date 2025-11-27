@@ -19,7 +19,12 @@ public class ActivityLog {
     
     // For ASSIGNED action - the person who received the task
     private String assigneeId;
-    
+
+    // Additional context from backend
+    private Object oldValue;
+    private Object newValue;
+    private Object metadata;
+
     // For ADDED MEMBERSHIP action - the person who invited (when invitation accepted)
     private String invitedBy;
 
@@ -40,9 +45,17 @@ public class ActivityLog {
         this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar);
         this.assigneeId = assigneeId;
     }
-    
-    public ActivityLog(String id, String userId, String action, String entityType, 
-                      String entityName, String createdAt, String userName, String userAvatar, 
+    public ActivityLog(String id, String userId, String action, String entityType,
+                      String entityName, String createdAt, String userName, String userAvatar,
+                      String assigneeId, Object oldValue, Object newValue, Object metadata) {
+        this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar, assigneeId);
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+        this.metadata = metadata;
+    }
+
+    public ActivityLog(String id, String userId, String action, String entityType,
+                      String entityName, String createdAt, String userName, String userAvatar,
                       String assigneeId, String invitedBy) {
         this(id, userId, action, entityType, entityName, createdAt, userName, userAvatar, assigneeId);
         this.invitedBy = invitedBy;
@@ -84,7 +97,19 @@ public class ActivityLog {
     public String getAssigneeId() {
         return assigneeId;
     }
-    
+
+    public Object getOldValue() {
+        return oldValue;
+    }
+
+    public Object getNewValue() {
+        return newValue;
+    }
+
+    public Object getMetadata() {
+        return metadata;
+    }
+
     public String getInvitedBy() {
         return invitedBy;
     }

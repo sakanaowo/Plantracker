@@ -92,6 +92,11 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
 
         Button btnPick = view.findViewById(R.id.btnPickFileFragment);
         TextView tvEmpty = view.findViewById(R.id.tvNoAttachmentsFragment);
+        
+        // Upload progress views
+        View layoutUploadProgress = view.findViewById(R.id.layoutUploadProgress);
+        TextView tvUploadProgress = view.findViewById(R.id.tvUploadProgress);
+        android.widget.ProgressBar progressBarUpload = view.findViewById(R.id.progressBarUpload);
 
         setupViewModelAndUploader();
 
@@ -122,39 +127,64 @@ public class AttachmentsFragment extends BottomSheetDialogFragment {
         if (requestCode == PICK_FILE && resultCode == Activity.RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri != null && taskId != null) {
-                uploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
-                    @Override
-                    public void onProgress(int percent) {
-                        // Could show progress UI (not implemented)
-                        android.util.Log.d("AttachmentsFragment", "Upload progress: " + percent + "%");
-                    }
-
-                    @Override
-                    public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
-                        android.util.Log.d("AttachmentsFragment", "Upload success! File: " + attachmentDTO.fileName);
-                        // ✅ Just reload attachments from server (which has full data including URL)
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                android.widget.Toast.makeText(getContext(), 
-                                    "File uploaded successfully!", 
-                                    android.widget.Toast.LENGTH_SHORT).show();
-                                taskViewModel.loadTaskAttachments(taskId);
-                            });
+                // Get progress views from the current view
+                View currentView = getView();
+                if (currentView != null) {
+                    View layoutUploadProgress = currentView.findViewById(R.id.layoutUploadProgress);
+                    TextView tvUploadProgress = currentView.findViewById(R.id.tvUploadProgress);
+                    android.widget.ProgressBar progressBarUpload = currentView.findViewById(R.id.progressBarUpload);
+                    
+                    // Show progress UI
+                    layoutUploadProgress.setVisibility(View.VISIBLE);
+                    progressBarUpload.setProgress(0);
+                    
+                    uploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
+                        @Override
+                        public void onProgress(int percent) {
+                            android.util.Log.d("AttachmentsFragment", "Upload progress: " + percent + "%");
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    progressBarUpload.setProgress(percent);
+                                    tvUploadProgress.setText("Uploading... " + percent + "%");
+                                });
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onError(String error) {
-                        android.util.Log.e("AttachmentsFragment", "Upload error: " + error);
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                android.widget.Toast.makeText(getContext(), 
-                                    "Upload failed: " + error, 
-                                    android.widget.Toast.LENGTH_LONG).show();
-                            });
+                        @Override
+                        public void onSuccess(com.example.tralalero.data.remote.dto.task.AttachmentDTO attachmentDTO) {
+                            android.util.Log.d("AttachmentsFragment", "Upload success! File: " + attachmentDTO.fileName);
+                            // ✅ Just reload attachments from server (which has full data including URL)
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    // Hide progress UI
+                                    layoutUploadProgress.setVisibility(View.GONE);
+                                    progressBarUpload.setProgress(0);
+                                    
+                                    android.widget.Toast.makeText(getContext(), 
+                                        "File uploaded successfully!", 
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                                    taskViewModel.loadTaskAttachments(taskId);
+                                });
+                            }
                         }
-                    }
-                });
+
+                        @Override
+                        public void onError(String error) {
+                            android.util.Log.e("AttachmentsFragment", "Upload error: " + error);
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    // Hide progress UI
+                                    layoutUploadProgress.setVisibility(View.GONE);
+                                    progressBarUpload.setProgress(0);
+                                    
+                                    android.widget.Toast.makeText(getContext(), 
+                                        "Upload failed: " + error, 
+                                        android.widget.Toast.LENGTH_LONG).show();
+                                });
+                            }
+                        }
+                    });
+                }
             }
         }
     }

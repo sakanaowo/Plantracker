@@ -95,26 +95,34 @@ public class ProjectCalendarViewModel extends ViewModel {
                 @Override
                 public void onSuccess(List<CalendarEvent> events) {
                     loadingLiveData.postValue(false);
-                    cachedEvents = events != null ? events : new ArrayList<>();
+                    
+                    // 🔥 FIX: Filter events to only include those matching the projectId
+                    // Backend returns all events, so we need to filter on frontend
+                    List<CalendarEvent> projectEvents = new ArrayList<>();
+                    if (events != null) {
+                        for (CalendarEvent event : events) {
+                            if (projectId.equals(event.getProjectId())) {
+                                projectEvents.add(event);
+                            }
+                        }
+                    }
+                    
+                    cachedEvents = projectEvents;
                     allEventsLiveData.postValue(cachedEvents);
                     filteredEventsLiveData.postValue(cachedEvents);
-                    Log.d(TAG, "Loaded " + cachedEvents.size() + " events");
+                    Log.d(TAG, "Loaded " + cachedEvents.size() + " events (including task reminders) for project: " + projectId);
                 }
                 
                 @Override
                 public void onError(String error) {
                     loadingLiveData.postValue(false);
-                    
-                    // Check if it's "not connected" case
                     if ("CALENDAR_NOT_CONNECTED".equals(error)) {
-                        Log.w(TAG, "Google Calendar not connected - prompting user");
+                        Log.w(TAG, "Google Calendar not connected");
                         calendarNotConnectedLiveData.postValue(true);
                     } else {
                         errorLiveData.postValue(error);
                         Log.e(TAG, "Error loading events: " + error);
                     }
-                    
-                    // Fallback to empty list
                     cachedEvents = new ArrayList<>();
                     allEventsLiveData.postValue(cachedEvents);
                     filteredEventsLiveData.postValue(cachedEvents);
@@ -123,7 +131,7 @@ public class ProjectCalendarViewModel extends ViewModel {
     }
     
     /**
-     * Filter events for a specific date
+     * Filter events for a specific date (including task reminders)
      */
     public void filterEventsByDate(int year, int month, int dayOfMonth) {
         Calendar targetCal = Calendar.getInstance();
@@ -132,26 +140,22 @@ public class ProjectCalendarViewModel extends ViewModel {
         
         String targetDate = dateFormatter.format(targetCal.getTime());
         
-        Log.d(TAG, "Filtering events for date: " + targetDate + " (" + year + "-" + (month+1) + "-" + dayOfMonth + ")");
+        Log.d(TAG, "Filtering events for date: " + targetDate);
         
         List<CalendarEvent> filtered = new ArrayList<>();
         for (CalendarEvent event : cachedEvents) {
             if (event.getStartAt() != null) {
-                // Extract date part (first 10 chars: "yyyy-MM-dd")
                 String eventDate = event.getStartAt().length() >= 10 ? 
                     event.getStartAt().substring(0, 10) : event.getStartAt();
                 
-                Log.d(TAG, "  Checking event: " + event.getTitle() + " on " + eventDate + " vs " + targetDate);
-                
                 if (eventDate.equals(targetDate)) {
                     filtered.add(event);
-                    Log.d(TAG, "    ✓ Match!");
                 }
             }
         }
         
         filteredEventsLiveData.setValue(filtered);
-        Log.d(TAG, "Filtered " + filtered.size() + " events for date: " + targetDate);
+        Log.d(TAG, "Filtered " + filtered.size() + " events/tasks for date: " + targetDate);
     }
     
     /**

@@ -19,6 +19,14 @@
         android:padding="12dp"
         android:gravity="center_vertical">
 
+        <!-- Color Indicator Bar (Orange for Task, Green for Event) -->
+        <View
+            android:id="@+id/viewColorIndicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="8dp"
+            android:background="#FF9800"/>
+
         <!-- Event Type Icon -->
         <LinearLayout
             android:layout_width="40dp"

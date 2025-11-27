@@ -17,10 +17,17 @@ import java.util.Locale;
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
     private List<Task> tasks = new ArrayList<>();
     private OnTaskClickListener listener;
+    private String currentBoardType; // "To Do", "In Progress", "Done"
+
     public interface OnTaskClickListener {
         void onTaskClick(Task task);
-        void onTaskCompleted(Task task);
+        void onTaskCheckboxClick(Task task, String currentBoardType);
     }
+
+    public void setCurrentBoardType(String boardType) {
+        this.currentBoardType = boardType;
+    }
+
     public TaskAdapter(OnTaskClickListener listener) {
         this.listener = listener;
     }
@@ -71,23 +78,13 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             });
             
             // Handle checkbox click
-            checkboxTask.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            checkboxTask.setOnClickListener(v -> {
                 int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
+                if (position != RecyclerView.NO_POSITION && listener != null) {
                     Task task = tasks.get(position);
-                    // Apply strikethrough to task name when checked
-                    if (isChecked) {
-                        tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                        tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                        
-                        // Notify listener to move task to Done board
-                        if (listener != null) {
-                            listener.onTaskCompleted(task);
-                        }
-                    } else {
-                        tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                        tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                    }
+                    // Don't change checkbox state here, let the listener handle it
+                    // This prevents immediate UI change before backend confirmation
+                    listener.onTaskCheckboxClick(task, currentBoardType);
                 }
             });
         }
@@ -113,8 +110,12 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 tvTaskTime.setVisibility(View.GONE);
             }
             
-            // TODO: Set checkbox state from task.isCompleted() if you have that field
+            // Set checkbox to unchecked by default (tasks in current board are not yet "done" for that board)
             checkboxTask.setChecked(false);
+            
+            // Remove strikethrough by default
+            tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
         }
     }
 }

@@ -456,7 +456,15 @@ public class AccountFragment extends Fragment {
             return;
         }
         
-        Toast.makeText(requireContext(), "Uploading image...", Toast.LENGTH_SHORT).show();
+        // Create progress dialog
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(requireContext());
+        progressDialog.setTitle("Uploading Profile Picture");
+        progressDialog.setMessage("Please wait...");
+        progressDialog.setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setMax(100);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        
         Log.d(TAG, "Starting upload for user: " + firebaseUser.getUid());
         
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
@@ -464,18 +472,28 @@ public class AccountFragment extends Fragment {
         Log.d(TAG, "Upload path: profile_images/" + firebaseUser.getUid() + ".jpg");
         
         profileImageRef.putFile(imageUri)
+            .addOnProgressListener(taskSnapshot -> {
+                double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                progressDialog.setProgress((int) progress);
+                Log.d(TAG, "Upload progress: " + (int) progress + "%");
+            })
             .addOnSuccessListener(taskSnapshot -> {
                 Log.d(TAG, "Upload successful, getting download URL...");
+                progressDialog.setMessage("Processing...");
                 profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                     Log.d(TAG, "Download URL obtained: " + uri.toString());
+                    progressDialog.dismiss();
+                    Toast.makeText(requireContext(), "Upload successful!", Toast.LENGTH_SHORT).show();
                     updateUserProfile(uri);
                 }).addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to get download URL", e);
+                    progressDialog.dismiss();
                     Toast.makeText(requireContext(), "Failed to get image URL: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             })
             .addOnFailureListener(e -> {
                 Log.e(TAG, "Failed to upload image. Error: " + e.getMessage(), e);
+                progressDialog.dismiss();
                 String errorMsg = "Upload failed: " + e.getMessage();
                 if (e.getMessage() != null && e.getMessage().contains("permission")) {
                     errorMsg = "Permission denied. Please check Firebase Storage rules.";

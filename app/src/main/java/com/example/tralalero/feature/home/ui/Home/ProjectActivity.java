@@ -655,14 +655,71 @@ public class ProjectActivity extends AppCompatActivity implements
     
     @Override
     public void onTaskStatusChanged(Task task, boolean isDone) {
-        Log.d(TAG, "onTaskStatusChanged: task=" + task.getTitle() + ", isDone=" + isDone);
+        Log.d(TAG, "onTaskStatusChanged: task=" + task.getTitle() + ", checkbox action triggered");
         
-        // Update task status to DONE or TO_DO
-        Task.TaskStatus newStatus = isDone ? Task.TaskStatus.DONE : Task.TaskStatus.TO_DO;
+        // Determine which board the task is currently in
+        String currentBoardId = task.getBoardId();
+        String currentBoardName = null;
+        String targetBoardName = null;
+        String targetBoardId = null;
+        Task.TaskStatus targetStatus = null;
         
-        // Update via ViewModel (Task is immutable, ViewModel will create new instance)
-        taskViewModel.updateTaskStatus(task.getId(), newStatus);
+        // Find current board name from projectViewModel
+        if (projectViewModel.getBoards().getValue() != null) {
+            for (Board board : projectViewModel.getBoards().getValue()) {
+                if (board.getId().equals(currentBoardId)) {
+                    currentBoardName = board.getName();
+                    break;
+                }
+            }
+        }
         
-        Toast.makeText(this, isDone ? "✅ Marked as done" : "⬜ Marked as to-do", Toast.LENGTH_SHORT).show();
+        if (currentBoardName == null) {
+            Log.e(TAG, "Could not determine current board");
+            Toast.makeText(this, "Error: Could not determine task board", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Determine target board and status based on current board
+        if ("To Do".equals(currentBoardName)) {
+            targetBoardName = "In Progress";
+            targetStatus = Task.TaskStatus.IN_PROGRESS;
+        } else if ("In Progress".equals(currentBoardName)) {
+            targetBoardName = "Done";
+            targetStatus = Task.TaskStatus.DONE;
+        } else if ("Done".equals(currentBoardName)) {
+            targetBoardName = "To Do"; // Reopen
+            targetStatus = Task.TaskStatus.TO_DO;
+        } else {
+            Log.e(TAG, "Unknown board: " + currentBoardName);
+            return;
+        }
+        
+        // Find target board ID
+        if (projectViewModel.getBoards().getValue() != null) {
+            for (Board board : projectViewModel.getBoards().getValue()) {
+                if (targetBoardName.equalsIgnoreCase(board.getName())) {
+                    targetBoardId = board.getId();
+                    break;
+                }
+            }
+        }
+        
+        if (targetBoardId == null) {
+            Log.e(TAG, "Could not find target board: " + targetBoardName);
+            Toast.makeText(this, "Error: Could not find " + targetBoardName + " board", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Log.d(TAG, "✅ Moving task '" + task.getTitle() + "' from " + currentBoardName + " to " + targetBoardName + " with status " + targetStatus);
+        
+        // ✅ Use ProjectViewModel to update UI optimistically (both boardId AND status)
+        double newPosition = 1000.0; // Add to end of target board
+        projectViewModel.moveTaskWithStatusUpdate(task, targetBoardId, targetStatus, newPosition);
+        
+        // ✅ Then sync with backend via TaskViewModel
+        taskViewModel.moveTaskToBoard(task, targetBoardId, newPosition);
+        
+        Toast.makeText(this, "Task moved to " + targetBoardName, Toast.LENGTH_SHORT).show();
     }
 }
