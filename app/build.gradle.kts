@@ -22,13 +22,13 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"https://plantracker-backend-develop.onrender.com/api/\""
+                "\"https://plantracker-backend-1.onrender.com/api/\""
             )
             // Use secure WebSocket (wss) for Render deployment
             buildConfigField(
                 "String",
                 "WS_URL",
-                "\"wss://plantracker-backend-develop.onrender.com/notifications\"",
+                "\"wss://plantracker-backend-1.onrender.com/notifications\"",
 
             )
         }
