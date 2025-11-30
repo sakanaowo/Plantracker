@@ -1,6 +1,5 @@
 package com.example.tralalero.domain.repository;
 
-import com.example.tralalero.domain.model.CalendarConnection;
 import com.example.tralalero.domain.model.CalendarEvent;
 import com.example.tralalero.domain.model.CalendarSyncResult;
 
@@ -8,34 +7,12 @@ import java.util.List;
 
 /**
  * Repository interface for Google Calendar integration
- * Defines contract for calendar operations
+ * Defines contract for calendar data operations
+ * 
+ * NOTE: OAuth authentication operations are handled separately by GoogleAuthApiService
+ * This repository only handles calendar synchronization and event management
  */
 public interface ICalendarRepository {
-
-    /**
-     * Get Google OAuth authorization URL
-     * User will open this URL in WebView to authorize the app
-     * 
-     * @param callback Success returns auth URL, Error returns error message
-     */
-    void getAuthUrl(RepositoryCallback<String> callback);
-
-    /**
-     * Handle OAuth callback with authorization code
-     * Exchange code for access token and store it
-     * 
-     * @param code Authorization code from Google OAuth redirect
-     * @param callback Success returns connection time, Error returns error message
-     */
-    void handleOAuthCallback(String code, RepositoryCallback<String> callback);
-
-    /**
-     * Check if user has connected Google Calendar
-     * Returns connection status and last sync time
-     * 
-     * @param callback Success returns CalendarConnection, Error returns error message
-     */
-    void getConnectionStatus(RepositoryCallback<CalendarConnection> callback);
 
     /**
      * Sync internal events to Google Calendar
@@ -57,14 +34,6 @@ public interface ICalendarRepository {
      * @param callback Success returns list of imported events, Error returns error message
      */
     void syncEventsFromGoogle(String projectId, String timeMin, String timeMax, RepositoryCallback<List<CalendarEvent>> callback);
-
-    /**
-     * Disconnect Google Calendar integration
-     * Removes OAuth tokens and event mappings
-     * 
-     * @param callback Success returns null, Error returns error message
-     */
-    void disconnectCalendar(RepositoryCallback<Void> callback);
 
     /**
      * Callback interface for asynchronous operations

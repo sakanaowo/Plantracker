@@ -7,20 +7,12 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.data.mapper.CalendarMapper;
 import com.example.tralalero.data.remote.api.CalendarApiService;
-import com.example.tralalero.data.remote.dto.calendar.AuthUrlResponse;
-import com.example.tralalero.data.remote.dto.calendar.CalendarConnectionStatusResponse;
-import com.example.tralalero.data.remote.dto.calendar.CalendarEventDTO;
 import com.example.tralalero.data.remote.dto.calendar.CalendarSyncRequest;
 import com.example.tralalero.data.remote.dto.calendar.CalendarSyncResponse;
-import com.example.tralalero.data.remote.dto.calendar.CallbackResponse;
-import com.example.tralalero.domain.model.CalendarConnection;
 import com.example.tralalero.domain.model.CalendarEvent;
 import com.example.tralalero.domain.model.CalendarSyncResult;
 import com.example.tralalero.domain.repository.ICalendarRepository;
 import com.example.tralalero.network.ApiClient;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import java.util.List;
 
@@ -39,88 +31,6 @@ public class CalendarRepositoryImpl implements ICalendarRepository {
     public CalendarRepositoryImpl(Context context) {
         AuthManager authManager = App.authManager;
         this.apiService = ApiClient.get(authManager).create(CalendarApiService.class);
-    }
-
-    @Override
-    public void getAuthUrl(RepositoryCallback<String> callback) {
-        apiService.getAuthUrl().enqueue(new Callback<AuthUrlResponse>() {
-            @Override
-            public void onResponse(Call<AuthUrlResponse> call, Response<AuthUrlResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String authUrl = response.body().getAuthUrl();
-                    Log.d(TAG, "Got auth URL successfully");
-                    callback.onSuccess(authUrl);
-                } else {
-                    String errorMsg = "Failed to get auth URL: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    callback.onError(errorMsg);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<AuthUrlResponse> call, Throwable t) {
-                String errorMsg = "Network error getting auth URL: " + t.getMessage();
-                Log.e(TAG, errorMsg, t);
-                callback.onError(errorMsg);
-            }
-        });
-    }
-
-    @Override
-    public void handleOAuthCallback(String code, RepositoryCallback<String> callback) {
-        apiService.handleCallback(code).enqueue(new Callback<CallbackResponse>() {
-            @Override
-            public void onResponse(Call<CallbackResponse> call, Response<CallbackResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    CallbackResponse callbackResponse = response.body();
-                    if (callbackResponse.isSuccess()) {
-                        String connectedAt = callbackResponse.getConnectedAt();
-                        Log.d(TAG, "OAuth callback handled successfully: " + callbackResponse.getMessage());
-                        callback.onSuccess(connectedAt);
-                    } else {
-                        String errorMsg = "OAuth callback failed: " + callbackResponse.getMessage();
-                        Log.e(TAG, errorMsg);
-                        callback.onError(errorMsg);
-                    }
-                } else {
-                    String errorMsg = "Failed to handle OAuth callback: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    callback.onError(errorMsg);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<CallbackResponse> call, Throwable t) {
-                String errorMsg = "Network error handling OAuth callback: " + t.getMessage();
-                Log.e(TAG, errorMsg, t);
-                callback.onError(errorMsg);
-            }
-        });
-    }
-
-    @Override
-    public void getConnectionStatus(RepositoryCallback<CalendarConnection> callback) {
-        apiService.getConnectionStatus().enqueue(new Callback<CalendarConnectionStatusResponse>() {
-            @Override
-            public void onResponse(Call<CalendarConnectionStatusResponse> call, Response<CalendarConnectionStatusResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    CalendarConnection connection = CalendarMapper.toDomain(response.body());
-                    Log.d(TAG, "Got connection status: connected=" + connection.isConnected());
-                    callback.onSuccess(connection);
-                } else {
-                    String errorMsg = "Failed to get connection status: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    callback.onError(errorMsg);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<CalendarConnectionStatusResponse> call, Throwable t) {
-                String errorMsg = "Network error getting connection status: " + t.getMessage();
-                Log.e(TAG, errorMsg, t);
-                callback.onError(errorMsg);
-            }
-        });
     }
 
     @Override
@@ -191,27 +101,4 @@ public class CalendarRepositoryImpl implements ICalendarRepository {
         });
     }
 
-    @Override
-    public void disconnectCalendar(RepositoryCallback<Void> callback) {
-        apiService.disconnectCalendar().enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Log.d(TAG, "Calendar disconnected successfully");
-                    callback.onSuccess(null);
-                } else {
-                    String errorMsg = "Failed to disconnect calendar: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    callback.onError(errorMsg);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                String errorMsg = "Network error disconnecting calendar: " + t.getMessage();
-                Log.e(TAG, errorMsg, t);
-                callback.onError(errorMsg);
-            }
-        });
-    }
 }
