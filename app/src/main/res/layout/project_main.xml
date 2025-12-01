@@ -21,6 +21,8 @@
 
         <com.google.android.material.tabs.TabItem android:id="@+id/tabSummary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Summary" />
 
+        <com.google.android.material.tabs.TabItem android:id="@+id/tabAllWork" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="All Work" />
+
         <com.google.android.material.tabs.TabItem android:id="@+id/tabBoard" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Board" />
 
         <com.google.android.material.tabs.TabItem android:id="@+id/tabCalendar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calendar" />

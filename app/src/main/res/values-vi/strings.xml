@@ -48,7 +48,7 @@
     <string name="edit_event">Chỉnh sửa sự kiện</string>
     <string name="cancel_event">Hủy sự kiện</string>
     <string name="send_reminder">Gửi nhắc nhở</string>
-    
+
     <!-- Create Event Dialog -->
     <string name="event_title">Tiêu đề sự kiện</string>
     <string name="event_date">Ngày sự kiện</string>
@@ -64,12 +64,12 @@
     <string name="recurrence">Lặp lại</string>
     <string name="cancel">Hủy</string>
     <string name="create">Tạo</string>
-    
+
     <!-- Calendar Integration -->
     <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
     <string name="view_in_calendar">Xem trong Lịch</string>
     <string name="calendar_reminder_settings">Cài đặt Nhắc nhở Lịch</string>
-    
+
     <!-- Meeting Scheduler -->
     <string name="select_team_members">Chọn Thành viên Nhóm</string>
     <string name="choose_members_availability">Chọn thành viên để kiểm tra tình trạng</string>
@@ -85,7 +85,7 @@
     <string name="suggested_times">Thời gian Đề xuất</string>
     <string name="no_available_times">Không tìm thấy thời gian rảnh</string>
     <string name="close">Đóng</string>
-    
+
     <!-- Quick Event -->
     <string name="quick_event">Sự kiện Nhanh</string>
     <string name="date">Ngày</string>

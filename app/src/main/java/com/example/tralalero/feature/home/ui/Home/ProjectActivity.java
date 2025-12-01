@@ -41,6 +41,7 @@ import com.example.tralalero.feature.home.ui.Home.project.CreateTaskBottomSheet;
 import com.example.tralalero.feature.home.ui.Home.project.ProjectCalendarFragment;
 import com.example.tralalero.feature.home.ui.Home.project.ProjectSummaryFragment;
 import com.example.tralalero.feature.home.ui.Home.project.ProjectEventsFragment;
+import com.example.tralalero.feature.home.ui.Home.project.ProjectAllWorkFragment;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.example.tralalero.presentation.viewmodel.ProjectViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
@@ -251,13 +252,16 @@ public class ProjectActivity extends AppCompatActivity implements
                     case 0: // Summary tab
                         showSummaryFragment();
                         break;
-                    case 1: // Board tab
+                    case 1: // All Work tab
+                        showAllWorkFragment();
+                        break;
+                    case 2: // Board tab
                         showBoardView();
                         break;
-                    case 2: // Calendar tab
+                    case 3: // Calendar tab
                         showCalendarFragment();
                         break;
-                    case 3: // Event tab
+                    case 4: // Event tab
                         showEventsFragment();
                         break;
                 }
@@ -270,8 +274,8 @@ public class ProjectActivity extends AppCompatActivity implements
             public void onTabReselected(TabLayout.Tab tab) {}
         });
         
-        // Select Board tab by default (index 1)
-        TabLayout.Tab boardTab = tabLayout.getTabAt(1);
+        // Select Board tab by default (index 2 now after All Work)
+        TabLayout.Tab boardTab = tabLayout.getTabAt(2);
         if (boardTab != null) {
             boardTab.select();
         }
@@ -284,7 +288,7 @@ public class ProjectActivity extends AppCompatActivity implements
             public void onSwipeLeft() {
                 // Swipe left = next tab
                 int currentTab = tabLayout.getSelectedTabPosition();
-                if (currentTab < 3) { // Max tab index is 3
+                if (currentTab < 4) { // Max tab index is 4 (0-4 = 5 tabs)
                     TabLayout.Tab nextTab = tabLayout.getTabAt(currentTab + 1);
                     if (nextTab != null) {
                         nextTab.select();
@@ -332,6 +336,29 @@ public class ProjectActivity extends AppCompatActivity implements
         } else {
             getSupportFragmentManager().beginTransaction()
                 .show(summaryFragment)
+                .commit();
+        }
+    }
+    
+    private void showAllWorkFragment() {
+        boardsRecyclerView.setVisibility(View.GONE);
+        FrameLayout fragmentContainer = findViewById(R.id.fragmentContainer);
+        fragmentContainer.setVisibility(View.VISIBLE);
+        
+        androidx.fragment.app.Fragment allWorkFragment = getSupportFragmentManager()
+            .findFragmentByTag("all_work_fragment");
+        
+        // Hide other fragments
+        hideOtherFragments("all_work_fragment");
+        
+        if (allWorkFragment == null) {
+            allWorkFragment = ProjectAllWorkFragment.newInstance(projectId);
+            getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragmentContainer, allWorkFragment, "all_work_fragment")
+                .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                .show(allWorkFragment)
                 .commit();
         }
     }
@@ -394,7 +421,7 @@ public class ProjectActivity extends AppCompatActivity implements
     private void hideOtherFragments(String exceptTag) {
         androidx.fragment.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         
-        String[] fragmentTags = {"summary_fragment", "calendar_fragment", "events_fragment"};
+        String[] fragmentTags = {"summary_fragment", "all_work_fragment", "calendar_fragment", "events_fragment"};
         for (String tag : fragmentTags) {
             if (!tag.equals(exceptTag)) {
                 androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);

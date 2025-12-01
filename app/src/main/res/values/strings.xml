@@ -72,7 +72,7 @@
     <string name="edit_event">Edit event</string>
     <string name="cancel_event">Cancel event</string>
     <string name="send_reminder">Send reminder</string>
-    
+
     <!-- Create Event Dialog -->
     <string name="event_title">Event title</string>
     <string name="event_date">Event date</string>
@@ -88,12 +88,12 @@
     <string name="recurrence">Recurrence</string>
     <string name="cancel">Cancel</string>
     <string name="create">Create</string>
-    
+
     <!-- Calendar Integration -->
     <string name="sync_with_google_calendar">Sync with Google Calendar</string>
     <string name="view_in_calendar">View in Calendar</string>
     <string name="calendar_reminder_settings">Calendar Reminder Settings</string>
-    
+
     <!-- Meeting Scheduler -->
     <string name="select_team_members">Select Team Members</string>
     <string name="choose_members_availability">Choose members to check their availability</string>

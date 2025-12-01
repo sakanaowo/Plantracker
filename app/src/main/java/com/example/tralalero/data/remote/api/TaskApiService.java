@@ -43,6 +43,15 @@ public interface TaskApiService {
     Call<List<TaskDTO>> getQuickTasks();
 
     /**
+     * Get all tasks assigned to current user in a specific project
+     * 
+     * @param projectId Project ID to filter tasks
+     * @return List of assigned tasks
+     */
+    @GET("tasks/my-assigned")
+    Call<List<TaskDTO>> getMyAssignedTasksInProject(@Query("projectId") String projectId);
+
+    /**
      * Create a quick task - automatically assigns to default project/board
      * Backend will find user's personal workspace, default project, and "To Do" board
      * 

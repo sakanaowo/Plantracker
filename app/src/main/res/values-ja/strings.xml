@@ -48,7 +48,7 @@
     <string name="edit_event">イベントを編集</string>
     <string name="cancel_event">イベントをキャンセル</string>
     <string name="send_reminder">リマインダーを送信</string>
-    
+
     <!-- Create Event Dialog -->
     <string name="event_title">イベントタイトル</string>
     <string name="event_date">イベント日付</string>
@@ -64,12 +64,12 @@
     <string name="recurrence">繰り返し</string>
     <string name="cancel">キャンセル</string>
     <string name="create">作成</string>
-    
+
     <!-- Calendar Integration -->
     <string name="sync_with_google_calendar">Googleカレンダーと同期</string>
     <string name="view_in_calendar">カレンダーで表示</string>
     <string name="calendar_reminder_settings">カレンダーリマインダー設定</string>
-    
+
     <!-- Meeting Scheduler -->
     <string name="select_team_members">チームメンバーを選択</string>
     <string name="choose_members_availability">メンバーの空き状況を確認するため選択</string>
@@ -85,7 +85,7 @@
     <string name="suggested_times">提案された時間</string>
     <string name="no_available_times">利用可能な時間が見つかりません</string>
     <string name="close">閉じる</string>
-    
+
     <!-- Quick Event -->
     <string name="quick_event">クイックイベント</string>
     <string name="date">日付</string>
