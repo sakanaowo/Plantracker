@@ -62,6 +62,17 @@
             <TextView android:id="@+id/tvSyncedStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Synced" android:textSize="14sp" android:textColor="#172B4D"/>
         </LinearLayout>
 
+        <!-- Divider -->
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="16dp" android:background="#091E4221"/>
+
+        <!-- Delete Project Section -->
+        <LinearLayout android:id="@+id/layoutDeleteProject" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="?attr/selectableItemBackground" android:gravity="center_vertical">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_delete" app:tint="#CF222E" android:layout_marginEnd="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete Project" android:textSize="14sp" android:textColor="#CF222E" android:fontFamily="sans-serif-medium"/>
+        </LinearLayout>
+
         <!-- Bottom Padding -->
         <View android:layout_width="match_parent" android:layout_height="16dp"/>
 

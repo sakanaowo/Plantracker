@@ -20,6 +20,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
+import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.auth.ui.forgot.ForgotPasswordActivity;
@@ -186,7 +187,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
-        Intent intent = new Intent(LoginActivity.this, MainContainerActivity.class);
+        // Navigate through MainActivity to trigger calendar sync prompt
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("is_first_login", true); // Flag for calendar sync prompt
+        
         com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
         if (user != null) {
             intent.putExtra("user_name", user.getName());

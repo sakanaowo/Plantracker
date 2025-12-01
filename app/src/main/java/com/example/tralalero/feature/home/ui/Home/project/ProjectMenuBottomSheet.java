@@ -109,9 +109,15 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         btnInvite = view.findViewById(R.id.btnInvite);
 
         layoutSynced = view.findViewById(R.id.layoutSynced);
+        View layoutDeleteProject = view.findViewById(R.id.layoutDeleteProject);
         
         if (projectName != null) {
             tvMenuTitle.setText("Project menu");
+        }
+        
+        // Setup delete project listener
+        if (layoutDeleteProject != null) {
+            layoutDeleteProject.setOnClickListener(v -> showDeleteProjectDialog());
         }
     }
 
@@ -140,6 +146,59 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                 Toast.makeText(getContext(), "✅ Data synced successfully", Toast.LENGTH_SHORT).show();
             });
         }
+    }
+    
+    private void showDeleteProjectDialog() {
+        if (getContext() == null) return;
+        
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+            .setTitle("Delete Project")
+            .setMessage("Are you sure you want to delete \"" + projectName + "\"? This action cannot be undone.")
+            .setPositiveButton("Delete", (dialog, which) -> deleteProject())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    private void deleteProject() {
+        if (getContext() == null) return;
+        
+        Toast.makeText(getContext(), "Deleting project...", Toast.LENGTH_SHORT).show();
+        
+        com.example.tralalero.data.remote.api.ProjectApiService projectApi = 
+            com.example.tralalero.network.ApiClient.get().create(com.example.tralalero.data.remote.api.ProjectApiService.class);
+        
+        projectApi.deleteProject(projectId).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {
+                if (getActivity() == null) return;
+                
+                getActivity().runOnUiThread(() -> {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(getContext(), "✅ Project deleted successfully", Toast.LENGTH_SHORT).show();
+                        dismiss();
+                        getActivity().finish(); // Close ProjectActivity and return to home
+                    } else {
+                        String errorMsg = "Failed to delete project";
+                        if (response.code() == 403) {
+                            errorMsg = "You don't have permission to delete this project";
+                        } else if (response.code() == 404) {
+                            errorMsg = "Project not found";
+                        }
+                        Toast.makeText(getContext(), "❌ " + errorMsg, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<Void> call, Throwable t) {
+                if (getActivity() == null) return;
+                
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "❌ Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e("ProjectMenu", "Delete project failed", t);
+                });
+            }
+        });
     }
     
     private void showInviteDialog() {

@@ -251,7 +251,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    deleteFirebaseUser(firebaseUser);
+                    // Backend handles both DB and Firebase deletion
+                    // Just clear local data and logout
+                    Log.d(TAG, "Account deleted successfully by backend");
+                    clearDataAndLogout();
                 } else {
                     Log.e(TAG, "Backend delete failed: " + response.code());
                     Toast.makeText(requireContext(), "Failed to delete account from server", Toast.LENGTH_SHORT).show();
@@ -263,17 +266,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-    }
-    private void deleteFirebaseUser(FirebaseUser firebaseUser) {
-        firebaseUser.delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Firebase user deleted successfully");
-                    clearDataAndLogout();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to delete Firebase user", e);
-                    Toast.makeText(requireContext(), "Failed to delete Firebase account: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
     private void clearDataAndLogout() {
         tokenManager.clearAll();
