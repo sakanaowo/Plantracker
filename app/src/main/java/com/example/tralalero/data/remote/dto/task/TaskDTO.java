@@ -36,7 +36,10 @@ public class TaskDTO {
 
     // Assignment
     @SerializedName(value = "assigneeId", alternate = {"assignee_id"})
-    private String assigneeId;
+    private String assigneeId;  // Legacy field - kept for backward compatibility
+
+    @SerializedName(value = "assigneeIds", alternate = {"assignee_ids"})
+    private java.util.List<String> assigneeIds;  // New field - matches backend CreateTaskDto
 
     @SerializedName(value = "createdBy", alternate = {"created_by"})
     private String createdBy;
@@ -257,6 +260,14 @@ public class TaskDTO {
 
     public void setAssigneeId(String assigneeId) {
         this.assigneeId = assigneeId;
+    }
+
+    public java.util.List<String> getAssigneeIds() {
+        return assigneeIds;
+    }
+
+    public void setAssigneeIds(java.util.List<String> assigneeIds) {
+        this.assigneeIds = assigneeIds;
     }
 
     public String getCreatedBy() {

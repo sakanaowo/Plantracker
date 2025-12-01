@@ -36,6 +36,16 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         notifyDataSetChanged();
     }
 
+    public void updateTask(Task updatedTask) {
+        for (int i = 0; i < tasks.size(); i++) {
+            if (tasks.get(i).getId().equals(updatedTask.getId())) {
+                tasks.set(i, updatedTask);
+                notifyItemChanged(i);
+                break;
+            }
+        }
+    }
+
     public List<Task> getTasks() {
         return new ArrayList<>(tasks);  // Return a copy to avoid external modifications
     }
@@ -110,12 +120,23 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 tvTaskTime.setVisibility(View.GONE);
             }
             
-            // Set checkbox to unchecked by default (tasks in current board are not yet "done" for that board)
-            checkboxTask.setChecked(false);
+            // Check if task is DONE - show visual indicator
+            boolean isDone = task.getStatus() == Task.TaskStatus.DONE;
+            checkboxTask.setChecked(isDone);
             
-            // Remove strikethrough by default
-            tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-            tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            // Apply strikethrough for completed tasks
+            if (isDone) {
+                tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                // Make text slightly grayed out
+                tvTaskName.setAlpha(0.6f);
+                tvTaskDescription.setAlpha(0.6f);
+            } else {
+                tvTaskName.setPaintFlags(tvTaskName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                tvTaskDescription.setPaintFlags(tvTaskDescription.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                tvTaskName.setAlpha(1.0f);
+                tvTaskDescription.setAlpha(1.0f);
+            }
         }
     }
 }

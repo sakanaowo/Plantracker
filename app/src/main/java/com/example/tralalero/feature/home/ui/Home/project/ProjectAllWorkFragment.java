@@ -182,7 +182,49 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
     
     @Override
     public void onTaskCheckboxClick(Task task, String currentBoardType) {
-        // Not needed for All Work view - tasks are read-only here
         Log.d(TAG, "Checkbox clicked for task: " + task.getId());
+        
+        // Toggle task status: TO_DO ↔ DONE
+        Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+            ? Task.TaskStatus.TO_DO 
+            : Task.TaskStatus.DONE;
+        
+        Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
+        
+        updateTaskStatus(task, newStatus);
+    }
+    
+    private void updateTaskStatus(Task task, Task.TaskStatus newStatus) {
+        // Create update payload with ONLY the field we want to change
+        // Using Map to avoid sending null values for other fields
+        java.util.Map<String, Object> updatePayload = new java.util.HashMap<>();
+        updatePayload.put("status", newStatus.name());
+        
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Update local task list
+                    Task updatedTask = TaskMapper.toDomain(response.body());
+                    taskAdapter.updateTask(updatedTask);
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    showError("Failed to update task");
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                showError("Error: " + t.getMessage());
+            }
+        });
     }
 }

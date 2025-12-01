@@ -65,7 +65,7 @@ public interface TaskApiService {
     @PATCH("tasks/{id}")
     Call<TaskDTO> updateTask(
         @Path("id") String taskId,
-        @Body TaskDTO task
+        @Body Object taskUpdate  // Accept Object to allow Map or TaskDTO
     );
 
     /**

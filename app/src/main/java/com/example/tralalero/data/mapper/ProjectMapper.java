@@ -26,6 +26,7 @@ public class ProjectMapper {
             dto.getDescription(),
             dto.getKey(),
             dto.getBoardType(),
+            dto.getType(),  // Add type field
             workspaceName
         );
         
@@ -44,6 +45,7 @@ public class ProjectMapper {
         dto.setDescription(project.getDescription());
         dto.setKey(project.getKey());
         dto.setBoardType(project.getBoardType());
+        dto.setType(project.getType());  // Add type field
         
         return dto;
     }

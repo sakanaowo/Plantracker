@@ -180,7 +180,8 @@ public class WorkspaceViewModel extends ViewModel {
             name,
             description,
             "",  // Empty key - will be set by server
-            "KANBAN"  // Default board type
+            "KANBAN",  // Default board type
+            null  // Type will be set by server (default PERSONAL)
         );
         
         List<Project> updated = new ArrayList<>(originalList);

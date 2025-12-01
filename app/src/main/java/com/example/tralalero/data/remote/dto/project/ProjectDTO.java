@@ -25,6 +25,9 @@ public class ProjectDTO {
     @SerializedName(value = "boardType", alternate = {"board_type"})
     private String boardType;
 
+    @SerializedName("type")
+    private String type;  // PERSONAL or TEAM
+
     @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
@@ -106,6 +109,14 @@ public class ProjectDTO {
 
     public void setBoardType(String boardType) {
         this.boardType = boardType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getCreatedAt() {

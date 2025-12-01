@@ -242,7 +242,7 @@ public class HomeFragment extends Fragment {
         Toast.makeText(getContext(), "Creating project...", Toast.LENGTH_SHORT).show();
         
         Project newProject = new Project(
-            null, null, projectName, projectDescription, null, "KANBAN"
+            null, null, projectName, projectDescription, null, "KANBAN", null
         );
         
         projectRepository.createProject(null, newProject, new IProjectRepository.RepositoryCallback<Project>() {

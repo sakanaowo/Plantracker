@@ -30,6 +30,7 @@ import com.example.tralalero.adapter.CommentAdapter;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
 import com.example.tralalero.data.remote.api.ProjectApiService;
+import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
 import com.example.tralalero.domain.model.ProjectMember;
@@ -88,6 +89,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private String boardId;
     private String boardName;
     private String projectId;
+    private String projectType;  // PERSONAL or TEAM
     private boolean isEditMode;
     private TaskViewModel taskViewModel;
     private TaskCalendarSyncViewModel calendarSyncViewModel;
@@ -903,6 +905,38 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // Load project info to check project type
+        ProjectApiService projectApiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApiService.getProjectById(projectId).enqueue(new Callback<ProjectDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<ProjectDTO> call, @NonNull Response<ProjectDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ProjectDTO projectDTO = response.body();
+                    projectType = projectDTO.getType();
+                    
+                    android.util.Log.d("CardDetailActivity", "Project type: " + projectType);
+                    
+                    // PERSONAL project: Only one person, auto self-assign
+                    if ("PERSONAL".equalsIgnoreCase(projectType)) {
+                        selfAssignTaskForPersonalProject();
+                        return;
+                    }
+                    
+                    // TEAM project: Check user role for permissions
+                    checkRoleForTeamProject();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to load project info", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<ProjectDTO> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void checkRoleForTeamProject() {
         // Get current user ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -941,16 +975,19 @@ public class CardDetailActivity extends AppCompatActivity {
                     }
                     
                     if (currentUserRole == null || currentUserInternalId == null) {
-                        android.util.Log.e("CardDetailActivity", "❌ Current user not found in members list!");
-                        Toast.makeText(CardDetailActivity.this, "You are not a member of this project", Toast.LENGTH_SHORT).show();
+                        android.util.Log.e("CardDetailActivity", "❌ Current user not found in team project members!");
+                        Toast.makeText(CardDetailActivity.this, "You are not a member of this team project", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     
-                    if ("OWNER".equals(currentUserRole)) {
-                        // Owner: Show member selection dialog
+                    // TEAM project permission logic:
+                    // - OWNER/ADMIN: Can assign anyone (open bottomsheet)
+                    // - MEMBER: Can only self-assign
+                    if ("OWNER".equalsIgnoreCase(currentUserRole) || "ADMIN".equalsIgnoreCase(currentUserRole)) {
+                        // Owner/Admin: Show member selection dialog
                         showAssignTaskDialog();
                     } else {
-                        // Non-owner: Self-assign directly using internal user ID
+                        // Member: Self-assign directly using internal user ID
                         selfAssignTask(currentUserInternalId);
                     }
                 } else {
@@ -1015,6 +1052,44 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(CardDetailActivity.this, "Task assigned to you", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to assign task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void selfAssignTaskForPersonalProject() {
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get current user's internal ID from token manager
+        String internalUserId = App.tokenManager.getInternalUserId();
+        
+        if (internalUserId == null || internalUserId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: User ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        android.util.Log.d("CardDetailActivity", "Personal project - Self-assigning task to internal user ID: " + internalUserId);
+        
+        // Call API to assign task using internal user ID
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        Map<String, List<String>> body = new HashMap<>();
+        body.put("userIds", Arrays.asList(internalUserId));
+        
+        taskApiService.assignUsers(taskId, body).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(CardDetailActivity.this, "✅ Task assigned to you", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(CardDetailActivity.this, "Failed to assign task", Toast.LENGTH_SHORT).show();
                 }
