@@ -149,4 +149,14 @@ public class MainContainerActivity extends AppCompatActivity {
             currentPage = initialPage;
         }
     }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // Handle navigation from deep links (e.g., Google Calendar callback)
+        int targetTab = intent.getIntExtra("navigate_to_tab", -1);
+        if (targetTab >= 0 && targetTab < 4 && viewPager != null) {
+            viewPager.setCurrentItem(targetTab, true);
+        }
+    }
 }

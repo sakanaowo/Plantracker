@@ -67,8 +67,10 @@ public class GoogleCalendarCallbackActivity extends AppCompatActivity {
     }
 
     private void navigateToSettings() {
-        Intent intent = new Intent(this, SettingsActivity.class);
+        // Navigate to MainContainerActivity and switch to Home tab (index 0)
+        Intent intent = new Intent(this, MainContainerActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("navigate_to_tab", 0); // Home tab
         startActivity(intent);
         finish();
     }

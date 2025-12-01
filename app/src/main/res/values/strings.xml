@@ -83,7 +83,7 @@
     <string name="meeting">Meeting</string>
     <string name="milestone">Milestone</string>
     <string name="other">Other</string>
-    <string name="add_attendees">Add attendees</string>
+    <string name="add_attendees">Invite attendees</string>
     <string name="create_google_meet">Create Google Meet</string>
     <string name="recurrence">Recurrence</string>
     <string name="cancel">Cancel</string>

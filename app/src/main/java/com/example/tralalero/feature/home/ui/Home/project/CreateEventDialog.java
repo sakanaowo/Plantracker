@@ -45,13 +45,8 @@ public class CreateEventDialog extends DialogFragment {
     private RadioButton rbMeeting;
     private RadioButton rbMilestone;
     private ChipGroup chipGroupAttendees;
-    private SwitchMaterial switchCreateMeet;
+    // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
     private Spinner spinnerRecurrence;
-    private com.google.android.material.card.MaterialCardView cardGoogleMeet;
-    private com.google.android.material.textfield.TextInputLayout tilMeetingLink;
-    private TextInputEditText etMeetingLink;
-    private com.google.android.material.textfield.TextInputLayout tilLocation;
-    private TextInputEditText etLocation;
     private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
@@ -111,9 +106,8 @@ public class CreateEventDialog extends DialogFragment {
         rbMeeting = view.findViewById(R.id.rbMeeting);
         rbMilestone = view.findViewById(R.id.rbMilestone);
         chipGroupAttendees = view.findViewById(R.id.chipGroupAttendees);
-        switchCreateMeet = view.findViewById(R.id.switchCreateMeet);
+        // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
         spinnerRecurrence = view.findViewById(R.id.spinnerRecurrence);
-        cardGoogleMeet = view.findViewById(R.id.cardGoogleMeet);
         progressBarLoading = view.findViewById(R.id.progressBarLoading);
         
         // ✅ SIMPLIFIED: No longer need meeting link and location fields
@@ -334,9 +328,9 @@ public class CreateEventDialog extends DialogFragment {
             event.setDescription(etEventDescription.getText().toString());
         }
         
-        // ✅ SIMPLIFIED: Always create MEETING type with optional Google Meet
+        // ✅ SIMPLIFIED: Always create MEETING type with Google Meet enabled by default
         event.setType("MEETING");
-        event.setCreateGoogleMeet(switchCreateMeet != null && switchCreateMeet.isChecked());
+        event.setCreateGoogleMeet(true); // Always create Google Meet
         
         event.setAttendeeIds(selectedAttendeeIds);
         event.setRecurrence(getSelectedRecurrence());

@@ -59,7 +59,7 @@
     <string name="meeting">会議</string>
     <string name="milestone">マイルストーン</string>
     <string name="other">その他</string>
-    <string name="add_attendees">参加者を追加</string>
+    <string name="add_attendees">参加者を招待</string>
     <string name="create_google_meet">Google Meetを作成</string>
     <string name="recurrence">繰り返し</string>
     <string name="cancel">キャンセル</string>
