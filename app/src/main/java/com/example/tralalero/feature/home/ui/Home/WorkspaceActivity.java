@@ -95,7 +95,7 @@ public class WorkspaceActivity extends AppCompatActivity {
         // Check if we should create a new project automatically
         if (shouldCreateProject && newProjectName != null && !newProjectName.isEmpty()) {
             Log.d(TAG, "Auto-creating project: " + newProjectName);
-            createProject(newProjectName, newProjectDescription != null ? newProjectDescription : "");
+            createProject(newProjectName);
         }
         
         setupCreateButton();
@@ -205,7 +205,6 @@ public class WorkspaceActivity extends AppCompatActivity {
         builder.setTitle("Create New Project");
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_project, null);
         EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
-        EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
 
         builder.setView(dialogView);
 
@@ -216,13 +215,12 @@ public class WorkspaceActivity extends AppCompatActivity {
         dialog.setOnShowListener(dialogInterface -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 String projectName = etProjectName.getText().toString().trim();
-                String projectDescription = etProjectDescription.getText().toString().trim();
                 if (projectName.isEmpty()) {
                     etProjectName.setError("Project name cannot be empty");
                     Toast.makeText(this, "Project name cannot be empty", Toast.LENGTH_SHORT).show();
                     return; // Don't close dialog
                 }
-                createProject(projectName, projectDescription);
+                createProject(projectName);
                 dialog.dismiss();
             });
         });
@@ -230,11 +228,11 @@ public class WorkspaceActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void createProject(String projectName, String projectDescription) {
+    private void createProject(String projectName) {
         Log.d(TAG, "Creating project: " + projectName);
         
-        // ✅ Use WorkspaceViewModel's optimistic update method
-        workspaceViewModel.createProject(workspaceId, projectName, projectDescription);
+        // ✅ Use WorkspaceViewModel's optimistic update method - no description
+        workspaceViewModel.createProject(workspaceId, projectName, null);
         
         // Observer auto-updates UI - NO MANUAL RELOAD
         Toast.makeText(this, "Creating project...", Toast.LENGTH_SHORT).show();

@@ -9,6 +9,9 @@ public class UserDto {
 
     public String passwordHash;
     public String avatarUrl;
+    public String bio;
+    public String jobTitle;
+    public String phoneNumber;
     public String firebaseUid;
     public String createdAt;
     public String updatedAt;
@@ -31,6 +34,18 @@ public class UserDto {
 
     public String getAvatarUrl() {
         return avatarUrl;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
     public String getFirebaseUid() {

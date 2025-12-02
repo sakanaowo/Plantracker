@@ -66,6 +66,9 @@ public class EditProfileActivity extends AppCompatActivity {
     private TextInputEditText etName;
     private TextInputEditText etUsername;
     private TextInputEditText etEmail;
+    private TextInputEditText etBio;
+    private TextInputEditText etJobTitle;
+    private TextInputEditText etPhoneNumber;
     private MaterialButton btnSave;
     private MaterialButton btnCancel;
     private FrameLayout loadingOverlay;
@@ -74,6 +77,11 @@ public class EditProfileActivity extends AppCompatActivity {
     private Uri currentPhotoUri;
     private String newAvatarUrl;
     private boolean avatarChanged = false;
+    
+    // Store original values for comparison
+    private String originalBio = "";
+    private String originalJobTitle = "";
+    private String originalPhoneNumber = "";
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
@@ -105,6 +113,9 @@ public class EditProfileActivity extends AppCompatActivity {
         etName = findViewById(R.id.etName);
         etUsername = findViewById(R.id.etUsername);
         etEmail = findViewById(R.id.etEmail);
+        etBio = findViewById(R.id.etBio);
+        etJobTitle = findViewById(R.id.etJobTitle);
+        etPhoneNumber = findViewById(R.id.etPhoneNumber);
         btnSave = findViewById(R.id.btnSave);
         btnCancel = findViewById(R.id.btnCancel);
         loadingOverlay = findViewById(R.id.loadingOverlay);
@@ -170,6 +181,18 @@ public class EditProfileActivity extends AppCompatActivity {
                     if (user.name != null && !user.name.isEmpty()) {
                         etName.setText(user.name);
                         etUsername.setText("@" + user.name.toLowerCase().replace(" ", ""));
+                    }
+                    if (user.bio != null && !user.bio.isEmpty()) {
+                        originalBio = user.bio;
+                        etBio.setText(user.bio);
+                    }
+                    if (user.jobTitle != null && !user.jobTitle.isEmpty()) {
+                        originalJobTitle = user.jobTitle;
+                        etJobTitle.setText(user.jobTitle);
+                    }
+                    if (user.phoneNumber != null && !user.phoneNumber.isEmpty()) {
+                        originalPhoneNumber = user.phoneNumber;
+                        etPhoneNumber.setText(user.phoneNumber);
                     }
                     if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
                         Log.d(TAG, "Loading avatar from: " + user.avatarUrl);
@@ -534,8 +557,19 @@ public class EditProfileActivity extends AppCompatActivity {
             etName.requestFocus();
             return;
         }
+        
+        // Check if any field has changed
         String currentName = firebaseUser != null ? firebaseUser.getDisplayName() : "";
-        if (newName.equals(currentName) && !avatarChanged) {
+        String newBio = etBio.getText().toString().trim();
+        String newJobTitle = etJobTitle.getText().toString().trim();
+        String newPhoneNumber = etPhoneNumber.getText().toString().trim();
+        
+        boolean nameChanged = !newName.equals(currentName);
+        boolean bioChanged = !newBio.equals(originalBio);
+        boolean jobTitleChanged = !newJobTitle.equals(originalJobTitle);
+        boolean phoneNumberChanged = !newPhoneNumber.equals(originalPhoneNumber);
+        
+        if (!nameChanged && !avatarChanged && !bioChanged && !jobTitleChanged && !phoneNumberChanged) {
             Toast.makeText(this, "No changes to save", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -559,7 +593,16 @@ public class EditProfileActivity extends AppCompatActivity {
         firebaseUser.updateProfile(profileUpdates)
             .addOnSuccessListener(aVoid -> {
                 Log.d(TAG, "✓ Firebase profile updated (name only)");
-                updateBackendProfile(newName, avatarChanged ? newAvatarUrl : null);
+                
+                // Get bio, job title, phone number
+                String bio = etBio.getText().toString().trim();
+                String jobTitle = etJobTitle.getText().toString().trim();
+                String phoneNumber = etPhoneNumber.getText().toString().trim();
+                
+                updateBackendProfile(newName, avatarChanged ? newAvatarUrl : null, 
+                    bio.isEmpty() ? null : bio,
+                    jobTitle.isEmpty() ? null : jobTitle,
+                    phoneNumber.isEmpty() ? null : phoneNumber);
             })
             .addOnFailureListener(e -> {
                 Log.e(TAG, "Failed to update Firebase profile", e);
@@ -569,13 +612,16 @@ public class EditProfileActivity extends AppCompatActivity {
             });
     }
 
-    private void updateBackendProfile(String name, String avatarUrl) {
+    private void updateBackendProfile(String name, String avatarUrl, String bio, String jobTitle, String phoneNumber) {
         Log.d(TAG, "Updating backend profile:");
         Log.d(TAG, "  Name: " + name);
         Log.d(TAG, "  Avatar URL (public URL): " + avatarUrl);
+        Log.d(TAG, "  Bio: " + bio);
+        Log.d(TAG, "  Job Title: " + jobTitle);
+        Log.d(TAG, "  Phone: " + phoneNumber);
 
         AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
-        UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl);
+        UpdateProfileRequest request = new UpdateProfileRequest(name, avatarUrl, bio, jobTitle, phoneNumber);
 
         authApi.updateProfile(request).enqueue(new retrofit2.Callback<UserDto>() {
             @Override

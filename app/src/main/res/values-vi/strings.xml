@@ -12,8 +12,8 @@
     <string name="client_id">710677395196-0f5krq4gdk0hht5ahn2lsk3c1pr0oa25.apps.googleusercontent.com</string>
     <string name="change_language_title">Ngôn ngữ</string>
 
-    <!-- Account Screen -->
-    <string name="account_title">Tài khoản</string>
+    <!-- Settings Screen -->
+    <string name="account_title">Cài đặt</string>
     <string name="workspaces_title">Không gian làm việc</string>
     <string name="general_title">Chung</string>
     <string name="offline_boards" tools:ignore="ExtraTranslation">Bảng ngoại tuyến</string>
@@ -25,7 +25,7 @@
     <string name="boards">Bảng</string>
     <string name="inbox">Hộp thư</string>
     <string name="activity">Hoạt động</string>
-    <string name="account">Tài khoản</string>
+    <string name="account">Cài đặt</string>
 
     <!-- Events Tab -->
     <string name="events_and_meetings">Sự kiện &amp; Cuộc họp</string>

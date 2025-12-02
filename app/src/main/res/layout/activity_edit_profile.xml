@@ -63,6 +63,27 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Bio Input (Optional) -->
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilBio" style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:hint="Bio (Optional)" app:boxCornerRadiusBottomEnd="12dp" app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusTopEnd="12dp" app:boxCornerRadiusTopStart="12dp" app:counterEnabled="true" app:counterMaxLength="500" app:helperText="Tell us about yourself" app:helperTextTextColor="@color/on_surface_variant">
+
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etBio" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textMultiLine|textCapSentences" android:maxLength="500" android:minLines="3" android:maxLines="5" android:gravity="top|start" android:textColor="@color/on_surface" android:textSize="16sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Job Title Input (Optional) -->
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilJobTitle" style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:hint="Job Title (Optional)" app:boxCornerRadiusBottomEnd="12dp" app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusTopEnd="12dp" app:boxCornerRadiusTopStart="12dp" app:counterEnabled="true" app:counterMaxLength="100" app:helperText="Your role or position" app:helperTextTextColor="@color/on_surface_variant">
+
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etJobTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapWords" android:maxLength="100" android:maxLines="1" android:textColor="@color/on_surface" android:textSize="16sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Phone Number Input (Optional) -->
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilPhoneNumber" style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:hint="Phone Number (Optional)" app:boxCornerRadiusBottomEnd="12dp" app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusTopEnd="12dp" app:boxCornerRadiusTopStart="12dp" app:helperText="Contact number" app:helperTextTextColor="@color/on_surface_variant" app:prefixText="+">
+
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etPhoneNumber" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone" android:maxLength="20" android:maxLines="1" android:textColor="@color/on_surface" android:textSize="16sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- Spacer -->
             <View android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
 

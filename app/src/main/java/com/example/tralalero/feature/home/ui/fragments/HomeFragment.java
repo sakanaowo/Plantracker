@@ -209,7 +209,6 @@ public class HomeFragment extends Fragment {
     private void showCreateProjectDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_create_project, null);
         EditText etProjectName = dialogView.findViewById(R.id.etProjectName);
-        EditText etProjectDescription = dialogView.findViewById(R.id.etProjectDescription);
         
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
         builder.setTitle("Create New Project");
@@ -221,7 +220,6 @@ public class HomeFragment extends Fragment {
         dialog.setOnShowListener(dialogInterface -> {
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 String projectName = etProjectName.getText().toString().trim();
-                String projectDescription = etProjectDescription.getText().toString().trim();
                 
                 if (projectName.isEmpty()) {
                     etProjectName.setError("Project name cannot be empty");
@@ -229,7 +227,7 @@ public class HomeFragment extends Fragment {
                     return;
                 }
                 
-                createProjectInOwnedWorkspace(projectName, projectDescription);
+                createProjectInOwnedWorkspace(projectName);
                 dialog.dismiss();
             });
         });
@@ -237,12 +235,12 @@ public class HomeFragment extends Fragment {
         dialog.show();
     }
     
-    private void createProjectInOwnedWorkspace(String projectName, String projectDescription) {
+    private void createProjectInOwnedWorkspace(String projectName) {
         Log.d(TAG, "Creating project: " + projectName);
         Toast.makeText(getContext(), "Creating project...", Toast.LENGTH_SHORT).show();
         
         Project newProject = new Project(
-            null, null, projectName, projectDescription, null, "KANBAN", null
+            null, null, projectName, null, null, "KANBAN", null
         );
         
         projectRepository.createProject(null, newProject, new IProjectRepository.RepositoryCallback<Project>() {
