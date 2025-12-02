@@ -237,16 +237,16 @@ public class MainActivity extends AppCompatActivity {
                         showCalendarSyncDialog();
                     }
                 } else {
-                    // API error, proceed to home anyway
-                    Log.w(TAG, "Failed to check calendar status, proceeding to home");
+                    // API error, proceed to home (can't determine status reliably)
+                    Log.w(TAG, "Failed to check calendar status: " + response.code() + ", proceeding to home");
                     proceedToHome();
                 }
             }
             
             @Override
             public void onFailure(Call<GoogleCalendarStatusResponse> call, Throwable t) {
-                // Network error, proceed to home anyway
-                Log.e(TAG, "Network error checking calendar status", t);
+                // Network error, proceed to home (can't determine status)
+                Log.e(TAG, "Network error checking calendar status, proceeding to home", t);
                 proceedToHome();
             }
         });
