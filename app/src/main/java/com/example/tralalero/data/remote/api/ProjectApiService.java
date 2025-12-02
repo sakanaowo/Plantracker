@@ -45,6 +45,14 @@ public interface ProjectApiService {
     Call<Void> deleteProject(@Path("id") String projectId);
     
     /**
+     * Leave project (for non-owners)
+     * @param projectId Project ID
+     * @return Response with success message
+     */
+    @POST("projects/{id}/leave")
+    Call<Void> leaveProject(@Path("id") String projectId);
+    
+    /**
      * Get project summary statistics
      * @param projectId Project ID
      * @return Summary with done, updated, created, due counts and status overview

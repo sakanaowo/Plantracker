@@ -316,6 +316,63 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
         }
     }
     
+    // ==================== LEAVE PROJECT ====================
+    
+    @Override
+    public void leaveProject(String projectId, RepositoryCallback<Void> callback) {
+        // Input validation
+        if (projectId == null || projectId.trim().isEmpty()) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("projectId cannot be null or empty"));
+            }
+            return;
+        }
+        
+        if (callback == null) {
+            Log.e(TAG, "leaveProject: callback is null");
+            return;
+        }
+        
+        try {
+            apiService.leaveProject(projectId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        // Delete from cache (user no longer has access)
+                        executorService.execute(() -> {
+                            try {
+                                projectDao.deleteProjectById(projectId);
+                                Log.d(TAG, "✓ Removed project from cache after leaving: " + projectId);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error removing from cache", e);
+                            }
+                        });
+                        
+                        // Callback on main thread
+                        mainHandler.post(() -> callback.onSuccess(null));
+                    } else {
+                        String errorMsg = "Failed to leave project";
+                        if (response.code() == 400) {
+                            errorMsg = "Cannot leave project (you may be the last owner)";
+                        } else if (response.code() == 404) {
+                            errorMsg = "You are not a member of this project";
+                        }
+                        String finalErrorMsg = errorMsg;
+                        mainHandler.post(() -> callback.onError(finalErrorMsg + ": " + response.code()));
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error leaving project", e);
+            mainHandler.post(() -> callback.onError("Error leaving project: " + e.getMessage()));
+        }
+    }
+    
     // ==================== UPDATE PROJECT KEY ====================
     
     @Override

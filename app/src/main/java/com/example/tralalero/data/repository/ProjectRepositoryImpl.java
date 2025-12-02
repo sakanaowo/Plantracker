@@ -106,6 +106,31 @@ public class ProjectRepositoryImpl implements IProjectRepository {
             }
         });
     }
+    
+    @Override
+    public void leaveProject(String projectId, RepositoryCallback<Void> callback) {
+        apiService.leaveProject(projectId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    String errorMsg = "Failed to leave project";
+                    if (response.code() == 400) {
+                        errorMsg = "Cannot leave project (you may be the last owner)";
+                    } else if (response.code() == 404) {
+                        errorMsg = "You are not a member of this project";
+                    }
+                    callback.onError(errorMsg + ": " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
 
     @Override
     public void updateProjectKey(String projectId, String newKey, RepositoryCallback<Project> callback) {
