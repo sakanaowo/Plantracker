@@ -807,9 +807,21 @@ public class AccountFragment extends Fragment {
     
     private void continueLogout() {
         Log.d(TAG, "Continuing logout: Firebase and cache cleanup");
+        
+        // Get user ID before signing out
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String userId = user != null ? user.getUid() : null;
+        
         FirebaseAuth.getInstance().signOut();
         App.authManager.signOut();
         Log.d(TAG, "✓ Auth cleared");
+        
+        // Clear calendar sync cooldown for this user (so they see prompt on next login if not connected)
+        if (userId != null) {
+            com.example.tralalero.MainActivity.clearCalendarSyncCooldown(requireContext(), userId);
+            Log.d(TAG, "✓ Calendar sync cooldown cleared for user: " + userId);
+        }
+        
         App.dependencyProvider.clearAllCaches();
         Log.d(TAG, "✓ Database cache cleared");
         DependencyProvider.reset();

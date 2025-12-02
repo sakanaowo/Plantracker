@@ -1,6 +1,7 @@
 package com.example.tralalero;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -45,9 +47,21 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final String PREFS_NAME = "CalendarSyncPrefs";
-    private static final String KEY_DONT_ASK_AGAIN = "dont_ask_calendar_sync";
-    private static final String KEY_LAST_PROMPTED = "last_prompted_timestamp";
+    private static final String KEY_LAST_PROMPTED_PREFIX = "last_prompted_";
     private static final long PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+    
+    /**
+     * Clear calendar sync cooldown for a specific user
+     * Useful for logout or testing scenarios
+     */
+    public static void clearCalendarSyncCooldown(Context context, String userId) {
+        if (context == null || userId == null) return;
+        
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String userKey = KEY_LAST_PROMPTED_PREFIX + userId;
+        prefs.edit().remove(userKey).apply();
+        Log.d(TAG, "Cleared calendar sync cooldown for user: " + userId);
+    }
     
     private AuthViewModel authViewModel;
     private GoogleAuthApiService googleAuthApiService;
@@ -183,26 +197,11 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Check if we should prompt the user to sync calendar
      * Conditions:
-     * 1. User hasn't selected "don't ask again"
-     * 2. Last prompt was more than 24 hours ago (cooldown)
-     * 3. User is authenticated
+     * 1. User is authenticated
+     * 2. Last prompt for THIS USER was more than 24 hours ago (cooldown)
+     *    - BUT if never prompted before (lastPrompted == 0), always show
      */
     private boolean shouldPromptCalendarSync() {
-        // Check if user selected "don't ask again"
-        boolean dontAskAgain = calendarSyncPrefs.getBoolean(KEY_DONT_ASK_AGAIN, false);
-        if (dontAskAgain) {
-            Log.d(TAG, "Calendar sync prompt disabled by user preference");
-            return false;
-        }
-        
-        // Check cooldown period
-        long lastPrompted = calendarSyncPrefs.getLong(KEY_LAST_PROMPTED, 0);
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastPrompted < PROMPT_COOLDOWN_MS) {
-            Log.d(TAG, "Calendar sync prompt on cooldown");
-            return false;
-        }
-        
         // Check if user is authenticated
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
@@ -210,7 +209,25 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         
-        Log.d(TAG, "Should prompt calendar sync: true");
+        // Check cooldown period FOR THIS SPECIFIC USER
+        String userKey = KEY_LAST_PROMPTED_PREFIX + user.getUid();
+        long lastPrompted = calendarSyncPrefs.getLong(userKey, 0);
+        
+        // If never prompted before (lastPrompted == 0), always show dialog
+        if (lastPrompted == 0) {
+            Log.d(TAG, "User never prompted before, should show calendar sync for user: " + user.getUid());
+            return true;
+        }
+        
+        // Check cooldown period
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastPrompted < PROMPT_COOLDOWN_MS) {
+            long hoursRemaining = (PROMPT_COOLDOWN_MS - (currentTime - lastPrompted)) / (60 * 60 * 1000);
+            Log.d(TAG, "Calendar sync prompt on cooldown for user: " + user.getUid() + " (" + hoursRemaining + "h remaining)");
+            return false;
+        }
+        
+        Log.d(TAG, "Cooldown expired, should prompt calendar sync for user: " + user.getUid());
         return true;
     }
     
@@ -260,14 +277,22 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Log.w(TAG, "Cannot show calendar dialog: user not authenticated");
+            proceedToHome();
+            return;
+        }
+        
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_calendar_sync_prompt);
         dialog.setCancelable(true);
         
-        // Update last prompted timestamp
+        // Update last prompted timestamp FOR THIS SPECIFIC USER
+        String userKey = KEY_LAST_PROMPTED_PREFIX + user.getUid();
         calendarSyncPrefs.edit()
-            .putLong(KEY_LAST_PROMPTED, System.currentTimeMillis())
+            .putLong(userKey, System.currentTimeMillis())
             .apply();
         
         Button btnConnectNow = dialog.findViewById(R.id.btnConnectNow);
@@ -288,12 +313,9 @@ public class MainActivity extends AppCompatActivity {
             proceedToHome();
         });
         
-        // Don't Ask Again button
+        // Don't Ask Again button - now just dismisses (user can still see in settings)
         btnDontAskAgain.setOnClickListener(v -> {
             Log.d(TAG, "User clicked 'Don't Ask Again'");
-            calendarSyncPrefs.edit()
-                .putBoolean(KEY_DONT_ASK_AGAIN, true)
-                .apply();
             dialog.dismiss();
             proceedToHome();
         });
@@ -306,28 +328,28 @@ public class MainActivity extends AppCompatActivity {
     
     /**
      * Initiate Google Calendar connection flow
-     * Gets OAuth URL and opens browser
+     * Gets OAuth URL and opens Chrome Custom Tab
      */
     private void initiateCalendarConnection() {
         Log.d(TAG, "Initiating calendar connection...");
+        Toast.makeText(this, "Connecting to Google Calendar...", Toast.LENGTH_SHORT).show();
         
         googleAuthApiService.getAuthUrl().enqueue(new Callback<AuthUrlResponse>() {
             @Override
             public void onResponse(Call<AuthUrlResponse> call, Response<AuthUrlResponse> response) {
                 if (!isFinishing() && response.isSuccessful() && response.body() != null) {
                     String authUrl = response.body().getAuthUrl();
-                    Log.d(TAG, "Opening OAuth URL: " + authUrl);
+                    Log.d(TAG, "Opening OAuth URL in Chrome Custom Tab: " + authUrl);
                     
-                    // Open OAuth URL in browser
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
-                    startActivity(browserIntent);
+                    // Open OAuth URL in Chrome Custom Tab
+                    openChromeCustomTab(authUrl);
                     
-                    // Proceed to home (user will return later)
+                    // Proceed to home (user will return after OAuth)
                     proceedToHome();
                 } else {
                     Log.e(TAG, "Failed to get auth URL: " + response.code());
                     Toast.makeText(MainActivity.this, 
-                        "Failed to connect calendar. Please try again later.", 
+                        "Failed to start Google sign-in", 
                         Toast.LENGTH_SHORT).show();
                     proceedToHome();
                 }
@@ -337,10 +359,36 @@ public class MainActivity extends AppCompatActivity {
             public void onFailure(Call<AuthUrlResponse> call, Throwable t) {
                 Log.e(TAG, "Network error getting auth URL", t);
                 Toast.makeText(MainActivity.this, 
-                    "Network error. Please check your connection.", 
+                    "Network error: " + t.getMessage(), 
                     Toast.LENGTH_SHORT).show();
                 proceedToHome();
             }
         });
+    }
+    
+    /**
+     * Open URL in Chrome Custom Tab with fallback to default browser
+     */
+    private void openChromeCustomTab(String url) {
+        try {
+            CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+            builder.setShowTitle(true);
+            builder.setToolbarColor(getResources().getColor(R.color.primary));
+            
+            CustomTabsIntent customTabsIntent = builder.build();
+            customTabsIntent.launchUrl(this, Uri.parse(url));
+            
+            Log.d(TAG, "Opened Chrome Custom Tab successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to open Chrome Custom Tab, using fallback", e);
+            // Fallback to default browser
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Failed to open browser", ex);
+                Toast.makeText(this, "Failed to open browser", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
