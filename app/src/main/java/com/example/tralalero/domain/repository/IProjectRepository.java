@@ -11,6 +11,8 @@ public interface IProjectRepository {
     void updateProject(String projectId, Project project, RepositoryCallback<Project> callback);
 
     void deleteProject(String projectId, RepositoryCallback<Void> callback);
+    
+    void leaveProject(String projectId, RepositoryCallback<Void> callback);
 
     void updateProjectKey(String projectId, String newKey, RepositoryCallback<Project> callback);
 

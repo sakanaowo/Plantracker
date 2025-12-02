@@ -65,12 +65,20 @@
         <!-- Divider -->
         <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="16dp" android:background="#091E4221"/>
 
-        <!-- Delete Project Section -->
-        <LinearLayout android:id="@+id/layoutDeleteProject" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="?attr/selectableItemBackground" android:gravity="center_vertical">
+        <!-- Delete Project Section (OWNER only) -->
+        <LinearLayout android:id="@+id/layoutDeleteProject" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="?attr/selectableItemBackground" android:gravity="center_vertical" android:visibility="gone">
 
             <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_delete" app:tint="#CF222E" android:layout_marginEnd="12dp"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete Project" android:textSize="14sp" android:textColor="#CF222E" android:fontFamily="sans-serif-medium"/>
+        </LinearLayout>
+
+        <!-- Leave Project Section (non-OWNER) -->
+        <LinearLayout android:id="@+id/layoutLeaveProject" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="?attr/selectableItemBackground" android:gravity="center_vertical" android:visibility="gone">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_revert" app:tint="#FF9800" android:layout_marginEnd="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Leave Project" android:textSize="14sp" android:textColor="#FF9800" android:fontFamily="sans-serif-medium"/>
         </LinearLayout>
 
         <!-- Bottom Padding -->

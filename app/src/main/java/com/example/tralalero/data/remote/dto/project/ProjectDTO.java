@@ -27,6 +27,9 @@ public class ProjectDTO {
 
     @SerializedName("type")
     private String type;  // PERSONAL or TEAM
+    
+    @SerializedName("currentUserRole")
+    private String currentUserRole;  // OWNER, ADMIN, MEMBER (from backend)
 
     @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
@@ -117,6 +120,14 @@ public class ProjectDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+    
+    public String getCurrentUserRole() {
+        return currentUserRole;
+    }
+    
+    public void setCurrentUserRole(String currentUserRole) {
+        this.currentUserRole = currentUserRole;
     }
 
     public String getCreatedAt() {

@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.data.repository.ActivityLogRepositoryImpl;
 import com.example.tralalero.data.repository.MemberRepositoryImpl;
@@ -49,6 +50,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     
     private String projectName;
     private String projectId;
+    private String currentUserRole; // OWNER, ADMIN, or MEMBER
     private IMemberRepository memberRepository;
     private IActivityLogRepository activityLogRepository;
     private TextView tvMenuTitle;
@@ -56,6 +58,8 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private RecyclerView rvMembers, rvActivity;
     private MaterialButton btnInvite;
     private View layoutSynced;
+    private View layoutDeleteProject;
+    private View layoutLeaveProject;
     
     private MemberAdapter memberAdapter;
     private ActivityLogAdapter activityAdapter;
@@ -109,15 +113,19 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         btnInvite = view.findViewById(R.id.btnInvite);
 
         layoutSynced = view.findViewById(R.id.layoutSynced);
-        View layoutDeleteProject = view.findViewById(R.id.layoutDeleteProject);
+        layoutDeleteProject = view.findViewById(R.id.layoutDeleteProject);
+        layoutLeaveProject = view.findViewById(R.id.layoutLeaveProject);
         
         if (projectName != null) {
             tvMenuTitle.setText("Project menu");
         }
         
-        // Setup delete project listener
+        // Initially hide both - will show appropriate one after fetching project
         if (layoutDeleteProject != null) {
-            layoutDeleteProject.setOnClickListener(v -> showDeleteProjectDialog());
+            layoutDeleteProject.setVisibility(View.GONE);
+        }
+        if (layoutLeaveProject != null) {
+            layoutLeaveProject.setVisibility(View.GONE);
         }
     }
 
@@ -131,6 +139,16 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         layoutSynced.setOnClickListener(v -> {
             syncProjectData();
         });
+        
+        // Setup delete project listener
+        if (layoutDeleteProject != null) {
+            layoutDeleteProject.setOnClickListener(v -> showDeleteProjectDialog());
+        }
+        
+        // Setup leave project listener
+        if (layoutLeaveProject != null) {
+            layoutLeaveProject.setOnClickListener(v -> showLeaveProjectDialog());
+        }
     }
     
     private void syncProjectData() {
@@ -440,6 +458,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private void loadData() {
         loadProjectMembersWithCache();
         loadActivityLogsWithCache();
+        fetchProjectDetails(); // Fetch project to get currentUserRole
     }
     
     private void loadProjectMembersWithCache() {
@@ -655,6 +674,135 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     private void addActivityLog(String action) {
         // Activity logs are now loaded from API, not added manually
         // This method is deprecated
+    }
+    
+    /**
+     * Fetch project details to get currentUserRole
+     */
+    private void fetchProjectDetails() {
+        if (projectId == null) return;
+        
+        com.example.tralalero.data.remote.api.ProjectApiService projectApi = 
+            com.example.tralalero.network.ApiClient.get(App.authManager)
+                .create(com.example.tralalero.data.remote.api.ProjectApiService.class);
+        
+        projectApi.getProjectById(projectId).enqueue(new retrofit2.Callback<com.example.tralalero.data.remote.dto.project.ProjectDTO>() {
+            @Override
+            public void onResponse(retrofit2.Call<com.example.tralalero.data.remote.dto.project.ProjectDTO> call, 
+                                 retrofit2.Response<com.example.tralalero.data.remote.dto.project.ProjectDTO> response) {
+                if (getActivity() == null) return;
+                
+                getActivity().runOnUiThread(() -> {
+                    if (response.isSuccessful() && response.body() != null) {
+                        currentUserRole = response.body().getCurrentUserRole();
+                        Log.d("ProjectMenuBottomSheet", "✅ RAW currentUserRole from API: '" + currentUserRole + "'");
+                        Log.d("ProjectMenuBottomSheet", "✅ Is null? " + (currentUserRole == null));
+                        Log.d("ProjectMenuBottomSheet", "✅ Project ID: " + projectId);
+                        Log.d("ProjectMenuBottomSheet", "✅ Response body: " + response.body());
+                        updateUIBasedOnRole();
+                    } else {
+                        Log.e("ProjectMenuBottomSheet", "❌ Failed to get project: " + response.code());
+                        // Hide both buttons if we can't determine role
+                        if (layoutDeleteProject != null) layoutDeleteProject.setVisibility(View.GONE);
+                        if (layoutLeaveProject != null) layoutLeaveProject.setVisibility(View.GONE);
+                    }
+                });
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<com.example.tralalero.data.remote.dto.project.ProjectDTO> call, Throwable t) {
+                Log.e("ProjectMenuBottomSheet", "❌ Error fetching project", t);
+            }
+        });
+    }
+    
+    /**
+     * Show appropriate button based on user role
+     */
+    private void updateUIBasedOnRole() {
+        if (layoutDeleteProject == null || layoutLeaveProject == null) {
+            Log.e("ProjectMenuBottomSheet", "❌ Layout views are NULL!");
+            return;
+        }
+        
+        Log.d("ProjectMenuBottomSheet", "🔍 updateUIBasedOnRole - currentUserRole: '" + currentUserRole + "'");
+        
+        // Handle null role (workspace owner who is not project member)
+        if (currentUserRole == null || currentUserRole.trim().isEmpty()) {
+            Log.w("ProjectMenuBottomSheet", "⚠️ currentUserRole is null/empty - hiding both buttons");
+            layoutDeleteProject.setVisibility(View.GONE);
+            layoutLeaveProject.setVisibility(View.GONE);
+            return;
+        }
+        
+        String role = currentUserRole.trim().toUpperCase();
+        Log.d("ProjectMenuBottomSheet", "🔍 Normalized role: '" + role + "'");
+        
+        if ("OWNER".equals(role)) {
+            // Show Delete, hide Leave
+            layoutDeleteProject.setVisibility(View.VISIBLE);
+            layoutLeaveProject.setVisibility(View.GONE);
+            Log.d("ProjectMenuBottomSheet", "✅ Showing DELETE button (user is OWNER)");
+        } else if ("ADMIN".equals(role) || "MEMBER".equals(role)) {
+            // Show Leave, hide Delete
+            layoutDeleteProject.setVisibility(View.GONE);
+            layoutLeaveProject.setVisibility(View.VISIBLE);
+            Log.d("ProjectMenuBottomSheet", "✅ Showing LEAVE button (user is " + role + ")");
+        } else {
+            // Unknown role - hide both
+            Log.w("ProjectMenuBottomSheet", "⚠️ Unknown role: " + role + " - hiding both buttons");
+            layoutDeleteProject.setVisibility(View.GONE);
+            layoutLeaveProject.setVisibility(View.GONE);
+        }
+    }
+    
+    /**
+     * Show leave project confirmation dialog
+     */
+    private void showLeaveProjectDialog() {
+        if (getContext() == null) return;
+        
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+            .setTitle("Leave Project")
+            .setMessage("Are you sure you want to leave \"" + projectName + "\"?")
+            .setPositiveButton("Leave", (dialog, which) -> leaveProject())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Leave project (for non-owners)
+     */
+    private void leaveProject() {
+        if (getContext() == null) return;
+        
+        Toast.makeText(getContext(), "Leaving project...", Toast.LENGTH_SHORT).show();
+        
+        com.example.tralalero.domain.repository.IProjectRepository projectRepo = 
+            new com.example.tralalero.data.repository.ProjectRepositoryImpl(getContext());
+        
+        projectRepo.leaveProject(projectId, new com.example.tralalero.domain.repository.IProjectRepository.RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                if (getActivity() == null) return;
+                
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "✅ Successfully left the project", Toast.LENGTH_SHORT).show();
+                    dismiss();
+                    getActivity().finish(); // Close ProjectActivity and return to home
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                if (getActivity() == null) return;
+                
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "❌ " + error, Toast.LENGTH_LONG).show();
+                    Log.e("ProjectMenu", "Leave project failed: " + error);
+                });
+            }
+        });
     }
 
     static class UIMember {
