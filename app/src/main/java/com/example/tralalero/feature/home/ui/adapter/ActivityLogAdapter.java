@@ -161,6 +161,11 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             String entityType = log.getEntityType();
             String entityName = log.getEntityName();
             
+            // Null safety for entityName
+            if (entityName == null) {
+                entityName = "";
+            }
+            
             switch (action) {
                 case "CREATED":
                     if ("TASK".equals(entityType)) {
@@ -172,41 +177,55 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                     } else if ("BOARD".equals(entityType)) {
                         return userName + " created board \"" + entityName + "\"";
                     }
-                    return userName + " created " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                    return userName + " created " + entityType.toLowerCase() + (entityName.isEmpty() ? "" : " \"" + entityName + "\"");
                 
                 case "ADDED":
                     if ("MEMBERSHIP".equals(entityType)) {
-                        // entityName is the invited person's name
-                        // Try to get invitation type from metadata and project name from newValue
+                        // ✅ NEW FORMAT: entityName is now the PROJECT name
+                        // memberName is in metadata
+                        String projectName = entityName;
+                        String memberName = getMetadataValue(log.getMetadata(), "memberName");
                         String invitationType = getMetadataValue(log.getMetadata(), "type");
-                        String projectName = null;
-
-                        // Try to get project name from newValue
-                        try {
-                            if (log.getNewValue() instanceof java.util.Map) {
-                                java.util.Map<String, Object> newVal = (java.util.Map<String, Object>) log.getNewValue();
-                                Object pName = newVal.get("projectName");
-                                if (pName != null) projectName = pName.toString();
+                        
+                        // ⚠️ BACKWARD COMPATIBILITY: Old data had memberName in entityName
+                        // If projectName looks like a person name or entityName == memberName, 
+                        // it's probably old data where entityName was memberName
+                        boolean isOldFormat = false;
+                        if (memberName != null && projectName != null && 
+                            (projectName.equals(memberName) || projectName.contains(memberName))) {
+                            // Old format detected - entityName was member name
+                            isOldFormat = true;
+                            // Try to get project name from newValue (old structure)
+                            String oldProjectName = null;
+                            try {
+                                if (log.getNewValue() instanceof java.util.Map) {
+                                    java.util.Map<String, Object> newVal = (java.util.Map<String, Object>) log.getNewValue();
+                                    Object pName = newVal.get("projectName");
+                                    if (pName != null) oldProjectName = pName.toString();
+                                }
+                            } catch (Exception e) {
+                                // Ignore
                             }
-                        } catch (Exception e) {
-                            // Ignore parsing errors
+                            if (oldProjectName != null && !oldProjectName.isEmpty()) {
+                                projectName = oldProjectName;
+                            }
                         }
-
-                        String projectContext = projectName != null ? " project \"" + projectName + "\"" : " a project";
-
+                        
                         if ("INVITATION_ACCEPTED".equals(invitationType)) {
-                            // Someone accepted invitation
+                            // Someone accepted invitation - they joined the project
                             if (isSelf) {
-                                return "You joined" + projectContext;
+                                return "You joined project \"" + projectName + "\"";
                             } else {
-                                return entityName + " joined" + projectContext;
+                                // The person who joined is the userName (not memberName)
+                                return userName + " joined project \"" + projectName + "\"";
                             }
                         } else {
-                            // Someone was invited
+                            // Someone invited a new member
+                            String invitee = memberName != null ? memberName : "a member";
                             if (isSelf) {
-                                return "You invited " + entityName + " to" + projectContext;
+                                return "You invited " + invitee + " to project \"" + projectName + "\"";
                             } else {
-                                return userName + " invited " + entityName + " to" + projectContext;
+                                return userName + " invited " + invitee + " to project \"" + projectName + "\"";
                             }
                         }
                     }
@@ -241,32 +260,88 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                     } else if ("PROJECT".equals(entityType)) {
                         return userName + " updated project \"" + entityName + "\"";
                     } else if ("MEMBERSHIP".equals(entityType)) {
-                        // Role change
-                        return userName + " updated membership for " + entityName;
+                        // ✅ Role change: entityName is PROJECT name, memberName in metadata
+                        String projectName = entityName;
+                        String memberName = getMetadataValue(log.getMetadata(), "memberName");
+                        String oldRole = getMetadataValue(log.getMetadata(), "oldRole");
+                        String newRole = getMetadataValue(log.getMetadata(), "newRole");
+                        
+                        String roleChange = "";
+                        if (oldRole != null && newRole != null) {
+                            roleChange = " from " + oldRole + " to " + newRole;
+                        }
+                        
+                        // Check if current user's role was changed
+                        if (currentUserId != null && memberName != null) {
+                            // If we can get the member's user info, check if it's the current user
+                            // For now, check if it's self by comparing names
+                            if (isSelf && userName.equals(memberName)) {
+                                // User's own role was changed by someone else
+                                return userName + " changed your role" + roleChange + " in project \"" + projectName + "\"";
+                            }
+                        }
+                        
+                        String memberInfo = memberName != null ? memberName : "a member";
+                        
+                        if (isSelf) {
+                            // User changed someone's role
+                            return "You changed " + memberInfo + "'s role" + roleChange + " in project \"" + projectName + "\"";
+                        } else {
+                            return userName + " changed " + memberInfo + "'s role" + roleChange + " in project \"" + projectName + "\"";
+                        }
                     }
-                    return userName + " updated " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                    return userName + " updated " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");
                 
                 case "DELETED":
-                    return userName + " deleted " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                    if ("PROJECT".equals(entityType)) {
+                        return userName + " deleted project \"" + entityName + "\"";
+                    }
+                    return userName + " deleted " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");
                 
                 case "REMOVED":
                     if ("MEMBERSHIP".equals(entityType)) {
-                        if (isSelf) {
-                            return "You removed " + entityName + " from the project";
+                        // ✅ Member removed/left: entityName is PROJECT name, memberName in metadata
+                        String projectName = entityName;
+                        String memberName = getMetadataValue(log.getMetadata(), "memberName");
+                        String memberId = getMetadataValue(log.getMetadata(), "memberId");
+                        
+                        // Check if the action performer is the same as the member being removed
+                        boolean selfLeft = log.getUserId() != null && log.getUserId().equals(memberId);
+                        
+                        if (isSelf && selfLeft) {
+                            // Current user left the project themselves
+                            return "You left project \"" + projectName + "\"";
+                        } else if (isSelf) {
+                            // Current user removed someone else
+                            String removedMember = memberName != null ? memberName : "a member";
+                            return "You removed " + removedMember + " from project \"" + projectName + "\"";
+                        } else if (selfLeft) {
+                            // Someone else left the project
+                            return userName + " left project \"" + projectName + "\"";
                         } else {
-                            return userName + " removed " + entityName + " from the project";
+                            // Someone removed another member
+                            String removedMember = memberName != null ? memberName : "a member";
+                            return userName + " removed " + removedMember + " from project \"" + projectName + "\"";
                         }
                     }
-                    return userName + " removed " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                    return userName + " removed " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");
 
                 case "ATTACHED":
                     if ("ATTACHMENT".equals(entityType)) {
+                        // Try to get filename from metadata
+                        String fileName = getMetadataValue(log.getMetadata(), "fileName");
+                        if (fileName != null) {
+                            return userName + " added attachment \"" + fileName + "\"";
+                        }
                         return userName + " added an attachment";
                     }
                     return userName + " attached " + entityType.toLowerCase();
 
                 case "COMMENTED":
-                    return userName + " commented on \"" + entityName + "\"";
+                    if (!entityName.isEmpty()) {
+                        return userName + " commented on \"" + entityName + "\"";
+                    }
+                    return userName + " added a comment";
                 
                 case "MOVED":
                     // Try to get board names from oldValue/newValue
@@ -289,20 +364,45 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
 
                     if (fromBoardName != null && toBoardName != null) {
                         return userName + " moved task \"" + entityName + "\" from " + fromBoardName + " to " + toBoardName;
-                    } else {
+                    } else if (!entityName.isEmpty()) {
                         return userName + " moved task \"" + entityName + "\"";
                     }
+                    return userName + " moved a task";
                 
                 case "COMPLETED":
-                    return userName + " completed task \"" + entityName + "\"";
+                    if (!entityName.isEmpty()) {
+                        return userName + " completed task \"" + entityName + "\"";
+                    }
+                    return userName + " completed a task";
                 
                 case "REOPENED":
-                    return userName + " reopened task \"" + entityName + "\"";
+                    if (!entityName.isEmpty()) {
+                        return userName + " reopened task \"" + entityName + "\"";
+                    }
+                    return userName + " reopened a task";
                 
                 case "UNASSIGNED":
-                    return userName + " unassigned task \"" + entityName + "\"";
+                    if (!entityName.isEmpty()) {
+                        return userName + " unassigned task \"" + entityName + "\"";
+                    }
+                    return userName + " unassigned a task";
+                
+                case "CHECKED":
+                    if ("TASK_CHECKLIST_ITEM".equals(entityType) && !entityName.isEmpty()) {
+                        return userName + " checked \"" + entityName + "\"";
+                    }
+                    return userName + " checked an item";
+                
+                case "UNCHECKED":
+                    if ("TASK_CHECKLIST_ITEM".equals(entityType) && !entityName.isEmpty()) {
+                        return userName + " unchecked \"" + entityName + "\"";
+                    }
+                    return userName + " unchecked an item";
 
                 default:
+                    if (!entityName.isEmpty()) {
+                        return userName + " " + action.toLowerCase() + " " + entityType.toLowerCase() + " \"" + entityName + "\"";
+                    }
                     return userName + " " + action.toLowerCase() + " " + entityType.toLowerCase();
             }
         }
