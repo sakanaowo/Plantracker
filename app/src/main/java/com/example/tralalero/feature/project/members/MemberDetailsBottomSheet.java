@@ -25,8 +25,12 @@ import java.util.Locale;
 public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
     
     private static final String ARG_MEMBER = "member";
+    private static final String ARG_CURRENT_USER_ID = "current_user_id";
+    private static final String ARG_CURRENT_USER_ROLE = "current_user_role";
     
     private MemberDTO member;
+    private String currentUserId;
+    private String currentUserRole;
     private OnMemberActionListener listener;
     
     // Views
@@ -38,18 +42,22 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
     private TextView tvMemberId;
     private TextView tvJoinedDate;
     private TextView tvUserId;
+    private TextView tvMemberBio;
     private MaterialButton btnChangeRole;
     private MaterialButton btnRemoveMember;
+    private View layoutActions;
     
     public interface OnMemberActionListener {
         void onChangeRole(MemberDTO member);
         void onRemoveMember(MemberDTO member);
     }
     
-    public static MemberDetailsBottomSheet newInstance(MemberDTO member) {
+    public static MemberDetailsBottomSheet newInstance(MemberDTO member, String currentUserId, String currentUserRole) {
         MemberDetailsBottomSheet fragment = new MemberDetailsBottomSheet();
         Bundle args = new Bundle();
         args.putSerializable(ARG_MEMBER, member);
+        args.putString(ARG_CURRENT_USER_ID, currentUserId);
+        args.putString(ARG_CURRENT_USER_ROLE, currentUserRole);
         fragment.setArguments(args);
         return fragment;
     }
@@ -59,6 +67,8 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             member = (MemberDTO) getArguments().getSerializable(ARG_MEMBER);
+            currentUserId = getArguments().getString(ARG_CURRENT_USER_ID);
+            currentUserRole = getArguments().getString(ARG_CURRENT_USER_ROLE);
         }
     }
     
@@ -93,8 +103,10 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
         tvMemberId = view.findViewById(R.id.tvMemberId);
         tvJoinedDate = view.findViewById(R.id.tvJoinedDate);
         tvUserId = view.findViewById(R.id.tvUserId);
+        tvMemberBio = view.findViewById(R.id.tvMemberBio);
         btnChangeRole = view.findViewById(R.id.btnChangeRole);
         btnRemoveMember = view.findViewById(R.id.btnRemoveMember);
+        layoutActions = view.findViewById(R.id.layoutActions);
     }
     
     private void populateData() {
@@ -126,10 +138,10 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
             chipRole.setChipBackgroundColorResource(roleColor);
         }
         
-        // Set member ID
-        String memberId = member.getId();
-        if (memberId != null && !memberId.isEmpty()) {
-            tvMemberId.setText(memberId);
+        // Set job title (previously Member ID field)
+        String jobTitle = member.getUser().getJobTitle();
+        if (jobTitle != null && !jobTitle.isEmpty()) {
+            tvMemberId.setText(jobTitle);
         } else {
             tvMemberId.setText("N/A");
         }
@@ -153,12 +165,22 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
             tvJoinedDate.setText("N/A");
         }
         
-        // Set user ID
-        String userId = member.getUser().getId();
-        if (userId != null && !userId.isEmpty()) {
-            tvUserId.setText(userId);
+        // Set phone number (previously User ID field)
+        String phoneNumber = member.getUser().getPhoneNumber();
+        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            tvUserId.setText(phoneNumber);
         } else {
             tvUserId.setText("N/A");
+        }
+        
+        // Set bio
+        String bio = member.getUser().getBio();
+        if (bio != null && !bio.isEmpty()) {
+            tvMemberBio.setText(bio);
+            tvMemberBio.setVisibility(View.VISIBLE);
+        } else {
+            tvMemberBio.setText("N/A");
+            tvMemberBio.setVisibility(View.VISIBLE);
         }
         
         // Load avatar with Glide
@@ -174,12 +196,49 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
             ivMemberAvatar.setImageResource(R.drawable.ic_person);
         }
         
-        // Disable actions for OWNER role
-        if ("OWNER".equalsIgnoreCase(role)) {
-            btnChangeRole.setEnabled(false);
-            btnChangeRole.setAlpha(0.5f);
-            btnRemoveMember.setEnabled(false);
-            btnRemoveMember.setAlpha(0.5f);
+        // Control button visibility based on permissions
+        updateButtonVisibility(role);
+    }
+    
+    private void updateButtonVisibility(String memberRole) {
+        // Check if viewing self
+        boolean isViewingSelf = member != null && member.getUser() != null && 
+            member.getUser().getId() != null && 
+            member.getUser().getId().equals(currentUserId);
+        
+        // Check if current user is owner or admin
+        boolean isCurrentUserOwner = "OWNER".equalsIgnoreCase(currentUserRole);
+        boolean isCurrentUserAdmin = "ADMIN".equalsIgnoreCase(currentUserRole);
+        boolean hasPermission = isCurrentUserOwner || isCurrentUserAdmin;
+        
+        // Check if member being viewed is owner
+        boolean isMemberOwner = "OWNER".equalsIgnoreCase(memberRole);
+        
+        // Determine visibility for each button
+        boolean showRemoveButton = !isViewingSelf && isCurrentUserOwner && !isMemberOwner;
+        boolean showChangeRoleButton = hasPermission && !isMemberOwner;
+        
+        // Update Remove Member button visibility
+        if (showRemoveButton) {
+            btnRemoveMember.setVisibility(View.VISIBLE);
+        } else {
+            btnRemoveMember.setVisibility(View.GONE);
+        }
+        
+        // Update Change Role button visibility
+        if (showChangeRoleButton) {
+            btnChangeRole.setVisibility(View.VISIBLE);
+            btnChangeRole.setEnabled(true);
+            btnChangeRole.setAlpha(1.0f);
+        } else {
+            btnChangeRole.setVisibility(View.GONE);
+        }
+        
+        // Hide entire Actions section if both buttons are hidden
+        if (!showRemoveButton && !showChangeRoleButton) {
+            layoutActions.setVisibility(View.GONE);
+        } else {
+            layoutActions.setVisibility(View.VISIBLE);
         }
     }
     

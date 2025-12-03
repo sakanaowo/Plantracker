@@ -63,6 +63,7 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
     
     private MemberAdapter memberAdapter;
     private ActivityLogAdapter activityAdapter;
+    private List<MemberDTO> currentMemberDTOs = new ArrayList<>();
 
     public static ProjectMenuBottomSheet newInstance(String projectId, String projectName) {
         ProjectMenuBottomSheet fragment = new ProjectMenuBottomSheet();
@@ -310,11 +311,23 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
             return;
         }
         
+        // Get current user ID
+        com.google.firebase.auth.FirebaseUser firebaseUser = 
+            com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String currentUserId = firebaseUser.getUid();
+        
+        // Use currentUserRole that was already fetched in fetchProjectDetails()
+        String userRole = currentUserRole != null ? currentUserRole : "MEMBER";
+        
         // Convert domain Member to MemberDTO
         MemberDTO memberDTO = MemberMapper.toDTO(uiMember.memberData);
         
         // Show member details bottom sheet
-        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(memberDTO);
+        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(memberDTO, currentUserId, userRole);
         bottomSheet.setOnMemberActionListener(new MemberDetailsBottomSheet.OnMemberActionListener() {
             @Override
             public void onChangeRole(MemberDTO member) {
@@ -536,6 +549,11 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
                     if (getContext() == null) return;
                     
                     Log.d("ProjectMenuBottomSheet", "✅ Received " + domainMembers.size() + " members from API");
+                    
+                    // Convert domain members to DTO and store
+                    currentMemberDTOs = domainMembers.stream()
+                        .map(MemberMapper::toDTO)
+                        .collect(java.util.stream.Collectors.toList());
                     
                     // Convert domain members to UI members
                     List<UIMember> uiMembers = new ArrayList<>();

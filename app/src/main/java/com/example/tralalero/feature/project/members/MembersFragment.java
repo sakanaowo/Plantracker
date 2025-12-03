@@ -19,6 +19,8 @@ import com.example.tralalero.data.repository.MemberRepositoryImpl;
 import com.example.tralalero.domain.model.Member;
 import com.example.tralalero.domain.repository.IMemberRepository;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +40,7 @@ public class MembersFragment extends Fragment {
     
     private MemberAdapter adapter;
     private IMemberRepository repository;
+    private List<MemberDTO> currentMembers = new ArrayList<>();
 
     public static MembersFragment newInstance(String projectId) {
         MembersFragment fragment = new MembersFragment();
@@ -123,6 +126,7 @@ public class MembersFragment extends Fragment {
                     List<MemberDTO> dtoList = data.stream()
                         .map(MemberMapper::toDTO)
                         .collect(Collectors.toList());
+                    currentMembers = dtoList; // Store for later use
                     adapter.setMembers(dtoList);
                     updateEmptyState(data.isEmpty());
                 }
@@ -148,7 +152,24 @@ public class MembersFragment extends Fragment {
     }
     
     private void showMemberDetails(MemberDTO member) {
-        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(member);
+        // Get current user ID
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(requireContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String currentUserId = firebaseUser.getUid();
+        
+        // Find current user's role in the project
+        String currentUserRole = "MEMBER"; // Default
+        for (MemberDTO m : currentMembers) {
+            if (m.getUser() != null && currentUserId.equals(m.getUser().getId())) {
+                currentUserRole = m.getRole();
+                break;
+            }
+        }
+        
+        MemberDetailsBottomSheet bottomSheet = MemberDetailsBottomSheet.newInstance(member, currentUserId, currentUserRole);
         bottomSheet.setOnMemberActionListener(new MemberDetailsBottomSheet.OnMemberActionListener() {
             @Override
             public void onChangeRole(MemberDTO member) {

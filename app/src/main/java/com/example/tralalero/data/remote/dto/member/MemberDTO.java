@@ -37,6 +37,15 @@ public class MemberDTO implements Serializable {
         @SerializedName("avatarUrl")
         private String avatarUrl;
 
+        @SerializedName("bio")
+        private String bio;
+
+        @SerializedName("jobTitle")
+        private String jobTitle;
+
+        @SerializedName("phoneNumber")
+        private String phoneNumber;
+
         // Getters & Setters
         public String getId() { return id; }
         public void setId(String id) { this.id = id; }
@@ -46,6 +55,12 @@ public class MemberDTO implements Serializable {
         public void setEmail(String email) { this.email = email; }
         public String getAvatarUrl() { return avatarUrl; }
         public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+        public String getBio() { return bio; }
+        public void setBio(String bio) { this.bio = bio; }
+        public String getJobTitle() { return jobTitle; }
+        public void setJobTitle(String jobTitle) { this.jobTitle = jobTitle; }
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     }
 
     // Getters & Setters
