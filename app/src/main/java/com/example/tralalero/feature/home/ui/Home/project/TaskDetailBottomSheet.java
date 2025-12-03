@@ -88,6 +88,17 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private CommentAdapter commentAdapter;
     private AttachmentAdapter attachmentAdapter;
     
+    // Dropdown UI elements
+    private android.widget.LinearLayout layoutAttachments;
+    private android.widget.LinearLayout layoutDetails;
+    private android.widget.LinearLayout layoutDetailsContent;
+    private ImageView ivAttachmentDropdown;
+    private ImageView ivDetailsDropdown;
+    private TextView tvAttachmentCount;
+    private ImageView ivAddAttachment;
+    private boolean isAttachmentsExpanded = false;
+    private boolean isDetailsExpanded = true;
+    
     private Date selectedDueDate;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     
@@ -157,6 +168,17 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         btnLowPriority = view.findViewById(R.id.btnLowPriority);
         btnMediumPriority = view.findViewById(R.id.btnMediumPriority);
         btnHighPriority = view.findViewById(R.id.btnHighPriority);
+        
+        // Dropdown elements
+        layoutAttachments = view.findViewById(R.id.layoutAttachments);
+        layoutDetails = view.findViewById(R.id.layoutDetails);
+        layoutDetailsContent = view.findViewById(R.id.layoutDetailsContent);
+        ivAttachmentDropdown = view.findViewById(R.id.ivAttachmentDropdown);
+        ivDetailsDropdown = view.findViewById(R.id.ivDetailsDropdown);
+        tvAttachmentCount = view.findViewById(R.id.tvAttachmentCount);
+        ivAddAttachment = view.findViewById(R.id.ivAddAttachment);
+        rvAttachments = view.findViewById(R.id.rvAttachments);
+        tvNoAttachments = view.findViewById(R.id.tvNoAttachments);
         
         etDescription.setEnabled(false);
         
@@ -337,6 +359,37 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                     Toast.makeText(requireContext(), "Cannot save: task data missing", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+        
+        // Dropdown toggles
+        if (layoutAttachments != null) {
+            layoutAttachments.setOnClickListener(v -> toggleAttachmentsDropdown());
+        }
+        if (layoutDetails != null) {
+            layoutDetails.setOnClickListener(v -> toggleDetailsDropdown());
+        }
+    }
+    
+    private void toggleAttachmentsDropdown() {
+        isAttachmentsExpanded = !isAttachmentsExpanded;
+        if (rvAttachments != null) {
+            rvAttachments.setVisibility(isAttachmentsExpanded ? View.VISIBLE : View.GONE);
+        }
+        if (tvNoAttachments != null && attachmentAdapter != null) {
+            tvNoAttachments.setVisibility(isAttachmentsExpanded && attachmentAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+        }
+        if (ivAttachmentDropdown != null) {
+            ivAttachmentDropdown.setRotation(isAttachmentsExpanded ? 180 : 0);
+        }
+    }
+    
+    private void toggleDetailsDropdown() {
+        isDetailsExpanded = !isDetailsExpanded;
+        if (layoutDetailsContent != null) {
+            layoutDetailsContent.setVisibility(isDetailsExpanded ? View.VISIBLE : View.GONE);
+        }
+        if (ivDetailsDropdown != null) {
+            ivDetailsDropdown.setRotation(isDetailsExpanded ? 180 : 0);
         }
     }
     

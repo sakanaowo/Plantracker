@@ -48,12 +48,15 @@ public class AttachmentUploader {
             req.put("mimeType", mimeType);
             req.put("size", (int) fileSize);  // ✅ Changed from "fileSize" to "size", cast to int
 
-            android.util.Log.d("AttachmentUploader", "Requesting upload URL for task: " + taskId);
+            android.util.Log.d("AttachmentUploader", "🚀 Requesting upload URL for task: " + taskId);
+            android.util.Log.d("AttachmentUploader", "📦 Request body: " + req.toString());
 
             apiService.requestUploadUrl(taskId, req).enqueue(new Callback<UploadUrlResponseDTO>() {
                 @Override
                 public void onResponse(Call<UploadUrlResponseDTO> call, Response<UploadUrlResponseDTO> response) {
-                    android.util.Log.d("AttachmentUploader", "Upload URL response code: " + response.code());
+                    android.util.Log.d("AttachmentUploader", "📥 Upload URL response code: " + response.code());
+                    android.util.Log.d("AttachmentUploader", "📥 Response successful: " + response.isSuccessful());
+                    android.util.Log.d("AttachmentUploader", "📥 Response body null: " + (response.body() == null));
                     
                     if (response.isSuccessful() && response.body() != null) {
                         callback.onProgress(30);
@@ -122,14 +125,19 @@ public class AttachmentUploader {
 
                     } else {
                         String errorMsg = "Failed to get upload URL: " + response.code();
+                        String errorBody = "";
                         try {
                             if (response.errorBody() != null) {
-                                errorMsg += " - " + response.errorBody().string();
+                                errorBody = response.errorBody().string();
+                                errorMsg += " - " + errorBody;
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        android.util.Log.e("AttachmentUploader", errorMsg);
+                        android.util.Log.e("AttachmentUploader", "❌ Upload URL request failed!");
+                        android.util.Log.e("AttachmentUploader", "❌ Response code: " + response.code());
+                        android.util.Log.e("AttachmentUploader", "❌ Error body: " + errorBody);
+                        android.util.Log.e("AttachmentUploader", "❌ Request was: " + req.toString());
                         callback.onError(errorMsg);
                     }
                 }
@@ -137,7 +145,11 @@ public class AttachmentUploader {
                 @Override
                 public void onFailure(Call<UploadUrlResponseDTO> call, Throwable t) {
                     String errorMsg = "Network error: " + t.getMessage();
-                    android.util.Log.e("AttachmentUploader", errorMsg, t);
+                    android.util.Log.e("AttachmentUploader", "❌❌ REQUEST FAILED - Network Error ❌❌");
+                    android.util.Log.e("AttachmentUploader", "❌ Error: " + errorMsg);
+                    android.util.Log.e("AttachmentUploader", "❌ Exception type: " + t.getClass().getName());
+                    android.util.Log.e("AttachmentUploader", "❌ Request was: " + req.toString());
+                    t.printStackTrace();
                     callback.onError(errorMsg);
                 }
             });

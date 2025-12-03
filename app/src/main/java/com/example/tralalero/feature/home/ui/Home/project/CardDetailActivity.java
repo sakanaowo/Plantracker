@@ -34,6 +34,7 @@ import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 import com.example.tralalero.data.remote.mapper.ProjectMemberMapper;
 import com.example.tralalero.domain.model.ProjectMember;
+import com.example.tralalero.domain.model.AssigneeInfo;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -97,6 +98,8 @@ public class CardDetailActivity extends AppCompatActivity {
     private ImageView ivClose;
     private EditText etTaskTitle; // Changed from RadioButton to EditText
     private TextView tvBoardName; // NEW: Display board name
+    private TextView tvProjectBadge;
+    private MaterialButton btnBoardStatus;
     private MaterialButton btnMembers;
     private MaterialButton btnAddAttachment;
     private MaterialButton btnAddComment;
@@ -108,6 +111,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private MaterialButton btnMediumPriority;
     private MaterialButton btnHighPriority;
     private Task.TaskPriority currentPriority = Task.TaskPriority.MEDIUM;
+    private Task.TaskStatus currentStatus = Task.TaskStatus.TO_DO;
     
     // RecyclerViews and Adapters
     private RecyclerView rvChecklist;
@@ -146,6 +150,34 @@ public class CardDetailActivity extends AppCompatActivity {
     private boolean isGoogleCalendarConnected = false; // ✅ Store actual connection state from API
     private List<Integer> reminderMinutes = new ArrayList<>(Arrays.asList(15, 60, 1440));
     private GoogleAuthApiService googleAuthApiService;
+    
+    // Dropdown UI elements
+    private LinearLayout layoutAttachments;
+    private LinearLayout layoutDetails;
+    private LinearLayout layoutDetailsContent;
+    private ImageView ivAttachmentDropdown;
+    private ImageView ivDetailsDropdown;
+    private TextView tvAttachmentCount;
+    private boolean isAttachmentsExpanded = false;
+    private boolean isDetailsExpanded = true;
+    
+    // New UI elements for interactive details
+    private LinearLayout layoutAssignee;
+    private LinearLayout layoutPriority;
+    private LinearLayout layoutLabels;
+    private LinearLayout layoutStartDate;
+    private RecyclerView rvAssignees;
+    private TextView tvNoAssignees;
+    private ImageView ivAddAssignee;
+    private AssigneeAdapter assigneeAdapter;
+    private TextView tvPriority;
+    private View viewPriorityIndicator;
+    private EditText etStartDate;
+    private MaterialButton btnQuickAssign;
+    private MaterialButton btnSaveChanges;
+    private boolean hasUnsavedChanges = false;
+    private boolean isPopulatingUI = false; // Flag to prevent TextWatcher trigger during load
+    private String currentAssigneeId = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -205,6 +237,8 @@ public class CardDetailActivity extends AppCompatActivity {
         ivClose = findViewById(R.id.ivClose);
         etTaskTitle = findViewById(R.id.etTaskTitle); // Changed from rbTaskTitle
         tvBoardName = findViewById(R.id.tvBoardName); // NEW
+        tvProjectBadge = findViewById(R.id.tvProjectBadge);
+        btnBoardStatus = findViewById(R.id.btnBoardStatus);
         btnMembers = findViewById(R.id.btnMembers);
 
         btnDeleteTask = findViewById(R.id.btnDeleteTask);
@@ -243,6 +277,28 @@ public class CardDetailActivity extends AppCompatActivity {
         tvCalendarEventInfo = findViewById(R.id.tvCalendarEventInfo);
         layoutCalendarDetails = findViewById(R.id.layoutCalendarDetails);
         
+        // Dropdown elements
+        layoutAttachments = findViewById(R.id.layoutAttachments);
+        layoutDetails = findViewById(R.id.layoutDetails);
+        layoutDetailsContent = findViewById(R.id.layoutDetailsContent);
+        ivAttachmentDropdown = findViewById(R.id.ivAttachmentDropdown);
+        ivDetailsDropdown = findViewById(R.id.ivDetailsDropdown);
+        tvAttachmentCount = findViewById(R.id.tvAttachmentCount);
+        
+        // Details section interactive elements
+        layoutAssignee = findViewById(R.id.layoutAssignee);
+        layoutPriority = findViewById(R.id.layoutPriority);
+        layoutLabels = findViewById(R.id.layoutLabels);
+        layoutStartDate = findViewById(R.id.layoutStartDate);
+        rvAssignees = findViewById(R.id.rvAssignees);
+        tvNoAssignees = findViewById(R.id.tvNoAssignees);
+        ivAddAssignee = findViewById(R.id.ivAddAssignee);
+        tvPriority = findViewById(R.id.tvPriority);
+        viewPriorityIndicator = findViewById(R.id.viewPriorityIndicator);
+        etStartDate = findViewById(R.id.etStartDate);
+        btnQuickAssign = findViewById(R.id.btnQuickAssign);
+        btnSaveChanges = findViewById(R.id.btnSaveChanges);
+        
         // Setup RecyclerViews
         setupRecyclerViews();
     }
@@ -274,6 +330,18 @@ public class CardDetailActivity extends AppCompatActivity {
             }
         });
         rvChecklist.setAdapter(checklistAdapter);
+        
+        // Setup Assignees RecyclerView
+        LinearLayoutManager assigneesLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rvAssignees.setLayoutManager(assigneesLayoutManager);
+        assigneeAdapter = new AssigneeAdapter(user -> {
+            // Remove assignee callback
+            markUnsavedChanges();
+            assigneeAdapter.getAssignees().remove(user);
+            assigneeAdapter.notifyDataSetChanged();
+            updateAssigneesVisibility();
+        });
+        rvAssignees.setAdapter(assigneeAdapter);
         
         // Setup Comments RecyclerView
         rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -463,29 +531,78 @@ public class CardDetailActivity extends AppCompatActivity {
         // ✅ Observe task details (for loading calendar sync state)
         taskViewModel.getSelectedTask().observe(this, task -> {
             if (task != null && isEditMode) {
+                // ✅ Set flag to prevent TextWatcher from marking as changed
+                isPopulatingUI = true;
+                
                 android.util.Log.d(TAG, "✅ Task loaded from API - ID: " + task.getId());
                 android.util.Log.d(TAG, "  Description: " + (task.getDescription() != null ? task.getDescription().substring(0, Math.min(50, task.getDescription().length())) : "null"));
                 android.util.Log.d(TAG, "  StartAt: " + task.getStartAt());
                 android.util.Log.d(TAG, "  DueAt: " + task.getDueAt());
                 android.util.Log.d(TAG, "  CalendarSyncEnabled: " + task.isCalendarSyncEnabled());
                 
-                // ✅ FIX: Populate ALL task fields in UI
+                // ✅ Populate ALL task fields in UI
                 if (task.getDescription() != null) {
                     etDescription.setText(task.getDescription());
                     android.util.Log.d(TAG, "  ✅ Description populated in UI");
                 }
                 
-                SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+                SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
+                if (task.getStartAt() != null) {
+                    etStartDate.setText(displayFormat.format(task.getStartAt()));
+                    android.util.Log.d(TAG, "  ✅ Start date populated: " + displayFormat.format(task.getStartAt()));
+                } else if (task.getCreatedAt() != null) {
+                    // Auto-fill with createdAt if startAt is null
+                    etStartDate.setText(displayFormat.format(task.getCreatedAt()));
+                    android.util.Log.d(TAG, "  ✅ Start date auto-filled with createdAt: " + displayFormat.format(task.getCreatedAt()));
+                }
+                
                 if (task.getDueAt() != null) {
                     etDueDate.setText(displayFormat.format(task.getDueAt()));
                     android.util.Log.d(TAG, "  ✅ Due date populated: " + displayFormat.format(task.getDueAt()));
                 }
                 
+                // ✅ Update priority
+                if (task.getPriority() != null) {
+                    currentPriority = task.getPriority();
+                    updatePriorityUIDetails();
+                    android.util.Log.d(TAG, "  ✅ Priority populated: " + currentPriority);
+                }
+                
+                // ✅ Update assignees RecyclerView (support multiple assignees)
+                if (task.getAssignees() != null && !task.getAssignees().isEmpty()) {
+                    List<com.example.tralalero.data.remote.dto.user.UserDTO> assignees = new ArrayList<>();
+                    for (AssigneeInfo assigneeInfo : task.getAssignees()) {
+                        com.example.tralalero.data.remote.dto.user.UserDTO user = new com.example.tralalero.data.remote.dto.user.UserDTO();
+                        user.setId(assigneeInfo.getId());
+                        user.setName(assigneeInfo.getName());
+                        user.setEmail(assigneeInfo.getEmail() != null ? assigneeInfo.getEmail() : "");
+                        assignees.add(user);
+                    }
+                    assigneeAdapter.setAssignees(assignees);
+                    updateAssigneesVisibility();
+                    android.util.Log.d(TAG, "  ✅ " + assignees.size() + " assignee(s) populated");
+                } else {
+                    assigneeAdapter.setAssignees(new ArrayList<>());
+                    updateAssigneesVisibility();
+                    android.util.Log.d(TAG, "  ⚠️ No assignees");
+                }
+                
+                // ✅ Update board status
+                if (task.getStatus() != null) {
+                    currentStatus = task.getStatus();
+                    updateBoardStatusUI();
+                    android.util.Log.d(TAG, "  ✅ Board status populated: " + currentStatus);
+                }
+                
                 // Populate calendar sync UI
                 populateCalendarSyncUI(task);
                 
-                // ✅ FIX: Update calendar sync availability after populating UI
+                // ✅ Update calendar sync availability after populating UI
                 updateCalendarSyncAvailability();
+                
+                // ✅ Reset flag after all UI population is done
+                isPopulatingUI = false;
+                android.util.Log.d(TAG, "  ✅ UI population complete");
             }
         });
         
@@ -552,13 +669,16 @@ public class CardDetailActivity extends AppCompatActivity {
             if (attachments != null && !attachments.isEmpty()) {
                 android.util.Log.d("CardDetail", "Setting " + attachments.size() + " attachments to adapter");
                 attachmentAdapter.setAttachments(attachments);
-                rvAttachments.setVisibility(View.VISIBLE);
+                rvAttachments.setVisibility(isAttachmentsExpanded ? View.VISIBLE : View.GONE);
                 tvNoAttachments.setVisibility(View.GONE);
-                android.util.Log.d("CardDetail", "Attachments RecyclerView made visible");
+                tvAttachmentCount.setText(String.valueOf(attachments.size()));
+                tvAttachmentCount.setVisibility(View.VISIBLE);
+                android.util.Log.d("CardDetail", "Attachments RecyclerView visibility updated");
             } else {
                 android.util.Log.d("CardDetail", "No attachments - showing empty state");
                 rvAttachments.setVisibility(View.GONE);
-                tvNoAttachments.setVisibility(View.VISIBLE);
+                tvNoAttachments.setVisibility(isAttachmentsExpanded ? View.VISIBLE : View.GONE);
+                tvAttachmentCount.setVisibility(View.GONE);
             }
         });
     }
@@ -591,6 +711,9 @@ public class CardDetailActivity extends AppCompatActivity {
         } else {
             tvBoardName.setVisibility(View.GONE);
         }
+        
+        // Load project name
+        loadProjectName();
         
         // Update priority UI
         updatePriorityUI();
@@ -651,6 +774,26 @@ public class CardDetailActivity extends AppCompatActivity {
             taskViewModel.loadTaskById(taskId);
         }
     }
+    
+    private void loadProjectName() {
+        if (projectId == null || projectId.isEmpty()) return;
+        
+        ProjectApiService projectApiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApiService.getProjectById(projectId).enqueue(new Callback<ProjectDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<ProjectDTO> call, @NonNull Response<ProjectDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ProjectDTO project = response.body();
+                    tvProjectBadge.setText(project.getName());
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<ProjectDTO> call, @NonNull Throwable t) {
+                android.util.Log.e(TAG, "Failed to load project name", t);
+            }
+        });
+    }
 
     private void setupListeners() {
         ivClose.setOnClickListener(v -> {
@@ -707,6 +850,61 @@ public class CardDetailActivity extends AppCompatActivity {
             currentPriority = Task.TaskPriority.HIGH;
             updatePriorityUI();
         });
+        
+        // Dropdown toggles
+        layoutAttachments.setOnClickListener(v -> toggleAttachmentsDropdown());
+        layoutDetails.setOnClickListener(v -> toggleDetailsDropdown());
+        
+        // Details section interactions
+        layoutAssignee.setOnClickListener(v -> checkRoleAndAssign());
+        btnQuickAssign.setOnClickListener(v -> checkRoleAndAssign());
+        layoutPriority.setOnClickListener(v -> showPrioritySelectionDialog());
+        layoutLabels.setOnClickListener(v -> showLabelSelectionDialog());
+        etStartDate.setOnClickListener(v -> showDatePickerDialog(true));
+        
+        // Board status selection
+        btnBoardStatus.setOnClickListener(v -> showBoardSelectionDialog());
+        
+        // ✅ TEXT WATCHER: Mark unsaved changes on text input
+        android.text.TextWatcher textWatcher = new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                // Don't mark as changed if we're just populating UI from API
+                if (!isPopulatingUI) {
+                    markUnsavedChanges();
+                }
+            }
+        };
+        
+        etTaskTitle.addTextChangedListener(textWatcher);
+        etDescription.addTextChangedListener(textWatcher);
+        
+        // ✅ SAVE BUTTON: Save all changes
+        btnSaveChanges.setOnClickListener(v -> {
+            updateTask();
+        });
+        
+        // ✅ ADD ASSIGNEE: Show member selection dialog
+        ivAddAssignee.setOnClickListener(v -> checkRoleAndAssign());
+    }
+    
+    private void toggleAttachmentsDropdown() {
+        isAttachmentsExpanded = !isAttachmentsExpanded;
+        rvAttachments.setVisibility(isAttachmentsExpanded ? View.VISIBLE : View.GONE);
+        tvNoAttachments.setVisibility(isAttachmentsExpanded && (attachmentAdapter == null || attachmentAdapter.getItemCount() == 0) ? View.VISIBLE : View.GONE);
+        ivAttachmentDropdown.setRotation(isAttachmentsExpanded ? 180 : 0);
+    }
+    
+    private void toggleDetailsDropdown() {
+        isDetailsExpanded = !isDetailsExpanded;
+        layoutDetailsContent.setVisibility(isDetailsExpanded ? View.VISIBLE : View.GONE);
+        ivDetailsDropdown.setRotation(isDetailsExpanded ? 180 : 0);
     }
     
     private void updatePriorityUI() {
@@ -879,6 +1077,10 @@ public class CardDetailActivity extends AppCompatActivity {
             android.util.Log.d("CardDetailActivity", "🗑️ Disabling calendar sync: taskId=" + taskId);
             calendarSyncViewModel.updateCalendarSync(taskId, false, 30, null);
         }
+        
+        // ✅ Hide save button and mark as saved
+        hasUnsavedChanges = false;
+        btnSaveChanges.setVisibility(View.GONE);
         
         Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show();
         Intent resultIntent = new Intent();
@@ -1573,8 +1775,8 @@ public class CardDetailActivity extends AppCompatActivity {
         android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog(
                 this,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // After date selected, show time picker (only for due date now)
-                    showTimePickerDialog(false, selectedYear, selectedMonth, selectedDay);
+                    // After date selected, show time picker
+                    showTimePickerDialog(isStartDate, selectedYear, selectedMonth, selectedDay);
                 },
                 year, month, day
         );
@@ -1583,10 +1785,10 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     /**
-     * Show time picker after date selection (due date only)
+     * Show time picker after date selection
      */
     private void showTimePickerDialog(boolean isStartDate, int year, int month, int day) {
-        int defaultHour = 17; // Default: 5 PM for due date
+        int defaultHour = isStartDate ? 9 : 17; // Default: 9 AM for start, 5 PM for due date
         int defaultMinute = 0;
         
         android.app.TimePickerDialog timePickerDialog = new android.app.TimePickerDialog(
@@ -1595,14 +1797,54 @@ public class CardDetailActivity extends AppCompatActivity {
                     // Format: dd/MM/yyyy HH:mm
                     String date = String.format(Locale.getDefault(), 
                             "%02d/%02d/%d %02d:%02d", day, month + 1, year, selectedHour, selectedMinute);
-                    etDueDate.setText(date);
-                    // ✅ Check calendar sync availability when due date changes
-                    updateCalendarSyncAvailability();
+                    if (isStartDate) {
+                        etStartDate.setText(date);
+                        // ✅ Mark unsaved changes instead of auto-save
+                        markUnsavedChanges();
+                    } else {
+                        etDueDate.setText(date);
+                        // ✅ Mark unsaved changes instead of auto-save
+                        markUnsavedChanges();
+                        // ✅ Check calendar sync availability when due date changes
+                        updateCalendarSyncAvailability();
+                    }
                 },
                 defaultHour, defaultMinute, true // 24-hour format
         );
         
         timePickerDialog.show();
+    }
+    
+    /**
+     * Update task date on server (auto-save)
+     */
+    private void updateTaskDate(boolean isStartDate, String dateStr) {
+        if (taskId == null) return;
+        
+        SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US);
+        try {
+            Date date = displayFormat.parse(dateStr);
+            
+            TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+            Map<String, Object> updates = new HashMap<>();
+            updates.put(isStartDate ? "startAt" : "dueAt", date);
+            
+            taskApiService.updateTask(taskId, updates).enqueue(new Callback<com.example.tralalero.data.remote.dto.task.TaskDTO>() {
+                @Override
+                public void onResponse(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Response<com.example.tralalero.data.remote.dto.task.TaskDTO> response) {
+                    if (response.isSuccessful()) {
+                        android.util.Log.d(TAG, (isStartDate ? "Start" : "Due") + " date updated");
+                    }
+                }
+                
+                @Override
+                public void onFailure(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Throwable t) {
+                    Toast.makeText(CardDetailActivity.this, "Failed to update date", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+            android.util.Log.e(TAG, "Error parsing date: " + dateStr, e);
+        }
     }
     
     /**
@@ -2174,5 +2416,207 @@ public class CardDetailActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+    
+    /**
+     * Show Assignee Selection Dialog
+     */
+    private void showAssigneeSelectionDialog() {
+        if (projectId == null || projectId.isEmpty()) {
+            Toast.makeText(this, "Cannot assign task: Invalid project", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Task not yet created. Please save the task first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Open new AssignMemberBottomSheet with multi-select support
+        AssignMemberBottomSheet assignSheet = AssignMemberBottomSheet.newInstance(projectId, taskId);
+        assignSheet.setOnAssigneesChangedListener(new AssignMemberBottomSheet.OnAssigneesChangedListener() {
+            @Override
+            public void onAssigneesChanged() {
+                // Reload task details to show updated assignees
+                loadTaskDetails();
+            }
+        });
+        
+        assignSheet.show(getSupportFragmentManager(), "assign_member");
+    }
+    
+    /**
+     * Show Priority Selection Dialog
+     */
+    private void showPrioritySelectionDialog() {
+        String[] priorities = {"Low", "Medium", "High"};
+        int currentIndex = currentPriority == Task.TaskPriority.LOW ? 0 : 
+                          currentPriority == Task.TaskPriority.HIGH ? 2 : 1;
+        
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Select Priority")
+            .setSingleChoiceItems(priorities, currentIndex, (dialog, which) -> {
+                switch (which) {
+                    case 0:
+                        currentPriority = Task.TaskPriority.LOW;
+                        break;
+                    case 1:
+                        currentPriority = Task.TaskPriority.MEDIUM;
+                        break;
+                    case 2:
+                        currentPriority = Task.TaskPriority.HIGH;
+                        break;
+                }
+                updatePriorityUIDetails();
+                
+                // ✅ Mark unsaved changes instead of auto-save
+                markUnsavedChanges();
+                
+                dialog.dismiss();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Update Priority UI in Details section
+     */
+    private void updatePriorityUIDetails() {
+        switch (currentPriority) {
+            case LOW:
+                tvPriority.setText("Low");
+                viewPriorityIndicator.setBackgroundColor(Color.parseColor("#4CAF50"));
+                break;
+            case MEDIUM:
+                tvPriority.setText("Medium");
+                viewPriorityIndicator.setBackgroundColor(Color.parseColor("#FF9800"));
+                break;
+            case HIGH:
+                tvPriority.setText("High");
+                viewPriorityIndicator.setBackgroundColor(Color.parseColor("#F44336"));
+                break;
+        }
+    }
+    
+    /**
+     * Update task priority on server
+     */
+    private void updateTaskPriority() {
+        if (taskId == null) return;
+        
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("priority", currentPriority.name());
+        
+        taskApiService.updateTask(taskId, updates).enqueue(new Callback<com.example.tralalero.data.remote.dto.task.TaskDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Response<com.example.tralalero.data.remote.dto.task.TaskDTO> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(CardDetailActivity.this, "Priority updated", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Failed to update priority", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Show Board Selection Dialog
+     */
+    private void showBoardSelectionDialog() {
+        if (!isEditMode || taskId == null || taskId.isEmpty()) {
+            Toast.makeText(this, "Please save the task first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        BoardSelectionBottomSheet bottomSheet = BoardSelectionBottomSheet.newInstance(currentStatus);
+        bottomSheet.setOnBoardSelectedListener(newStatus -> {
+            currentStatus = newStatus;
+            updateBoardStatusUI();
+            // ✅ Mark unsaved changes instead of auto-save
+            markUnsavedChanges();
+        });
+        bottomSheet.show(getSupportFragmentManager(), "board_selection");
+    }
+    
+    /**
+     * Update Board Status UI
+     */
+    private void updateBoardStatusUI() {
+        String statusText = "";
+        int statusColor = 0;
+        
+        switch (currentStatus) {
+            case TO_DO:
+                statusText = "To Do";
+                statusColor = Color.parseColor("#9E9E9E");
+                break;
+            case IN_PROGRESS:
+                statusText = "In Progress";
+                statusColor = Color.parseColor("#2196F3");
+                break;
+            case DONE:
+                statusText = "Done";
+                statusColor = Color.parseColor("#4CAF50");
+                break;
+        }
+        
+        btnBoardStatus.setText(statusText);
+        btnBoardStatus.setTextColor(statusColor);
+        btnBoardStatus.setStrokeColor(android.content.res.ColorStateList.valueOf(statusColor));
+        btnBoardStatus.setIconTint(android.content.res.ColorStateList.valueOf(statusColor));
+    }
+    
+    /**
+     * Update task status on server
+     */
+    private void updateTaskStatus(Task.TaskStatus newStatus) {
+        if (taskId == null) return;
+        
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", newStatus.name());
+        
+        taskApiService.updateTask(taskId, updates).enqueue(new Callback<com.example.tralalero.data.remote.dto.task.TaskDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Response<com.example.tralalero.data.remote.dto.task.TaskDTO> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(CardDetailActivity.this, "Moved to " + newStatus.name().replace("_", " "), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(CardDetailActivity.this, "Failed to update status", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<com.example.tralalero.data.remote.dto.task.TaskDTO> call, @NonNull Throwable t) {
+                Toast.makeText(CardDetailActivity.this, "Failed to update status", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Mark that there are unsaved changes and show save button
+     */
+    private void markUnsavedChanges() {
+        if (!hasUnsavedChanges) {
+            hasUnsavedChanges = true;
+            btnSaveChanges.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    /**
+     * Update assignees RecyclerView visibility
+     */
+    private void updateAssigneesVisibility() {
+        if (assigneeAdapter.getItemCount() > 0) {
+            rvAssignees.setVisibility(View.VISIBLE);
+            tvNoAssignees.setVisibility(View.GONE);
+        } else {
+            rvAssignees.setVisibility(View.GONE);
+            tvNoAssignees.setVisibility(View.VISIBLE);
+        }
     }
 }

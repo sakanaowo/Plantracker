@@ -126,9 +126,12 @@ public class ProjectActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        // ✅ REMOVED: No more manual reload!
-        // ❌ OLD: for (Board board : boards) { loadTasksForBoard(board.getId()); }
-        // Observer auto-updates UI when data changes
+        // ✅ Reload boards and tasks when returning from CardDetailActivity
+        Log.d(TAG, "📱 onResume - Reloading boards and tasks for project: " + projectId);
+        if (projectId != null && !projectId.isEmpty()) {
+            boardViewModel.loadBoardsByProject(projectId);
+            // Observer will auto-update UI when data changes
+        }
     }
 
     private void getIntentData() {
