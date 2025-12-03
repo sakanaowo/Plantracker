@@ -212,6 +212,11 @@ public class CardDetailActivity extends AppCompatActivity {
         etDescription = findViewById(R.id.etDescription);
         etDueDate = findViewById(R.id.etDueDate);
         
+        // Priority Buttons
+        btnLowPriority = findViewById(R.id.btnLowPriority);
+        btnMediumPriority = findViewById(R.id.btnMediumPriority);
+        btnHighPriority = findViewById(R.id.btnHighPriority);
+        
         // RecyclerViews
         rvChecklist = findViewById(R.id.rvChecklist);
         tvNoChecklist = findViewById(R.id.tvNoChecklist);
@@ -587,6 +592,9 @@ public class CardDetailActivity extends AppCompatActivity {
             tvBoardName.setVisibility(View.GONE);
         }
         
+        // Update priority UI
+        updatePriorityUI();
+        
         // Load attachments and comments if in edit mode
         if (isEditMode && taskId != null && !taskId.isEmpty()) {
             loadTaskAttachments();
@@ -684,6 +692,41 @@ public class CardDetailActivity extends AppCompatActivity {
         });
         etDueDate.setOnClickListener(v -> showDatePickerDialog(false));
         
+        // Priority buttons
+        btnLowPriority.setOnClickListener(v -> {
+            currentPriority = Task.TaskPriority.LOW;
+            updatePriorityUI();
+        });
+        
+        btnMediumPriority.setOnClickListener(v -> {
+            currentPriority = Task.TaskPriority.MEDIUM;
+            updatePriorityUI();
+        });
+        
+        btnHighPriority.setOnClickListener(v -> {
+            currentPriority = Task.TaskPriority.HIGH;
+            updatePriorityUI();
+        });
+    }
+    
+    private void updatePriorityUI() {
+        // Reset all buttons to outlined style
+        btnLowPriority.setBackgroundColor(Color.TRANSPARENT);
+        btnMediumPriority.setBackgroundColor(Color.TRANSPARENT);
+        btnHighPriority.setBackgroundColor(Color.TRANSPARENT);
+        
+        // Set selected button to filled style
+        switch (currentPriority) {
+            case LOW:
+                btnLowPriority.setBackgroundColor(Color.parseColor("#E8F5E9"));
+                break;
+            case MEDIUM:
+                btnMediumPriority.setBackgroundColor(Color.parseColor("#FFF3E0"));
+                break;
+            case HIGH:
+                btnHighPriority.setBackgroundColor(Color.parseColor("#FFEBEE"));
+                break;
+        }
     }
     
     private void createTask() {

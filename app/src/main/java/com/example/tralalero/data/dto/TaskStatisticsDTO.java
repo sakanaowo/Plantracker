@@ -8,12 +8,13 @@ public class TaskStatisticsDTO {
     private int totalCount;
     private int todoCount;
     private int inProgressCount;
+    private int overdueCount;
     
     // Constructors
     public TaskStatisticsDTO() {}
     
     public TaskStatisticsDTO(int doneCount, int updatedCount, int createdCount, int dueCount,
-                            int totalCount, int todoCount, int inProgressCount) {
+                            int totalCount, int todoCount, int inProgressCount, int overdueCount) {
         this.doneCount = doneCount;
         this.updatedCount = updatedCount;
         this.createdCount = createdCount;
@@ -21,6 +22,7 @@ public class TaskStatisticsDTO {
         this.totalCount = totalCount;
         this.todoCount = todoCount;
         this.inProgressCount = inProgressCount;
+        this.overdueCount = overdueCount;
     }
     
     // Getters and Setters
@@ -78,5 +80,13 @@ public class TaskStatisticsDTO {
     
     public void setInProgressCount(int inProgressCount) {
         this.inProgressCount = inProgressCount;
+    }
+    
+    public int getOverdueCount() {
+        return overdueCount;
+    }
+    
+    public void setOverdueCount(int overdueCount) {
+        this.overdueCount = overdueCount;
     }
 }

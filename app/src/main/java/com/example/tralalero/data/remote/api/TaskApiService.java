@@ -52,6 +52,26 @@ public interface TaskApiService {
     Call<List<TaskDTO>> getMyAssignedTasksInProject(@Query("projectId") String projectId);
 
     /**
+     * Get ALL tasks in a project (complete project overview)
+     * For "All Work" tab - shows all tasks regardless of assignment
+     * 
+     * @param projectId Project ID
+     * @return List of all tasks in project
+     */
+    @GET("tasks/project/{projectId}/all")
+    Call<List<TaskDTO>> getAllTasksInProject(@Path("projectId") String projectId);
+
+    /**
+     * Get statistics for All Work view
+     * Returns counts by status (TODO, IN_PROGRESS, DONE), overdue, and total
+     * 
+     * @param projectId Project ID
+     * @return Statistics for all tasks
+     */
+    @GET("tasks/project/{projectId}/statistics")
+    Call<TaskStatisticsDTO> getAllWorkStatistics(@Path("projectId") String projectId);
+
+    /**
      * Create a quick task - automatically assigns to default project/board
      * Backend will find user's personal workspace, default project, and "To Do" board
      * 

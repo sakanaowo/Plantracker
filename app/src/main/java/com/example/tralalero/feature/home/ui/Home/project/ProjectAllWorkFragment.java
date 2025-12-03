@@ -21,13 +21,18 @@ import com.example.tralalero.R;
 import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.dto.TaskStatisticsDTO;
 import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.data.mapper.TaskMapper;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.chip.Chip;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,6 +44,8 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
     
     private String projectId;
     private TaskApiService taskApiService;
+    private List<Task> allTasks = new ArrayList<>();
+    private String currentFilter = "all"; // all, my, overdue
     
     // Views
     private RecyclerView recyclerView;
@@ -46,6 +53,11 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
     private ProgressBar progressBar;
     private TextView tvEmptyState;
     private SwipeRefreshLayout swipeRefreshLayout;
+    
+    // Filter chips
+    private Chip chipAll;
+    private Chip chipMyTasks;
+    private Chip chipOverdue;
 
     public static ProjectAllWorkFragment newInstance(String projectId) {
         ProjectAllWorkFragment fragment = new ProjectAllWorkFragment();
@@ -86,7 +98,7 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume - Refreshing assigned tasks");
+        Log.d(TAG, "onResume - Refreshing tasks");
         loadAssignedTasks();
     }
     
@@ -97,6 +109,30 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
         
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         swipeRefreshLayout.setOnRefreshListener(this::loadAssignedTasks);
+        
+        // Filter chips
+        chipAll = view.findViewById(R.id.chipAll);
+        chipMyTasks = view.findViewById(R.id.chipMyTasks);
+        chipOverdue = view.findViewById(R.id.chipOverdue);
+        
+        setupFilterChips();
+    }
+    
+    private void setupFilterChips() {
+        chipAll.setOnClickListener(v -> {
+            currentFilter = "all";
+            applyFilter();
+        });
+        
+        chipMyTasks.setOnClickListener(v -> {
+            currentFilter = "my";
+            applyFilter();
+        });
+        
+        chipOverdue.setOnClickListener(v -> {
+            currentFilter = "overdue";
+            applyFilter();
+        });
     }
     
     private void setupRecyclerView() {
@@ -112,11 +148,11 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
             return;
         }
         
-        Log.d(TAG, "Loading assigned tasks for projectId: " + projectId);
+        Log.d(TAG, "Loading ALL tasks for projectId: " + projectId);
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
         
-        taskApiService.getMyAssignedTasksInProject(projectId).enqueue(new Callback<List<TaskDTO>>() {
+        taskApiService.getAllTasksInProject(projectId).enqueue(new Callback<List<TaskDTO>>() {
             @Override
             public void onResponse(Call<List<TaskDTO>> call, Response<List<TaskDTO>> response) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -124,7 +160,7 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
                 
                 if (response.isSuccessful() && response.body() != null) {
                     List<TaskDTO> taskDTOs = response.body();
-                    Log.d(TAG, "Loaded " + taskDTOs.size() + " assigned tasks");
+                    Log.d(TAG, "Loaded " + taskDTOs.size() + " tasks");
                     
                     // Convert DTOs to domain models
                     List<Task> tasks = new ArrayList<>();
@@ -132,12 +168,13 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
                         tasks.add(TaskMapper.toDomain(dto));
                     }
                     
-                    taskAdapter.setTasks(tasks);
+                    allTasks = tasks; // Store for filtering
+                    applyFilter(); // Apply current filter
                     
                     // Show empty state if no tasks
                     if (tasks.isEmpty()) {
                         tvEmptyState.setVisibility(View.VISIBLE);
-                        tvEmptyState.setText("No tasks assigned to you in this project");
+                        tvEmptyState.setText("No tasks in this project yet\n\nCreate tasks in the Board view to get started");
                     } else {
                         tvEmptyState.setVisibility(View.GONE);
                     }
@@ -160,6 +197,60 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
                 tvEmptyState.setText("Error loading tasks");
             }
         });
+    }
+    
+    private void applyFilter() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            taskAdapter.setTasks(allTasks);
+            return;
+        }
+        String currentUserId = firebaseUser.getUid();
+        
+        List<Task> filteredTasks = allTasks;
+        
+        switch (currentFilter) {
+            case "my":
+                // Filter tasks assigned to current user
+                filteredTasks = allTasks.stream()
+                    .filter(task -> task.getAssignees() != null && 
+                        task.getAssignees().stream()
+                            .anyMatch(assignee -> currentUserId.equals(assignee.getId())))
+                    .collect(Collectors.toList());
+                break;
+                
+            case "overdue":
+                // Filter overdue tasks (has due date in past and not DONE)
+                long now = System.currentTimeMillis();
+                filteredTasks = allTasks.stream()
+                    .filter(task -> task.getDueAt() != null && 
+                        task.getDueAt().getTime() < now &&
+                        task.getStatus() != Task.TaskStatus.DONE)
+                    .collect(Collectors.toList());
+                break;
+                
+            case "all":
+            default:
+                // Show all tasks
+                filteredTasks = allTasks;
+                break;
+        }
+        
+        taskAdapter.setTasks(filteredTasks);
+        
+        // Update empty state
+        if (filteredTasks.isEmpty()) {
+            tvEmptyState.setVisibility(View.VISIBLE);
+            if ("my".equals(currentFilter)) {
+                tvEmptyState.setText("No tasks assigned to you");
+            } else if ("overdue".equals(currentFilter)) {
+                tvEmptyState.setText("No overdue tasks");
+            } else {
+                tvEmptyState.setText("No tasks in this project yet");
+            }
+        } else {
+            tvEmptyState.setVisibility(View.GONE);
+        }
     }
     
     private void showError(String message) {

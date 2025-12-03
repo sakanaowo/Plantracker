@@ -74,6 +74,10 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     private MaterialButton btnCalendarSync;
     private MaterialButton btnDeleteTask;
     private MaterialButton btnConfirm;
+    private MaterialButton btnLowPriority;
+    private MaterialButton btnMediumPriority;
+    private MaterialButton btnHighPriority;
+    private Task.TaskPriority currentPriority = Task.TaskPriority.MEDIUM;
     private boolean isEditMode = false;
     
     // Comments and Attachments (inline)
@@ -149,6 +153,11 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         btnDeleteTask = view.findViewById(R.id.btnDeleteTask);
         btnConfirm = view.findViewById(R.id.btnConfirm);
         
+        // Priority Buttons
+        btnLowPriority = view.findViewById(R.id.btnLowPriority);
+        btnMediumPriority = view.findViewById(R.id.btnMediumPriority);
+        btnHighPriority = view.findViewById(R.id.btnHighPriority);
+        
         etDescription.setEnabled(false);
         
         // Enable date field for editing
@@ -167,6 +176,16 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         // Get project ID and assignee ID
         projectId = args.getString(ARG_PROJECT_ID);
         assigneeId = args.getString(ARG_ASSIGNEE_ID);
+        
+        // Load priority
+        String priorityStr = args.getString(ARG_TASK_PRIORITY);
+        if (priorityStr != null) {
+            try {
+                currentPriority = Task.TaskPriority.valueOf(priorityStr);
+            } catch (IllegalArgumentException e) {
+                currentPriority = Task.TaskPriority.MEDIUM;
+            }
+        }
         
         // Update button text based on mode
         if (btnConfirm != null) {
@@ -192,7 +211,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             null,                                   // issueKey
             null,                                   // type
             null,                                   // status
-            null,                                   // priority
+            currentPriority,                        // priority
             0.0,                                    // position
             null,                                   // assigneeId
             null,                                   // createdBy
@@ -231,6 +250,9 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                 etDueDate.setHint("Select due date");
             }
         }
+        
+        // Update priority UI
+        updatePriorityUI();
     }
     
     private void setupListeners() {
@@ -271,6 +293,28 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
                     listener.onDeleteTask(task);
                 }
                 dismiss();
+            });
+        }
+        
+        // Priority buttons
+        if (btnLowPriority != null) {
+            btnLowPriority.setOnClickListener(v -> {
+                currentPriority = Task.TaskPriority.LOW;
+                updatePriorityUI();
+            });
+        }
+        
+        if (btnMediumPriority != null) {
+            btnMediumPriority.setOnClickListener(v -> {
+                currentPriority = Task.TaskPriority.MEDIUM;
+                updatePriorityUI();
+            });
+        }
+        
+        if (btnHighPriority != null) {
+            btnHighPriority.setOnClickListener(v -> {
+                currentPriority = Task.TaskPriority.HIGH;
+                updatePriorityUI();
             });
         }
         
@@ -330,6 +374,30 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         
         datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePickerDialog.show();
+    }
+    
+    private void updatePriorityUI() {
+        if (btnLowPriority == null || btnMediumPriority == null || btnHighPriority == null) {
+            return;
+        }
+        
+        // Reset all buttons to transparent background
+        btnLowPriority.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnMediumPriority.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnHighPriority.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        
+        // Set selected button background
+        switch (currentPriority) {
+            case LOW:
+                btnLowPriority.setBackgroundColor(android.graphics.Color.parseColor("#E8F5E9"));
+                break;
+            case MEDIUM:
+                btnMediumPriority.setBackgroundColor(android.graphics.Color.parseColor("#FFF3E0"));
+                break;
+            case HIGH:
+                btnHighPriority.setBackgroundColor(android.graphics.Color.parseColor("#FFEBEE"));
+                break;
+        }
     }
     
     /**

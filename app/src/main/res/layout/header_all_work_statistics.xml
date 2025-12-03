@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="16dp" app:cardElevation="2dp" app:cardCornerRadius="12dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+
+        <!-- Header Title -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📊 Project Overview" android:textSize="16sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="12dp"/>
+
+        <!-- Statistics Grid -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:weightSum="4">
+
+            <!-- Total Tasks -->
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+
+                <TextView android:id="@+id/tvTotalCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="#2196F3"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total" android:textSize="12sp" android:textColor="#666666" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <!-- To Do -->
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+
+                <TextView android:id="@+id/tvTodoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="#FF9800"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="To Do" android:textSize="12sp" android:textColor="#666666" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <!-- In Progress -->
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+
+                <TextView android:id="@+id/tvInProgressCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="#9C27B0"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Doing" android:textSize="12sp" android:textColor="#666666" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <!-- Done -->
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+
+                <TextView android:id="@+id/tvDoneCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="#4CAF50"/>
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Done" android:textSize="12sp" android:textColor="#666666" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Overdue Tasks Alert (show only if > 0) -->
+        <LinearLayout android:id="@+id/layoutOverdue" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="#FFF3E0" android:padding="12dp" android:layout_marginTop="12dp" android:visibility="gone">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⚠️" android:textSize="18sp" android:layout_marginEnd="8dp"/>
+
+            <TextView android:id="@+id/tvOverdueMessage" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="2 tasks are overdue" android:textSize="14sp" android:textColor="#F57C00" android:textStyle="bold"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
