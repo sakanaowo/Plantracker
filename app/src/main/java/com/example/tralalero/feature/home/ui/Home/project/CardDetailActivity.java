@@ -1005,10 +1005,11 @@ public class CardDetailActivity extends AppCompatActivity {
                         ProjectMember member = ProjectMemberMapper.toDomain(dto);
                         if (member != null) {
                             android.util.Log.d("CardDetailActivity", "Member: " + member.getName() + 
-                                ", FirebaseUid: " + member.getFirebaseUid() + 
+                                ", UserId: " + member.getUserId() + 
                                 ", Role: " + member.getRole());
                             
-                            if (member.getFirebaseUid() != null && member.getFirebaseUid().equals(currentUserId)) {
+                            // Compare userId (which is Firebase UID from backend)
+                            if (member.getUserId() != null && member.getUserId().equals(currentUserId)) {
                                 currentUserRole = member.getRole();
                                 currentUserInternalId = member.getUserId();
                                 android.util.Log.d("CardDetailActivity", "✅ Found current user! Role: " + currentUserRole + ", Internal ID: " + currentUserInternalId);
