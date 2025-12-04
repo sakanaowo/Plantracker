@@ -93,7 +93,9 @@ public class TaskMapper {
         String boardName = null;
         if (dto.getBoards() != null) {
             boardName = dto.getBoards().getName();
-            android.util.Log.d("TaskMapper", "Board name: " + boardName);
+            android.util.Log.d("TaskMapper", "✅ Board name extracted: " + boardName + " (ID: " + dto.getBoards().getId() + ")");
+        } else {
+            android.util.Log.w("TaskMapper", "⚠️ No boards relation in DTO for task: " + dto.getId());
         }
         
         return new Task(

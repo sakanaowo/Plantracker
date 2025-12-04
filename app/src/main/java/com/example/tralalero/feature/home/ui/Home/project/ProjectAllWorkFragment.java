@@ -266,9 +266,23 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
         Log.d(TAG, "Task clicked: " + task.getId());
         
         Intent intent = new Intent(getActivity(), CardDetailActivity.class);
-        intent.putExtra("task_id", task.getId());
-        intent.putExtra("project_id", projectId);
-        intent.putExtra("is_edit_mode", true); // ✅ Enable edit mode to load task details
+        // Use constants from CardDetailActivity to match Board navigation exactly
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
+        
+        // Include board info if available from task object
+        if (task.getBoardId() != null && !task.getBoardId().isEmpty()) {
+            intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, task.getBoardId());
+        }
+        if (task.getBoardName() != null && !task.getBoardName().isEmpty()) {
+            intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, task.getBoardName());
+        }
+        
+        Log.d(TAG, "Navigating to CardDetail - taskId: " + task.getId() + 
+            ", boardId: " + task.getBoardId() + 
+            ", boardName: " + task.getBoardName());
+        
         startActivity(intent);
     }
     

@@ -571,12 +571,26 @@ public class CardDetailActivity extends AppCompatActivity {
                 isPopulatingUI = true;
                 
                 android.util.Log.d(TAG, "✅ Task loaded from API - ID: " + task.getId());
+                android.util.Log.d(TAG, "  Title: " + task.getTitle());
+                android.util.Log.d(TAG, "  BoardId: " + task.getBoardId());
+                android.util.Log.d(TAG, "  BoardName: " + task.getBoardName());
                 android.util.Log.d(TAG, "  Description: " + (task.getDescription() != null ? task.getDescription().substring(0, Math.min(50, task.getDescription().length())) : "null"));
                 android.util.Log.d(TAG, "  StartAt: " + task.getStartAt());
                 android.util.Log.d(TAG, "  DueAt: " + task.getDueAt());
+                android.util.Log.d(TAG, "  Priority: " + task.getPriority());
+                android.util.Log.d(TAG, "  Status: " + task.getStatus());
+                android.util.Log.d(TAG, "  Assignees count: " + (task.getAssignees() != null ? task.getAssignees().size() : 0));
+                android.util.Log.d(TAG, "  Labels count: " + (task.getLabels() != null ? task.getLabels().size() : 0));
                 android.util.Log.d(TAG, "  CalendarSyncEnabled: " + task.isCalendarSyncEnabled());
                 
                 // ✅ Populate ALL task fields in UI
+                
+                // ✅ Populate title
+                if (task.getTitle() != null && !task.getTitle().isEmpty()) {
+                    etTaskTitle.setText(task.getTitle());
+                    android.util.Log.d(TAG, "  ✅ Title populated in UI: " + task.getTitle());
+                }
+                
                 if (task.getDescription() != null) {
                     etDescription.setText(task.getDescription());
                     android.util.Log.d(TAG, "  ✅ Description populated in UI");
@@ -754,15 +768,22 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void setupUI() {
         if (isEditMode) {
-            etTaskTitle.setText(getIntent().getStringExtra(EXTRA_TASK_TITLE));
+            // ✅ Only populate from Intent extras if taskId is NOT present
+            // If taskId exists, loadTaskDetails() will populate from API with fresh data
+            if (taskId == null || taskId.isEmpty()) {
+                etTaskTitle.setText(getIntent().getStringExtra(EXTRA_TASK_TITLE));
 
-            String priorityStr = getIntent().getStringExtra(EXTRA_TASK_PRIORITY);
-            if (priorityStr != null) {
-                try {
-                    currentPriority = Task.TaskPriority.valueOf(priorityStr);
-                } catch (IllegalArgumentException e) {
-                    currentPriority = Task.TaskPriority.MEDIUM;
+                String priorityStr = getIntent().getStringExtra(EXTRA_TASK_PRIORITY);
+                if (priorityStr != null) {
+                    try {
+                        currentPriority = Task.TaskPriority.valueOf(priorityStr);
+                    } catch (IllegalArgumentException e) {
+                        currentPriority = Task.TaskPriority.MEDIUM;
+                    }
                 }
+            } else {
+                // Task data will be loaded from API by loadTaskDetails()
+                android.util.Log.d(TAG, "Edit mode with taskId - data will be loaded from API");
             }
 
             btnDeleteTask.setVisibility(View.VISIBLE);
