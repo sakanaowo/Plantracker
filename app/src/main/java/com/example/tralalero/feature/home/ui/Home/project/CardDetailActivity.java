@@ -643,17 +643,17 @@ public class CardDetailActivity extends AppCompatActivity {
                     android.util.Log.d(TAG, "  ⚠️ No assignees");
                 }
                 
-                // ✅ Update board status
+                // ✅ Update task status
                 if (task.getStatus() != null) {
                     currentStatus = task.getStatus();
-                    updateBoardStatusUI();
-                    android.util.Log.d(TAG, "  ✅ Board status populated: " + currentStatus);
+                    android.util.Log.d(TAG, "  ✅ Task status populated: " + currentStatus);
                 }
                 
-                // ✅ Update board name from task
+                // ✅ Update board name from task (both tvBoardName and btnBoardStatus)
                 if (task.getBoardName() != null && !task.getBoardName().isEmpty()) {
                     boardName = task.getBoardName();
                     tvBoardName.setText("In " + boardName);
+                    updateBoardNameUI();
                     android.util.Log.d(TAG, "  ✅ Board name populated: " + boardName);
                 }
                 
@@ -2737,10 +2737,25 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // TODO: Show actual board selection dialog with board list from project
+        // For now, just show status selection (To Do/In Progress/Done boards)
         BoardSelectionBottomSheet bottomSheet = BoardSelectionBottomSheet.newInstance(currentStatus);
         bottomSheet.setOnBoardSelectedListener(newStatus -> {
             currentStatus = newStatus;
-            updateBoardStatusUI();
+            // Map status to board name
+            switch (newStatus) {
+                case TO_DO:
+                    boardName = "To Do";
+                    break;
+                case IN_PROGRESS:
+                    boardName = "In Progress";
+                    break;
+                case DONE:
+                    boardName = "Done";
+                    break;
+            }
+            updateBoardNameUI();
+            tvBoardName.setText("In " + boardName);
             // ✅ Mark unsaved changes instead of auto-save
             markUnsavedChanges();
         });
@@ -2748,31 +2763,35 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     /**
-     * Update Board Status UI
+     * Update Board Name UI (display in btnBoardStatus)
      */
-    private void updateBoardStatusUI() {
-        String statusText = "";
-        int statusColor = 0;
+    private void updateBoardNameUI() {
+        if (boardName == null || boardName.isEmpty()) {
+            boardName = "To Do"; // Default
+        }
         
-        switch (currentStatus) {
-            case TO_DO:
-                statusText = "To Do";
-                statusColor = Color.parseColor("#9E9E9E");
+        int boardColor = 0;
+        
+        // Set color based on board name
+        switch (boardName) {
+            case "To Do":
+                boardColor = Color.parseColor("#9E9E9E");
                 break;
-            case IN_PROGRESS:
-                statusText = "In Progress";
-                statusColor = Color.parseColor("#2196F3");
+            case "In Progress":
+                boardColor = Color.parseColor("#2196F3");
                 break;
-            case DONE:
-                statusText = "Done";
-                statusColor = Color.parseColor("#4CAF50");
+            case "Done":
+                boardColor = Color.parseColor("#4CAF50");
+                break;
+            default:
+                boardColor = Color.parseColor("#9E9E9E");
                 break;
         }
         
-        btnBoardStatus.setText(statusText);
-        btnBoardStatus.setTextColor(statusColor);
-        btnBoardStatus.setStrokeColor(android.content.res.ColorStateList.valueOf(statusColor));
-        btnBoardStatus.setIconTint(android.content.res.ColorStateList.valueOf(statusColor));
+        btnBoardStatus.setText(boardName);
+        btnBoardStatus.setTextColor(boardColor);
+        btnBoardStatus.setStrokeColor(android.content.res.ColorStateList.valueOf(boardColor));
+        btnBoardStatus.setIconTint(android.content.res.ColorStateList.valueOf(boardColor));
     }
     
     /**
