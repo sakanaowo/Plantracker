@@ -232,15 +232,25 @@ public interface TaskApiService {
      * PUT /tasks/:taskId/calendar-sync
      * 
      * @param taskId Task ID
-     * @param syncData Map with:
-     *   - "calendarReminderEnabled" (boolean)
-     *   - "calendarReminderTime" (int, minutes before due)
+     * @param request TaskCalendarSyncRequest with calendar sync settings
      * @return Updated task with calendar_event_id and last_synced_at
      */
     @PUT("tasks/{taskId}/calendar-sync")
     Call<TaskDTO> updateCalendarSync(
         @Path("taskId") String taskId,
-        @Body java.util.Map<String, Object> syncData
+        @Body com.example.tralalero.data.remote.dto.task.TaskCalendarSyncRequest request
+    );
+    
+    /**
+     * Remove task calendar sync (delete event from Google Calendar)
+     * DELETE /tasks/{taskId}/calendar-sync
+     * 
+     * @param taskId Task ID
+     * @return Updated task with calendar sync disabled
+     */
+    @DELETE("tasks/{taskId}/calendar-sync")
+    Call<TaskDTO> unsyncCalendar(
+        @Path("taskId") String taskId
     );
     
     /**

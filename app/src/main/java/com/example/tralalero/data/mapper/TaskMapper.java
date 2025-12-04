@@ -21,7 +21,7 @@ public class TaskMapper {
     private static final SimpleDateFormat ISO_DATE_FORMAT;
     
     static {
-        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
     
@@ -33,6 +33,8 @@ public class TaskMapper {
         android.util.Log.d("TaskMapper", "Converting task: " + dto.getTitle() + 
             ", taskLabels field: " + dto.getTaskLabels() + 
             ", taskAssignees field: " + dto.getTaskAssignees());
+        android.util.Log.d("TaskMapper", "📅 Raw DTO dates - startAt: '" + dto.getStartAt() + 
+            "', dueAt: '" + dto.getDueAt() + "'");
         
         TaskType type = parseTaskType(dto.getType());
         TaskStatus status = parseTaskStatus(dto.getStatus());
@@ -189,6 +191,102 @@ public class TaskMapper {
         return dto;
     }
     
+    /**
+     * Convert Task to TaskDTO for UPDATE operation
+     * Only includes fields that user can edit in CardDetailActivity.
+     * 
+     * EXCLUDES read-only/auto-managed fields:
+     * - position (managed by move API)
+     * - boardId, projectId (not editable in CardDetail)
+     * - taskAssignees, taskLabels (managed separately via assignees/labels APIs)
+     * - createdAt, updatedAt, deletedAt (auto-managed by backend)
+     * - createdBy, updatedBy (auto-set by backend from auth)
+     * - calendarEventId, lastSyncedAt (managed by calendar sync API)
+     * - assigneeId, assigneeIds (legacy/managed separately)
+     * 
+     * INCLUDES editable fields in CardDetail:
+     * - title, description
+     * - dueAt, startAt
+     * - priority, type, status
+     * - calendarReminderEnabled, calendarReminderTime
+     * - Advanced fields: issueKey, sprintId, epicId, parentTaskId, storyPoints, estimates
+     */
+    public static TaskDTO toDtoForUpdate(Task task) {
+        if (task == null) {
+            return null;
+        }
+        
+        TaskDTO dto = new TaskDTO();
+        
+        // ✅ Always include ID for update
+        dto.setId(task.getId());
+        
+        // ✅ Basic editable fields (CardDetail UI)
+        if (task.getTitle() != null && !task.getTitle().isEmpty()) {
+            dto.setTitle(task.getTitle());
+        }
+        if (task.getDescription() != null) {
+            dto.setDescription(task.getDescription());
+        }
+        
+        // ✅ Status/Priority (editable in CardDetail)
+        if (task.getStatus() != null) {
+            dto.setStatus(formatTaskStatus(task.getStatus()));
+        }
+        if (task.getPriority() != null) {
+            dto.setPriority(formatTaskPriority(task.getPriority()));
+        }
+        
+        // ✅ Dates (editable in CardDetail)
+        if (task.getStartAt() != null) {
+            dto.setStartAt(formatDate(task.getStartAt()));
+        }
+        if (task.getDueAt() != null) {
+            dto.setDueAt(formatDate(task.getDueAt()));
+        }
+        
+        // ✅ Calendar sync fields (editable in CardDetail)
+        dto.setCalendarReminderEnabled(task.isCalendarSyncEnabled());
+        if (task.getCalendarReminderMinutes() != null && !task.getCalendarReminderMinutes().isEmpty()) {
+            dto.setCalendarReminderTime(task.getCalendarReminderMinutes().get(0));
+        }
+        
+        // ✅ Advanced fields (if implemented in UI, currently not used but schema exists)
+        if (task.getIssueKey() != null && !task.getIssueKey().isEmpty()) {
+            dto.setIssueKey(task.getIssueKey());
+        }
+        if (task.getType() != null) {
+            dto.setType(formatTaskType(task.getType()));
+        }
+        if (task.getSprintId() != null && !task.getSprintId().isEmpty()) {
+            dto.setSprintId(task.getSprintId());
+        }
+        if (task.getEpicId() != null && !task.getEpicId().isEmpty()) {
+            dto.setEpicId(task.getEpicId());
+        }
+        if (task.getParentTaskId() != null && !task.getParentTaskId().isEmpty()) {
+            dto.setParentTaskId(task.getParentTaskId());
+        }
+        if (task.getStoryPoints() != null) {
+            dto.setStoryPoints(task.getStoryPoints());
+        }
+        if (task.getOriginalEstimateSec() != null) {
+            dto.setOriginalEstimateSec(task.getOriginalEstimateSec());
+        }
+        if (task.getRemainingEstimateSec() != null) {
+            dto.setRemainingEstimateSec(task.getRemainingEstimateSec());
+        }
+        
+        // ❌ DO NOT include:
+        // - position (use move API)
+        // - boardId, projectId (read-only)
+        // - taskAssignees, taskLabels (use separate APIs)
+        // - timestamps (auto-managed)
+        // - calendarEventId, lastSyncedAt (auto-managed)
+        
+        return dto;
+    }
+    
     public static List<Task> toDomainList(List<TaskDTO> dtoList) {
         if (dtoList == null) {
             return null;
@@ -273,17 +371,26 @@ public class TaskMapper {
     
     // Date converters
     private static Date parseDate(String dateString) {
+        android.util.Log.d("TaskMapper", "📅 parseDate input: " + dateString);
+        
         if (dateString == null || dateString.isEmpty()) {
+            android.util.Log.d("TaskMapper", "  ⚠️ Date is null/empty");
             return null;
         }
         
         try {
-            return ISO_DATE_FORMAT.parse(dateString);
+            Date parsed = ISO_DATE_FORMAT.parse(dateString);
+            android.util.Log.d("TaskMapper", "  ✅ Parsed with ISO format: " + parsed);
+            return parsed;
         } catch (ParseException e) {
+            android.util.Log.d("TaskMapper", "  ⚠️ ISO format failed: " + e.getMessage());
             try {
                 SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-                return altFormat.parse(dateString);
+                Date parsed = altFormat.parse(dateString);
+                android.util.Log.d("TaskMapper", "  ✅ Parsed with alt format: " + parsed);
+                return parsed;
             } catch (ParseException ex) {
+                android.util.Log.d("TaskMapper", "  ❌ All formats failed: " + ex.getMessage());
                 return null;
             }
         }

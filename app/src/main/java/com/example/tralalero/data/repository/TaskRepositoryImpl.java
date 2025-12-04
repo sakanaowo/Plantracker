@@ -231,7 +231,8 @@ public class TaskRepositoryImpl implements ITaskRepository {
 
     @Override
     public void updateTask(String taskId, Task task, RepositoryCallback<Task> callback) {
-        TaskDTO dto = TaskMapper.toDto(task);
+        // ✅ Use toDtoForUpdate to only send changed fields (avoid null overwrites)
+        TaskDTO dto = TaskMapper.toDtoForUpdate(task);
 
         apiService.updateTask(taskId, dto).enqueue(new Callback<TaskDTO>() {
             @Override

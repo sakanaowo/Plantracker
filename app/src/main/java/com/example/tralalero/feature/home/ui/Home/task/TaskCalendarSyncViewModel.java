@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.task.TaskCalendarSyncRequest;
 import com.example.tralalero.network.ApiClient;
 
 import java.util.HashMap;
@@ -95,12 +96,12 @@ public class TaskCalendarSyncViewModel extends AndroidViewModel {
         Log.d(TAG, "Updating calendar sync for task " + taskId + 
                    ": enabled=" + enabled + ", reminder=" + reminderMinutes + ", dueAt=" + dueAt);
         
-        // Prepare request body
-        Map<String, Object> syncData = new HashMap<>();
-        syncData.put("calendarReminderEnabled", enabled);
-        syncData.put("calendarReminderTime", reminderMinutes);
+        // Prepare request object
+        TaskCalendarSyncRequest syncData = new TaskCalendarSyncRequest();
+        syncData.setCalendarReminderEnabled(enabled);
+        syncData.setCalendarReminderTime(reminderMinutes);
         if (dueAt != null) {
-            syncData.put("dueAt", dueAt);
+            syncData.setDueAt(dueAt);
         }
         
         // API call

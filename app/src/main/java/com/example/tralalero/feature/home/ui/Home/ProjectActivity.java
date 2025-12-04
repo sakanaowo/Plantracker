@@ -129,8 +129,9 @@ public class ProjectActivity extends AppCompatActivity implements
         // ✅ Reload boards and tasks when returning from CardDetailActivity
         Log.d(TAG, "📱 onResume - Reloading boards and tasks for project: " + projectId);
         if (projectId != null && !projectId.isEmpty()) {
-            boardViewModel.loadBoardsByProject(projectId);
-            // Observer will auto-update UI when data changes
+            // ✅ Force reload both boards and tasks to get latest updates
+            projectViewModel.loadBoardsForProject(projectId);
+            Log.d(TAG, "  ✅ Triggered full reload - boards and tasks will update via observers");
         }
     }
 

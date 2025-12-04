@@ -91,6 +91,10 @@ public class TaskViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     
+    // ✅ Update task result LiveData
+    private final MutableLiveData<Task> updateTaskResultLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> updateErrorLiveData = new MutableLiveData<>();
+    
     // ✅ Event for task moved successfully (contains source and target board IDs)
     public static class TaskMovedEvent {
         public final String taskId;
@@ -225,6 +229,14 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return errorLiveData;
+    }
+    
+    public LiveData<Task> getUpdateTaskResult() {
+        return updateTaskResultLiveData;
+    }
+    
+    public LiveData<String> getUpdateError() {
+        return updateErrorLiveData;
     }
     
     public LiveData<TaskMovedEvent> getTaskMovedEvent() {
@@ -571,12 +583,20 @@ public class TaskViewModel extends ViewModel {
                 // Update with server version
                 updateTaskInAllLists(task, t -> result);
                 selectedTaskLiveData.setValue(result);
+                
+                // ✅ Notify success for UI reload
+                updateTaskResultLiveData.setValue(result);
+                updateErrorLiveData.setValue(null);
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                
+                // ✅ Notify error for UI handling
+                updateErrorLiveData.setValue(error);
+                updateTaskResultLiveData.setValue(null);
                 
                 // ✅ Rollback: Restore original task
                 if (taskToRollback != null) {
