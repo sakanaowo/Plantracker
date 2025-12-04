@@ -50,6 +50,7 @@ import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.data.remote.api.TaskApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
@@ -690,69 +691,44 @@ public class ProjectActivity extends AppCompatActivity implements
     public void onTaskStatusChanged(Task task, boolean isDone) {
         Log.d(TAG, "onTaskStatusChanged: task=" + task.getTitle() + ", checkbox action triggered");
         
-        // Determine which board the task is currently in
-        String currentBoardId = task.getBoardId();
-        String currentBoardName = null;
-        String targetBoardName = null;
-        String targetBoardId = null;
-        Task.TaskStatus targetStatus = null;
+        // Simply toggle task status between TO_DO and DONE (same as All Work)
+        Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+            ? Task.TaskStatus.TO_DO 
+            : Task.TaskStatus.DONE;
         
-        // Find current board name from projectViewModel
-        if (projectViewModel.getBoards().getValue() != null) {
-            for (Board board : projectViewModel.getBoards().getValue()) {
-                if (board.getId().equals(currentBoardId)) {
-                    currentBoardName = board.getName();
-                    break;
+        Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
+        
+        // Update task status via API
+        java.util.Map<String, Object> updatePayload = new java.util.HashMap<>();
+        updatePayload.put("status", newStatus.name());
+        
+        TaskApiService taskApiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new retrofit2.Callback<TaskDTO>() {
+            @Override
+            public void onResponse(retrofit2.Call<TaskDTO> call, retrofit2.Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Reload boards to refresh UI
+                    if (projectViewModel != null) {
+                        projectViewModel.loadBoardsForProject(projectId);
+                    }
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(ProjectActivity.this, message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    Toast.makeText(ProjectActivity.this, "Failed to update task", Toast.LENGTH_SHORT).show();
                 }
             }
-        }
-        
-        if (currentBoardName == null) {
-            Log.e(TAG, "Could not determine current board");
-            Toast.makeText(this, "Error: Could not determine task board", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        // Determine target board and status based on current board
-        if ("To Do".equals(currentBoardName)) {
-            targetBoardName = "In Progress";
-            targetStatus = Task.TaskStatus.IN_PROGRESS;
-        } else if ("In Progress".equals(currentBoardName)) {
-            targetBoardName = "Done";
-            targetStatus = Task.TaskStatus.DONE;
-        } else if ("Done".equals(currentBoardName)) {
-            targetBoardName = "To Do"; // Reopen
-            targetStatus = Task.TaskStatus.TO_DO;
-        } else {
-            Log.e(TAG, "Unknown board: " + currentBoardName);
-            return;
-        }
-        
-        // Find target board ID
-        if (projectViewModel.getBoards().getValue() != null) {
-            for (Board board : projectViewModel.getBoards().getValue()) {
-                if (targetBoardName.equalsIgnoreCase(board.getName())) {
-                    targetBoardId = board.getId();
-                    break;
-                }
+            
+            @Override
+            public void onFailure(retrofit2.Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                Toast.makeText(ProjectActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
-        }
-        
-        if (targetBoardId == null) {
-            Log.e(TAG, "Could not find target board: " + targetBoardName);
-            Toast.makeText(this, "Error: Could not find " + targetBoardName + " board", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        Log.d(TAG, "✅ Moving task '" + task.getTitle() + "' from " + currentBoardName + " to " + targetBoardName + " with status " + targetStatus);
-        
-        // ✅ Use ProjectViewModel to update UI optimistically (both boardId AND status)
-        double newPosition = 1000.0; // Add to end of target board
-        projectViewModel.moveTaskWithStatusUpdate(task, targetBoardId, targetStatus, newPosition);
-        
-        // ✅ Then sync with backend via TaskViewModel
-        taskViewModel.moveTaskToBoard(task, targetBoardId, newPosition);
-        
-        Toast.makeText(this, "Task moved to " + targetBoardName, Toast.LENGTH_SHORT).show();
+        });
     }
 }

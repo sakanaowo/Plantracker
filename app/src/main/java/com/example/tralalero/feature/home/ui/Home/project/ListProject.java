@@ -45,9 +45,16 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.mapper.TaskMapper;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ListProject extends Fragment {
     private static final String TAG = "ListProject";
@@ -61,6 +68,7 @@ public class ListProject extends Fragment {
     private String projectId;
     private String boardId;
     private TaskViewModel taskViewModel;
+    private TaskApiService taskApiService;
     private LabelViewModel labelViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
@@ -230,6 +238,8 @@ public class ListProject extends Fragment {
         
         // Set status change listener for checkbox
         taskAdapter.setOnTaskStatusChangeListener((task, isDone) -> {
+            Log.d(TAG, "Checkbox clicked from old adapter for task: " + task.getId());
+            // Call the new unified logic
             handleCheckboxClick(task, type);
         });
 
@@ -426,86 +436,59 @@ public class ListProject extends Fragment {
     }
     
     /**
-     * Handle checkbox click logic based on current board type:
-     * - To Do → In Progress
-     * - In Progress → Done  
-     * - Done → To Do (reopen task)
+     * Handle checkbox click logic:
+     * Simply toggle task status between TO_DO and DONE (same as All Work)
+     * No moving tasks between boards
      */
     private void handleCheckboxClick(Task task, String currentBoardType) {
         Log.d(TAG, "Checkbox clicked for task: " + task.getTitle() + " in board: " + currentBoardType);
         
-        // Determine target status based on current board
-        Task.TaskStatus targetStatus;
-        String targetBoardName;
+        // Toggle task status: TO_DO ↔ DONE
+        Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+            ? Task.TaskStatus.TO_DO 
+            : Task.TaskStatus.DONE;
         
-        if ("To Do".equals(currentBoardType)) {
-            targetStatus = Task.TaskStatus.IN_PROGRESS;
-            targetBoardName = "In Progress";
-        } else if ("In Progress".equals(currentBoardType)) {
-            targetStatus = Task.TaskStatus.DONE;
-            targetBoardName = "Done";
-        } else if ("Done".equals(currentBoardType)) {
-            // Reopen task - move back to To Do
-            targetStatus = Task.TaskStatus.TO_DO;
-            targetBoardName = "To Do";
-        } else {
-            Log.e(TAG, "Unknown board type: " + currentBoardType);
-            return;
-        }
+        Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
         
-        // Find target board ID
-        findBoardIdByName(targetBoardName, targetBoardId -> {
-            if (targetBoardId != null) {
-                // Move task to target board
-                Log.d(TAG, "Moving task '" + task.getTitle() + "' from " + currentBoardType + " to " + targetBoardName);
-                taskViewModel.moveTaskToBoard(task.getId(), targetBoardId, 1000.0); // Default position
-                
-                Toast.makeText(getContext(), 
-                    "Task moved to " + targetBoardName, 
-                    Toast.LENGTH_SHORT).show();
-            } else {
-                Log.e(TAG, "Could not find board: " + targetBoardName);
-                Toast.makeText(getContext(), 
-                    "Error: Could not find " + targetBoardName + " board", 
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
+        updateTaskStatus(task, newStatus);
     }
     
     /**
-     * Find board ID by board name
+     * Update task status via API (same as All Work logic)
      */
-    private void findBoardIdByName(String boardName, BoardIdCallback callback) {
-        if (getActivity() == null || projectId == null) {
-            callback.onBoardIdFound(null);
-            return;
-        }
+    private void updateTaskStatus(Task task, Task.TaskStatus newStatus) {
+        // Create update payload with ONLY the field we want to change
+        Map<String, Object> updatePayload = new HashMap<>();
+        updatePayload.put("status", newStatus.name());
         
-        // Get BoardViewModel from activity to access all boards
-        BoardViewModel boardViewModel = new ViewModelProvider(requireActivity()).get(BoardViewModel.class);
-        
-        // First load boards for this project
-        boardViewModel.loadBoardsForProject(projectId);
-        
-        // Then observe the boards
-        boardViewModel.getProjectBoards().observe(getViewLifecycleOwner(), boards -> {
-            if (boards != null) {
-                for (com.example.tralalero.domain.model.Board board : boards) {
-                    if (boardName.equalsIgnoreCase(board.getName())) {
-                        callback.onBoardIdFound(board.getId());
-                        return;
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Reload the board to refresh the task list
+                    if (boardId != null && !boardId.isEmpty()) {
+                        Log.d(TAG, "Reloading board: " + boardId);
+                        taskViewModel.loadTasksByBoard(boardId);
                     }
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    Toast.makeText(getContext(), "Failed to update task", Toast.LENGTH_SHORT).show();
                 }
             }
-            callback.onBoardIdFound(null);
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
-    }
-    
-    /**
-     * Callback interface for board ID lookup
-     */
-    private interface BoardIdCallback {
-        void onBoardIdFound(String boardId);
     }
     
     // ==================== FILTER METHODS ====================

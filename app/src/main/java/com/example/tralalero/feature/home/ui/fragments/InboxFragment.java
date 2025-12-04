@@ -26,6 +26,8 @@ import com.example.tralalero.R;
 import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.CommentApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.mapper.TaskMapper;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
 import com.example.tralalero.domain.model.Task;
@@ -37,6 +39,9 @@ import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.google.android.material.textfield.TextInputEditText;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import java.util.ArrayList;
 
@@ -45,6 +50,7 @@ public class InboxFragment extends Fragment {
     private TaskViewModel taskViewModel;
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
+    private TaskApiService taskApiService;
     private RelativeLayout notiLayout;
     private LinearLayout inboxQuickAccess;
     private TextInputEditText inboxAddCard;
@@ -72,11 +78,11 @@ public class InboxFragment extends Fragment {
         
         taskViewModel.loadInboxTasks("", false);
     }
-
     private void setupViewModel() {
         TaskRepositoryImplWithCache repositoryWithCache = 
             App.dependencyProvider.getTaskRepositoryWithCache();
         TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        this.taskApiService = apiService; // Store for direct API calls
         CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
         AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
         ITaskRepository apiRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
@@ -134,8 +140,15 @@ public class InboxFragment extends Fragment {
             
             @Override
             public void onTaskCheckboxClick(Task task, String currentBoardType) {
-                // Inbox doesn't have board types, just complete task
-                handleTaskCompleted(task);
+                // Toggle task status: TO_DO ↔ DONE (same as All Work)
+                Log.d(TAG, "Checkbox clicked for task: " + task.getId());
+                
+                Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+                    ? Task.TaskStatus.TO_DO 
+                    : Task.TaskStatus.DONE;
+                
+                Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
+                updateTaskStatus(task, newStatus);
             }
         });
         // Set board type as "Inbox" for checkbox logic
@@ -270,8 +283,38 @@ public class InboxFragment extends Fragment {
         bottomSheet.show(getChildFragmentManager(), "TaskDetailBottomSheet");
     }
     
-    private void handleTaskCompleted(Task task) {
-        taskViewModel.toggleTaskComplete(task);
-        Toast.makeText(getContext(), "Task updated", Toast.LENGTH_SHORT).show();
+    /**
+     * Update task status via API (same as All Work logic)
+     */
+    private void updateTaskStatus(Task task, Task.TaskStatus newStatus) {
+        // Create update payload with ONLY the field we want to change
+        java.util.Map<String, Object> updatePayload = new java.util.HashMap<>();
+        updatePayload.put("status", newStatus.name());
+        
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Reload inbox tasks to refresh the list
+                    taskViewModel.loadInboxTasks("", true);
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    Toast.makeText(getContext(), "Failed to update task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
