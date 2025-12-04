@@ -101,6 +101,10 @@ public class TaskDTO {
     @SerializedName(value = "taskAssignees", alternate = {"task_assignees"})
     private java.util.List<TaskAssigneeDTO> taskAssignees;
     
+    // Board - nested object from backend
+    @SerializedName("boards")
+    private BoardDTO boards;
+    
     // Nested DTO for task_labels relation
     public static class TaskLabelDTO {
         @SerializedName("labels")
@@ -172,6 +176,21 @@ public class TaskDTO {
         public void setName(String name) { this.name = name; }
         public void setEmail(String email) { this.email = email; }
         public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    }
+    
+    // Nested DTO for board info
+    public static class BoardDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
     }
 
     public String getId() {
@@ -412,5 +431,13 @@ public class TaskDTO {
     
     public void setTaskAssignees(java.util.List<TaskAssigneeDTO> taskAssignees) {
         this.taskAssignees = taskAssignees;
+    }
+    
+    public BoardDTO getBoards() {
+        return boards;
+    }
+    
+    public void setBoards(BoardDTO boards) {
+        this.boards = boards;
     }
 }

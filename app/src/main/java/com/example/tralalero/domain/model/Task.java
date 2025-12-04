@@ -7,6 +7,7 @@ public class Task {
     private final String id;
     private final String projectId;
     private final String boardId;
+    private final String boardName; // Board name from boards relation
     private final String title;
     private final String description;
     private final String issueKey; 
@@ -50,13 +51,31 @@ public class Task {
                 String epicId, String parentTaskId, Date startAt, Date dueAt,
                 Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
                 Date createdAt, Date updatedAt) {
-        this(id, projectId, boardId, title, description, issueKey, type, status, priority,
+        this(id, projectId, boardId, null, title, description, issueKey, type, status, priority,
              position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
              storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
              false, null, null, null, null, null);
     }
     
+    // Constructor WITHOUT boardName (backward compatibility)
     public Task(String id, String projectId, String boardId, String title, String description,
+                String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
+                double position, String assigneeId, String createdBy, String sprintId,
+                String epicId, String parentTaskId, Date startAt, Date dueAt,
+                Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
+                Date createdAt, Date updatedAt,
+                boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
+                String calendarEventId, Date calendarSyncedAt, List<Label> labels, 
+                List<AssigneeInfo> assignees) {
+        this(id, projectId, boardId, null, title, description, issueKey, type, status, priority,
+             position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
+             storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
+             calendarSyncEnabled, calendarReminderMinutes, calendarEventId, calendarSyncedAt, 
+             labels, assignees);
+    }
+    
+    // Constructor WITH boardName (full)
+    public Task(String id, String projectId, String boardId, String boardName, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
                 double position, String assigneeId, String createdBy, String sprintId,
                 String epicId, String parentTaskId, Date startAt, Date dueAt,
@@ -68,6 +87,7 @@ public class Task {
         this.id = id;
         this.projectId = projectId;
         this.boardId = boardId;
+        this.boardName = boardName;
         this.title = title;
         this.description = description;
         this.issueKey = issueKey;
@@ -105,6 +125,10 @@ public class Task {
 
     public String getBoardId() {
         return boardId;
+    }
+    
+    public String getBoardName() {
+        return boardName;
     }
 
     public String getTitle() {

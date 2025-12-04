@@ -636,6 +636,13 @@ public class CardDetailActivity extends AppCompatActivity {
                     android.util.Log.d(TAG, "  ✅ Board status populated: " + currentStatus);
                 }
                 
+                // ✅ Update board name from task
+                if (task.getBoardName() != null && !task.getBoardName().isEmpty()) {
+                    boardName = task.getBoardName();
+                    tvBoardName.setText("In " + boardName);
+                    android.util.Log.d(TAG, "  ✅ Board name populated: " + boardName);
+                }
+                
                 // Populate calendar sync UI
                 populateCalendarSyncUI(task);
                 

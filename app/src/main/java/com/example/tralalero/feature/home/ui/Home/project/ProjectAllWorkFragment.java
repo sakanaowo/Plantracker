@@ -268,6 +268,7 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
         Intent intent = new Intent(getActivity(), CardDetailActivity.class);
         intent.putExtra("task_id", task.getId());
         intent.putExtra("project_id", projectId);
+        intent.putExtra("is_edit_mode", true); // ✅ Enable edit mode to load task details
         startActivity(intent);
     }
     

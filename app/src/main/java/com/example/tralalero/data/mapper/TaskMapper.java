@@ -89,10 +89,18 @@ public class TaskMapper {
             }
         }
         
+        // Extract board name from boards nested structure
+        String boardName = null;
+        if (dto.getBoards() != null) {
+            boardName = dto.getBoards().getName();
+            android.util.Log.d("TaskMapper", "Board name: " + boardName);
+        }
+        
         return new Task(
             dto.getId(),
             dto.getProjectId(),
             dto.getBoardId(),
+            boardName, // ← NEW: Pass board name
             dto.getTitle(),
             dto.getDescription(),
             dto.getIssueKey(),
