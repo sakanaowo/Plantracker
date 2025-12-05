@@ -1,125 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F5F5F5">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F5F5F5">
+    <!-- Month/Year Header with Navigation -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="@android:color/white" android:elevation="2dp" android:gravity="center_vertical">
 
-        <!-- Top Action Bar -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:background="@android:color/white" android:elevation="2dp" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/btnPrevMonth" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_chevron_left" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Previous month"/>
 
-            <!-- Month Navigation -->
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnPreviousMonth" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="&lt;" android:textSize="18sp" android:insetLeft="0dp" android:insetRight="0dp"/>
+        <TextView android:id="@+id/tvMonthYear" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="December 2025" android:textSize="18sp" android:textStyle="bold" android:textColor="@android:color/black" android:gravity="center"/>
 
-            <TextView android:id="@+id/tvCurrentMonth" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Tháng 11 2025" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black" android:gravity="center"/>
-
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnNextMonth" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="36dp" android:layout_height="36dp" android:text="&gt;" android:textSize="18sp" android:insetLeft="0dp" android:insetRight="0dp"/>
-
-            <!-- ✅ FIX: Removed Sync and Filter buttons per user request -->
-        </LinearLayout>
-
-        <!-- Selected Date Info -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:background="@android:color/white" android:elevation="1dp" android:layout_marginTop="4dp">
-
-            <TextView android:id="@+id/tvSelectedDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Hôm nay" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black"/>
-
-            <TextView android:id="@+id/tvEventCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 sự kiện" android:textSize="14sp" android:textColor="#666666"/>
-        </LinearLayout>
-
-        <!-- Calendar View with Decorator Overlay -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp">
-            
-            <CalendarView
-                android:id="@+id/calendarView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white"/>
-            
-            <!-- Decorator for colored dots -->
-            <com.example.tralalero.feature.home.ui.Home.project.CalendarDecorator
-                android:id="@+id/calendarDecorator"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-        </FrameLayout>
-
-        <!-- Event Dates Indicator with visual markers -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardEventIndicator"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            app:cardElevation="2dp"
-            app:cardCornerRadius="8dp"
-            android:visibility="gone">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-                
-                <TextView
-                    android:id="@+id/tvEventDatesIndicator"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Dates with events: Loading..."
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/holo_green_dark"
-                    android:drawablePadding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground"/>
-                
-                <!-- Legend for future task markers -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="� Event"
-                        android:textSize="12sp"
-                        android:layout_marginEnd="16dp"/>
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="� Task (sắp tới)"
-                        android:textSize="12sp"
-                        android:alpha="0.5"/>
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Events List with Pull-to-Refresh -->
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
-
-            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarEvents" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="8dp" android:clipToPadding="false"/>
-
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        <!-- Empty State -->
-        <LinearLayout android:id="@+id/layoutEmptyState" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:padding="32dp" android:visibility="gone">
-
-            <ImageView android:layout_width="120dp" android:layout_height="120dp" android:src="@drawable/ic_google_calendar" android:alpha="0.3"/>
-
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No events this month" android:textSize="16sp" android:textColor="#999999" android:layout_marginTop="16dp"/>
-
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tap + to create an event or sync from Google Calendar" android:textSize="14sp" android:gravity="center" android:textColor="#BBBBBB" android:layout_marginTop="8dp"/>
-        </LinearLayout>
-
-        <!-- Loading Indicator -->
-        <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
-
+        <ImageButton android:id="@+id/btnNextMonth" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_chevron_right" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Next month"/>
     </LinearLayout>
 
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/fabAddEvent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="16dp" android:src="@android:drawable/ic_input_add" android:contentDescription="Add Event" app:tint="@android:color/white"/>
+    <!-- Weekday Headers (Mon - Sun) -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp" android:background="@android:color/white" android:weightSum="7">
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Mon" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Tue" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Wed" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Thu" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Fri" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Sat" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Sun" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- Calendar Grid (7 columns) -->
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarGrid" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/white" android:paddingBottom="8dp"/>
+
+    <!-- Selected Date Label -->
+    <TextView android:id="@+id/tvSelectedDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="12dp" android:text="05/12/2025" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black" android:background="@android:color/white" android:layout_marginTop="8dp" android:visibility="gone"/>
+
+    <!-- Task/Event List for Selected Date -->
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTasksEvents" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp" android:visibility="gone"/>
+
+    <!-- Empty State -->
+    <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:text="No tasks or events on this date" android:textSize="14sp" android:textColor="#999999" android:gravity="center" android:visibility="gone"/>
+
+    <!-- Loading -->
+    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+</LinearLayout>

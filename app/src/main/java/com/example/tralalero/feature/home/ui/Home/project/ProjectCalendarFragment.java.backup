@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
@@ -50,14 +51,6 @@ public class ProjectCalendarFragment extends Fragment {
     private Calendar currentCalendar;
     private Calendar selectedCalendar;
     
-    public static ProjectCalendarFragment newInstance(String projectId) {
-        ProjectCalendarFragment fragment = new ProjectCalendarFragment();
-        Bundle args = new Bundle();
-        args.putString("project_id", projectId);
-        fragment.setArguments(args);
-        return fragment;
-    }
-    
     // Header views
     private TextView tvMonthYear;
     private ImageButton btnPrevMonth;
@@ -84,10 +77,15 @@ public class ProjectCalendarFragment extends Fragment {
     private List<TaskDTO> allTasks;
     private List<EventDTO> allEvents;
     private Set<String> datesWithItems;
-    
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            projectId = getArguments().getString("project_id");
+        }
+        
+        currentCalendar = Calendar.getInstance();
+        selectedCalendar = null; // No date selected by default
         
         if (getArguments() != null) {
             projectId = getArguments().getString("project_id");
@@ -150,43 +148,27 @@ public class ProjectCalendarFragment extends Fragment {
         calendarGridAdapter = new CalendarGridAdapter(new ArrayList<>(), new CalendarGridAdapter.OnDayClickListener() {
             @Override
             public void onDayClick(CalendarDay day) {
-                if (!day.isCurrentMonth()) return; // Ignore clicks on outside month days
-                
-                selectedCalendar = (Calendar) currentCalendar.clone();
-                selectedCalendar.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
-                
-                // Update selection visual
-                calendarGridAdapter.setSelectedDate(selectedCalendar);
-                
-                // Load tasks/events for this date
-                loadTasksForDate(selectedCalendar);
+                if (!day.isOutsideMonth()) {
+                    selectedCalendar = (Calendar) currentCalendar.clone();
+                    selectedCalendar.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
+                    
+                    // Update adapter with new selection
+                    calendarGridAdapter.setSelectedDate(selectedCalendar);
+                    
+                    // Load tasks/events for selected date
+                    loadTasksForDate(selectedCalendar);
+                }
             }
         });
-        
         rvCalendarGrid.setAdapter(calendarGridAdapter);
         
-        // Generate initial calendar days
+        // Generate days for current month
         generateCalendarDays();
     }
     
     private void setupTaskEventList() {
-        // Setup adapter with navigation handlers
-        CalendarItemAdapter adapter = new CalendarItemAdapter(new ArrayList<>(), new CalendarItemAdapter.OnItemClickListener() {
-            @Override
-            public void onTaskClick(String taskId, String boardId) {
-                // Navigate to board tab and focus task
-                navigateToBoardTab(boardId, taskId);
-            }
-            
-            @Override
-            public void onEventClick(String eventId) {
-                // Navigate to event tab and focus event
-                navigateToEventTab(eventId);
-            }
-        });
-        
-        rvTasksEvents.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext()));
-        rvTasksEvents.setAdapter(adapter);
+        rvTasksEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // TODO: Create adapter for tasks and events
         
         // Hide by default
         tvSelectedDate.setVisibility(View.GONE);
@@ -239,22 +221,6 @@ public class ProjectCalendarFragment extends Fragment {
         
         // Add days of current month
         Calendar today = Calendar.getInstance();
-        for (int day = 1; day <= daysInMonth; day++) {
-            boolean isToday = today.get(Calendar.YEAR) == currentCalendar.get(Calendar.YEAR) &&
-                             today.get(Calendar.MONTH) == currentCalendar.get(Calendar.MONTH) &&
-                             today.get(Calendar.DAY_OF_MONTH) == day;
-            days.add(new CalendarDay(day, true, isToday, false));
-        }
-        
-        // Fill remaining cells with next month days
-        int remainingDays = 42 - days.size();
-        for (int i = 1; i <= remainingDays; i++) {
-            days.add(new CalendarDay(i, false, false, false));
-        }
-        
-        calendarGridAdapter.updateDays(days);
-    }
-    
     private void loadMonthData(Calendar calendar) {
         String month = apiMonthFormat.format(calendar.getTime());
         Log.d(TAG, "Loading data for month: " + month);
@@ -265,59 +231,6 @@ public class ProjectCalendarFragment extends Fragment {
             @Override
             public void onResponse(Call<CalendarDataResponse> call, Response<CalendarDataResponse> response) {
                 progressBar.setVisibility(View.GONE);
-                
-                if (response.isSuccessful() && response.body() != null) {
-                    CalendarDataResponse data = response.body();
-                    
-                    // Cache data
-                    allTasks = data.getTasks() != null ? data.getTasks() : new ArrayList<>();
-                    allEvents = data.getEvents() != null ? data.getEvents() : new ArrayList<>();
-                    datesWithItems.clear();
-                    if (data.getDatesWithItems() != null) {
-                        datesWithItems.addAll(data.getDatesWithItems());
-                    }
-                    
-                    Log.d(TAG, "✅ Loaded " + allTasks.size() + " tasks, " + allEvents.size() + " events");
-                    Log.d(TAG, "✅ Dates with items: " + datesWithItems.size());
-                    
-                    // Update calendar grid with event indicators
-                    updateCalendarWithEventIndicators();
-                } else {
-                    Log.e(TAG, "Failed to load calendar data: " + response.code());
-                    Toast.makeText(getContext(), "Failed to load calendar data", Toast.LENGTH_SHORT).show();
-                }
-            }
-            
-            @Override
-            public void onFailure(Call<CalendarDataResponse> call, Throwable t) {
-                progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error loading calendar data", t);
-                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    
-    private void updateCalendarWithEventIndicators() {
-        List<CalendarDay> days = calendarGridAdapter.getDays();
-        if (days == null || days.isEmpty()) {
-            return;
-        }
-        
-        Calendar cal = (Calendar) currentCalendar.clone();
-        
-        for (CalendarDay day : days) {
-            if (day.isCurrentMonth()) {
-                cal.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
-                String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.getTime());
-                
-                boolean hasEvents = datesWithItems.contains(dateStr);
-                day.setHasEvents(hasEvents);
-            }
-        }
-        
-        calendarGridAdapter.notifyDataSetChanged();
-    }
-    
     private void loadTasksForDate(Calendar date) {
         String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date.getTime());
         Log.d(TAG, "Loading tasks for date: " + dateStr);
@@ -350,22 +263,80 @@ public class ProjectCalendarFragment extends Fragment {
         } else {
             tvEmptyState.setVisibility(View.GONE);
             rvTasksEvents.setVisibility(View.VISIBLE);
-            
-            // Combine tasks and events into CalendarItem list
-            List<CalendarItem> items = new ArrayList<>();
-            for (TaskDTO task : tasksForDate) {
-                items.add(CalendarItem.fromTask(task));
+            // TODO: Update adapter with tasksForDate and eventsForDate
+        }
+    }                   datesWithItems.addAll(data.getDatesWithItems());
+                    }
+                    
+                    Log.d(TAG, "✅ Loaded " + allTasks.size() + " tasks, " + allEvents.size() + " events");
+                    Log.d(TAG, "✅ Dates with items: " + datesWithItems.size());
+                    
+                    // Update calendar grid with event indicators
+                    updateCalendarWithEventIndicators();
+                } else {
+                    Log.e(TAG, "Failed to load calendar data: " + response.code());
+                    Toast.makeText(getContext(), "Failed to load calendar data", Toast.LENGTH_SHORT).show();
+                }
             }
-            for (EventDTO event : eventsForDate) {
-                items.add(CalendarItem.fromEvent(event));
-            }
             
-            // Update adapter
-            CalendarItemAdapter adapter = (CalendarItemAdapter) rvTasksEvents.getAdapter();
-            if (adapter != null) {
-                adapter.updateItems(items);
+            @Override
+            public void onFailure(Call<CalendarDataResponse> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Log.e(TAG, "Error loading calendar data", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void updateCalendarWithEventIndicators() {
+        // Update existing calendar days with event indicators
+        List<CalendarDay> days = calendarGridAdapter.getDays();
+        if (days == null || days.isEmpty()) {
+            return;
+        }
+        
+        Calendar cal = (Calendar) currentCalendar.clone();
+        
+        for (CalendarDay day : days) {
+            if (day.isCurrentMonth()) {
+                // Build date string for this day
+                cal.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
+                String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.getTime());
+                
+                // Check if this date has tasks/events
+                boolean hasEvents = datesWithItems.contains(dateStr);
+                day.setHasEvents(hasEvents);
             }
         }
+        
+        calendarGridAdapter.notifyDataSetChanged();
+    }   int remainingDays = 42 - days.size();
+        for (int i = 1; i <= remainingDays; i++) {
+            days.add(new CalendarDay(i, false, false, false));
+        }
+        
+        calendarGridAdapter.updateDays(days);
+    }
+    
+    private void loadMonthData(Calendar calendar) {
+        // TODO: Call API to get tasks/events for this month
+        // GET /api/projects/{projectId}/calendar?month=2025-12
+        Log.d(TAG, "Loading data for month: " + monthYearFormat.format(calendar.getTime()));
+        progressBar.setVisibility(View.VISIBLE);
+        
+        // Mock: After API call, update adapter with event indicators
+        // calendarGridAdapter.setEventDays(eventDays);
+    }
+    
+    private void loadTasksForDate(Calendar date) {
+        // TODO: Filter tasks/events for selected date and show in list
+        Log.d(TAG, "Loading tasks for date: " + dateFormat.format(date.getTime()));
+        
+        tvSelectedDate.setText(dateFormat.format(date.getTime()));
+        tvSelectedDate.setVisibility(View.VISIBLE);
+        rvTasksEvents.setVisibility(View.VISIBLE);
+        tvEmptyState.setVisibility(View.VISIBLE);
+        tvEmptyState.setText("No tasks or events on this date");
     }
     
     private void clearSelection() {
@@ -377,48 +348,26 @@ public class ProjectCalendarFragment extends Fragment {
     }
     
     /**
-     * Navigate to Board tab and focus on specific task
+     * Model class for calendar day
      */
-    private void navigateToBoardTab(String boardId, String taskId) {
-        if (getActivity() instanceof com.example.tralalero.feature.home.ui.Home.ProjectActivity) {
-            com.example.tralalero.feature.home.ui.Home.ProjectActivity activity = 
-                (com.example.tralalero.feature.home.ui.Home.ProjectActivity) getActivity();
-            
-            // Switch to Board tab (index 2)
-            com.google.android.material.tabs.TabLayout tabLayout = activity.findViewById(R.id.tabLayout);
-            if (tabLayout != null) {
-                com.google.android.material.tabs.TabLayout.Tab boardTab = tabLayout.getTabAt(2);
-                if (boardTab != null) {
-                    boardTab.select();
-                    
-                    // TODO: Scroll to specific task after tab switch
-                    // This requires exposing a method in ProjectActivity to focus on a task
-                    Log.d(TAG, "Navigated to board tab for task: " + taskId);
-                }
-            }
+    public static class CalendarDay {
+        private final int dayOfMonth;
+        private final boolean isCurrentMonth;
+        private final boolean isToday;
+        private boolean hasEvents;
+        
+        public CalendarDay(int dayOfMonth, boolean isCurrentMonth, boolean isToday, boolean hasEvents) {
+            this.dayOfMonth = dayOfMonth;
+            this.isCurrentMonth = isCurrentMonth;
+            this.isToday = isToday;
+            this.hasEvents = hasEvents;
         }
-    }
-    
-    /**
-     * Navigate to Event tab and focus on specific event
-     */
-    private void navigateToEventTab(String eventId) {
-        if (getActivity() instanceof com.example.tralalero.feature.home.ui.Home.ProjectActivity) {
-            com.example.tralalero.feature.home.ui.Home.ProjectActivity activity = 
-                (com.example.tralalero.feature.home.ui.Home.ProjectActivity) getActivity();
-            
-            // Switch to Event tab (index 4)
-            com.google.android.material.tabs.TabLayout tabLayout = activity.findViewById(R.id.tabLayout);
-            if (tabLayout != null) {
-                com.google.android.material.tabs.TabLayout.Tab eventTab = tabLayout.getTabAt(4);
-                if (eventTab != null) {
-                    eventTab.select();
-                    
-                    // TODO: Scroll to specific event after tab switch
-                    // This requires exposing a method in ProjectActivity to focus on an event
-                    Log.d(TAG, "Navigated to event tab for event: " + eventId);
-                }
-            }
-        }
+        
+        public int getDayOfMonth() { return dayOfMonth; }
+        public boolean isCurrentMonth() { return isCurrentMonth; }
+        public boolean isOutsideMonth() { return !isCurrentMonth; }
+        public boolean isToday() { return isToday; }
+        public boolean hasEvents() { return hasEvents; }
+        public void setHasEvents(boolean hasEvents) { this.hasEvents = hasEvents; }
     }
 }

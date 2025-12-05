@@ -59,5 +59,16 @@ public interface ProjectApiService {
      */
     @GET("projects/{id}/summary")
     Call<ProjectSummaryResponse> getProjectSummary(@Path("id") String projectId);
+    
+    /**
+     * Get calendar data for a specific month
+     * @param projectId Project ID
+     * @param month Month in YYYY-MM format (e.g., "2025-12")
+     * @return Calendar data with tasks, events, and dates with items
+     */
+    @GET("projects/{id}/calendar-data")
+    Call<com.example.tralalero.data.remote.dto.calendar.CalendarDataResponse> getCalendarData(
+        @Path("id") String projectId,
+        @Query("month") String month
+    );
 }
-
