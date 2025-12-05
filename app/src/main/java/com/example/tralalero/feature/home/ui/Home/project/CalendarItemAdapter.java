@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tralalero.R;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.event.EventDTO;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,8 +27,8 @@ public class CalendarItemAdapter extends RecyclerView.Adapter<CalendarItemAdapte
     private OnItemClickListener listener;
     
     public interface OnItemClickListener {
-        void onTaskClick(String taskId, String boardId);
-        void onEventClick(String eventId);
+        void onTaskClick(TaskDTO task);
+        void onEventClick(EventDTO event);
     }
     
     public CalendarItemAdapter(List<CalendarItem> items, OnItemClickListener listener) {
@@ -88,8 +90,8 @@ public class CalendarItemAdapter extends RecyclerView.Adapter<CalendarItemAdapte
                 
                 // Click handler
                 itemView.setOnClickListener(v -> {
-                    if (listener != null && item.getTask().getBoards() != null) {
-                        listener.onTaskClick(item.getTask().getId(), item.getTask().getBoards().getId());
+                    if (listener != null) {
+                        listener.onTaskClick(item.getTask());
                     }
                 });
                 
@@ -106,7 +108,7 @@ public class CalendarItemAdapter extends RecyclerView.Adapter<CalendarItemAdapte
                 // Click handler
                 itemView.setOnClickListener(v -> {
                     if (listener != null) {
-                        listener.onEventClick(item.getEvent().getId());
+                        listener.onEventClick(item.getEvent());
                     }
                 });
             }

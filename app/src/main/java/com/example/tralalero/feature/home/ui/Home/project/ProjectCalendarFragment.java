@@ -173,15 +173,15 @@ public class ProjectCalendarFragment extends Fragment {
         // Setup adapter with navigation handlers
         CalendarItemAdapter adapter = new CalendarItemAdapter(new ArrayList<>(), new CalendarItemAdapter.OnItemClickListener() {
             @Override
-            public void onTaskClick(String taskId, String boardId) {
-                // Navigate to board tab and focus task
-                navigateToBoardTab(boardId, taskId);
+            public void onTaskClick(TaskDTO task) {
+                // Show task detail bottom sheet
+                showTaskDetail(task);
             }
             
             @Override
-            public void onEventClick(String eventId) {
+            public void onEventClick(EventDTO event) {
                 // Navigate to event tab and focus event
-                navigateToEventTab(eventId);
+                navigateToEventTab(event.getId());
             }
         });
         
@@ -377,25 +377,14 @@ public class ProjectCalendarFragment extends Fragment {
     }
     
     /**
-     * Navigate to Board tab and focus on specific task
+     * Show task detail bottom sheet
      */
-    private void navigateToBoardTab(String boardId, String taskId) {
+    private void showTaskDetail(TaskDTO task) {
         if (getActivity() instanceof com.example.tralalero.feature.home.ui.Home.ProjectActivity) {
             com.example.tralalero.feature.home.ui.Home.ProjectActivity activity = 
                 (com.example.tralalero.feature.home.ui.Home.ProjectActivity) getActivity();
             
-            // Switch to Board tab (index 2)
-            com.google.android.material.tabs.TabLayout tabLayout = activity.findViewById(R.id.tabLayout);
-            if (tabLayout != null) {
-                com.google.android.material.tabs.TabLayout.Tab boardTab = tabLayout.getTabAt(2);
-                if (boardTab != null) {
-                    boardTab.select();
-                    
-                    // TODO: Scroll to specific task after tab switch
-                    // This requires exposing a method in ProjectActivity to focus on a task
-                    Log.d(TAG, "Navigated to board tab for task: " + taskId);
-                }
-            }
+            activity.showTaskDetailFromDTO(task);
         }
     }
     

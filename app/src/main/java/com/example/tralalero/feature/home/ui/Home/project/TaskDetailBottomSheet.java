@@ -50,22 +50,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
-    private static final String ARG_TASK_ID = "task_id";
-    private static final String ARG_TASK_TITLE = "task_title";
-    private static final String ARG_TASK_DESCRIPTION = "task_description";
-    private static final String ARG_TASK_PRIORITY = "task_priority";
-    private static final String ARG_TASK_STATUS = "task_status";
-    private static final String ARG_TASK_DUE_DATE = "task_due_date";
+    private static final String ARG_TASK_OBJECT = "task_object";
     private static final String ARG_IS_EDIT_MODE = "is_edit_mode";
-    private static final String ARG_PROJECT_ID = "project_id";
-    private static final String ARG_ASSIGNEE_ID = "assignee_id";
     
     private Task task;
     private String projectId;
     private String assigneeId;
     private OnActionClickListener listener;
     private ImageView ivClose;
-    private RadioButton rbTaskTitle;
+    private EditText etTaskTitle;
     private EditText etDescription;
     private EditText etDueDate;
     private MaterialButton btnMembers;
@@ -123,18 +116,8 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         boolean isEditMode = task.getId() != null && !task.getId().isEmpty();
         args.putBoolean(ARG_IS_EDIT_MODE, isEditMode);
         
-        args.putString(ARG_TASK_ID, task.getId());
-        args.putString(ARG_TASK_TITLE, task.getTitle());
-        args.putString(ARG_TASK_DESCRIPTION, task.getDescription());
-        args.putString(ARG_TASK_PRIORITY, task.getPriority().name());
-        args.putString(ARG_TASK_STATUS, task.getStatus().name());
-        args.putString(ARG_PROJECT_ID, task.getProjectId());
-        args.putString(ARG_ASSIGNEE_ID, task.getAssigneeId());
-        
-        // Store due date as timestamp
-        if (task.getDueAt() != null) {
-            args.putLong(ARG_TASK_DUE_DATE, task.getDueAt().getTime());
-        }
+        // Store serializable Task object to preserve ALL fields
+        args.putSerializable(ARG_TASK_OBJECT, task);
         
         fragment.setArguments(args);
         return fragment;
@@ -158,6 +141,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
     }
     private void initViews(View view) {
         ivClose = view.findViewById(R.id.ivClose);
+        etTaskTitle = view.findViewById(R.id.etTaskTitle);
         etDescription = view.findViewById(R.id.etDescription);
         etDueDate = view.findViewById(R.id.etDueDate);
         btnMembers = view.findViewById(R.id.btnMembers);
@@ -195,19 +179,26 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         // Get edit mode flag
         isEditMode = args.getBoolean(ARG_IS_EDIT_MODE, false);
         
-        // Get project ID and assignee ID
-        projectId = args.getString(ARG_PROJECT_ID);
-        assigneeId = args.getString(ARG_ASSIGNEE_ID);
-        
-        // Load priority
-        String priorityStr = args.getString(ARG_TASK_PRIORITY);
-        if (priorityStr != null) {
-            try {
-                currentPriority = Task.TaskPriority.valueOf(priorityStr);
-            } catch (IllegalArgumentException e) {
-                currentPriority = Task.TaskPriority.MEDIUM;
-            }
+        // Load FULL Task object from Bundle (preserves ALL fields)
+        task = (Task) args.getSerializable(ARG_TASK_OBJECT);
+        if (task == null) {
+            android.util.Log.e("TaskDetailBottomSheet", "❌ Task object is NULL from Bundle!");
+            return;
         }
+        
+        android.util.Log.d("TaskDetailBottomSheet", "✅ Loaded task: " + task.getTitle());
+        android.util.Log.d("TaskDetailBottomSheet", "  - ID: " + task.getId());
+        android.util.Log.d("TaskDetailBottomSheet", "  - ProjectID: " + task.getProjectId());
+        android.util.Log.d("TaskDetailBottomSheet", "  - BoardID: " + task.getBoardId());
+        android.util.Log.d("TaskDetailBottomSheet", "  - Status: " + task.getStatus());
+        android.util.Log.d("TaskDetailBottomSheet", "  - Priority: " + task.getPriority());
+        android.util.Log.d("TaskDetailBottomSheet", "  - Description: " + task.getDescription());
+        
+        // Extract commonly used fields
+        projectId = task.getProjectId();
+        assigneeId = task.getAssigneeId();
+        currentPriority = task.getPriority() != null ? task.getPriority() : Task.TaskPriority.MEDIUM;
+        selectedDueDate = task.getDueAt();
         
         // Update button text based on mode
         if (btnConfirm != null) {
@@ -218,50 +209,13 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
             }
         }
         
-        // Load due date from timestamp
-        long dueDateTimestamp = args.getLong(ARG_TASK_DUE_DATE, -1);
-        if (dueDateTimestamp != -1) {
-            selectedDueDate = new Date(dueDateTimestamp);
-        }
-        
-        task = new Task(
-            args.getString(ARG_TASK_ID),           // id
-            null,                                   // projectId
-            null,                                   // boardId
-            args.getString(ARG_TASK_TITLE),        // title
-            args.getString(ARG_TASK_DESCRIPTION),  // description
-            null,                                   // issueKey
-            null,                                   // type
-            null,                                   // status
-            currentPriority,                        // priority
-            0.0,                                    // position
-            null,                                   // assigneeId
-            null,                                   // createdBy
-            null,                                   // sprintId
-            null,                                   // epicId
-            null,                                   // parentTaskId
-            new Date(),                             // startAt - auto-set to current time
-            selectedDueDate,                        // dueAt
-            null,                                   // storyPoints
-            null,                                   // originalEstimateSec
-            null,                                   // remainingEstimateSec
-            null,                                   // createdAt
-            null,                                   // updatedAt
-            false,                                  // calendarSyncEnabled
-            null,                                   // calendarReminderMinutes
-            null,                                   // calendarEventId
-            null,                                   // calendarSyncedAt
-            null,                                   // labels
-            null                                    // assignees
-        );
-        
-        if (rbTaskTitle != null) {
-            rbTaskTitle.setText(args.getString(ARG_TASK_TITLE, "No Title"));
-            rbTaskTitle.setChecked(false); 
-            rbTaskTitle.setEnabled(false);
+        // Display task data in UI
+        if (etTaskTitle != null) {
+            etTaskTitle.setText(task.getTitle() != null ? task.getTitle() : "No Title");
+            etTaskTitle.setEnabled(false);
         }
         if (etDescription != null) {
-            etDescription.setText(args.getString(ARG_TASK_DESCRIPTION, "No description"));
+            etDescription.setText(task.getDescription() != null ? task.getDescription() : "No description");
         }
         
         // Display due date
@@ -344,7 +298,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         if (btnConfirm != null) {
             btnConfirm.setOnClickListener(v -> {
                 if (listener != null && task != null) {
-                    String newTitle = rbTaskTitle != null ? rbTaskTitle.getText().toString().trim() : task.getTitle();
+                    String newTitle = etTaskTitle != null ? etTaskTitle.getText().toString().trim() : task.getTitle();
                     String newDescription = etDescription != null ? etDescription.getText().toString().trim() : "";
                     
                     if (newTitle.isEmpty()) {

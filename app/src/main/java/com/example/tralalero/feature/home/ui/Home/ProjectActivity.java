@@ -617,6 +617,34 @@ public class ProjectActivity extends AppCompatActivity implements
 
         startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
     }
+    
+    /**
+     * Show task detail from TaskDTO (used by Calendar fragment)
+     */
+    public void showTaskDetailFromDTO(TaskDTO taskDTO) {
+        if (taskDTO == null) {
+            Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Intent intent = new Intent(this, CardDetailActivity.class);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, taskDTO.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, taskDTO.getBoardId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, 
+                taskDTO.getBoards() != null ? taskDTO.getBoards().getName() : "Unknown Board");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, taskDTO.getTitle());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, taskDTO.getDescription());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, taskDTO.getPriority() != null ? taskDTO.getPriority() : "MEDIUM");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_STATUS, taskDTO.getStatus() != null ? taskDTO.getStatus() : "TO_DO");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_POSITION, taskDTO.getPosition() != null ? taskDTO.getPosition() : 0.0);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ASSIGNEE_ID, taskDTO.getAssigneeId());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_CREATED_BY, taskDTO.getCreatedBy());
+        intent.putExtra("board_id_for_reload", taskDTO.getBoardId());
+
+        startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
