@@ -22,6 +22,10 @@ public class ProjectEvent {
     private String endAt; // ISO 8601 format with timezone
     private boolean createGoogleMeet;
     private String calendarEventId;
+    private String status; // ACTIVE, CANCELLED, COMPLETED
+    private Date cancelledAt;
+    private String cancelledBy;
+    private String cancellationReason;
     private Date createdAt;
     private String createdBy;
     
@@ -194,6 +198,38 @@ public class ProjectEvent {
     
     public void setCalendarEventId(String calendarEventId) {
         this.calendarEventId = calendarEventId;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public Date getCancelledAt() {
+        return cancelledAt;
+    }
+    
+    public void setCancelledAt(Date cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+    
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+    
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
+    }
+    
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+    
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
     
     public Date getCreatedAt() {

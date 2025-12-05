@@ -202,6 +202,14 @@ public class ProjectEventsFragment extends Fragment {
                     java.util.List<ProjectEvent> events = result.getData();
                     
                     if (events != null && !events.isEmpty()) {
+                        // Sort events by date - nearest events first (ascending order)
+                        java.util.Collections.sort(events, (e1, e2) -> {
+                            if (e1.getDate() == null && e2.getDate() == null) return 0;
+                            if (e1.getDate() == null) return 1;
+                            if (e2.getDate() == null) return -1;
+                            return e1.getDate().compareTo(e2.getDate());
+                        });
+                        
                         eventAdapter.setEvents(events);
                         rvEvents.setVisibility(View.VISIBLE);
                         layoutEmptyState.setVisibility(View.GONE);

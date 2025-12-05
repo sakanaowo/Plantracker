@@ -120,7 +120,6 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
             // Show initials
             tvInitials.setText(member.getInitials());
 
-            // TODO: Load avatar image using Glide/Picasso if needed
             // For now, just show initials
             ivAvatar.setVisibility(View.GONE);
             tvInitials.setVisibility(View.VISIBLE);

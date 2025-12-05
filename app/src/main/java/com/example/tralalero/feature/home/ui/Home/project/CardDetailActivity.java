@@ -144,14 +144,11 @@ public class CardDetailActivity extends AppCompatActivity {
     
     // Calendar Sync UI
     private SwitchMaterial switchCalendarSync;
-    private MaterialButton btnCalendarSyncSettings;
     private MaterialButton btnViewInCalendar;
     private TextView tvCalendarEventInfo;
-    private LinearLayout layoutCalendarDetails;
     private boolean isCalendarSyncEnabled = false;
     private boolean isPopulatingCalendarUI = false; // ✅ Flag to prevent listener trigger during UI population
     private boolean isGoogleCalendarConnected = false; // ✅ Store actual connection state from API
-    private List<Integer> reminderMinutes = new ArrayList<>(Arrays.asList(15, 60, 1440));
     private GoogleAuthApiService googleAuthApiService;
     
     // Dropdown UI elements
@@ -307,10 +304,8 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Calendar Sync Views
         switchCalendarSync = findViewById(R.id.switchCalendarSync);
-        btnCalendarSyncSettings = findViewById(R.id.btnCalendarSyncSettings);
         btnViewInCalendar = findViewById(R.id.btnViewInCalendar);
         tvCalendarEventInfo = findViewById(R.id.tvCalendarEventInfo);
-        layoutCalendarDetails = findViewById(R.id.layoutCalendarDetails);
         
         // Dropdown elements
         layoutAttachments = findViewById(R.id.layoutAttachments);
@@ -1068,7 +1063,7 @@ public class CardDetailActivity extends AppCompatActivity {
                 null,            // updatedAt
                 // Calendar sync fields
                 isCalendarSyncEnabled,
-                isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
+                null,            // calendar reminder minutes
                 null,            // calendarEventId (backend will generate)
                 null,            // calendarSyncedAt (backend will set)
                 null,            // labels
@@ -1143,7 +1138,7 @@ public class CardDetailActivity extends AppCompatActivity {
                 currentTask.getUpdatedAt(),      // ✅ Backend will update
                 // Calendar sync fields
                 isCalendarSyncEnabled,
-                isCalendarSyncEnabled ? new ArrayList<>(reminderMinutes) : null,
+                null,  // calendar reminder minutes - no longer used
                 currentTask.getCalendarEventId(),     // ✅ Preserve (backend will update)
                 currentTask.getCalendarSyncedAt(),    // ✅ Preserve (backend will update)
                 currentTask.getLabels(),              // ✅ Preserve
@@ -1155,7 +1150,7 @@ public class CardDetailActivity extends AppCompatActivity {
         // After updating task, sync calendar settings if task has due date
         if (isCalendarSyncEnabled && dueAt != null) {
             android.util.Log.d("CardDetailActivity", "📅 Syncing calendar: taskId=" + taskId + 
-                ", enabled=" + isCalendarSyncEnabled + ", reminder=" + (reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0)));
+                ", enabled=" + isCalendarSyncEnabled + ", reminder=30");
             
             // Convert Date to ISO string for backend
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
@@ -1165,7 +1160,7 @@ public class CardDetailActivity extends AppCompatActivity {
             calendarSyncViewModel.updateCalendarSync(
                 taskId, 
                 isCalendarSyncEnabled, 
-                reminderMinutes.isEmpty() ? 30 : reminderMinutes.get(0),
+                30,  // default 30 minutes reminder
                 dueAtISO
             );
         } else if (!isCalendarSyncEnabled) {
@@ -1613,12 +1608,10 @@ public class CardDetailActivity extends AppCompatActivity {
             
             android.util.Log.d(TAG, "👆 User toggled calendar sync: " + isChecked);
             isCalendarSyncEnabled = isChecked;
-            layoutCalendarDetails.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             
             if (isChecked && !isGoogleCalendarConnected()) {
                 showConnectGoogleCalendarDialog();
             } else if (isChecked) {
-                updateReminderInfoText();
                 // ✅ AUTO-SAVE: Sync to calendar when enabled
                 if (isEditMode && taskId != null) {
                     autoSaveCalendarSync();
@@ -1629,11 +1622,6 @@ public class CardDetailActivity extends AppCompatActivity {
                     autoUnsyncCalendar();
                 }
             }
-        });
-        
-        // Settings button
-        btnCalendarSyncSettings.setOnClickListener(v -> {
-            showReminderSettingsDialog();
         });
         
         // View in calendar button
@@ -1683,9 +1671,6 @@ public class CardDetailActivity extends AppCompatActivity {
             tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar. Nhấn vào switch để kết nối.");
         } else {
             switchCalendarSync.setEnabled(true);
-            if (isEditMode) {
-                updateReminderInfoText();
-            }
         }
     }
     
@@ -1712,7 +1697,6 @@ public class CardDetailActivity extends AppCompatActivity {
             } else {
                 tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar");
             }
-            layoutCalendarDetails.setVisibility(View.GONE);
             
             // Clear flag
             isPopulatingCalendarUI = false;
@@ -1725,18 +1709,6 @@ public class CardDetailActivity extends AppCompatActivity {
         if (task.isCalendarSyncEnabled()) {
             switchCalendarSync.setChecked(true);
             isCalendarSyncEnabled = true;
-            layoutCalendarDetails.setVisibility(View.VISIBLE);
-            
-            // Set reminder minutes
-            if (task.getCalendarReminderMinutes() != null && !task.getCalendarReminderMinutes().isEmpty()) {
-                reminderMinutes.clear();
-                reminderMinutes.addAll(task.getCalendarReminderMinutes());
-            } else {
-                reminderMinutes.clear();
-                reminderMinutes.add(30); // Default
-            }
-            
-            updateReminderInfoText();
             
             // Show event info if synced
             if (task.getCalendarEventId() != null && task.getCalendarSyncedAt() != null) {
@@ -1745,12 +1717,11 @@ public class CardDetailActivity extends AppCompatActivity {
                 tvCalendarEventInfo.setText("✅ Đã đồng bộ lúc: " + syncTime);
                 btnViewInCalendar.setVisibility(View.VISIBLE);
             } else {
-                tvCalendarEventInfo.setText("📅 Sẽ tự động đồng bộ khi lưu");
+                tvCalendarEventInfo.setText("");
             }
         } else {
             switchCalendarSync.setChecked(false);
             isCalendarSyncEnabled = false;
-            layoutCalendarDetails.setVisibility(View.GONE);
             
         }
         
@@ -1801,48 +1772,6 @@ public class CardDetailActivity extends AppCompatActivity {
         });
     }
     
-    private void showReminderSettingsDialog() {
-        CalendarReminderSettingsDialog dialog = new CalendarReminderSettingsDialog();
-        dialog.setCurrentReminders(reminderMinutes);
-        dialog.setOnSaveListener(newReminders -> {
-            reminderMinutes = newReminders;
-            updateReminderInfoText();
-            Toast.makeText(this, "Đã lưu cài đặt nhắc nhở", Toast.LENGTH_SHORT).show();
-        });
-        dialog.show(getSupportFragmentManager(), "reminder_settings");
-    }
-    
-    private void updateReminderInfoText() {
-        String taskTitle = etTaskTitle.getText().toString().trim();
-        if (taskTitle.isEmpty()) {
-            taskTitle = "Task này";
-        }
-        
-        StringBuilder info = new StringBuilder("📅 Sự kiện: " + taskTitle + " - Hạn chót\n");
-        
-        if (!reminderMinutes.isEmpty()) {
-            info.append("⏰ Nhắc nhở: ");
-            
-            List<String> reminderTexts = new ArrayList<>();
-            for (int minutes : reminderMinutes) {
-                if (minutes < 60) {
-                    reminderTexts.add(minutes + " phút");
-                } else if (minutes < 1440) {
-                    reminderTexts.add((minutes / 60) + " giờ");
-                } else if (minutes < 10080) {
-                    reminderTexts.add((minutes / 1440) + " ngày");
-                } else {
-                    reminderTexts.add((minutes / 10080) + " tuần");
-                }
-            }
-            info.append(String.join(", ", reminderTexts)).append(" trước");
-        } else {
-            info.append("⏰ Không có nhắc nhở");
-        }
-        
-        tvCalendarEventInfo.setText(info.toString());
-    }
-    
     /**
      * AUTO-SAVE: Sync task to Google Calendar when user enables calendar sync
      */
@@ -1877,7 +1806,7 @@ public class CardDetailActivity extends AppCompatActivity {
         // Call API to sync
         TaskCalendarSyncRequest request = new TaskCalendarSyncRequest(
             true,  // enabled
-            !reminderMinutes.isEmpty() ? reminderMinutes.get(0) : 30,  // default 30 minutes
+            30,    // default 30 minutes reminder
             title,
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(dueAt)
         );
@@ -1888,9 +1817,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     android.util.Log.d(TAG, "✅ Calendar sync saved successfully");
                     Toast.makeText(CardDetailActivity.this, "✅ Đã đồng bộ với Google Calendar", Toast.LENGTH_SHORT).show();
-                    
-                    // Update UI to show sync status
-                    updateReminderInfoText();
                 } else {
                     android.util.Log.e(TAG, "❌ Failed to sync calendar: " + response.code());
                     Toast.makeText(CardDetailActivity.this, "❌ Lỗi đồng bộ Calendar", Toast.LENGTH_SHORT).show();
@@ -1927,9 +1853,6 @@ public class CardDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     android.util.Log.d(TAG, "✅ Calendar unsync successful");
                     Toast.makeText(CardDetailActivity.this, "✅ Đã ngắt đồng bộ với Calendar", Toast.LENGTH_SHORT).show();
-                    
-                    // Hide calendar details
-                    layoutCalendarDetails.setVisibility(View.GONE);
                 } else {
                     android.util.Log.e(TAG, "❌ Failed to unsync calendar: " + response.code());
                     Toast.makeText(CardDetailActivity.this, "❌ Lỗi ngắt đồng bộ", Toast.LENGTH_SHORT).show();
@@ -2066,14 +1989,12 @@ public class CardDetailActivity extends AppCompatActivity {
             switchCalendarSync.setEnabled(false);
             switchCalendarSync.setChecked(false);
             isCalendarSyncEnabled = false;
-            layoutCalendarDetails.setVisibility(View.GONE);
             tvCalendarEventInfo.setText("⚠️ Cần thêm due date để sync với Calendar");
         } else if (!isCalendarConnected) {
             // Has due date but not connected
             switchCalendarSync.setEnabled(false);
             switchCalendarSync.setChecked(false);
             isCalendarSyncEnabled = false;
-            layoutCalendarDetails.setVisibility(View.GONE);
             tvCalendarEventInfo.setText("⚠️ Chưa kết nối Google Calendar. Nhấn vào switch để kết nối.");
         } else {
             // Has due date AND connected - enable toggle

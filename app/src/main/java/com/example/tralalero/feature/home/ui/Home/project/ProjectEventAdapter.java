@@ -86,6 +86,7 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
         TextView tvEventAttendees;
         TextView tvMeetLink;
         TextView tvEventStatus;
+        TextView tvCancellationReason;
         LinearLayout layoutDateBox;
         LinearLayout layoutEventActions;
         LinearLayout layoutMeetLink;
@@ -105,6 +106,7 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
             tvEventAttendees = itemView.findViewById(R.id.tvEventAttendees);
             tvMeetLink = itemView.findViewById(R.id.tvMeetLink);
             tvEventStatus = itemView.findViewById(R.id.tvEventStatus);
+            tvCancellationReason = itemView.findViewById(R.id.tvCancellationReason);
             layoutDateBox = itemView.findViewById(R.id.layoutDateBox);
             layoutEventActions = itemView.findViewById(R.id.layoutEventActions);
             layoutMeetLink = itemView.findViewById(R.id.layoutMeetLink);
@@ -117,16 +119,30 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
         void bind(ProjectEvent event) {
             if (event == null) return;
             
-            // ✅ FIX: Check if event is past using current timestamp (includes time)
+            // ✅ Check if event is cancelled
+            boolean isCancelled = "CANCELLED".equalsIgnoreCase(event.getStatus());
+            
+            // ✅ Check if event is past (event end time has passed current time)
             boolean isPastEvent = false;
             if (event.getDate() != null) {
                 Date now = new Date();
-                isPastEvent = event.getDate().before(now);
+                // Calculate event end time = start date + duration (in minutes)
+                Calendar eventEnd = Calendar.getInstance();
+                eventEnd.setTime(event.getDate());
+                eventEnd.add(Calendar.MINUTE, event.getDuration());
+                isPastEvent = eventEnd.getTime().before(now);
             }
             
-            // Status badge (HIDDEN - no longer needed)
+            // Status badge - show CANCELLED badge if cancelled
             if (tvEventStatus != null) {
-                tvEventStatus.setVisibility(View.GONE);
+                if (isCancelled) {
+                    tvEventStatus.setVisibility(View.VISIBLE);
+                    tvEventStatus.setText("CANCELLED");
+                    tvEventStatus.setBackgroundResource(R.drawable.badge_cancelled);
+                    tvEventStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+                } else {
+                    tvEventStatus.setVisibility(View.GONE);
+                }
             }
             
             // Format date with color coding
@@ -138,18 +154,29 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
                 SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
                 tvEventMonth.setText(monthFormat.format(event.getDate()).toUpperCase());
                 
-                // Keep date box color consistent (blue gradient)
+                // Change date box color: gray for cancelled/past, blue for active
                 if (layoutDateBox != null) {
-                    layoutDateBox.setBackgroundResource(R.drawable.rounded_background_gradient_blue);
+                    if (isCancelled || isPastEvent) {
+                        layoutDateBox.setBackgroundResource(R.drawable.rounded_background_gray);
+                    } else {
+                        layoutDateBox.setBackgroundResource(R.drawable.rounded_background_gradient_blue);
+                    }
                 }
             } else {
                 tvEventDay.setText("--");
                 tvEventMonth.setText("---");
             }
             
-            // Title with icon
+            // Title with icon and strikethrough for cancelled/past events
             String icon = getEventIcon(event.getType());
             tvEventTitle.setText(icon + " " + event.getTitle());
+            if (isCancelled || isPastEvent) {
+                tvEventTitle.setPaintFlags(tvEventTitle.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+                tvEventTitle.setTextColor(itemView.getContext().getResources().getColor(android.R.color.darker_gray));
+            } else {
+                tvEventTitle.setPaintFlags(tvEventTitle.getPaintFlags() & ~android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+                tvEventTitle.setTextColor(itemView.getContext().getResources().getColor(R.color.black));
+            }
             
             // Time
             String timeText = event.getTime();
@@ -157,6 +184,11 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
                 timeText += " (" + event.getDuration() + " phút)";
             }
             tvEventTime.setText(timeText);
+            if (isCancelled || isPastEvent) {
+                tvEventTime.setTextColor(itemView.getContext().getResources().getColor(android.R.color.darker_gray));
+            } else {
+                tvEventTime.setTextColor(itemView.getContext().getResources().getColor(R.color.black));
+            }
             
             // Attendees
             int attendeeCount = event.getAttendeeIds() != null ? 
@@ -168,9 +200,28 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
                 layoutMeetLink.setVisibility(View.VISIBLE);
                 btnJoinMeeting.setVisibility(View.VISIBLE);
                 tvMeetLink.setText(event.getMeetLink());
+                
+                // Disable join button for cancelled events
+                if (isCancelled) {
+                    btnJoinMeeting.setEnabled(false);
+                    btnJoinMeeting.setAlpha(0.5f);
+                } else {
+                    btnJoinMeeting.setEnabled(true);
+                    btnJoinMeeting.setAlpha(1.0f);
+                }
             } else {
                 layoutMeetLink.setVisibility(View.GONE);
                 btnJoinMeeting.setVisibility(View.GONE);
+            }
+            
+            // Show cancellation reason if event is cancelled
+            if (tvCancellationReason != null) {
+                if (isCancelled && event.getCancellationReason() != null && !event.getCancellationReason().isEmpty()) {
+                    tvCancellationReason.setVisibility(View.VISIBLE);
+                    tvCancellationReason.setText("❌ Lý do hủy: " + event.getCancellationReason());
+                } else {
+                    tvCancellationReason.setVisibility(View.GONE);
+                }
             }
             
             // Click to expand/collapse
@@ -182,7 +233,7 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
             // Join meeting
             if (btnJoinMeeting != null) {
                 btnJoinMeeting.setOnClickListener(v -> {
-                    if (onJoinMeetingClickListener != null) {
+                    if (onJoinMeetingClickListener != null && !isCancelled) {
                         onJoinMeetingClickListener.onJoinMeeting(event);
                     }
                 });

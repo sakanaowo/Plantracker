@@ -78,8 +78,6 @@ public class TaskDataMapper {
         }
 
         Date createdAt = parseDate(dto.getCreatedAt());
-
-        // TODO: Add user info when backend includes it in response
         Comment.User user = new Comment.User(
             dto.getUserId(),
             "User " + dto.getUserId(), // Placeholder - backend should return user name

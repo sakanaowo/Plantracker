@@ -164,7 +164,7 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         rvAttachments = view.findViewById(R.id.rvAttachments);
         tvNoAttachments = view.findViewById(R.id.tvNoAttachments);
         
-        etDescription.setEnabled(false);
+        // Remove default disabled state - will be set in loadTaskData with click listeners
         
         // Enable date field for editing
         etDueDate.setEnabled(true);
@@ -212,10 +212,25 @@ public class TaskDetailBottomSheet extends BottomSheetDialogFragment {
         // Display task data in UI
         if (etTaskTitle != null) {
             etTaskTitle.setText(task.getTitle() != null ? task.getTitle() : "No Title");
-            etTaskTitle.setEnabled(false);
+            // Enable edit on click
+            etTaskTitle.setEnabled(true);
+            etTaskTitle.setOnClickListener(v -> {
+                etTaskTitle.setEnabled(true);
+                etTaskTitle.setFocusableInTouchMode(true);
+                etTaskTitle.requestFocus();
+                etTaskTitle.setSelection(etTaskTitle.getText().length());
+            });
         }
         if (etDescription != null) {
             etDescription.setText(task.getDescription() != null ? task.getDescription() : "No description");
+            // Enable edit on click
+            etDescription.setEnabled(true);
+            etDescription.setOnClickListener(v -> {
+                etDescription.setEnabled(true);
+                etDescription.setFocusableInTouchMode(true);
+                etDescription.requestFocus();
+                etDescription.setSelection(etDescription.getText().length());
+            });
         }
         
         // Display due date

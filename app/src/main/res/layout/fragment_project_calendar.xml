@@ -31,7 +31,12 @@
     </LinearLayout>
 
     <!-- Calendar Grid (7 columns) -->
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalendarGrid" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/white" android:paddingBottom="8dp"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCalendarGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:paddingBottom="8dp" />
 
     <!-- Selected Date Label -->
     <TextView android:id="@+id/tvSelectedDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="12dp" android:text="05/12/2025" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black" android:background="@android:color/white" android:layout_marginTop="8dp" android:visibility="gone"/>
