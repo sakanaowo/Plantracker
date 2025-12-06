@@ -233,5 +233,65 @@ public class EventRepositoryImpl implements IEventRepository {
             }
         });
     }
-}
+    
+    // ==================== CANCEL/RESTORE EVENT ====================
+    
+    @Override
+    public void cancelEvent(String projectId, String eventId, String reason, 
+                           RepositoryCallback<EventDTO> callback) {
+        EventApiService.CancelEventRequest request = new EventApiService.CancelEventRequest(reason);
+        apiService.cancelEvent(projectId, eventId, request).enqueue(new Callback<EventDTO>() {
+            @Override
+            public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to cancel event: " + response.code());
+                }
+            }
 
+            @Override
+            public void onFailure(Call<EventDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+    
+    @Override
+    public void restoreEvent(String projectId, String eventId, RepositoryCallback<EventDTO> callback) {
+        apiService.restoreEvent(projectId, eventId).enqueue(new Callback<EventDTO>() {
+            @Override
+            public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to restore event: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<EventDTO> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+    
+    @Override
+    public void hardDeleteEvent(String projectId, String eventId, RepositoryCallback<Void> callback) {
+        apiService.hardDeleteEvent(projectId, eventId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Failed to permanently delete event: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+}

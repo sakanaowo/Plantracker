@@ -216,6 +216,54 @@ public class ProjectEventsViewModel extends ViewModel {
     }
     
     /**
+     * Hard delete event (permanent)
+     */
+    public LiveData<Result<Void>> hardDeleteEvent(String eventId) {
+        MutableLiveData<Result<Void>> resultLiveData = new MutableLiveData<>();
+        loadingLiveData.setValue(true);
+        
+        // Get event first to find projectId
+        eventApiService.getEventById(eventId).enqueue(new Callback<EventDTO>() {
+            @Override
+            public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String projectId = response.body().getProjectId();
+                    
+                    eventApiService.hardDeleteEvent(projectId, eventId).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            loadingLiveData.setValue(false);
+                            
+                            if (response.isSuccessful()) {
+                                resultLiveData.setValue(Result.success(null));
+                            } else {
+                                resultLiveData.setValue(Result.error("Không thể xóa vĩnh viễn sự kiện"));
+                            }
+                        }
+                        
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            loadingLiveData.setValue(false);
+                            resultLiveData.setValue(Result.error("Lỗi kết nối: " + t.getMessage()));
+                        }
+                    });
+                } else {
+                    loadingLiveData.setValue(false);
+                    resultLiveData.setValue(Result.error("Không thể tìm thấy sự kiện"));
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<EventDTO> call, Throwable t) {
+                loadingLiveData.setValue(false);
+                resultLiveData.setValue(Result.error("Lỗi kết nối: " + t.getMessage()));
+            }
+        });
+        
+        return resultLiveData;
+    }
+    
+    /**
      * Send reminder to attendees
      */
     public LiveData<Result<Void>> sendReminder(String eventId) {
@@ -277,10 +325,23 @@ public class ProjectEventsViewModel extends ViewModel {
         
         // Parse dates from ISO strings
         try {
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            // ✅ FIX: Handle both UTC format (with .000Z) and local format (without Z)
+            // Backend returns: "2025-12-05T17:00:00.000Z" (UTC)
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            
+            // Fallback parser for local time format (without timezone)
+            SimpleDateFormat localFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
             
             if (dto.getStartAt() != null) {
-                Date startDate = isoFormat.parse(dto.getStartAt());
+                Date startDate = null;
+                try {
+                    // Try UTC format first
+                    startDate = isoFormat.parse(dto.getStartAt());
+                } catch (Exception e) {
+                    // Fallback to local format
+                    startDate = localFormat.parse(dto.getStartAt());
+                }
                 event.setDate(startDate);
                 
                 SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
@@ -288,15 +349,30 @@ public class ProjectEventsViewModel extends ViewModel {
             }
             
             if (dto.getEndAt() != null && dto.getStartAt() != null) {
-                Date startDate = isoFormat.parse(dto.getStartAt());
-                Date endDate = isoFormat.parse(dto.getEndAt());
+                Date startDate = null;
+                Date endDate = null;
+                try {
+                    // Try UTC format first
+                    startDate = isoFormat.parse(dto.getStartAt());
+                    endDate = isoFormat.parse(dto.getEndAt());
+                } catch (Exception e) {
+                    // Fallback to local format
+                    startDate = localFormat.parse(dto.getStartAt());
+                    endDate = localFormat.parse(dto.getEndAt());
+                }
                 long durationMillis = endDate.getTime() - startDate.getTime();
                 int durationMinutes = (int) (durationMillis / (1000 * 60));
                 event.setDuration(durationMinutes);
             }
             
             if (dto.getCreatedAt() != null) {
-                event.setCreatedAt(isoFormat.parse(dto.getCreatedAt()));
+                Date createdDate = null;
+                try {
+                    createdDate = isoFormat.parse(dto.getCreatedAt());
+                } catch (Exception e) {
+                    createdDate = localFormat.parse(dto.getCreatedAt());
+                }
+                event.setCreatedAt(createdDate);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -307,6 +383,9 @@ public class ProjectEventsViewModel extends ViewModel {
         if (dto.getParticipants() != null) {
             attendeeCount = dto.getParticipants().size();
         }
+        
+        // ✅ FIX: Map status field from DTO
+        event.setStatus(dto.getStatus() != null ? dto.getStatus() : "ACTIVE");
         
         // Set defaults for fields not in DTO
         event.setType("MEETING");

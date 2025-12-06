@@ -49,10 +49,33 @@ public interface IEventRepository {
      * Delete a project event
      */
     void deleteProjectEvent(String eventId, RepositoryCallback<Void> callback);
+    
+    // ==================== CANCEL/RESTORE EVENT ====================
+    
+    /**
+     * Cancel an event (soft delete)
+     * @param projectId Project ID
+     * @param eventId Event ID
+     * @param reason Optional cancellation reason
+     */
+    void cancelEvent(String projectId, String eventId, String reason, RepositoryCallback<EventDTO> callback);
+    
+    /**
+     * Restore a cancelled event
+     * @param projectId Project ID
+     * @param eventId Event ID
+     */
+    void restoreEvent(String projectId, String eventId, RepositoryCallback<EventDTO> callback);
+    
+    /**
+     * Permanently delete an event
+     * @param projectId Project ID
+     * @param eventId Event ID
+     */
+    void hardDeleteEvent(String projectId, String eventId, RepositoryCallback<Void> callback);
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);
         void onError(String error);
     }
 }
-

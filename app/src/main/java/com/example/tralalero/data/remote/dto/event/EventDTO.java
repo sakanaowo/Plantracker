@@ -34,6 +34,18 @@ public class EventDTO {
     @SerializedName("createdBy")  // ✅ Changed from created_by to createdBy
     private String createdBy;
     
+    @SerializedName("status")
+    private String status; // ACTIVE, CANCELLED, COMPLETED
+    
+    @SerializedName("cancelledAt")
+    private String cancelledAt;
+    
+    @SerializedName("cancelledBy")
+    private String cancelledBy;
+    
+    @SerializedName("cancellationReason")
+    private String cancellationReason;
+    
     @SerializedName("participants")
     private java.util.List<ParticipantDTO> participants;
 
@@ -115,6 +127,38 @@ public class EventDTO {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public String getCancelledAt() {
+        return cancelledAt;
+    }
+    
+    public void setCancelledAt(String cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+    
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+    
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
+    }
+    
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+    
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
     
     public java.util.List<ParticipantDTO> getParticipants() {

@@ -2,6 +2,7 @@ package com.example.tralalero.data.remote.api;
 
 import com.example.tralalero.data.dto.event.CreateProjectEventRequest;
 import com.example.tralalero.data.remote.dto.event.EventDTO;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
@@ -77,5 +78,61 @@ public interface EventApiService {
      */
     @DELETE("events/projects/{id}")
     Call<Void> deleteProjectEvent(@Path("id") String eventId);
+    
+    // ==================== CANCEL/RESTORE EVENT ====================
+    
+    /**
+     * Cancel an event (soft delete)
+     * @param projectId Project ID
+     * @param eventId Event ID
+     * @param request Contains optional cancellation reason
+     */
+    @PATCH("events/projects/{projectId}/events/{eventId}/cancel")
+    Call<EventDTO> cancelEvent(
+        @Path("projectId") String projectId,
+        @Path("eventId") String eventId,
+        @Body CancelEventRequest request
+    );
+    
+    /**
+     * Restore a cancelled event
+     * @param projectId Project ID
+     * @param eventId Event ID
+     */
+    @PATCH("events/projects/{projectId}/events/{eventId}/restore")
+    Call<EventDTO> restoreEvent(
+        @Path("projectId") String projectId,
+        @Path("eventId") String eventId
+    );
+    
+    /**
+     * Permanently delete an event
+     * @param projectId Project ID
+     * @param eventId Event ID
+     */
+    @DELETE("events/projects/{projectId}/events/{eventId}/hard-delete")
+    Call<Void> hardDeleteEvent(
+        @Path("projectId") String projectId,
+        @Path("eventId") String eventId
+    );
+    
+    /**
+     * Request DTO for cancelling an event
+     */
+    class CancelEventRequest {
+        @SerializedName("reason")
+        private String reason;
+        
+        public CancelEventRequest(String reason) {
+            this.reason = reason;
+        }
+        
+        public String getReason() {
+            return reason;
+        }
+        
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
+    }
 }
-

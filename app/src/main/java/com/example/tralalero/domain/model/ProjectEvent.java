@@ -2,8 +2,9 @@ package com.example.tralalero.domain.model;
 
 import java.util.Date;
 import java.util.List;
+import java.io.Serializable;
 
-public class ProjectEvent {
+public class ProjectEvent implements Serializable {
     private String id;
     private String projectId;
     private String title;

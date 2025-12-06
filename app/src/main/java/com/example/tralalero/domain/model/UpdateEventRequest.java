@@ -16,6 +16,10 @@ public class UpdateEventRequest {
     private List<String> attendeeIds;
     private Boolean createGoogleMeet;
     
+    // ISO 8601 datetime fields
+    private String startAt;  // ISO 8601 format: "2025-11-11T15:00:00Z"
+    private String endAt;    // ISO 8601 format: "2025-11-11T15:30:00Z"
+    
     // Constructors
     public UpdateEventRequest() {}
     
@@ -104,5 +108,21 @@ public class UpdateEventRequest {
     
     public void setCreateGoogleMeet(Boolean createGoogleMeet) {
         this.createGoogleMeet = createGoogleMeet;
+    }
+    
+    public String getStartAt() {
+        return startAt;
+    }
+    
+    public void setStartAt(String startAt) {
+        this.startAt = startAt;
+    }
+    
+    public String getEndAt() {
+        return endAt;
+    }
+    
+    public void setEndAt(String endAt) {
+        this.endAt = endAt;
     }
 }

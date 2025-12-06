@@ -309,6 +309,9 @@ public class ProjectEventsFragment extends Fragment {
             } else if (itemId == R.id.action_cancel) {
                 cancelEvent(event);
                 return true;
+            } else if (itemId == R.id.action_delete_permanent) {
+                hardDeleteEvent(event);
+                return true;
             } else if (itemId == R.id.action_send_reminder) {
                 sendReminder(event);
                 return true;
@@ -320,14 +323,26 @@ public class ProjectEventsFragment extends Fragment {
     }
     
     private void editEvent(ProjectEvent event) {
-        // TODO: Mở edit dialog
-        Toast.makeText(getContext(), "TODO: Edit event", Toast.LENGTH_SHORT).show();
+        EditEventDialog dialog = EditEventDialog.newInstance(event);
+        dialog.setOnEventUpdatedListener(request -> {
+            viewModel.updateEvent(event.getId(), request).observe(getViewLifecycleOwner(), result -> {
+                if (result.isSuccess()) {
+                    Toast.makeText(getContext(), "✅ Đã cập nhật sự kiện", Toast.LENGTH_SHORT).show();
+                    loadEvents();
+                } else {
+                    Toast.makeText(getContext(), 
+                        "Lỗi: " + result.getErrorMessage(), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+        dialog.show(getChildFragmentManager(), "edit_event");
     }
     
     private void cancelEvent(ProjectEvent event) {
         new AlertDialog.Builder(getContext())
             .setTitle("Hủy sự kiện")
-            .setMessage("Bạn có chắc muốn hủy sự kiện này?")
+            .setMessage("Bạn có chắc muốn hủy sự kiện này? (Soft delete)")
             .setPositiveButton("Hủy sự kiện", (dialog, which) -> {
                 viewModel.deleteEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
                     if (result.isSuccess()) {
@@ -341,6 +356,26 @@ public class ProjectEventsFragment extends Fragment {
                 });
             })
             .setNegativeButton("Không", null)
+            .show();
+    }
+    
+    private void hardDeleteEvent(ProjectEvent event) {
+        new AlertDialog.Builder(getContext())
+            .setTitle("Xóa vĩnh viễn")
+            .setMessage("⚠️ Bạn có chắc muốn XÓA VĨNH VIỄN sự kiện này?\n\nHành động này KHÔNG THỂ HOÀN TÁC!")
+            .setPositiveButton("Xóa vĩnh viễn", (dialog, which) -> {
+                viewModel.hardDeleteEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
+                    if (result.isSuccess()) {
+                        Toast.makeText(getContext(), "✅ Đã xóa vĩnh viễn sự kiện", Toast.LENGTH_SHORT).show();
+                        loadEvents();
+                    } else {
+                        Toast.makeText(getContext(), 
+                            "Lỗi: " + result.getErrorMessage(), 
+                            Toast.LENGTH_SHORT).show();
+                    }
+                });
+            })
+            .setNegativeButton("Hủy", null)
             .show();
     }
     

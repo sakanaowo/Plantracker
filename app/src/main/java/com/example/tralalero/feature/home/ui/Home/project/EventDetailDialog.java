@@ -134,7 +134,10 @@ public class EventDetailDialog extends DialogFragment {
                 tvDialogMeetLink.setText(event.getMeetLink());
                 tvDialogMeetLink.setVisibility(View.VISIBLE);
             } else {
-                tvDialogMeetLink.setVisibility(View.GONE);
+                // Show message when Google Meet is not available
+                tvDialogMeetLink.setText("⚠️ Chưa có link Google Meet (cần kết nối Google Calendar)");
+                tvDialogMeetLink.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                tvDialogMeetLink.setVisibility(View.VISIBLE);
             }
         }
     }

@@ -17,12 +17,12 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.MemberApiService;
 import com.example.tralalero.data.remote.dto.member.MemberDTO;
 import com.example.tralalero.domain.model.ProjectEvent;
+import com.example.tralalero.domain.model.UpdateEventRequest;
 import com.example.tralalero.domain.model.User;
 import com.example.tralalero.feature.home.ui.Home.calendar.MemberSelectionBottomSheet;
 import com.example.tralalero.network.ApiClient;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
@@ -33,9 +33,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Dialog for creating a new project event
+ * Dialog for editing an existing project event
  */
-public class CreateEventDialog extends DialogFragment {
+public class EditEventDialog extends DialogFragment {
     private TextInputEditText etEventTitle;
     private TextInputEditText etEventDate;
     private TextInputEditText etEventTime;
@@ -45,29 +45,29 @@ public class CreateEventDialog extends DialogFragment {
     private RadioButton rbMeeting;
     private RadioButton rbMilestone;
     private ChipGroup chipGroupAttendees;
-    // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
     private Spinner spinnerRecurrence;
     private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
+    private ProjectEvent existingEvent;
     private List<String> selectedAttendeeIds = new ArrayList<>();
-    private List<User> selectedAttendees = new ArrayList<>();  // ✅ ADD: Track full User objects
-    private OnEventCreatedListener listener;
+    private List<User> selectedAttendees = new ArrayList<>();
+    private OnEventUpdatedListener listener;
     private boolean isLoadingMembers = false;
     
-    public interface OnEventCreatedListener {
-        void onEventCreated(ProjectEvent event);
+    public interface OnEventUpdatedListener {
+        void onEventUpdated(UpdateEventRequest request);
     }
     
-    public static CreateEventDialog newInstance(String projectId) {
-        CreateEventDialog dialog = new CreateEventDialog();
+    public static EditEventDialog newInstance(ProjectEvent event) {
+        EditEventDialog dialog = new EditEventDialog();
         Bundle args = new Bundle();
-        args.putString("project_id", projectId);
+        args.putSerializable("event", event);
         dialog.setArguments(args);
         return dialog;
     }
     
-    public void setOnEventCreatedListener(OnEventCreatedListener listener) {
+    public void setOnEventUpdatedListener(OnEventUpdatedListener listener) {
         this.listener = listener;
     }
     
@@ -77,7 +77,10 @@ public class CreateEventDialog extends DialogFragment {
         setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
         
         if (getArguments() != null) {
-            projectId = getArguments().getString("project_id");
+            existingEvent = (ProjectEvent) getArguments().getSerializable("event");
+            if (existingEvent != null) {
+                projectId = existingEvent.getProjectId();
+            }
         }
     }
     
@@ -93,6 +96,9 @@ public class CreateEventDialog extends DialogFragment {
         setupRecurrence();
         setupButtons(view);
         
+        // Pre-fill with existing event data
+        prefillEventData();
+        
         return view;
     }
     
@@ -106,14 +112,149 @@ public class CreateEventDialog extends DialogFragment {
         rbMeeting = view.findViewById(R.id.rbMeeting);
         rbMilestone = view.findViewById(R.id.rbMilestone);
         chipGroupAttendees = view.findViewById(R.id.chipGroupAttendees);
-        // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
         spinnerRecurrence = view.findViewById(R.id.spinnerRecurrence);
         progressBarLoading = view.findViewById(R.id.progressBarLoading);
-        
-        // ✅ SIMPLIFIED: No longer need meeting link and location fields
     }
     
-
+    private void prefillEventData() {
+        if (existingEvent == null) return;
+        
+        // Set title
+        etEventTitle.setText(existingEvent.getTitle());
+        
+        // Set description
+        if (existingEvent.getDescription() != null) {
+            etEventDescription.setText(existingEvent.getDescription());
+        }
+        
+        // Set date
+        if (existingEvent.getDate() != null) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            etEventDate.setText(dateFormat.format(existingEvent.getDate()));
+        }
+        
+        // Set time
+        if (existingEvent.getTime() != null) {
+            etEventTime.setText(existingEvent.getTime());
+        }
+        
+        // Set duration
+        etDuration.setText(String.valueOf(existingEvent.getDuration()));
+        
+        // Set event type
+        if ("MILESTONE".equals(existingEvent.getType())) {
+            rbMilestone.setChecked(true);
+        } else {
+            rbMeeting.setChecked(true);
+        }
+        
+        // Set recurrence
+        String recurrence = existingEvent.getRecurrence();
+        if (recurrence != null) {
+            int position = getRecurrencePosition(recurrence);
+            spinnerRecurrence.setSelection(position);
+        }
+        
+        // Set attendees
+        if (existingEvent.getAttendeeIds() != null) {
+            selectedAttendeeIds = new ArrayList<>(existingEvent.getAttendeeIds());
+        }
+    }
+    
+    private int getRecurrencePosition(String recurrence) {
+        switch (recurrence) {
+            case "DAILY": return 1;
+            case "WEEKLY": return 2;
+            case "BIWEEKLY": return 3;
+            case "MONTHLY": return 4;
+            default: return 0;
+        }
+    }
+    
+    private void setupAttendees(View view) {
+        if (chipGroupAttendees == null) return;
+        
+        // Load project members
+        loadProjectMembers();
+        
+        View btnAddAttendees = view.findViewById(R.id.btnAddAttendees);
+        if (btnAddAttendees != null) {
+            btnAddAttendees.setOnClickListener(v -> {
+                showMemberSelectionBottomSheet();
+            });
+        }
+    }
+    
+    private void loadProjectMembers() {
+        if (projectId == null || isLoadingMembers) return;
+        
+        isLoadingMembers = true;
+        if (progressBarLoading != null) {
+            progressBarLoading.setVisibility(View.VISIBLE);
+        }
+        
+        MemberApiService memberApiService = ApiClient.get(App.authManager).create(MemberApiService.class);
+        memberApiService.getMembers(projectId).enqueue(new Callback<List<MemberDTO>>() {
+            @Override
+            public void onResponse(Call<List<MemberDTO>> call, Response<List<MemberDTO>> response) {
+                isLoadingMembers = false;
+                if (progressBarLoading != null) {
+                    progressBarLoading.setVisibility(View.GONE);
+                }
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    List<MemberDTO> members = response.body();
+                    updateAttendeesChips(members);
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<List<MemberDTO>> call, Throwable t) {
+                isLoadingMembers = false;
+                if (progressBarLoading != null) {
+                    progressBarLoading.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+    
+    private void updateAttendeesChips(List<MemberDTO> allMembers) {
+        if (chipGroupAttendees == null) return;
+        
+        chipGroupAttendees.removeAllViews();
+        
+        for (String attendeeId : selectedAttendeeIds) {
+            MemberDTO member = findMemberById(allMembers, attendeeId);
+            if (member != null && member.getUser() != null) {
+                addAttendeeChip(member.getUser().getName(), attendeeId);
+            }
+        }
+    }
+    
+    private MemberDTO findMemberById(List<MemberDTO> members, String userId) {
+        for (MemberDTO member : members) {
+            if (member.getUserId().equals(userId)) {
+                return member;
+            }
+        }
+        return null;
+    }
+    
+    private void addAttendeeChip(String name, String userId) {
+        Chip chip = new Chip(getContext());
+        chip.setText(name);
+        chip.setCloseIconVisible(true);
+        chip.setOnCloseIconClickListener(v -> {
+            chipGroupAttendees.removeView(chip);
+            selectedAttendeeIds.remove(userId);
+        });
+        chipGroupAttendees.addView(chip);
+    }
+    
+    private void showMemberSelectionBottomSheet() {
+        // TODO: Load members and show selection
+        Toast.makeText(getContext(), "Chức năng đang phát triển", Toast.LENGTH_SHORT).show();
+    }
     
     private void setupDateTimePickers() {
         Calendar calendar = Calendar.getInstance();
@@ -153,99 +294,6 @@ public class CreateEventDialog extends DialogFragment {
         });
     }
     
-    private void setupAttendees(View view) {
-        View btnAddAttendees = view.findViewById(R.id.btnAddAttendees);
-        if (btnAddAttendees != null) {
-            btnAddAttendees.setOnClickListener(v -> {
-                showSelectAttendeesDialog();
-            });
-        }
-    }
-    
-    private void showSelectAttendeesDialog() {
-        // Prevent multiple concurrent requests
-        if (isLoadingMembers) {
-            Toast.makeText(getContext(), "Loading members, please wait...", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        // Show loading state
-        isLoadingMembers = true;
-        if (progressBarLoading != null) {
-            progressBarLoading.setVisibility(View.VISIBLE);
-        }
-        
-        // Load project members from API
-        MemberApiService api = ApiClient.get(App.authManager).create(MemberApiService.class);
-        api.getMembers(projectId).enqueue(new Callback<List<MemberDTO>>() {
-            @Override
-            public void onResponse(Call<List<MemberDTO>> call, 
-                                 Response<List<MemberDTO>> response) {
-                // Hide loading state
-                isLoadingMembers = false;
-                if (progressBarLoading != null) {
-                    progressBarLoading.setVisibility(View.GONE);
-                }
-                
-                if (response.isSuccessful() && response.body() != null) {
-                    List<User> users = new ArrayList<>();
-                    for (MemberDTO dto : response.body()) {
-                        if (dto.getUser() != null) {
-                            User user = new User(
-                                dto.getUserId(),
-                                dto.getUser().getName(),
-                                dto.getUser().getEmail(),
-                                dto.getUser().getAvatarUrl(),
-                                null  // firebaseUid not in MemberDTO
-                            );
-                            users.add(user);
-                        }
-                    }
-
-                    // ✅ FIX: Show member selection bottom sheet with pre-selected members
-                    MemberSelectionBottomSheet sheet = MemberSelectionBottomSheet.newInstance(users, selectedAttendees);
-                    sheet.setListener(selected -> {
-                        // Clear existing chips
-                        chipGroupAttendees.removeAllViews();
-                        selectedAttendeeIds.clear();
-                        selectedAttendees.clear();  // ✅ Clear full User list
-                        
-                        // Add chips for selected members
-                        for (User u : selected) {
-                            addAttendeeChip(u.getId(), u.getName());
-                            selectedAttendees.add(u);  // ✅ Track full User object
-                        }
-                    });
-                    sheet.show(getParentFragmentManager(), "select_members");
-                } else {
-                    Toast.makeText(getContext(), "Failed to load members", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<MemberDTO>> call, Throwable t) {
-                // Hide loading state
-                isLoadingMembers = false;
-                if (progressBarLoading != null) {
-                    progressBarLoading.setVisibility(View.GONE);
-                }
-                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    
-    private void addAttendeeChip(String userId, String userName) {
-        Chip chip = new Chip(getContext());
-        chip.setText(userName);
-        chip.setCloseIconVisible(true);
-        chip.setOnCloseIconClickListener(v -> {
-            chipGroupAttendees.removeView(chip);
-            selectedAttendeeIds.remove(userId);
-        });
-        chipGroupAttendees.addView(chip);
-        selectedAttendeeIds.add(userId);
-    }
-    
     private void setupRecurrence() {
         String[] recurrenceOptions = {
             "Không lặp lại",
@@ -275,11 +323,13 @@ public class CreateEventDialog extends DialogFragment {
             btnCancel.setOnClickListener(v -> dismiss());
         }
         
+        // Change button text to "Update"
         View btnCreate = view.findViewById(R.id.btnCreateEvent);
-        if (btnCreate != null) {
+        if (btnCreate != null && btnCreate instanceof Button) {
+            ((Button) btnCreate).setText("Cập nhật");
             btnCreate.setOnClickListener(v -> {
                 if (validateInput()) {
-                    createEvent();
+                    updateEvent();
                 }
             });
         }
@@ -313,50 +363,33 @@ public class CreateEventDialog extends DialogFragment {
         return true;
     }
     
-    private void createEvent() {
-        // Build event object và call API
-        ProjectEvent event = new ProjectEvent();
-        event.setTitle(etEventTitle.getText().toString());
-        event.setDate(parseDate(etEventDate.getText().toString()));
-        event.setTime(etEventTime.getText().toString());
+    private void updateEvent() {
+        UpdateEventRequest request = new UpdateEventRequest();
+        request.setTitle(etEventTitle.getText().toString());
+        
+        if (etEventDescription.getText() != null && !etEventDescription.getText().toString().trim().isEmpty()) {
+            request.setDescription(etEventDescription.getText().toString());
+        }
         
         String durationStr = etDuration.getText().toString();
         int durationMinutes = durationStr.isEmpty() ? 60 : Integer.parseInt(durationStr);
-        event.setDuration(durationMinutes);
-        
-        if (etEventDescription.getText() != null && !etEventDescription.getText().toString().trim().isEmpty()) {
-            event.setDescription(etEventDescription.getText().toString());
-        }
-        
-        // ✅ SIMPLIFIED: Always create MEETING type with Google Meet enabled by default
-        event.setType("MEETING");
-        event.setCreateGoogleMeet(true); // Always create Google Meet
-        
-        event.setAttendeeIds(selectedAttendeeIds);
-        event.setRecurrence(getSelectedRecurrence());
-        event.setProjectId(projectId);
+        request.setDuration(durationMinutes);
         
         // Format startAt and endAt with ISO 8601 timezone (UTC)
         String startAtISO = formatToISO8601(etEventDate.getText().toString(), etEventTime.getText().toString());
         String endAtISO = formatToISO8601WithDuration(etEventDate.getText().toString(), etEventTime.getText().toString(), durationMinutes);
-        event.setStartAt(startAtISO);
-        event.setEndAt(endAtISO);
+        request.setStartAt(startAtISO);
+        request.setEndAt(endAtISO);
         
-        // Call API to create event
+        request.setAttendeeIds(selectedAttendeeIds);
+        
         if (listener != null) {
-            listener.onEventCreated(event);
+            listener.onEventUpdated(request);
         }
         
         dismiss();
     }
     
-    /**
-     * Format date and time to ISO 8601 format in local timezone
-     * Backend expects local time format: "2024-01-15T10:00:00"
-     * @param dateStr Date in format dd/MM/yyyy
-     * @param timeStr Time in format HH:mm
-     * @return ISO 8601 string without timezone (local time)
-     */
     private String formatToISO8601(String dateStr, String timeStr) {
         try {
             SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
@@ -371,13 +404,10 @@ public class CreateEventDialog extends DialogFragment {
             
             // Format as local time WITH timezone offset
             SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            String result = iso8601Format.format(date) + offsetStr;
             
-            android.util.Log.d("CreateEventDialog", "Formatted startAt (with timezone): " + result);
-            return result;
+            return iso8601Format.format(date) + offsetStr;
         } catch (Exception e) {
             e.printStackTrace();
-            // Fallback: use current time with timezone
             SimpleDateFormat fallbackFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
             TimeZone tz = TimeZone.getDefault();
             int offsetMillis = tz.getOffset(System.currentTimeMillis());
@@ -388,13 +418,6 @@ public class CreateEventDialog extends DialogFragment {
         }
     }
     
-    /**
-     * Format end time by adding duration to start time
-     * @param dateStr Date in format dd/MM/yyyy
-     * @param timeStr Time in format HH:mm
-     * @param durationMinutes Duration in minutes
-     * @return ISO 8601 string with end time (local timezone)
-     */
     private String formatToISO8601WithDuration(String dateStr, String timeStr, int durationMinutes) {
         try {
             SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
@@ -413,33 +436,11 @@ public class CreateEventDialog extends DialogFragment {
             
             // Format as local time WITH timezone offset
             SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            String result = iso8601Format.format(cal.getTime()) + offsetStr;
             
-            android.util.Log.d("CreateEventDialog", "Formatted endAt (with timezone): " + result);
-            return result;
+            return iso8601Format.format(cal.getTime()) + offsetStr;
         } catch (Exception e) {
             e.printStackTrace();
             return formatToISO8601(dateStr, timeStr);
-        }
-    }
-    
-    private Date parseDate(String dateStr) {
-        try {
-            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            return format.parse(dateStr);
-        } catch (Exception e) {
-            return new Date();
-        }
-    }
-    
-    private String getSelectedRecurrence() {
-        int position = spinnerRecurrence.getSelectedItemPosition();
-        switch (position) {
-            case 1: return "DAILY";
-            case 2: return "WEEKLY";
-            case 3: return "BIWEEKLY";
-            case 4: return "MONTHLY";
-            default: return "NONE";
         }
     }
 }
