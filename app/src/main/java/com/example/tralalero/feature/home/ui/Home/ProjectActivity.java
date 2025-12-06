@@ -138,6 +138,11 @@ public class ProjectActivity extends AppCompatActivity implements
 
     private void getIntentData() {
         projectId = getIntent().getStringExtra("project_id");
+        // Also support PROJECT_ID (uppercase) from notification navigation
+        if (projectId == null) {
+            projectId = getIntent().getStringExtra("PROJECT_ID");
+        }
+        
         projectName = getIntent().getStringExtra("project_name");
         workspaceId = getIntent().getStringExtra("workspace_id");
         workspaceName = getIntent().getStringExtra("workspace_name");
@@ -149,6 +154,17 @@ public class ProjectActivity extends AppCompatActivity implements
             Log.e(TAG, "ERROR: No project_id provided!");
             Toast.makeText(this, "Error: No project ID", Toast.LENGTH_SHORT).show();
             finish();
+            return;
+        }
+        
+        // Check if we need to open calendar tab (from notification)
+        boolean openCalendarTab = getIntent().getBooleanExtra("OPEN_CALENDAR_TAB", false);
+        String eventId = getIntent().getStringExtra("EVENT_ID");
+        
+        if (openCalendarTab) {
+            Log.d(TAG, "📅 Notification intent: Opening calendar tab for event: " + eventId);
+            // Will switch to calendar tab after setup completes
+            getIntent().putExtra("_SWITCH_TO_CALENDAR", true);
         }
     }
 
@@ -279,10 +295,22 @@ public class ProjectActivity extends AppCompatActivity implements
             public void onTabReselected(TabLayout.Tab tab) {}
         });
         
-        // Select Board tab by default (index 2 now after All Work)
-        TabLayout.Tab boardTab = tabLayout.getTabAt(2);
-        if (boardTab != null) {
-            boardTab.select();
+        // Check if we should open calendar tab (from notification)
+        boolean shouldOpenCalendar = getIntent().getBooleanExtra("_SWITCH_TO_CALENDAR", false);
+        
+        if (shouldOpenCalendar) {
+            // Open Calendar tab (index 3)
+            TabLayout.Tab calendarTab = tabLayout.getTabAt(3);
+            if (calendarTab != null) {
+                calendarTab.select();
+                Log.d(TAG, "📅 Auto-selected Calendar tab from notification");
+            }
+        } else {
+            // Default: Select Board tab (index 2)
+            TabLayout.Tab boardTab = tabLayout.getTabAt(2);
+            if (boardTab != null) {
+                boardTab.select();
+            }
         }
     }
     

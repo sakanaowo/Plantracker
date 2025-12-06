@@ -134,11 +134,9 @@ public class NotificationWebSocketManager {
         shouldBeConnected = true;
         isConnecting = true;
         
-        // Update SharedPreferences - disable FCM notifications when WebSocket active
-        if (notifPrefs != null) {
-            notifPrefs.edit().putBoolean("show_fcm_notifications", false).apply();
-            Log.d(TAG, "📊 Set show_fcm_notifications = false (WebSocket connecting)");
-        }
+        // DON'T disable FCM here! Only disable when CONNECTED successfully
+        // This prevents race condition where FCM is disabled during connection attempt
+        // but connection fails, leaving FCM disabled while user is actually offline
         
         try {
             String wsUrl = BuildConfig.WS_URL;
@@ -304,6 +302,31 @@ public class NotificationWebSocketManager {
                         
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to parse notification", e);
+                    }
+                }
+            }
+        });
+        
+        // Activity log event (for activity feed updates)
+        socket.on("activity_log", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (args.length > 0) {
+                    try {
+                        String json = args[0].toString();
+                        Log.d(TAG, "📋 Received activity_log: " + json);
+                        
+                        NotificationPayload notification = gson.fromJson(json, NotificationPayload.class);
+                        
+                        // Notify all listeners on main thread (same as notification)
+                        mainHandler.post(() -> {
+                            for (OnNotificationReceivedListener listener : listeners) {
+                                listener.onNotificationReceived(notification);
+                            }
+                        });
+                        
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to parse activity_log", e);
                     }
                 }
             }

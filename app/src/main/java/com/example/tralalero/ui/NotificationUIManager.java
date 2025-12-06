@@ -117,6 +117,9 @@ public class NotificationUIManager {
             case "EVENT_UPDATED":
                 return "📆"; // Calendar with pen
             
+            case "EVENT_REMINDER":
+                return "⏰"; // Alarm clock (reminder)
+            
             case "TIME_REMINDER":
                 return "⏰"; // Alarm clock
             

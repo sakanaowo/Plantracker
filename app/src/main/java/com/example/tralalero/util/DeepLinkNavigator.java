@@ -144,6 +144,7 @@ public class DeepLinkNavigator {
         }
         
         String eventId = data.get("eventId");
+        String projectId = data.get("projectId");
         
         if (eventId == null) {
             Log.w(TAG, "Missing eventId");
@@ -151,11 +152,23 @@ public class DeepLinkNavigator {
             return;
         }
         
-        Log.d(TAG, "📅 Event detail screen not implemented yet for eventId: " + eventId);
+        Log.d(TAG, "📅 Opening event: " + eventId);
         
-        // TODO: Implement EventDetailActivity navigation
-        // For now, fallback to Inbox
-        openInbox(context);
+        // If we have projectId, open ProjectActivity with Calendar tab
+        if (projectId != null) {
+            Intent intent = new Intent(context, ProjectActivity.class);
+            intent.putExtra("PROJECT_ID", projectId);
+            intent.putExtra("EVENT_ID", eventId);
+            intent.putExtra("OPEN_CALENDAR_TAB", true); // Signal to open calendar tab
+            intent.putExtra("FROM_NOTIFICATION", true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            context.startActivity(intent);
+            Log.d(TAG, "✅ Launched ProjectActivity with calendar tab");
+        } else {
+            // No projectId, fallback to Inbox
+            Log.w(TAG, "Missing projectId, opening Inbox");
+            openInbox(context);
+        }
         
         /*
         // Future implementation:
