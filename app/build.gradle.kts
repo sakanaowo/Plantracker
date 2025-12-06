@@ -92,6 +92,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
+    
+    // Socket.IO client for real-time notifications
+    implementation("io.socket:socket.io-client:2.1.0")
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")

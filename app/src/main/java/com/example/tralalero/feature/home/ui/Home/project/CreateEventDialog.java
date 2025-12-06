@@ -14,6 +14,7 @@ import androidx.fragment.app.DialogFragment;
 
 import com.example.tralalero.R;
 import com.example.tralalero.App.App;
+import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.data.remote.api.MemberApiService;
 import com.example.tralalero.data.remote.dto.member.MemberDTO;
 import com.example.tralalero.domain.model.ProjectEvent;
@@ -50,6 +51,7 @@ public class CreateEventDialog extends DialogFragment {
     private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
+    private String currentUserId;
     private List<String> selectedAttendeeIds = new ArrayList<>();
     private List<User> selectedAttendees = new ArrayList<>();  // ✅ ADD: Track full User objects
     private OnEventCreatedListener listener;
@@ -79,6 +81,15 @@ public class CreateEventDialog extends DialogFragment {
         if (getArguments() != null) {
             projectId = getArguments().getString("project_id");
         }
+        
+        // Get current user ID
+        TokenManager tokenManager = new TokenManager(requireContext());
+        currentUserId = tokenManager.getInternalUserId();
+        
+        // Auto-add self to attendees
+        if (currentUserId != null && !selectedAttendeeIds.contains(currentUserId)) {
+            selectedAttendeeIds.add(currentUserId);
+        }
     }
     
     @Nullable
@@ -92,6 +103,9 @@ public class CreateEventDialog extends DialogFragment {
         setupAttendees(view);
         setupRecurrence();
         setupButtons(view);
+        
+        // ✅ Show chip for current user (auto-added)
+        loadCurrentUserAndShowChip();
         
         return view;
     }
@@ -189,6 +203,8 @@ public class CreateEventDialog extends DialogFragment {
                 
                 if (response.isSuccessful() && response.body() != null) {
                     List<User> users = new ArrayList<>();
+                    User currentUser = null;
+                    
                     for (MemberDTO dto : response.body()) {
                         if (dto.getUser() != null) {
                             User user = new User(
@@ -198,9 +214,21 @@ public class CreateEventDialog extends DialogFragment {
                                 dto.getUser().getAvatarUrl(),
                                 null  // firebaseUid not in MemberDTO
                             );
-                            users.add(user);
+                            
+                            // ✅ Hide current user from selection list
+                            if (!dto.getUserId().equals(currentUserId)) {
+                                users.add(user);
+                            } else {
+                                currentUser = user;
+                                // ✅ Ensure current user is in selected attendees
+                                if (!selectedAttendees.stream().anyMatch(u -> u.getId().equals(currentUserId))) {
+                                    selectedAttendees.add(user);
+                                }
+                            }
                         }
                     }
+                    
+                    final User finalCurrentUser = currentUser;
 
                     // ✅ FIX: Show member selection bottom sheet with pre-selected members
                     MemberSelectionBottomSheet sheet = MemberSelectionBottomSheet.newInstance(users, selectedAttendees);
@@ -210,10 +238,19 @@ public class CreateEventDialog extends DialogFragment {
                         selectedAttendeeIds.clear();
                         selectedAttendees.clear();  // ✅ Clear full User list
                         
+                        // ✅ Always add current user first (auto-included)
+                        if (currentUserId != null && finalCurrentUser != null) {
+                            selectedAttendeeIds.add(currentUserId);
+                            selectedAttendees.add(finalCurrentUser);
+                            addAttendeeChip(finalCurrentUser.getId(), finalCurrentUser.getName() + " (Bạn)");
+                        }
+                        
                         // Add chips for selected members
                         for (User u : selected) {
-                            addAttendeeChip(u.getId(), u.getName());
-                            selectedAttendees.add(u);  // ✅ Track full User object
+                            if (!u.getId().equals(currentUserId)) {  // Skip current user (already added)
+                                addAttendeeChip(u.getId(), u.getName());
+                                selectedAttendees.add(u);  // ✅ Track full User object
+                            }
                         }
                     });
                     sheet.show(getParentFragmentManager(), "select_members");
@@ -230,6 +267,42 @@ public class CreateEventDialog extends DialogFragment {
                     progressBarLoading.setVisibility(View.GONE);
                 }
                 Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    /**
+     * Load current user info and display chip (auto-added attendee)
+     */
+    private void loadCurrentUserAndShowChip() {
+        if (currentUserId == null || projectId == null) return;
+        
+        MemberApiService api = ApiClient.get(App.authManager).create(MemberApiService.class);
+        api.getMembers(projectId).enqueue(new Callback<List<MemberDTO>>() {
+            @Override
+            public void onResponse(Call<List<MemberDTO>> call, Response<List<MemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (MemberDTO dto : response.body()) {
+                        if (currentUserId.equals(dto.getUserId()) && dto.getUser() != null) {
+                            // Found current user - add chip
+                            User currentUser = new User(
+                                dto.getUserId(),
+                                dto.getUser().getName(),
+                                dto.getUser().getEmail(),
+                                dto.getUser().getAvatarUrl(),
+                                null
+                            );
+                            selectedAttendees.add(currentUser);
+                            addAttendeeChip(currentUser.getId(), currentUser.getName() + " (Bạn)");
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<List<MemberDTO>> call, Throwable t) {
+                // Silently fail - chip won't show but user is still in attendee list
             }
         });
     }

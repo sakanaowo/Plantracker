@@ -21,12 +21,15 @@ import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.data.mapper.ActivityLogMapper;
 import com.example.tralalero.data.remote.api.ActivityLogApiService;
+import com.example.tralalero.data.remote.api.EventApiService;
 import com.example.tralalero.data.remote.dto.activity.ActivityLogDTO;
 import com.example.tralalero.data.repository.InvitationRepositoryImpl;
 import com.example.tralalero.domain.model.ActivityLog;
 import com.example.tralalero.domain.model.Invitation;
+import com.example.tralalero.domain.model.EventReminder;
 import com.example.tralalero.domain.repository.IInvitationRepository;
 import com.example.tralalero.feature.home.ui.adapter.ActivityLogAdapter;
+import com.example.tralalero.feature.home.ui.adapter.EventReminderAdapter;
 import com.example.tralalero.feature.invitations.InvitationsAdapter;
 import com.example.tralalero.network.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
@@ -48,12 +51,18 @@ public class ActivityFragment extends Fragment {
     private InvitationsAdapter invitationsAdapter;
     private IInvitationRepository invitationRepository;
     
+    // Event reminders section
+    private LinearLayout eventRemindersSection;
+    private RecyclerView rvEventReminders;
+    private EventReminderAdapter eventReminderAdapter;
+    
     // Activity feed section
     private RecyclerView rvActivityFeed;
     private TextView tvEmptyActivity;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ActivityLogAdapter activityAdapter;
     private ActivityLogApiService activityLogApiService;
+    private EventApiService eventApiService;
     private String currentUserId;
 
     @Nullable
@@ -70,6 +79,8 @@ public class ActivityFragment extends Fragment {
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         invitationsSection = view.findViewById(R.id.invitationsSection);
         rvInvitations = view.findViewById(R.id.rvInvitations);
+        eventRemindersSection = view.findViewById(R.id.eventRemindersSection);
+        rvEventReminders = view.findViewById(R.id.rvEventReminders);
         rvActivityFeed = view.findViewById(R.id.rvActivityFeed);
         tvEmptyActivity = view.findViewById(R.id.tvEmptyActivity);
         
@@ -87,6 +98,21 @@ public class ActivityFragment extends Fragment {
             }
         });
         rvInvitations.setAdapter(invitationsAdapter);
+        
+        // Setup event reminders RecyclerView
+        rvEventReminders.setLayoutManager(new LinearLayoutManager(getContext()));
+        eventReminderAdapter = new EventReminderAdapter(new EventReminderAdapter.EventReminderActionListener() {
+            @Override
+            public void onViewEvent(EventReminder reminder) {
+                handleViewEvent(reminder);
+            }
+
+            @Override
+            public void onDismiss(EventReminder reminder) {
+                handleDismissReminder(reminder);
+            }
+        });
+        rvEventReminders.setAdapter(eventReminderAdapter);
         
         // Setup activity feed RecyclerView
         rvActivityFeed.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -106,6 +132,7 @@ public class ActivityFragment extends Fragment {
         // Initialize repositories
         AuthManager authManager = new AuthManager(requireActivity().getApplication());
         activityLogApiService = ApiClient.get(authManager).create(ActivityLogApiService.class);
+        eventApiService = ApiClient.get(authManager).create(EventApiService.class);
         invitationRepository = new InvitationRepositoryImpl(requireContext());
 
         // Get current user and load data
@@ -120,6 +147,7 @@ public class ActivityFragment extends Fragment {
     
     private void loadAllData() {
         loadPendingInvitations();
+        loadEventReminders();
         loadUserActivityFeed();
     }
 
@@ -151,6 +179,111 @@ public class ActivityFragment extends Fragment {
                 
                 Log.e(TAG, "Error loading invitations: " + message);
                 invitationsSection.setVisibility(View.GONE);
+            }
+        });
+    }
+    
+    private void loadEventReminders() {
+        if (currentUserId == null || getContext() == null) {
+            return;
+        }
+
+        Log.d(TAG, "Loading event reminders for user: " + currentUserId);
+
+        eventApiService.getMyEventReminders().enqueue(new Callback<List<EventApiService.EventReminderDTO>>() {
+            @Override
+            public void onResponse(Call<List<EventApiService.EventReminderDTO>> call, Response<List<EventApiService.EventReminderDTO>> response) {
+                if (getContext() == null) return;
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    List<EventApiService.EventReminderDTO> dtos = response.body();
+                    List<EventReminder> reminders = new ArrayList<>();
+                    
+                    for (EventApiService.EventReminderDTO dto : dtos) {
+                        EventReminder reminder = new EventReminder();
+                        reminder.setId(dto.getId());
+                        reminder.setEventId(dto.getEventId());
+                        reminder.setEventTitle(dto.getEventTitle());
+                        reminder.setEventDate(dto.getEventDate());
+                        reminder.setEventTime(dto.getEventTime());
+                        reminder.setProjectId(dto.getProjectId());
+                        reminder.setProjectName(dto.getProjectName());
+                        reminder.setSenderName(dto.getSenderName());
+                        reminder.setMessage(dto.getMessage());
+                        reminder.setTimestamp(dto.getTimestamp());
+                        reminder.setRead(dto.isRead());
+                        reminders.add(reminder);
+                    }
+                    
+                    Log.d(TAG, "Received " + reminders.size() + " event reminders");
+                    
+                    if (reminders.isEmpty()) {
+                        eventRemindersSection.setVisibility(View.GONE);
+                    } else {
+                        eventRemindersSection.setVisibility(View.VISIBLE);
+                        eventReminderAdapter.updateReminders(reminders);
+                    }
+                } else {
+                    Log.e(TAG, "Failed to load event reminders: " + response.code());
+                    eventRemindersSection.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<EventApiService.EventReminderDTO>> call, Throwable t) {
+                if (getContext() == null) return;
+                Log.e(TAG, "Error loading event reminders: " + t.getMessage());
+                eventRemindersSection.setVisibility(View.GONE);
+            }
+        });
+    }
+    
+    private void handleViewEvent(EventReminder reminder) {
+        Log.d(TAG, "Viewing event: " + reminder.getEventId());
+        
+        // Mark as read
+        eventApiService.markReminderAsRead(reminder.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Reminder marked as read");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Failed to mark reminder as read: " + t.getMessage());
+            }
+        });
+        
+        // TODO: Navigate to event details
+        // For now, show a toast
+        if (getContext() != null) {
+            Toast.makeText(getContext(), "Opening event: " + reminder.getEventTitle(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void handleDismissReminder(EventReminder reminder) {
+        Log.d(TAG, "Dismissing reminder: " + reminder.getId());
+        
+        eventApiService.dismissEventReminder(reminder.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (getContext() == null) return;
+                
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "Reminder dismissed", Toast.LENGTH_SHORT).show();
+                    loadEventReminders();
+                } else {
+                    Toast.makeText(getContext(), "Failed to dismiss reminder", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                if (getContext() == null) return;
+                Log.e(TAG, "Error dismissing reminder: " + t.getMessage());
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

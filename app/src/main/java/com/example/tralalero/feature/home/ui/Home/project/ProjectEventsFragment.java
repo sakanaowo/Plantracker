@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -26,12 +27,22 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CreateEventRequest;
 import com.example.tralalero.domain.model.ProjectEvent;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.tralalero.auth.storage.TokenManager;
+import com.example.tralalero.data.remote.api.ProjectApiService;
+import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.dto.project.ProjectMemberDTO;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Fragment for displaying and managing project events
@@ -41,11 +52,20 @@ public class ProjectEventsFragment extends Fragment {
     private ProjectEventAdapter eventAdapter;
     private View layoutEmptyState;
     private ProgressBar progressBar;
-    private FloatingActionButton fabCreateEvent;
+    private ImageButton btnCreateEvent;
     private SwipeRefreshLayout swipeRefreshLayout;
     
     private ProjectEventsViewModel viewModel;
     private String projectId;
+    private String currentUserId;
+    private String currentUserRole; // OWNER, ADMIN, or MEMBER
+    
+    // For search functionality
+    private List<ProjectEvent> allEvents = new ArrayList<>();
+    private View layoutSearchEvents;
+    private TextInputEditText etSearchEvents;
+    private ImageButton btnSearchEvents;
+    private boolean isSearchVisible = false;
     
     public static ProjectEventsFragment newInstance(String projectId) {
         ProjectEventsFragment fragment = new ProjectEventsFragment();
@@ -61,6 +81,13 @@ public class ProjectEventsFragment extends Fragment {
         if (getArguments() != null) {
             projectId = getArguments().getString("project_id");
         }
+        
+        // Get current user ID
+        TokenManager tokenManager = new TokenManager(requireContext());
+        currentUserId = tokenManager.getInternalUserId();
+        
+        // Fetch user's role in this project
+        fetchCurrentUserRole();
     }
     
     @Nullable
@@ -82,8 +109,47 @@ public class ProjectEventsFragment extends Fragment {
         rvEvents = view.findViewById(R.id.rvEvents);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         progressBar = view.findViewById(R.id.progressBar);
-        fabCreateEvent = view.findViewById(R.id.fabCreateEvent);
+        btnCreateEvent = view.findViewById(R.id.btnCreateEvent);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        
+        // Setup search views
+        layoutSearchEvents = view.findViewById(R.id.layoutSearchEvents);
+        etSearchEvents = view.findViewById(R.id.etSearchEvents);
+        btnSearchEvents = view.findViewById(R.id.btnSearchEvents);
+        
+        // Setup search button click listener
+        if (btnSearchEvents != null) {
+            btnSearchEvents.setOnClickListener(v -> toggleSearch());
+        }
+        
+        // Setup search field text watcher
+        if (etSearchEvents != null) {
+            etSearchEvents.addTextChangedListener(new android.text.TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterEvents(s.toString());
+                }
+                
+                @Override
+                public void afterTextChanged(android.text.Editable s) {}
+            });
+            
+            // Setup clear button to close search
+            etSearchEvents.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                    // Hide keyboard when search is pressed
+                    android.view.inputmethod.InputMethodManager imm = 
+                        (android.view.inputmethod.InputMethodManager) requireContext()
+                            .getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                    return true;
+                }
+                return false;
+            });
+        }
     }
     
     private void setupViewModel() {
@@ -168,27 +234,15 @@ public class ProjectEventsFragment extends Fragment {
 
     
     private void setupButtons(View view) {
-        // FAB
-        if (fabCreateEvent != null) {
-            fabCreateEvent.setOnClickListener(v -> showCreateEventDialog());
+        // Create Event button
+        if (btnCreateEvent != null) {
+            btnCreateEvent.setOnClickListener(v -> showCreateEventDialog());
         }
         
         // Empty state button
         View btnCreateFirstEvent = view.findViewById(R.id.btnCreateFirstEvent);
         if (btnCreateFirstEvent != null) {
             btnCreateFirstEvent.setOnClickListener(v -> showCreateEventDialog());
-        }
-        
-        // Filter button
-        View btnFilterEvents = view.findViewById(R.id.btnFilterEvents);
-        if (btnFilterEvents != null) {
-            btnFilterEvents.setOnClickListener(v -> showFilterDialog());
-        }
-        
-        // Search button
-        View btnSearchEvents = view.findViewById(R.id.btnSearchEvents);
-        if (btnSearchEvents != null) {
-            btnSearchEvents.setOnClickListener(v -> showSearchDialog());
         }
     }
     
@@ -199,21 +253,37 @@ public class ProjectEventsFragment extends Fragment {
         viewModel.loadProjectEvents(projectId, null)
             .observe(getViewLifecycleOwner(), result -> {
                 if (result.isSuccess()) {
-                    java.util.List<ProjectEvent> events = result.getData();
+                    List<ProjectEvent> events = result.getData();
                     
                     if (events != null && !events.isEmpty()) {
-                        // Sort events by date - nearest events first (ascending order)
+                        // Sort events by startAt datetime - nearest events first (sắp đến -> xa nhất)
                         java.util.Collections.sort(events, (e1, e2) -> {
-                            if (e1.getDate() == null && e2.getDate() == null) return 0;
-                            if (e1.getDate() == null) return 1;
-                            if (e2.getDate() == null) return -1;
-                            return e1.getDate().compareTo(e2.getDate());
+                            // Use startAt for more precise sorting (includes time)
+                            String startAt1 = e1.getStartAt();
+                            String startAt2 = e2.getStartAt();
+                            
+                            // Handle null startAt - fallback to date field
+                            if (startAt1 == null && startAt2 == null) {
+                                if (e1.getDate() == null && e2.getDate() == null) return 0;
+                                if (e1.getDate() == null) return 1;
+                                if (e2.getDate() == null) return -1;
+                                return e1.getDate().compareTo(e2.getDate());
+                            }
+                            if (startAt1 == null) return 1;
+                            if (startAt2 == null) return -1;
+                            
+                            // Compare by startAt timestamp (ISO 8601 format sorts correctly)
+                            return startAt1.compareTo(startAt2);
                         });
+                        
+                        // Save to allEvents for search filtering
+                        allEvents = new ArrayList<>(events);
                         
                         eventAdapter.setEvents(events);
                         rvEvents.setVisibility(View.VISIBLE);
                         layoutEmptyState.setVisibility(View.GONE);
                     } else {
+                        allEvents = new ArrayList<>();
                         rvEvents.setVisibility(View.GONE);
                         layoutEmptyState.setVisibility(View.VISIBLE);
                     }
@@ -301,6 +371,16 @@ public class ProjectEventsFragment extends Fragment {
         PopupMenu popup = new PopupMenu(getContext(), anchorView);
         popup.inflate(R.menu.menu_event_actions);
         
+        // ✅ Check permission: Only event creator or OWNER/ADMIN can edit/delete
+        boolean canModify = canUserModifyEvent(event);
+        
+        // Hide/disable menu items based on permission
+        if (!canModify) {
+            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
+            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
+            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+        }
+        
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.action_edit) {
@@ -320,6 +400,56 @@ public class ProjectEventsFragment extends Fragment {
         });
         
         popup.show();
+    }
+    
+    /**
+     * Check if current user can modify this event
+     * Rules: Event creator OR project OWNER/ADMIN can modify
+     */
+    private boolean canUserModifyEvent(ProjectEvent event) {
+        if (currentUserId == null) return false;
+        
+        // Event creator can always modify
+        if (currentUserId.equals(event.getCreatedBy())) {
+            return true;
+        }
+        
+        // OWNER or ADMIN can modify any event
+        if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole)) {
+            return true;
+        }
+        
+        // MEMBER can only modify their own events
+        return false;
+    }
+    
+    /**
+     * Fetch current user's role in this project
+     */
+    private void fetchCurrentUserRole() {
+        if (projectId == null || currentUserId == null) return;
+        
+        ProjectApiService projectApi = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApi.getProjectMembers(projectId).enqueue(new Callback<java.util.List<ProjectMemberDTO>>() {
+            @Override
+            public void onResponse(@NonNull Call<java.util.List<ProjectMemberDTO>> call, 
+                                 @NonNull Response<java.util.List<ProjectMemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (ProjectMemberDTO member : response.body()) {
+                        if (currentUserId.equals(member.getUserId())) {
+                            currentUserRole = member.getRole();
+                            android.util.Log.d("ProjectEvents", "✅ User role: " + currentUserRole);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<java.util.List<ProjectMemberDTO>> call, @NonNull Throwable t) {
+                android.util.Log.e("ProjectEvents", "❌ Failed to fetch user role", t);
+            }
+        });
     }
     
     private void editEvent(ProjectEvent event) {
@@ -393,13 +523,98 @@ public class ProjectEventsFragment extends Fragment {
         });
     }
     
-    private void showFilterDialog() {
-        // TODO: Implement filter dialog
-        Toast.makeText(getContext(), "TODO: Filter events", Toast.LENGTH_SHORT).show();
+    /**
+     * Toggle search bar visibility
+     */
+    private void toggleSearch() {
+        if (isSearchVisible) {
+            // Hide search bar
+            hideSearch();
+        } else {
+            // Show search bar
+            showSearch();
+        }
     }
     
-    private void showSearchDialog() {
-        // TODO: Implement search
-        Toast.makeText(getContext(), "TODO: Search events", Toast.LENGTH_SHORT).show();
+    /**
+     * Show search bar and focus on input
+     */
+    private void showSearch() {
+        isSearchVisible = true;
+        if (layoutSearchEvents != null) {
+            layoutSearchEvents.setVisibility(View.VISIBLE);
+        }
+        if (etSearchEvents != null) {
+            etSearchEvents.requestFocus();
+            // Show keyboard
+            android.view.inputmethod.InputMethodManager imm = 
+                (android.view.inputmethod.InputMethodManager) requireContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(etSearchEvents, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+    
+    /**
+     * Hide search bar and clear search query
+     */
+    private void hideSearch() {
+        isSearchVisible = false;
+        if (layoutSearchEvents != null) {
+            layoutSearchEvents.setVisibility(View.GONE);
+        }
+        if (etSearchEvents != null) {
+            etSearchEvents.setText("");
+            etSearchEvents.clearFocus();
+        }
+        // Hide keyboard
+        android.view.inputmethod.InputMethodManager imm = 
+            (android.view.inputmethod.InputMethodManager) requireContext()
+                .getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null && getView() != null) {
+            imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
+        }
+        // Clear filter and show all events
+        filterEvents("");
+    }
+    
+    /**
+     * Filter events by title search query
+     */
+    private void filterEvents(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            // Show all events
+            eventAdapter.setEvents(allEvents);
+            if (allEvents.isEmpty()) {
+                rvEvents.setVisibility(View.GONE);
+                layoutEmptyState.setVisibility(View.VISIBLE);
+            } else {
+                rvEvents.setVisibility(View.VISIBLE);
+                layoutEmptyState.setVisibility(View.GONE);
+            }
+            return;
+        }
+        
+        // Filter by title (case-insensitive)
+        String lowerQuery = query.toLowerCase().trim();
+        List<ProjectEvent> filtered = new ArrayList<>();
+        
+        for (ProjectEvent event : allEvents) {
+            if (event.getTitle() != null && 
+                event.getTitle().toLowerCase().contains(lowerQuery)) {
+                filtered.add(event);
+            }
+        }
+        
+        // Update adapter
+        eventAdapter.setEvents(filtered);
+        
+        // Update visibility
+        if (filtered.isEmpty()) {
+            rvEvents.setVisibility(View.GONE);
+            layoutEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            rvEvents.setVisibility(View.VISIBLE);
+            layoutEmptyState.setVisibility(View.GONE);
+        }
     }
 }

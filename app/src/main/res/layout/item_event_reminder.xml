@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="8dp" app:cardElevation="2dp" app:cardCornerRadius="8dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+
+        <!-- Header with sender name and timestamp -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+
+            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_event" android:tint="#FF9800" android:contentDescription="Event reminder"/>
+
+            <TextView android:id="@+id/tvSenderName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Sender Name" android:textStyle="bold" android:textSize="14sp" android:textColor="?android:textColorPrimary"/>
+
+            <TextView android:id="@+id/tvTimestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2h ago" android:textSize="12sp" android:textColor="?android:textColorSecondary"/>
+        </LinearLayout>
+
+        <!-- Event details -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp" android:background="#FFF3E0" android:padding="12dp">
+
+            <TextView android:id="@+id/tvEventTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Event Title" android:textStyle="bold" android:textSize="16sp" android:textColor="#E65100"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_calendar" android:tint="#E65100" android:contentDescription="Date"/>
+
+                <TextView android:id="@+id/tvEventDateTime" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp" android:text="Dec 6, 2024 at 10:00 AM" android:textSize="14sp" android:textColor="#E65100"/>
+            </LinearLayout>
+
+            <TextView android:id="@+id/tvProjectName" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Project Name" android:textSize="12sp" android:textColor="#E65100" android:textStyle="italic"/>
+        </LinearLayout>
+
+        <!-- Reminder message -->
+        <TextView android:id="@+id/tvMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Don't forget about this event!" android:textSize="14sp" android:textColor="?android:textColorPrimary"/>
+
+        <!-- Action buttons -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end" android:layout_marginTop="8dp">
+
+            <Button android:id="@+id/btnDismiss" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dismiss" android:textColor="?android:textColorSecondary"/>
+
+            <Button android:id="@+id/btnViewEvent" style="@style/Widget.MaterialComponents.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="View Event" android:backgroundTint="#FF9800"/>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

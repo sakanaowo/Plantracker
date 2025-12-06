@@ -19,6 +19,15 @@
 
                 </LinearLayout>
 
+                <!-- Event Reminders Section -->
+                <LinearLayout android:id="@+id/eventRemindersSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Event Reminders" android:textSize="18sp" android:textStyle="bold" android:padding="16dp" android:paddingBottom="8dp" android:textColor="?android:textColorPrimary"/>
+
+                    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvEventReminders" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false"/>
+
+                </LinearLayout>
+
                 <!-- Activity Feed Section -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 

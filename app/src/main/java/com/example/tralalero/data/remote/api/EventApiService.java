@@ -38,7 +38,7 @@ public interface EventApiService {
     Call<Void> deleteEvent(@Path("id") String eventId);
     
     
-    @POST("events/{id}/send-reminder")
+    @POST("events/projects/{id}/send-reminder")
     Call<Void> sendReminder(@Path("id") String eventId);
     
     // ==================== PROJECT EVENTS ENDPOINTS ====================
@@ -116,6 +116,35 @@ public interface EventApiService {
         @Path("eventId") String eventId
     );
     
+    // ==================== EVENT REMINDERS ====================
+    
+    /**
+     * Send event reminder to users
+     * @param request Contains eventId, recipientIds, and optional message
+     */
+    @POST("events/reminders")
+    Call<CreateEventReminderResponse> sendEventReminder(@Body CreateEventReminderRequest request);
+    
+    /**
+     * Get my event reminders
+     */
+    @GET("events/reminders/my")
+    Call<List<EventReminderDTO>> getMyEventReminders();
+    
+    /**
+     * Mark event reminder as read
+     * @param reminderId Reminder ID
+     */
+    @PATCH("events/reminders/{id}/read")
+    Call<Void> markReminderAsRead(@Path("id") String reminderId);
+    
+    /**
+     * Dismiss event reminder
+     * @param reminderId Reminder ID
+     */
+    @DELETE("events/reminders/{id}")
+    Call<Void> dismissEventReminder(@Path("id") String reminderId);
+    
     /**
      * Request DTO for cancelling an event
      */
@@ -134,5 +163,98 @@ public interface EventApiService {
         public void setReason(String reason) {
             this.reason = reason;
         }
+    }
+    
+    /**
+     * Request DTO for creating event reminder
+     */
+    class CreateEventReminderRequest {
+        @SerializedName("eventId")
+        private String eventId;
+        
+        @SerializedName("recipientIds")
+        private List<String> recipientIds;
+        
+        @SerializedName("message")
+        private String message;
+        
+        public CreateEventReminderRequest(String eventId, List<String> recipientIds, String message) {
+            this.eventId = eventId;
+            this.recipientIds = recipientIds;
+            this.message = message;
+        }
+        
+        // Getters and Setters
+        public String getEventId() { return eventId; }
+        public void setEventId(String eventId) { this.eventId = eventId; }
+        public List<String> getRecipientIds() { return recipientIds; }
+        public void setRecipientIds(List<String> recipientIds) { this.recipientIds = recipientIds; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+    
+    /**
+     * Response DTO for event reminder creation
+     */
+    class CreateEventReminderResponse {
+        @SerializedName("success")
+        private boolean success;
+        
+        @SerializedName("created")
+        private int created;
+        
+        public boolean isSuccess() { return success; }
+        public int getCreated() { return created; }
+    }
+    
+    /**
+     * Event Reminder DTO
+     */
+    class EventReminderDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("eventId")
+        private String eventId;
+        
+        @SerializedName("eventTitle")
+        private String eventTitle;
+        
+        @SerializedName("eventDate")
+        private String eventDate;
+        
+        @SerializedName("eventTime")
+        private String eventTime;
+        
+        @SerializedName("projectId")
+        private String projectId;
+        
+        @SerializedName("projectName")
+        private String projectName;
+        
+        @SerializedName("senderName")
+        private String senderName;
+        
+        @SerializedName("message")
+        private String message;
+        
+        @SerializedName("timestamp")
+        private long timestamp;
+        
+        @SerializedName("isRead")
+        private boolean isRead;
+        
+        // Getters
+        public String getId() { return id; }
+        public String getEventId() { return eventId; }
+        public String getEventTitle() { return eventTitle; }
+        public String getEventDate() { return eventDate; }
+        public String getEventTime() { return eventTime; }
+        public String getProjectId() { return projectId; }
+        public String getProjectName() { return projectName; }
+        public String getSenderName() { return senderName; }
+        public String getMessage() { return message; }
+        public long getTimestamp() { return timestamp; }
+        public boolean isRead() { return isRead; }
     }
 }

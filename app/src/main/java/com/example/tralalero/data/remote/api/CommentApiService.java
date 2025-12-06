@@ -19,9 +19,9 @@ public interface CommentApiService {
     @POST("tasks/{taskId}/comments")
     Call<TaskCommentDTO> addTaskComment(@Path("taskId") String taskId, @Body TaskCommentDTO comment);
 
-    @PATCH("tasks/comments/{commentId}")
+    @PATCH("comments/{commentId}")
     Call<TaskCommentDTO> updateComment(@Path("commentId") String commentId, @Body TaskCommentDTO body);
 
-    @DELETE("tasks/comments/{commentId}")
+    @DELETE("comments/{commentId}")
     Call<Void> deleteComment(@Path("commentId") String commentId);
 }

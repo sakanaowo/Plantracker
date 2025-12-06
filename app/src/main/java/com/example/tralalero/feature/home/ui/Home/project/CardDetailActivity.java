@@ -178,6 +178,12 @@ public class CardDetailActivity extends AppCompatActivity {
     private boolean hasUnsavedChanges = false;
     private boolean isPopulatingUI = false; // Flag to prevent TextWatcher trigger during load
     private String currentAssigneeId = null;
+    
+    // Permission fields
+    private String currentUserId;
+    private String currentUserRole; // OWNER, ADMIN, or MEMBER
+    private String taskCreatorId;
+    private List<String> taskAssigneeIds = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -201,6 +207,15 @@ public class CardDetailActivity extends AppCompatActivity {
         setupUI();
         setupListeners();
         setupCalendarSyncUI();
+        
+        // ✅ Get current user ID from TokenManager
+        com.example.tralalero.auth.storage.TokenManager tokenManager = new com.example.tralalero.auth.storage.TokenManager(this);
+        currentUserId = tokenManager.getInternalUserId();
+        
+        // ✅ Fetch user role for permission checks
+        if (projectId != null && currentUserId != null) {
+            fetchCurrentUserRole();
+        }
         
         // ✅ Load task data if in edit mode
         if (isEditMode && taskId != null && !taskId.isEmpty()) {
@@ -233,6 +248,92 @@ public class CardDetailActivity extends AppCompatActivity {
             loadTaskComments();
             loadChecklistItems();  // CRITICAL - Reload checklist items!
             loadTaskLabels();
+        }
+    }
+    
+    /**
+     * Fetch current user's role in this project for permission checks
+     */
+    private void fetchCurrentUserRole() {
+        if (projectId == null || currentUserId == null) return;
+        
+        ProjectApiService projectApi = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        projectApi.getProjectMembers(projectId).enqueue(new Callback<List<ProjectMemberDTO>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<ProjectMemberDTO>> call, 
+                                 @NonNull Response<List<ProjectMemberDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (ProjectMemberDTO member : response.body()) {
+                        if (currentUserId.equals(member.getUserId())) {
+                            currentUserRole = member.getRole();
+                            android.util.Log.d("CardDetail", "✅ User role: " + currentUserRole);
+                            // Update UI permissions after role is loaded
+                            updateTaskPermissionUI();
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void onFailure(@NonNull Call<List<ProjectMemberDTO>> call, @NonNull Throwable t) {
+                android.util.Log.e("CardDetail", "❌ Failed to fetch user role", t);
+            }
+        });
+    }
+    
+    /**
+     * Check if current user can modify this task
+     * Rules: Task creator OR assignees OR project OWNER/ADMIN can modify
+     */
+    private boolean canUserModifyTask() {
+        if (currentUserId == null) return false;
+        
+        // Task creator can always modify
+        if (currentUserId.equals(taskCreatorId)) {
+            return true;
+        }
+        
+        // Task assignees can modify
+        if (taskAssigneeIds != null && taskAssigneeIds.contains(currentUserId)) {
+            return true;
+        }
+        
+        // OWNER or ADMIN can modify any task
+        if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole)) {
+            return true;
+        }
+        
+        // MEMBER can only modify their own tasks or tasks they're assigned to
+        return false;
+    }
+    
+    /**
+     * Update UI based on task permissions
+     */
+    private void updateTaskPermissionUI() {
+        boolean canModify = canUserModifyTask();
+        
+        if (btnDeleteTask != null) {
+            if (canModify && isEditMode) {
+                btnDeleteTask.setVisibility(View.VISIBLE);
+                btnDeleteTask.setEnabled(true);
+            } else {
+                btnDeleteTask.setVisibility(View.GONE);
+            }
+        }
+        
+        // Disable editing if no permission
+        if (!canModify && isEditMode) {
+            etTaskTitle.setEnabled(false);
+            etDescription.setEnabled(false);
+            btnConfirm.setEnabled(false);
+            btnConfirm.setAlpha(0.5f);
+            btnSaveChanges.setEnabled(false);
+            btnSaveChanges.setAlpha(0.5f);
+            
+            // Show message
+            Toast.makeText(this, "⚠️ Bạn không có quyền chỉnh sửa task này", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -856,6 +957,30 @@ public class CardDetailActivity extends AppCompatActivity {
     private void loadTaskDetails() {
         if (taskId != null && !taskId.isEmpty()) {
             android.util.Log.d(TAG, "Loading task details for taskId: " + taskId);
+            
+            // Load task and extract creator/assignees for permission check
+            taskViewModel.getSelectedTask().observe(this, task -> {
+                if (task != null) {
+                    taskCreatorId = task.getCreatedBy();
+                    
+                    // Extract assignee IDs
+                    if (task.getAssignees() != null) {
+                        taskAssigneeIds.clear();
+                        for (AssigneeInfo assignee : task.getAssignees()) {
+                            if (assignee.getId() != null) {
+                                taskAssigneeIds.add(assignee.getId());
+                            }
+                        }
+                    }
+                    
+                    android.util.Log.d("CardDetail", "✅ Task creator: " + taskCreatorId);
+                    android.util.Log.d("CardDetail", "✅ Task assignees: " + taskAssigneeIds);
+                    
+                    // Update permission UI
+                    updateTaskPermissionUI();
+                }
+            });
+            
             taskViewModel.loadTaskById(taskId);
         }
     }

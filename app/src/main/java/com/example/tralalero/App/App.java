@@ -131,18 +131,22 @@ public class App extends Application {
     }
     
     /**
-     * Initialize WebSocket Manager and Lifecycle Observer (DEV 1)
+     * Initialize WebSocket Manager and Lifecycle Observer
      */
     private void initializeWebSocket() {
         // Create WebSocket Manager
         wsManager = new NotificationWebSocketManager();
+        wsManager.initialize(this); // Initialize with context for SharedPreferences
         Log.d(TAG, "✓ WebSocket Manager initialized");
         
-        // Setup callback - DEV 2: Show in-app notification UI
+        // Setup notification callback - show in-app notification using NotificationUIManager
         wsManager.setOnNotificationReceivedListener(notification -> {
-            Log.d(TAG, "📬 Notification received: " + notification.getTitle());
-            // DEV 2: Call NotificationUIManager to show Snackbar
+            Log.d(TAG, "📬 Notification received via WebSocket: " + notification.getTitle());
+            // Show in-app notification using Snackbar (NotificationUIManager)
             com.example.tralalero.ui.NotificationUIManager.handleInAppNotification(this, notification);
+            
+            // TODO: Update notification badge count
+            // TODO: Refresh notification list in ActivityFragment
         });
         
         // Register lifecycle observer
@@ -150,7 +154,7 @@ public class App extends Application {
         ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
         Log.d(TAG, "✓ Lifecycle Observer registered");
         
-        // DEV 2: Register Activity Tracker for in-app notifications
+        // Register Activity Tracker for in-app notifications (Snackbar)
         registerActivityLifecycleCallbacks(new com.example.tralalero.util.ActivityTracker());
         Log.d(TAG, "✓ Activity Tracker registered");
     }

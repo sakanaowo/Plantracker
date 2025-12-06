@@ -70,41 +70,39 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      * - App is in foreground
      * - App is in background (only if notification has data payload)
      * 
-     * DEV 1: Check if app is foreground - skip FCM if WebSocket is handling it
+     * IMPROVED: Filter duplicate notifications khi WebSocket active
      */
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
+        Log.d(TAG, "📨 FCM message received from: " + remoteMessage.getFrom());
         
-        // DEV 1: Check if app is in foreground (WebSocket active)
+        // Check if app is in foreground (WebSocket active)
         SharedPreferences prefs = getSharedPreferences("notification_prefs", MODE_PRIVATE);
         boolean showFCM = prefs.getBoolean("show_fcm_notifications", true);
         
         Log.d(TAG, "📊 [FCM] App state check:");
         Log.d(TAG, "   show_fcm_notifications: " + showFCM);
-        Log.d(TAG, "   Interpretation: " + (showFCM ? "BACKGROUND (show FCM)" : "FOREGROUND (WebSocket active)"));
+        Log.d(TAG, "   Status: " + (showFCM ? "✅ SHOW (WebSocket inactive)" : "⚠️ SKIP (WebSocket active)"));
         
         if (!showFCM) {
-            // App is foreground - WebSocket should handle notifications
-            // CHANGED: Still show as backup to prevent race condition losses
-            Log.d(TAG, "⚠️ [FCM] App foreground, but ALLOWING notification as backup");
-            Log.d(TAG, "   This prevents race condition when WebSocket not yet connected");
-            // Don't return - continue to show notification
-        } else {
-            Log.d(TAG, "✅ [FCM] App background, showing notification");
+            // App is foreground with WebSocket active - skip FCM to avoid duplicate
+            Log.d(TAG, "⏭️ [FCM] Skipping - WebSocket is handling notifications");
+            return; // SKIP FCM notification
         }
+        
+        Log.d(TAG, "✅ [FCM] Processing notification (app background or WebSocket offline)");
 
         // Check if message contains data payload
         if (!remoteMessage.getData().isEmpty()) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            Log.d(TAG, "📦 Message data payload: " + remoteMessage.getData());
             handleDataMessage(remoteMessage);
         }
 
         // Check if message contains notification payload
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+            Log.d(TAG, "🔔 Message Notification Body: " + remoteMessage.getNotification().getBody());
             String title = remoteMessage.getNotification().getTitle();
             String body = remoteMessage.getNotification().getBody();
             sendNotification(title, body);
