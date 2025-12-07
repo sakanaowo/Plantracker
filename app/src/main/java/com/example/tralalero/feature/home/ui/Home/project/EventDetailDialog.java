@@ -119,7 +119,7 @@ public class EventDetailDialog extends DialogFragment {
         if (tvDialogAttendees != null) {
             int count = event.getAttendeeIds() != null ? 
                 event.getAttendeeIds().size() : event.getAttendeeCount();
-            tvDialogAttendees.setText(count + " người tham gia");
+            tvDialogAttendees.setText(count + " participants");
         }
         
         // Recurrence

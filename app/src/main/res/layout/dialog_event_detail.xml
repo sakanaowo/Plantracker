@@ -1,259 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="#FFFFFF">
-    
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
-        
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="#FFFFFF">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+
         <!-- Title -->
-        <TextView
-            android:id="@+id/tvDialogTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📋 Daily Standup"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#212121"
-            android:layout_marginBottom="16dp"/>
-        
+        <TextView android:id="@+id/tvDialogTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="📋 Daily Standup" android:textSize="22sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="16dp"/>
+
         <!-- Description -->
-        <TextView
-            android:id="@+id/tvDialogDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Team sync meeting to discuss progress and blockers"
-            android:textSize="15sp"
-            android:textColor="#757575"
-            android:layout_marginBottom="24dp"
-            android:visibility="gone"/>
-        
+        <TextView android:id="@+id/tvDialogDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Team sync meeting to discuss progress and blockers" android:textSize="15sp" android:textColor="#757575" android:layout_marginBottom="24dp" android:visibility="gone"/>
+
         <!-- Date & Time Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="20dp">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Thời gian"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#999999"
-                android:layout_marginBottom="8dp"/>
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_calendar"
-                    app:tint="#4CAF50"
-                    android:contentDescription="Date"/>
-                
-                <TextView
-                    android:id="@+id/tvDialogDate"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="15 November 2024"
-                    android:textSize="15sp"
-                    android:textColor="#212121"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="20dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Thời gian" android:textSize="12sp" android:textStyle="bold" android:textColor="#999999" android:layout_marginBottom="8dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_calendar" app:tint="#4CAF50" android:contentDescription="Date"/>
+
+                <TextView android:id="@+id/tvDialogDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="15 November 2024" android:textSize="15sp" android:textColor="#212121"/>
             </LinearLayout>
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="8dp">
-                
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_clock"
-                    app:tint="#4CAF50"
-                    android:contentDescription="Time"/>
-                
-                <TextView
-                    android:id="@+id/tvDialogTime"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="09:00"
-                    android:textSize="15sp"
-                    android:textColor="#212121"/>
-                
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginStart="16dp"
-                    android:src="@drawable/ic_timer"
-                    app:tint="#4CAF50"
-                    android:contentDescription="Duration"/>
-                
-                <TextView
-                    android:id="@+id/tvDialogDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="15 phút"
-                    android:textSize="15sp"
-                    android:textColor="#212121"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp">
+
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_clock" app:tint="#4CAF50" android:contentDescription="Time"/>
+
+                <TextView android:id="@+id/tvDialogTime" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="09:00" android:textSize="15sp" android:textColor="#212121"/>
+
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_marginStart="16dp" android:src="@drawable/ic_timer" app:tint="#4CAF50" android:contentDescription="Duration"/>
+
+                <TextView android:id="@+id/tvDialogDuration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="15 phút" android:textSize="15sp" android:textColor="#212121"/>
             </LinearLayout>
         </LinearLayout>
-        
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="20dp"/>
-        
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="20dp"/>
+
         <!-- Event Type -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
-            
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Loại sự kiện"
-                android:textSize="14sp"
-                android:textColor="#757575"/>
-            
-            <TextView
-                android:id="@+id/tvDialogType"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Cuộc họp"
-                android:textSize="15sp"
-                android:textColor="#212121"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+
+            <TextView android:layout_width="100dp" android:layout_height="wrap_content" android:text="Loại sự kiện" android:textSize="14sp" android:textColor="#757575"/>
+
+            <TextView android:id="@+id/tvDialogType" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Cuộc họp" android:textSize="15sp" android:textColor="#212121"/>
         </LinearLayout>
-        
+
         <!-- Attendees -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
-            
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Người tham gia"
-                android:textSize="14sp"
-                android:textColor="#757575"/>
-            
-            <TextView
-                android:id="@+id/tvDialogAttendees"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="5 người"
-                android:textSize="15sp"
-                android:textColor="#212121"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+
+            <TextView android:layout_width="100dp" android:layout_height="wrap_content" android:text="Participants" android:textSize="14sp" android:textColor="#757575"/>
+
+            <TextView android:id="@+id/tvDialogAttendees" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="5 người" android:textSize="15sp" android:textColor="#212121"/>
         </LinearLayout>
-        
+
         <!-- Recurrence -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="20dp">
-            
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Lặp lại"
-                android:textSize="14sp"
-                android:textColor="#757575"/>
-            
-            <TextView
-                android:id="@+id/tvDialogRecurrence"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Hàng ngày"
-                android:textSize="15sp"
-                android:textColor="#212121"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="20dp">
+
+            <TextView android:layout_width="100dp" android:layout_height="wrap_content" android:text="Lặp lại" android:textSize="14sp" android:textColor="#757575"/>
+
+            <TextView android:id="@+id/tvDialogRecurrence" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Hàng ngày" android:textSize="15sp" android:textColor="#212121"/>
         </LinearLayout>
-        
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="20dp"/>
-        
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="20dp"/>
+
         <!-- Google Meet Link -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="24dp">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Google Meet"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#999999"
-                android:layout_marginBottom="8dp"/>
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/rounded_background_light_blue"
-                android:padding="12dp"
-                android:gravity="center_vertical">
-                
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_google_meet"
-                    android:contentDescription="Google Meet"/>
-                
-                <TextView
-                    android:id="@+id/tvDialogMeetLink"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="https://meet.google.com/abc-defg-hij"
-                    android:textSize="13sp"
-                    android:textColor="#1976D2"
-                    android:maxLines="1"
-                    android:ellipsize="middle"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="24dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Google Meet" android:textSize="12sp" android:textStyle="bold" android:textColor="#999999" android:layout_marginBottom="8dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/rounded_background_light_blue" android:padding="12dp" android:gravity="center_vertical">
+
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_google_meet" android:contentDescription="Google Meet"/>
+
+                <TextView android:id="@+id/tvDialogMeetLink" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:text="https://meet.google.com/abc-defg-hij" android:textSize="13sp" android:textColor="#1976D2" android:maxLines="1" android:ellipsize="middle"/>
             </LinearLayout>
         </LinearLayout>
-        
+
         <!-- Close Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnClose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Đóng"
-            android:backgroundTint="#4CAF50"
-            app:cornerRadius="8dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnClose" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Đóng" android:backgroundTint="#4CAF50" app:cornerRadius="8dp"/>
     </LinearLayout>
 </ScrollView>

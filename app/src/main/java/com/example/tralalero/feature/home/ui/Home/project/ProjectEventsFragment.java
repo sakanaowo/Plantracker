@@ -28,6 +28,9 @@ import com.example.tralalero.R;
 import com.example.tralalero.domain.model.CreateEventRequest;
 import com.example.tralalero.domain.model.ProjectEvent;
 import com.example.tralalero.auth.storage.TokenManager;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
@@ -38,8 +41,11 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -256,32 +262,11 @@ public class ProjectEventsFragment extends Fragment {
                     List<ProjectEvent> events = result.getData();
                     
                     if (events != null && !events.isEmpty()) {
-                        // Sort events by startAt datetime - nearest events first (sắp đến -> xa nhất)
-                        java.util.Collections.sort(events, (e1, e2) -> {
-                            // Use startAt for more precise sorting (includes time)
-                            String startAt1 = e1.getStartAt();
-                            String startAt2 = e2.getStartAt();
-                            
-                            // Handle null startAt - fallback to date field
-                            if (startAt1 == null && startAt2 == null) {
-                                if (e1.getDate() == null && e2.getDate() == null) return 0;
-                                if (e1.getDate() == null) return 1;
-                                if (e2.getDate() == null) return -1;
-                                return e1.getDate().compareTo(e2.getDate());
-                            }
-                            if (startAt1 == null) return 1;
-                            if (startAt2 == null) return -1;
-                            
-                            // Compare by startAt timestamp (ISO 8601 format sorts correctly)
-                            return startAt1.compareTo(startAt2);
-                        });
-                        
                         // Save to allEvents for search filtering
                         allEvents = new ArrayList<>(events);
                         
-                        eventAdapter.setEvents(events);
-                        rvEvents.setVisibility(View.VISIBLE);
-                        layoutEmptyState.setVisibility(View.GONE);
+                        // Sort and display events
+                        sortAndDisplayEvents(events);
                     } else {
                         allEvents = new ArrayList<>();
                         rvEvents.setVisibility(View.GONE);
@@ -289,10 +274,135 @@ public class ProjectEventsFragment extends Fragment {
                     }
                 } else {
                     Toast.makeText(getContext(), 
-                        "Lỗi: " + result.getErrorMessage(), 
+                        "Error: " + result.getErrorMessage(), 
                         Toast.LENGTH_SHORT).show();
                 }
             });
+    }
+    
+    /**
+     * Sort and display events by priority:
+     * 1. Upcoming events (not started yet, nearest first)
+     * 2. Ongoing events (started but not ended)
+     * 3. Cancelled events
+     * 4. Overdue events (ended, oldest first)
+     */
+    private void sortAndDisplayEvents(List<ProjectEvent> events) {
+        // Fix: Use ISO-8601 format with 'Z' (UTC) instead of XXX timezone
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date now = new Date();
+        
+        android.util.Log.d("ProjectEvents", "📊 Sorting " + events.size() + " events at " + now);
+        
+        // Debug: Log raw event data BEFORE sorting
+        if (!events.isEmpty()) {
+            android.util.Log.d("ProjectEvents", "🔍 First event raw data:");
+            ProjectEvent first = events.get(0);
+            android.util.Log.d("ProjectEvents", "  ID: " + first.getId());
+            android.util.Log.d("ProjectEvents", "  Title: " + first.getTitle());
+            android.util.Log.d("ProjectEvents", "  startAt: " + first.getStartAt());
+            android.util.Log.d("ProjectEvents", "  endAt: " + first.getEndAt());
+            android.util.Log.d("ProjectEvents", "  status: " + first.getStatus());
+        }
+        
+        // Sort events
+        Collections.sort(events, (e1, e2) -> {
+            try {
+                String status1 = e1.getStatus() != null ? e1.getStatus() : "ACTIVE";
+                String status2 = e2.getStatus() != null ? e2.getStatus() : "ACTIVE";
+                
+                // Null check: If date is null, push event to bottom
+                String endAt1 = e1.getEndAt();
+                String endAt2 = e2.getEndAt();
+                String startAt1 = e1.getStartAt();
+                String startAt2 = e2.getStartAt();
+                
+                if (endAt1 == null || startAt1 == null) return 1;
+                if (endAt2 == null || startAt2 == null) return -1;
+                
+                Date end1 = sdf.parse(endAt1);
+                Date end2 = sdf.parse(endAt2);
+                Date start1 = sdf.parse(startAt1);
+                Date start2 = sdf.parse(startAt2);
+                
+                // Categorize events
+                boolean isCancelled1 = "CANCELLED".equals(status1);
+                boolean isCancelled2 = "CANCELLED".equals(status2);
+                
+                // Overdue: event ended (end < now) and not cancelled
+                boolean isOverdue1 = end1 != null && end1.before(now) && !isCancelled1;
+                boolean isOverdue2 = end2 != null && end2.before(now) && !isCancelled2;
+                
+                // Upcoming: event not started yet (start > now) and not cancelled
+                boolean isUpcoming1 = start1 != null && start1.after(now) && !isCancelled1;
+                boolean isUpcoming2 = start2 != null && start2.after(now) && !isCancelled2;
+                
+                // Ongoing: started but not ended (start <= now < end) and not cancelled
+                boolean isOngoing1 = !isUpcoming1 && !isOverdue1 && !isCancelled1;
+                boolean isOngoing2 = !isUpcoming2 && !isOverdue2 && !isCancelled2;
+                
+                // Priority order: Upcoming > Ongoing > Cancelled > Overdue
+                
+                // 1. Upcoming vs others
+                if (isUpcoming1 && !isUpcoming2) return -1;
+                if (!isUpcoming1 && isUpcoming2) return 1;
+                if (isUpcoming1 && isUpcoming2) {
+                    return start1.compareTo(start2); // Nearest first (ASC)
+                }
+                
+                // 2. Ongoing vs others (not upcoming)
+                if (isOngoing1 && !isOngoing2) return -1;
+                if (!isOngoing1 && isOngoing2) return 1;
+                if (isOngoing1 && isOngoing2) {
+                    return start1.compareTo(start2); // Started first (ASC)
+                }
+                
+                // 3. Cancelled vs Overdue
+                if (isCancelled1 && !isCancelled2 && !isUpcoming2 && !isOngoing2) return -1;
+                if (isOverdue1 && isCancelled2) return 1;
+                if (isCancelled1 && isCancelled2) {
+                    return start1.compareTo(start2); // Same as overdue - oldest first (ASC)
+                }
+                
+                // 4. Both overdue - show oldest first (events that ended long time ago at bottom)
+                if (isOverdue1 && isOverdue2) {
+                    return start1.compareTo(start2); // Oldest first (ASC) - Dec 2, 3, 4...
+                }
+                
+                return 0;
+            } catch (Exception e) {
+                android.util.Log.e("ProjectEvents", "Error sorting events", e);
+                return 0;
+            }
+        });
+        
+        // Log sorted order with detailed timestamps
+        try {
+            android.util.Log.d("ProjectEvents", "✅ AFTER SORTING - Top 5 events:");
+            for (int i = 0; i < Math.min(events.size(), 5); i++) {
+                ProjectEvent e = events.get(i);
+                String category = "CANCELLED".equals(e.getStatus()) ? "CANCELLED" : 
+                                 (e.getEndAt() != null && sdf.parse(e.getEndAt()).before(now)) ? "OVERDUE" :
+                                 (e.getStartAt() != null && sdf.parse(e.getStartAt()).after(now)) ? "UPCOMING" : "ONGOING";
+                android.util.Log.d("ProjectEvents", String.format("#%d [%s] %s", i+1, category, e.getTitle()));
+                android.util.Log.d("ProjectEvents", String.format("    startAt: %s", e.getStartAt()));
+                android.util.Log.d("ProjectEvents", String.format("    endAt: %s", e.getEndAt()));
+            }
+        } catch (Exception ex) {
+            android.util.Log.e("ProjectEvents", "Error logging", ex);
+        }
+        
+        eventAdapter.setEvents(events);
+        
+        // Update visibility
+        if (events.isEmpty()) {
+            rvEvents.setVisibility(View.GONE);
+            layoutEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            rvEvents.setVisibility(View.VISIBLE);
+            layoutEmptyState.setVisibility(View.GONE);
+        }
     }
     
     private void showCreateEventDialog() {
@@ -303,24 +413,31 @@ public class ProjectEventsFragment extends Fragment {
             request.setTitle(event.getTitle());
             request.setDescription(event.getDescription());
             
-            // ✅ FIX: Use ISO 8601 formatted startAt/endAt instead of separate date/time
-            request.setStartAt(event.getStartAt());
-            request.setEndAt(event.getEndAt());
+            // ✅ FIX: Convert date from Date object to yyyy-MM-dd string
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            String dateStr = dateFormat.format(event.getDate());
             
+            request.setDate(dateStr);  // "2025-12-07"
+            request.setTime(event.getTime());  // "19:18"
             request.setDuration(event.getDuration());
             request.setType(event.getType());
-            request.setLocation(event.getLocation());  // ✅ Add location
-            request.setMeetingLink(event.getMeetingLink());  // ✅ Add meeting link
+            request.setLocation(event.getLocation());
+            request.setMeetingLink(event.getMeetingLink());
             request.setAttendeeIds(event.getAttendeeIds());
             request.setCreateGoogleMeet(event.isCreateGoogleMeet());
             request.setRecurrence(event.getRecurrence());
             request.setProjectId(projectId);
             
+            android.util.Log.d("ProjectEvents", "📤 Sending to backend:");
+            android.util.Log.d("ProjectEvents", "  date: " + dateStr);
+            android.util.Log.d("ProjectEvents", "  time: " + event.getTime());
+            android.util.Log.d("ProjectEvents", "  duration: " + event.getDuration());
+            
             // Call API via ViewModel
             viewModel.createEvent(request);
             
             Toast.makeText(getContext(), 
-                "⏳ Đang tạo sự kiện...", 
+                "⏳ Creating event...", 
                 Toast.LENGTH_SHORT).show();
         });
         dialog.show(getChildFragmentManager(), "create_event");
@@ -330,9 +447,9 @@ public class ProjectEventsFragment extends Fragment {
         if (getView() == null) return;
         
         Snackbar.make(getView(),
-            "📹 Google Meet đã được tạo",
+            "📹 Google Meet created",
             Snackbar.LENGTH_LONG)
-            .setAction("Sao chép link", v -> {
+            .setAction("Copy link", v -> {
                 copyMeetLinkToClipboard(event.getMeetLink());
             })
             .setActionTextColor(Color.parseColor("#4CAF50"))
@@ -346,7 +463,7 @@ public class ProjectEventsFragment extends Fragment {
             startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(getContext(), 
-                "Không thể mở link họp", 
+                "Cannot open meeting link", 
                 Toast.LENGTH_SHORT).show();
         }
     }
@@ -358,7 +475,7 @@ public class ProjectEventsFragment extends Fragment {
         clipboard.setPrimaryClip(clip);
         
         Toast.makeText(getContext(), 
-            "✅ Đã sao chép link", 
+            "✅ Link copied", 
             Toast.LENGTH_SHORT).show();
     }
     
@@ -374,10 +491,25 @@ public class ProjectEventsFragment extends Fragment {
         // ✅ Check permission: Only event creator or OWNER/ADMIN can edit/delete
         boolean canModify = canUserModifyEvent(event);
         
-        // Hide/disable menu items based on permission
+        // ✅ Check if event is overdue or cancelled
+        boolean isOverdueOrCancelled = isEventOverdueOrCancelled(event);
+        
+        // Hide/disable menu items based on permission and status
         if (!canModify) {
             popup.getMenu().findItem(R.id.action_edit).setVisible(false);
             popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
+            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+        } else if (isOverdueOrCancelled) {
+            // Overdue/Cancelled: Only show delete permanently
+            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
+            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
+            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(false);
+            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(true);
+        } else {
+            // Active events: Show edit, cancel, send reminder
+            popup.getMenu().findItem(R.id.action_edit).setVisible(true);
+            popup.getMenu().findItem(R.id.action_cancel).setVisible(true);
+            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(true);
             popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
         }
         
@@ -424,6 +556,29 @@ public class ProjectEventsFragment extends Fragment {
     }
     
     /**
+     * Check if event is overdue or cancelled
+     */
+    private boolean isEventOverdueOrCancelled(ProjectEvent event) {
+        // Check if cancelled
+        if ("CANCELLED".equals(event.getStatus())) {
+            return true;
+        }
+        
+        // Check if overdue (end time has passed)
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+            Date endTime = sdf.parse(event.getEndAt());
+            if (endTime != null && endTime.before(new Date())) {
+                return true;
+            }
+        } catch (Exception e) {
+            android.util.Log.e("ProjectEvents", "Error parsing date", e);
+        }
+        
+        return false;
+    }
+    
+    /**
      * Fetch current user's role in this project
      */
     private void fetchCurrentUserRole() {
@@ -457,11 +612,11 @@ public class ProjectEventsFragment extends Fragment {
         dialog.setOnEventUpdatedListener(request -> {
             viewModel.updateEvent(event.getId(), request).observe(getViewLifecycleOwner(), result -> {
                 if (result.isSuccess()) {
-                    Toast.makeText(getContext(), "✅ Đã cập nhật sự kiện", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "✅ Event updated", Toast.LENGTH_SHORT).show();
                     loadEvents();
                 } else {
                     Toast.makeText(getContext(), 
-                        "Lỗi: " + result.getErrorMessage(), 
+                        "Error: " + result.getErrorMessage(), 
                         Toast.LENGTH_SHORT).show();
                 }
             });
@@ -471,41 +626,41 @@ public class ProjectEventsFragment extends Fragment {
     
     private void cancelEvent(ProjectEvent event) {
         new AlertDialog.Builder(getContext())
-            .setTitle("Hủy sự kiện")
-            .setMessage("Bạn có chắc muốn hủy sự kiện này? (Soft delete)")
-            .setPositiveButton("Hủy sự kiện", (dialog, which) -> {
+            .setTitle("Cancel Event")
+            .setMessage("Are you sure you want to cancel this event?")
+            .setPositiveButton("Cancel Event", (dialog, which) -> {
                 viewModel.deleteEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
                     if (result.isSuccess()) {
-                        Toast.makeText(getContext(), "✅ Đã hủy sự kiện", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "✅ Event cancelled", Toast.LENGTH_SHORT).show();
                         loadEvents();
                     } else {
                         Toast.makeText(getContext(), 
-                            "Lỗi: " + result.getErrorMessage(), 
+                            "Error: " + result.getErrorMessage(), 
                             Toast.LENGTH_SHORT).show();
                     }
                 });
             })
-            .setNegativeButton("Không", null)
+            .setNegativeButton("No", null)
             .show();
     }
     
     private void hardDeleteEvent(ProjectEvent event) {
         new AlertDialog.Builder(getContext())
-            .setTitle("Xóa vĩnh viễn")
-            .setMessage("⚠️ Bạn có chắc muốn XÓA VĨNH VIỄN sự kiện này?\n\nHành động này KHÔNG THỂ HOÀN TÁC!")
-            .setPositiveButton("Xóa vĩnh viễn", (dialog, which) -> {
+            .setTitle("Delete Permanently")
+            .setMessage("⚠️ Are you sure you want to PERMANENTLY DELETE this event?\n\nThis action CANNOT BE UNDONE!")
+            .setPositiveButton("Delete Permanently", (dialog, which) -> {
                 viewModel.hardDeleteEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
                     if (result.isSuccess()) {
-                        Toast.makeText(getContext(), "✅ Đã xóa vĩnh viễn sự kiện", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "✅ Event permanently deleted", Toast.LENGTH_SHORT).show();
                         loadEvents();
                     } else {
                         Toast.makeText(getContext(), 
-                            "Lỗi: " + result.getErrorMessage(), 
+                            "Error: " + result.getErrorMessage(), 
                             Toast.LENGTH_SHORT).show();
                     }
                 });
             })
-            .setNegativeButton("Hủy", null)
+            .setNegativeButton("Cancel", null)
             .show();
     }
     
@@ -513,11 +668,11 @@ public class ProjectEventsFragment extends Fragment {
         viewModel.sendReminder(event.getId()).observe(getViewLifecycleOwner(), result -> {
             if (result.isSuccess()) {
                 Toast.makeText(getContext(), 
-                    "✅ Đã gửi nhắc nhở tới người tham gia", 
+                    "✅ Reminder sent to participants", 
                     Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(getContext(), 
-                    "Lỗi: " + result.getErrorMessage(), 
+                    "Error: " + result.getErrorMessage(), 
                     Toast.LENGTH_SHORT).show();
             }
         });
@@ -582,15 +737,8 @@ public class ProjectEventsFragment extends Fragment {
      */
     private void filterEvents(String query) {
         if (query == null || query.trim().isEmpty()) {
-            // Show all events
-            eventAdapter.setEvents(allEvents);
-            if (allEvents.isEmpty()) {
-                rvEvents.setVisibility(View.GONE);
-                layoutEmptyState.setVisibility(View.VISIBLE);
-            } else {
-                rvEvents.setVisibility(View.VISIBLE);
-                layoutEmptyState.setVisibility(View.GONE);
-            }
+            // Show all events with sorting
+            sortAndDisplayEvents(allEvents);
             return;
         }
         
@@ -605,16 +753,7 @@ public class ProjectEventsFragment extends Fragment {
             }
         }
         
-        // Update adapter
-        eventAdapter.setEvents(filtered);
-        
-        // Update visibility
-        if (filtered.isEmpty()) {
-            rvEvents.setVisibility(View.GONE);
-            layoutEmptyState.setVisibility(View.VISIBLE);
-        } else {
-            rvEvents.setVisibility(View.VISIBLE);
-            layoutEmptyState.setVisibility(View.GONE);
-        }
+        // Sort and display filtered events
+        sortAndDisplayEvents(filtered);
     }
 }

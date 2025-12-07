@@ -1,5 +1,7 @@
 package com.example.tralalero.domain.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Date;
 import java.util.List;
 import java.io.Serializable;
@@ -19,8 +21,13 @@ public class ProjectEvent implements Serializable {
     private String meetLink;
     private String meetingLink; // Alternative name for meetLink
     private String location; // Location for milestones/other events
+    
+    @SerializedName("startAt")
     private String startAt; // ISO 8601 format with timezone
+    
+    @SerializedName("endAt")
     private String endAt; // ISO 8601 format with timezone
+    
     private boolean createGoogleMeet;
     private String calendarEventId;
     private String status; // ACTIVE, CANCELLED, COMPLETED

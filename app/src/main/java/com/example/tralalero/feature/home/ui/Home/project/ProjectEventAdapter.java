@@ -193,7 +193,7 @@ public class ProjectEventAdapter extends RecyclerView.Adapter<ProjectEventAdapte
             // Attendees
             int attendeeCount = event.getAttendeeIds() != null ? 
                 event.getAttendeeIds().size() : event.getAttendeeCount();
-            tvEventAttendees.setText(attendeeCount + " người tham gia");
+            tvEventAttendees.setText(attendeeCount + " participants");
             
             // Google Meet link
             if (event.getMeetLink() != null && !event.getMeetLink().isEmpty()) {

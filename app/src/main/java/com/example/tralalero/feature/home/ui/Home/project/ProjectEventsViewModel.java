@@ -323,6 +323,10 @@ public class ProjectEventsViewModel extends ViewModel {
         event.setMeetLink(dto.getMeetLink());
         event.setCreatedBy(dto.getCreatedBy());
         
+        // ✅ CRITICAL FIX: Map the raw ISO 8601 strings for sorting
+        event.setStartAt(dto.getStartAt());
+        event.setEndAt(dto.getEndAt());
+        
         // Parse dates from ISO strings
         try {
             // ✅ FIX: Handle both UTC format (with .000Z) and local format (without Z)
@@ -410,47 +414,17 @@ public class ProjectEventsViewModel extends ViewModel {
         dto.setAttendeeIds(request.getAttendeeIds());
         dto.setCreateGoogleMeet(request.isCreateGoogleMeet());
         
-        // ✅ Extract date, time, duration from startAt/endAt (ISO 8601)
-        if (request.getStartAt() != null && request.getEndAt() != null) {
-            try {
-                // Parse ISO 8601 datetime: "2025-11-15T10:00:00Z"
-                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                
-                Date startDate = isoFormat.parse(request.getStartAt());
-                Date endDate = isoFormat.parse(request.getEndAt());
-                
-                // Extract date in YYYY-MM-DD format
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                dateFormat.setTimeZone(TimeZone.getDefault());
-                dto.setDate(dateFormat.format(startDate));
-                
-                // Extract time in HH:mm format
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
-                timeFormat.setTimeZone(TimeZone.getDefault());
-                dto.setTime(timeFormat.format(startDate));
-                
-                // Calculate duration in minutes
-                long durationMs = endDate.getTime() - startDate.getTime();
-                int durationMinutes = (int) (durationMs / 60000);
-                dto.setDuration(durationMinutes);
-                
-            } catch (Exception e) {
-                e.printStackTrace();
-                // Fallback to current time
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
-                Date now = new Date();
-                dto.setDate(dateFormat.format(now));
-                dto.setTime(timeFormat.format(now));
-                dto.setDuration(60); // Default 1 hour
-            }
-        } else {
-            // Fallback: Use old date/time fields if available
-            dto.setDate(request.getDate());
-            dto.setTime(request.getTime());
-            dto.setDuration(request.getDuration());
-        }
+        // ✅ SIMPLIFIED: Use date/time directly from request
+        // FE sends: date="2025-12-07", time="19:18", duration=60
+        // BE will combine: "2025-12-07T19:18:00+07:00"
+        dto.setDate(request.getDate());  // yyyy-MM-dd
+        dto.setTime(request.getTime());  // HH:mm
+        dto.setDuration(request.getDuration());
+        
+        android.util.Log.d("ProjectEventsVM", "📦 CreateProjectEventRequest:");
+        android.util.Log.d("ProjectEventsVM", "  date: " + dto.getDate());
+        android.util.Log.d("ProjectEventsVM", "  time: " + dto.getTime());
+        android.util.Log.d("ProjectEventsVM", "  duration: " + dto.getDuration());
         
         return dto;
     }

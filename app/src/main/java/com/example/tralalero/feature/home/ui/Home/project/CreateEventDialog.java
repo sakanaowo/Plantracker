@@ -409,11 +409,14 @@ public class CreateEventDialog extends DialogFragment {
         event.setRecurrence(getSelectedRecurrence());
         event.setProjectId(projectId);
         
-        // Format startAt and endAt with ISO 8601 timezone (UTC)
-        String startAtISO = formatToISO8601(etEventDate.getText().toString(), etEventTime.getText().toString());
-        String endAtISO = formatToISO8601WithDuration(etEventDate.getText().toString(), etEventTime.getText().toString(), durationMinutes);
-        event.setStartAt(startAtISO);
-        event.setEndAt(endAtISO);
+        // ✅ NEW: No need to set startAt/endAt - backend will calculate from date + time + duration
+        // FE sends: date="2025-12-07", time="19:18", duration=60
+        // BE creates: startAt="2025-12-07T19:18:00+07:00", endAt="2025-12-07T20:18:00+07:00"
+        
+        android.util.Log.d("CreateEventDialog", "📅 Creating event:");
+        android.util.Log.d("CreateEventDialog", "  Date: " + etEventDate.getText().toString());
+        android.util.Log.d("CreateEventDialog", "  Time: " + etEventTime.getText().toString());
+        android.util.Log.d("CreateEventDialog", "  Duration: " + durationMinutes + " minutes");
         
         // Call API to create event
         if (listener != null) {
@@ -423,78 +426,6 @@ public class CreateEventDialog extends DialogFragment {
         dismiss();
     }
     
-    /**
-     * Format date and time to ISO 8601 format in local timezone
-     * Backend expects local time format: "2024-01-15T10:00:00"
-     * @param dateStr Date in format dd/MM/yyyy
-     * @param timeStr Time in format HH:mm
-     * @return ISO 8601 string without timezone (local time)
-     */
-    private String formatToISO8601(String dateStr, String timeStr) {
-        try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-            Date date = inputFormat.parse(dateStr + " " + timeStr);
-            
-            // Get timezone offset of device (e.g., "+07:00" for Vietnam GMT+7)
-            TimeZone tz = TimeZone.getDefault();
-            int offsetMillis = tz.getOffset(date.getTime());
-            int offsetHours = offsetMillis / (1000 * 60 * 60);
-            int offsetMinutes = (Math.abs(offsetMillis) / (1000 * 60)) % 60;
-            String offsetStr = String.format(Locale.US, "%+03d:%02d", offsetHours, offsetMinutes);
-            
-            // Format as local time WITH timezone offset
-            SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            String result = iso8601Format.format(date) + offsetStr;
-            
-            android.util.Log.d("CreateEventDialog", "Formatted startAt (with timezone): " + result);
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Fallback: use current time with timezone
-            SimpleDateFormat fallbackFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            TimeZone tz = TimeZone.getDefault();
-            int offsetMillis = tz.getOffset(System.currentTimeMillis());
-            int offsetHours = offsetMillis / (1000 * 60 * 60);
-            int offsetMinutes = (Math.abs(offsetMillis) / (1000 * 60)) % 60;
-            String offsetStr = String.format(Locale.US, "%+03d:%02d", offsetHours, offsetMinutes);
-            return fallbackFormat.format(new Date()) + offsetStr;
-        }
-    }
-    
-    /**
-     * Format end time by adding duration to start time
-     * @param dateStr Date in format dd/MM/yyyy
-     * @param timeStr Time in format HH:mm
-     * @param durationMinutes Duration in minutes
-     * @return ISO 8601 string with end time (local timezone)
-     */
-    private String formatToISO8601WithDuration(String dateStr, String timeStr, int durationMinutes) {
-        try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-            Date startDate = inputFormat.parse(dateStr + " " + timeStr);
-            
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(startDate);
-            cal.add(Calendar.MINUTE, durationMinutes);
-            
-            // Get timezone offset of device (e.g., "+07:00" for Vietnam GMT+7)
-            TimeZone tz = TimeZone.getDefault();
-            int offsetMillis = tz.getOffset(cal.getTimeInMillis());
-            int offsetHours = offsetMillis / (1000 * 60 * 60);
-            int offsetMinutes = (Math.abs(offsetMillis) / (1000 * 60)) % 60;
-            String offsetStr = String.format(Locale.US, "%+03d:%02d", offsetHours, offsetMinutes);
-            
-            // Format as local time WITH timezone offset
-            SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            String result = iso8601Format.format(cal.getTime()) + offsetStr;
-            
-            android.util.Log.d("CreateEventDialog", "Formatted endAt (with timezone): " + result);
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return formatToISO8601(dateStr, timeStr);
-        }
-    }
     
     private Date parseDate(String dateStr) {
         try {
