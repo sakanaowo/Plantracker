@@ -289,7 +289,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHomeWithUserData(String userName, String userEmail) {
-        Intent intent = new Intent(this, MainContainerActivity.class);
+        // Navigate through MainActivity to trigger calendar sync prompt
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("is_first_login", true); // Flag for calendar sync prompt
         intent.putExtra("user_name", userName);
         intent.putExtra("user_email", userEmail);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

@@ -46,8 +46,19 @@ public class GoogleCalendarCallbackActivity extends AppCompatActivity {
         String error = data.getQueryParameter("error");
 
         if ("true".equals(success)) {
-            // Success!
+            // Success! Đánh dấu user đã sync calendar
             Log.d(TAG, "Google Calendar connected successfully: " + email);
+            
+            // Đánh dấu user đã sync (không hiện dialog nữa cho đến khi logout)
+            com.google.firebase.auth.FirebaseUser firebaseUser = 
+                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser != null) {
+                com.example.tralalero.feature.calendar.CalendarSyncManager
+                    .getInstance(this)
+                    .markUserAsSynced(firebaseUser.getUid());
+                Log.d(TAG, "Marked user as synced: " + firebaseUser.getUid());
+            }
+            
             Toast.makeText(this, 
                 "✓ Connected to Google Calendar\n" + email, 
                 Toast.LENGTH_LONG).show();

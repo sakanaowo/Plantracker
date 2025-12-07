@@ -123,28 +123,19 @@ public class ActivityFragment extends Fragment {
             @Override
             public void onTaskClick(String taskId, String projectId) {
                 Log.d(TAG, "Navigating to task: " + taskId + " in project: " + projectId);
-                // TODO: Navigate to task detail
-                if (getContext() != null) {
-                    Toast.makeText(getContext(), "Opening task...", Toast.LENGTH_SHORT).show();
-                }
+                navigateToTask(taskId, projectId);
             }
 
             @Override
             public void onEventClick(String eventId, String projectId) {
                 Log.d(TAG, "Navigating to event: " + eventId + " in project: " + projectId);
-                // TODO: Navigate to event detail
-                if (getContext() != null) {
-                    Toast.makeText(getContext(), "Opening event...", Toast.LENGTH_SHORT).show();
-                }
+                navigateToEvent(eventId, projectId);
             }
 
             @Override
             public void onProjectClick(String projectId) {
                 Log.d(TAG, "Navigating to project: " + projectId);
-                // TODO: Navigate to project detail
-                if (getContext() != null) {
-                    Toast.makeText(getContext(), "Opening project...", Toast.LENGTH_SHORT).show();
-                }
+                navigateToProject(projectId);
             }
         });
         
@@ -428,5 +419,48 @@ public class ActivityFragment extends Fragment {
                         }
                     }
                 });
+    }
+    
+    /**
+     * Navigate to task detail in ProjectActivity
+     */
+    private void navigateToTask(String taskId, String projectId) {
+        if (getContext() == null) return;
+        
+        Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.ProjectActivity.class);
+        intent.putExtra("PROJECT_ID", projectId);
+        intent.putExtra("HIGHLIGHT_TASK_ID", taskId); // ProjectActivity will highlight this task
+        intent.putExtra("TAB_INDEX", 0); // Tab 0 = Board view (where tasks are)
+        startActivity(intent);
+        
+        Log.d(TAG, "Navigated to task: " + taskId + " in project: " + projectId);
+    }
+    
+    /**
+     * Navigate to event detail in ProjectActivity (Calendar tab)
+     */
+    private void navigateToEvent(String eventId, String projectId) {
+        if (getContext() == null) return;
+        
+        Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.ProjectActivity.class);
+        intent.putExtra("PROJECT_ID", projectId);
+        intent.putExtra("HIGHLIGHT_EVENT_ID", eventId); // ProjectActivity will highlight this event
+        intent.putExtra("TAB_INDEX", 2); // Tab 2 = Calendar view (where events are)
+        startActivity(intent);
+        
+        Log.d(TAG, "Navigated to event: " + eventId + " in project: " + projectId);
+    }
+    
+    /**
+     * Navigate to project detail in ProjectActivity
+     */
+    private void navigateToProject(String projectId) {
+        if (getContext() == null) return;
+        
+        Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.ProjectActivity.class);
+        intent.putExtra("PROJECT_ID", projectId);
+        startActivity(intent);
+        
+        Log.d(TAG, "Navigated to project: " + projectId);
     }
 }

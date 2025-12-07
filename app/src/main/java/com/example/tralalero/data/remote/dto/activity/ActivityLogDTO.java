@@ -48,6 +48,9 @@ public class ActivityLogDTO {
     @SerializedName("users")
     private UserInfo users;
 
+    @SerializedName("projects")
+    private ProjectInfo projects;
+
     public static class UserInfo {
         @SerializedName("id")
         private String id;
@@ -68,6 +71,22 @@ public class ActivityLogDTO {
 
         public String getAvatarUrl() {
             return avatarUrl;
+        }
+    }
+
+    public static class ProjectInfo {
+        @SerializedName("id")
+        private String id;
+
+        @SerializedName("name")
+        private String name;
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
@@ -130,5 +149,9 @@ public class ActivityLogDTO {
 
     public UserInfo getUsers() {
         return users;
+    }
+
+    public ProjectInfo getProjects() {
+        return projects;
     }
 }

@@ -122,19 +122,30 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 ("EVENT".equals(entityType) && entityId != null) ||
                 ("PROJECT".equals(entityType) && entityId != null);
             
+            android.util.Log.d("ActivityLogAdapter", "Bind log - EntityType: " + entityType + ", EntityId: " + entityId + ", ProjectId: " + projectId + ", isClickable: " + isClickable);
+            
             // Set click listener
             if (isClickable) {
                 itemView.setOnClickListener(v -> {
+                    android.util.Log.d("ActivityLogAdapter", "Item clicked - EntityType: " + entityType + ", EntityId: " + entityId + ", ProjectId: " + projectId);
+                    
                     if (isInvitation && invitationClickListener != null) {
                         invitationClickListener.onInvitationClick(log);
                     } else if (activityClickListener != null) {
-                        if ("TASK".equals(entityType) && entityId != null) {
+                        if ("TASK".equals(entityType) && entityId != null && projectId != null) {
+                            android.util.Log.d("ActivityLogAdapter", "Navigating to task: " + entityId);
                             activityClickListener.onTaskClick(entityId, projectId);
-                        } else if ("EVENT".equals(entityType) && entityId != null) {
+                        } else if ("EVENT".equals(entityType) && entityId != null && projectId != null) {
+                            android.util.Log.d("ActivityLogAdapter", "Navigating to event: " + entityId);
                             activityClickListener.onEventClick(entityId, projectId);
                         } else if ("PROJECT".equals(entityType) && entityId != null) {
+                            android.util.Log.d("ActivityLogAdapter", "Navigating to project: " + entityId);
                             activityClickListener.onProjectClick(entityId);
+                        } else {
+                            android.util.Log.w("ActivityLogAdapter", "Cannot navigate - missing data. EntityType: " + entityType + ", EntityId: " + entityId + ", ProjectId: " + projectId);
                         }
+                    } else {
+                        android.util.Log.w("ActivityLogAdapter", "Activity click listener is null");
                     }
                 });
                 itemView.setClickable(true);
@@ -145,8 +156,8 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 itemView.setFocusable(false);
             }
             
-            // Set activity message with improved formatting
-            String message = formatActivityMessage(log);
+            // Set activity message using domain model's formatted message
+            String message = log.getFormattedMessage();
             tvActivityMessage.setText(message);
 
             // Set time
@@ -189,8 +200,8 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             String entityType = log.getEntityType();
             String entityName = log.getEntityName();
             
-            // Get projectName from metadata for better context
-            String projectName = getMetadataValue(log.getMetadata(), "projectName");
+            // Get projectName from ActivityLog model (populated from backend)
+            String projectName = log.getProjectName();
             
             // Null safety for entityName
             if (entityName == null) {

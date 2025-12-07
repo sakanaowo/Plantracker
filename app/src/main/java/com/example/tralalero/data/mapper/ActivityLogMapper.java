@@ -59,7 +59,13 @@ public class ActivityLogMapper {
             }
         }
 
-        return new ActivityLog(
+        // Extract project name
+        String projectName = null;
+        if (dto.getProjects() != null) {
+            projectName = dto.getProjects().getName();
+        }
+
+        ActivityLog activityLog = new ActivityLog(
             dto.getId(),
             dto.getUserId(),
             dto.getAction(),
@@ -73,6 +79,16 @@ public class ActivityLogMapper {
             dto.getNewValue(),
             dto.getMetadata()
         );
+        
+        // Set additional fields from DTO
+        activityLog.setEntityId(dto.getEntityId());
+        activityLog.setProjectId(dto.getProjectId());
+        activityLog.setWorkspaceId(dto.getWorkspaceId());
+        activityLog.setBoardId(dto.getBoardId());
+        activityLog.setTaskId(dto.getTaskId());
+        activityLog.setProjectName(projectName);
+        
+        return activityLog;
     }
 
     /**

@@ -816,10 +816,12 @@ public class AccountFragment extends Fragment {
         App.authManager.signOut();
         Log.d(TAG, "✓ Auth cleared");
         
-        // Clear calendar sync cooldown for this user (so they see prompt on next login if not connected)
+        // Clear calendar sync cache for this user using new CalendarSyncManager
         if (userId != null) {
-            com.example.tralalero.MainActivity.clearCalendarSyncCooldown(requireContext(), userId);
-            Log.d(TAG, "✓ Calendar sync cooldown cleared for user: " + userId);
+            com.example.tralalero.feature.calendar.CalendarSyncManager
+                .getInstance(requireContext())
+                .clearUserCache(userId);
+            Log.d(TAG, "✓ Calendar sync cache cleared for user: " + userId);
         }
         
         App.dependencyProvider.clearAllCaches();

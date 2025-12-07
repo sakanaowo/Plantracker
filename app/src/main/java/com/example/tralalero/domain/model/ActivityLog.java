@@ -17,6 +17,9 @@ public class ActivityLog {
     private String userName;
     private String userAvatar;
     
+    // Project info
+    private String projectName;
+    
     // For ASSIGNED action - the person who received the task
     private String assigneeId;
 
@@ -122,56 +125,92 @@ public class ActivityLog {
         return invitedBy;
     }
 
+    // Setters for JSON parsing
+    public void setEntityId(String entityId) {
+        this.entityId = entityId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+
+    public void setBoardId(String boardId) {
+        this.boardId = boardId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
     /**
      * Format activity log message for display
-     * E.g. "John Doe added Checklist to Test card 2"
+     * E.g. "John Doe created event Meeting in project MyProject"
      */
     public String getFormattedMessage() {
-        String actionText = formatAction(action, entityType);
+        StringBuilder message = new StringBuilder(userName);
+        message.append(" ").append(formatAction(action, entityType));
+        
         if (entityName != null && !entityName.isEmpty()) {
-            return userName + " " + actionText + " " + entityName;
+            message.append(" ").append(entityName);
         }
-        return userName + " " + actionText;
+        
+        if (projectName != null && !projectName.isEmpty()) {
+            message.append(" in project ").append(projectName);
+        }
+        
+        return message.toString();
     }
 
     private String formatAction(String action, String entityType) {
         if (action == null) {
-            return "đã thực hiện một hành động";
+            return "performed an action";
         }
         
         switch (action) {
             case "CREATED":
-                return "đã tạo " + formatEntityType(entityType);
+                return "created " + formatEntityType(entityType);
             case "UPDATED":
-                return "đã cập nhật " + formatEntityType(entityType);
+                return "updated " + formatEntityType(entityType);
             case "DELETED":
-                return "đã xóa " + formatEntityType(entityType);
+                return "deleted " + formatEntityType(entityType);
             case "ADDED":
                 // Special handling for MEMBERSHIP invitations
                 if ("MEMBERSHIP".equals(entityType)) {
-                    return "đã mời bạn tham gia";
+                    return "invited you to join";
                 }
-                return "đã thêm " + formatEntityType(entityType);
+                return "added " + formatEntityType(entityType);
             case "COMMENTED":
-                return "đã bình luận về";
+                return "commented on";
             case "ASSIGNED":
-                return "đã giao";
+                return "assigned";
             case "UNASSIGNED":
-                return "đã hủy giao";
+                return "unassigned";
             case "MOVED":
-                return "đã chuyển";
+                return "moved";
             case "CHECKED":
-                return "đã đánh dấu";
+                return "checked";
             case "UNCHECKED":
-                return "đã bỏ đánh dấu";
+                return "unchecked";
             case "ADDED_MEMBER":
-                return "đã thêm thành viên vào";
+                return "added member to";
             case "REMOVED_MEMBER":
-                return "đã xóa thành viên khỏi";
+                return "removed member from";
             case "COMPLETED":
-                return "đã hoàn thành";
+                return "completed";
             case "REOPENED":
-                return "đã mở lại";
+                return "reopened";
             default:
                 return action.toLowerCase();
         }
@@ -179,26 +218,28 @@ public class ActivityLog {
 
     private String formatEntityType(String entityType) {
         if (entityType == null) {
-            return "mục";
+            return "item";
         }
         
         switch (entityType) {
             case "TASK":
-                return "nhiệm vụ";
+                return "task";
             case "CHECKLIST_ITEM":
-                return "mục checklist";
+                return "checklist item";
             case "COMMENT":
-                return "bình luận";
+                return "comment";
             case "PROJECT":
-                return "dự án";
+                return "project";
             case "BOARD":
-                return "bảng";
+                return "board";
             case "LABEL":
-                return "nhãn";
+                return "label";
             case "ATTACHMENT":
-                return "tập tin đính kèm";
+                return "attachment";
             case "MEMBERSHIP":
-                return ""; // Empty string for "đã mời bạn tham gia [project name]"
+                return ""; // Empty string for "invited you to join [project name]"
+            case "EVENT":
+                return "event";
             default:
                 return entityType.toLowerCase();
         }
