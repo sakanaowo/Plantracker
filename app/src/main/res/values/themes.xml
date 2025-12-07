@@ -10,6 +10,13 @@
 
     <style name="Theme.Tralalero" parent="Base.Theme.Tralalero" />
 
+    <!-- Splash Screen Theme -->
+    <style name="Theme.Tralalero.Splash" parent="Theme.Tralalero">
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+
     <!-- Bottom Sheet Style -->
     <style name="CustomBottomSheetDialog" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheet</item>

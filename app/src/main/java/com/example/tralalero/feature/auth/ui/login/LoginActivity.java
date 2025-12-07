@@ -45,17 +45,13 @@ import com.google.firebase.auth.GoogleAuthProvider;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
 
-    private EditText etEmail;
-    private EditText etPassword;
-    private Button btnLogin;
     private MaterialButton btnGoogleSignIn;
-    private TextView textViewForgotPassword;
-    private TextView textViewSignUp;
+    private MaterialButton btnGoogleSignUp;
     private AuthViewModel authViewModel;
     private GoogleSignInClient googleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private TokenManager tokenManager;
-    @SuppressLint("ClickableViewAccessibility")
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,66 +62,35 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        
         tokenManager = new TokenManager(this);
+        
+        // Initialize views
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        btnGoogleSignUp = findViewById(R.id.btnGoogleSignUp);
+        
+        // Setup Google Sign In
         setupGoogleSignIn();
         setupGoogleSignInLauncher();
-
-        etEmail = findViewById(R.id.editTextEmail);
-        etPassword = findViewById(R.id.editTextPassword);
-        btnLogin = findViewById(R.id.buttonLogin);
-        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
-        textViewForgotPassword = findViewById(R.id.textViewForgotPassword);
-        textViewSignUp = findViewById(R.id.textViewSignUp);
         setupViewModel();
         observeViewModel();
         setupClickListeners();
-        final boolean[] isPasswordVisible = {false};
-        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
-        etPassword.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {
-                    if (isPasswordVisible[0]) {
-                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
-                        isPasswordVisible[0] = false;
-                    } else {
-                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eye, 0);
-                        isPasswordVisible[0] = true;
-                    }
-                    etPassword.setTypeface(Typeface.DEFAULT);
-                    etPassword.setSelection(etPassword.length());
-                    return true;
-                }
-            }
-            return false;
-        });
-        if (btnLogin != null) {
-            btnLogin.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    attemptLogin();
-                }
-            });
-        }
     }
+    
     private void setupClickListeners() {
+        // Both buttons use same Google Sign In flow
         if (btnGoogleSignIn != null) {
             btnGoogleSignIn.setOnClickListener(v -> {
-                Log.d(TAG, "Google Sign In clicked - starting sign-in flow");
+                Log.d(TAG, "Sign In with Google clicked");
                 signInWithGoogle();
             });
         }
-        if (textViewForgotPassword != null) {
-            textViewForgotPassword.setOnClickListener(v -> {
-                Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
-                startActivity(intent);
-            });
-        }
-        if (textViewSignUp != null) {
-            textViewSignUp.setOnClickListener(v -> {
-                Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
-                startActivity(intent);
+        
+        if (btnGoogleSignUp != null) {
+            btnGoogleSignUp.setOnClickListener(v -> {
+                Log.d(TAG, "Sign Up with Google clicked");
+                // Same flow as sign in - Google handles account creation
+                signInWithGoogle();
             });
         }
     }
@@ -152,17 +117,6 @@ public class LoginActivity extends AppCompatActivity {
                 case LOGGED_OUT:
                     // Do nothing
                     break;
-            }
-        });
-
-        // Observe loading state
-        authViewModel.isLoading().observe(this, isLoading -> {
-            if (isLoading) {
-                btnLogin.setEnabled(false);
-                btnLogin.setText("Logging in...");
-            } else {
-                btnLogin.setEnabled(true);
-                btnLogin.setText("Login");
             }
         });
 
@@ -221,22 +175,10 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to get token: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
         } else {
-            Log.e("LoginActivity", "No Firebase user found after login!");
+            Log.e(TAG, "No Firebase user found after login!");
         }
     }
-    private void attemptLogin() {
-        String email = etEmail != null ? etEmail.getText().toString().trim() : "";
-        String password = etPassword != null ? etPassword.getText().toString() : "";
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        authViewModel.login(email, password);
-    }
+    
     private void setupGoogleSignIn() {
         String clientId = getString(R.string.client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
