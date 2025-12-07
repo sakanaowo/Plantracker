@@ -1,28 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/white">
+    xmlns:app="http://schemas.android.com/apk/res-auto" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:background="@color/surface"
+    android:elevation="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
-    <LinearLayout android:id="@+id/myLinearIcon" android:layout_width="0dp" android:layout_height="0dp" android:orientation="horizontal" android:padding="4dp" android:background="@color/white" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" app:layout_constraintDimensionRatio="4:1">
+    <LinearLayout 
+        android:id="@+id/myLinearIcon" 
+        android:layout_width="0dp" 
+        android:layout_height="56dp" 
+        android:orientation="horizontal" 
+        android:paddingHorizontal="8dp"
+        android:background="@color/surface" 
+        app:layout_constraintStart_toStartOf="parent" 
+        app:layout_constraintEnd_toEndOf="parent" 
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton android:id="@+id/btn1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/white" android:src="@drawable/board_icon1" android:scaleType="centerInside" android:contentDescription="home" app:tint="@android:color/black" />
+        <ImageButton 
+            android:id="@+id/btn1" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:layout_weight="1" 
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/board_icon1" 
+            android:scaleType="centerInside" 
+            android:padding="8dp"
+            android:contentDescription="home" 
+            app:tint="@color/on_surface_variant" />
 
-        <ImageButton android:id="@+id/btn2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/white" android:src="@drawable/ib_icon" android:scaleType="centerInside" android:contentDescription="inbox" app:tint="@android:color/black" />
+        <ImageButton 
+            android:id="@+id/btn2" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:layout_weight="1" 
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ib_icon" 
+            android:scaleType="centerInside" 
+            android:padding="8dp"
+            android:contentDescription="inbox" 
+            app:tint="@color/on_surface_variant" />
 
-        <ImageButton android:id="@+id/btn3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/white" android:src="@drawable/bell_icon" android:scaleType="centerInside" android:contentDescription="notify" app:tint="@android:color/black" />
+        <ImageButton 
+            android:id="@+id/btn3" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:layout_weight="1" 
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/bell_icon" 
+            android:scaleType="centerInside" 
+            android:padding="8dp"
+            android:contentDescription="notify" 
+            app:tint="@color/on_surface_variant" />
 
-        <ImageButton android:id="@+id/btn4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/white" android:src="@drawable/acc_icon" android:scaleType="centerInside" android:contentDescription="account" app:tint="@android:color/black" />
+        <ImageButton 
+            android:id="@+id/btn4" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:layout_weight="1" 
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/acc_icon" 
+            android:scaleType="centerInside" 
+            android:padding="8dp"
+            android:contentDescription="account" 
+            app:tint="@color/on_surface_variant" />
 
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/myLineartitle" android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintBottom_toBottomOf="@id/myLinearIcon">
+    <LinearLayout 
+        android:id="@+id/myLineartitle" 
+        android:layout_width="0dp" 
+        android:layout_height="wrap_content" 
+        android:orientation="horizontal" 
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="4dp"
+        app:layout_constraintStart_toStartOf="parent" 
+        app:layout_constraintEnd_toEndOf="parent" 
+        app:layout_constraintTop_toBottomOf="@id/myLinearIcon">
 
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="14sp" android:gravity="center" android:text="Workspace"/>
+        <TextView 
+            android:layout_width="0dp" 
+            android:layout_height="wrap_content" 
+            android:layout_weight="1" 
+            android:textSize="12sp" 
+            android:gravity="center" 
+            android:textColor="@color/on_surface_variant"
+            android:text="Workspace"/>
 
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="14sp" android:gravity="center" android:text="Quick access"/>
+        <TextView 
+            android:layout_width="0dp" 
+            android:layout_height="wrap_content" 
+            android:layout_weight="1" 
+            android:textSize="12sp" 
+            android:gravity="center" 
+            android:textColor="@color/on_surface_variant"
+            android:text="Quick access"/>
 
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="14sp" android:gravity="center" android:text="Activity"/>
+        <TextView 
+            android:layout_width="0dp" 
+            android:layout_height="wrap_content" 
+            android:layout_weight="1" 
+            android:textSize="12sp" 
+            android:gravity="center" 
+            android:textColor="@color/on_surface_variant"
+            android:text="Activity"/>
 
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="14sp" android:gravity="center" android:text="Settings"/>
+        <TextView 
+            android:layout_width="0dp" 
+            android:layout_height="wrap_content" 
+            android:layout_weight="1" 
+            android:textSize="12sp" 
+            android:gravity="center" 
+            android:textColor="@color/on_surface_variant"
+            android:text="Settings"/>
 
     </LinearLayout>
 
