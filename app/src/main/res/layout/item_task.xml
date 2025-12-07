@@ -1,33 +1,37 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Trello-style Task Card -->
+<!-- Enhanced Task Card with Labels, Priority, and Due Date -->
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" app:cardCornerRadius="4dp" app:cardElevation="1dp" android:foreground="?android:attr/selectableItemBackground" app:cardBackgroundColor="@android:color/white">
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" app:cardCornerRadius="8dp" app:cardElevation="2dp" android:foreground="?android:attr/selectableItemBackground" app:cardBackgroundColor="@android:color/white">
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
 
-        <!-- Labels at the top (Trello style) -->
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTaskLabels" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="6dp" android:orientation="horizontal" android:visibility="gone" app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        <!-- Labels Row -->
+        <com.google.android.material.chip.ChipGroup android:id="@+id/chipGroupLabels" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" app:singleLine="true" android:visibility="gone" />
 
         <!-- Task Title with Checkbox -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
 
             <CheckBox android:id="@+id/checkBoxTask" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:minWidth="0dp" android:minHeight="0dp" android:clickable="true" />
 
-            <TextView android:id="@+id/tvTaskTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Task Title" android:textSize="14sp" android:textColor="@android:color/black" android:maxLines="3" android:ellipsize="end" android:lineSpacingExtra="2dp" />
+            <TextView android:id="@+id/tvTaskTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Task Title" android:textSize="15sp" android:textColor="@android:color/black" android:textStyle="bold" android:maxLines="3" android:ellipsize="end" android:lineSpacingExtra="2dp" />
         </LinearLayout>
 
-        <!-- Bottom row: Assignees and Move buttons -->
+        <!-- Metadata Row: Priority + Due Date -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal" android:gravity="center_vertical">
 
-            <!-- Assignees -->
-            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTaskAssignees" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="horizontal" android:visibility="gone" app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            <!-- Priority Badge -->
+            <TextView android:id="@+id/tvPriority" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="11sp" android:textStyle="bold" android:textColor="@android:color/white" android:background="@drawable/bg_priority_high" android:visibility="gone" android:text="HIGH" />
+
+            <Space android:layout_width="8dp" android:layout_height="1dp" />
+
+            <!-- Due Date -->
+            <TextView android:id="@+id/tvDueDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_calendar" android:drawablePadding="4dp" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="12sp" android:textColor="#666666" android:visibility="gone" android:text="Dec 25, 2024" />
 
             <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-            <!-- Move Buttons (for drag between boards) -->
-            <ImageButton android:id="@+id/btnMoveLeft" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginEnd="4dp" android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_media_previous" android:contentDescription="Move Left" android:scaleType="centerInside" android:padding="6dp" android:visibility="gone" />
-
-            <ImageButton android:id="@+id/btnMoveRight" android:layout_width="32dp" android:layout_height="32dp" android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_media_next" android:contentDescription="Move Right" android:scaleType="centerInside" android:padding="6dp" android:visibility="gone" />
+            <!-- Assignees -->
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTaskAssignees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone" app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -30,7 +30,10 @@ import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.Calendar;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -202,7 +205,7 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
     private void applyFilter() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
-            taskAdapter.setTasks(allTasks);
+            sortAndDisplayTasks(allTasks);
             return;
         }
         String currentUserId = firebaseUser.getUid();
@@ -236,7 +239,8 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
                 break;
         }
         
-        taskAdapter.setTasks(filteredTasks);
+        // Apply smart sorting algorithm
+        sortAndDisplayTasks(filteredTasks);
         
         // Update empty state
         if (filteredTasks.isEmpty()) {
@@ -251,6 +255,130 @@ public class ProjectAllWorkFragment extends Fragment implements TaskAdapter.OnTa
         } else {
             tvEmptyState.setVisibility(View.GONE);
         }
+    }
+    
+    /**
+     * Smart sorting algorithm for All Work tab:
+     * 
+     * Priority order:
+     * 1. Overdue tasks (due date < now) - sorted by due date ASC (oldest first)
+     * 2. Due today tasks - sorted by priority DESC then time ASC
+     * 3. Due this week tasks - sorted by priority DESC then due date ASC
+     * 4. Tasks with priority but no due date - sorted by priority DESC
+     * 5. Other tasks with due date - sorted by due date ASC
+     * 6. Tasks without priority and due date - sorted by creation date DESC
+     * 
+     * Within each category, secondary sort by priority (HIGH > MEDIUM > LOW)
+     */
+    private void sortAndDisplayTasks(List<Task> tasks) {
+        List<Task> sortedTasks = new ArrayList<>(tasks);
+        
+        long now = System.currentTimeMillis();
+        long todayEnd = getTodayEndTime();
+        long weekEnd = getWeekEndTime();
+        
+        Collections.sort(sortedTasks, (t1, t2) -> {
+            // Get task properties
+            Long due1 = t1.getDueAt() != null ? t1.getDueAt().getTime() : null;
+            Long due2 = t2.getDueAt() != null ? t2.getDueAt().getTime() : null;
+            Task.TaskPriority priority1 = t1.getPriority();
+            Task.TaskPriority priority2 = t2.getPriority();
+            
+            // Determine categories
+            int cat1 = getTaskCategory(t1, now, todayEnd, weekEnd);
+            int cat2 = getTaskCategory(t2, now, todayEnd, weekEnd);
+            
+            // Sort by category first
+            if (cat1 != cat2) {
+                return Integer.compare(cat1, cat2);
+            }
+            
+            // Within same category, apply secondary sorting
+            switch (cat1) {
+                case 1: // Overdue - oldest first
+                    return Long.compare(due1, due2);
+                    
+                case 2: // Due today - priority DESC then time ASC
+                case 3: // Due this week - priority DESC then due date ASC
+                    int priorityCompare = comparePriority(priority2, priority1); // DESC
+                    if (priorityCompare != 0) return priorityCompare;
+                    return Long.compare(due1, due2);
+                    
+                case 4: // Has priority only - priority DESC
+                    return comparePriority(priority2, priority1);
+                    
+                case 5: // Has due date only - due date ASC
+                    return Long.compare(due1, due2);
+                    
+                case 6: // No priority, no due date - creation date DESC (newest first)
+                default:
+                    Long created1 = t1.getCreatedAt() != null ? t1.getCreatedAt().getTime() : 0L;
+                    Long created2 = t2.getCreatedAt() != null ? t2.getCreatedAt().getTime() : 0L;
+                    return Long.compare(created2, created1);
+            }
+        });
+        
+        taskAdapter.setTasks(sortedTasks);
+    }
+    
+    /**
+     * Categorize tasks for sorting priority
+     * @return category number (lower = higher priority)
+     */
+    private int getTaskCategory(Task task, long now, long todayEnd, long weekEnd) {
+        Long dueTime = task.getDueAt() != null ? task.getDueAt().getTime() : null;
+        boolean hasPriority = task.getPriority() != null;
+        boolean isDone = task.getStatus() == Task.TaskStatus.DONE;
+        
+        // Completed tasks go to bottom
+        if (isDone) return 7;
+        
+        if (dueTime != null) {
+            if (dueTime < now) return 1; // Overdue - highest priority
+            if (dueTime <= todayEnd) return 2; // Due today
+            if (dueTime <= weekEnd) return 3; // Due this week
+            return 5; // Future due date
+        }
+        
+        if (hasPriority) return 4; // Has priority but no due date
+        
+        return 6; // No priority, no due date
+    }
+    
+    /**
+     * Compare priorities: CRITICAL > HIGH > MEDIUM > LOW > null
+     */
+    private int comparePriority(Task.TaskPriority p1, Task.TaskPriority p2) {
+        int val1 = getPriorityValue(p1);
+        int val2 = getPriorityValue(p2);
+        return Integer.compare(val1, val2);
+    }
+    
+    private int getPriorityValue(Task.TaskPriority priority) {
+        if (priority == null) return 0;
+        switch (priority) {
+            case HIGH: return 3;
+            case MEDIUM: return 2;
+            case LOW: return 1;
+            default: return 0;
+        }
+    }
+    
+    private long getTodayEndTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        return cal.getTimeInMillis();
+    }
+    
+    private long getWeekEndTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, 7);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        return cal.getTimeInMillis();
     }
     
     private void showError(String message) {
