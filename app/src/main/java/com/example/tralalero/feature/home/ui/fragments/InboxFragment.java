@@ -135,7 +135,13 @@ public class InboxFragment extends Fragment {
         taskAdapter = new TaskAdapter(new TaskAdapter.OnTaskClickListener() {
             @Override
             public void onTaskClick(Task task) {
+                // TODO: Navigate to new TaskDetailActivity instead of using bottom sheet
+                // TaskDetailBottomSheet is deprecated - no longer supports editing
+                Toast.makeText(getContext(), "Task: " + task.getTitle(), Toast.LENGTH_SHORT).show();
+                
+                /* DEPRECATED: Remove TaskDetailBottomSheet usage
                 showTaskDetailBottomSheet(task);
+                */
             }
             
             @Override
@@ -243,6 +249,7 @@ public class InboxFragment extends Fragment {
         Toast.makeText(getContext(), "Creating task...", Toast.LENGTH_SHORT).show();
     }
 
+    /* DEPRECATED: TaskDetailBottomSheet no longer supports editing - use new TaskDetailActivity instead
     private void showTaskDetailBottomSheet(Task task) {
         TaskDetailBottomSheet bottomSheet = TaskDetailBottomSheet.newInstance(task);
         bottomSheet.setOnActionClickListener(new TaskDetailBottomSheet.OnActionClickListener() {
@@ -282,6 +289,7 @@ public class InboxFragment extends Fragment {
         });
         bottomSheet.show(getChildFragmentManager(), "TaskDetailBottomSheet");
     }
+    */
     
     /**
      * Update task status via API (same as All Work logic)

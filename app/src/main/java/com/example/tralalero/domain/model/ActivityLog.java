@@ -97,6 +97,14 @@ public class ActivityLog {
     public String getAssigneeId() {
         return assigneeId;
     }
+    
+    public String getEntityId() {
+        return entityId;
+    }
+    
+    public String getProjectId() {
+        return projectId;
+    }
 
     public Object getOldValue() {
         return oldValue;

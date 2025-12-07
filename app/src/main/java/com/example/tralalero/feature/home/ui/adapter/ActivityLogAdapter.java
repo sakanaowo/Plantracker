@@ -30,10 +30,17 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
     private List<ActivityLog> activityLogs = new ArrayList<>();
     private Context context;
     private OnInvitationClickListener invitationClickListener;
+    private OnActivityClickListener activityClickListener;
     private String currentUserId;
 
     public interface OnInvitationClickListener {
         void onInvitationClick(ActivityLog log);
+    }
+    
+    public interface OnActivityClickListener {
+        void onTaskClick(String taskId, String projectId);
+        void onEventClick(String eventId, String projectId);
+        void onProjectClick(String projectId);
     }
 
     public ActivityLogAdapter(Context context) {
@@ -48,6 +55,10 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
 
     public void setOnInvitationClickListener(OnInvitationClickListener listener) {
         this.invitationClickListener = listener;
+    }
+    
+    public void setOnActivityClickListener(OnActivityClickListener listener) {
+        this.activityClickListener = listener;
     }
 
     public void setActivityLogs(List<ActivityLog> activityLogs) {
@@ -102,11 +113,28 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             // Check if this is an invitation
             boolean isInvitation = "ADDED".equals(log.getAction()) && "MEMBERSHIP".equals(log.getEntityType());
             
-            // Set click listener for invitations
-            if (isInvitation) {
+            // Check if this is a clickable entity (task, event, project)
+            String entityType = log.getEntityType();
+            String entityId = log.getEntityId();
+            String projectId = log.getProjectId();
+            boolean isClickable = isInvitation || 
+                ("TASK".equals(entityType) && entityId != null) ||
+                ("EVENT".equals(entityType) && entityId != null) ||
+                ("PROJECT".equals(entityType) && entityId != null);
+            
+            // Set click listener
+            if (isClickable) {
                 itemView.setOnClickListener(v -> {
-                    if (invitationClickListener != null) {
+                    if (isInvitation && invitationClickListener != null) {
                         invitationClickListener.onInvitationClick(log);
+                    } else if (activityClickListener != null) {
+                        if ("TASK".equals(entityType) && entityId != null) {
+                            activityClickListener.onTaskClick(entityId, projectId);
+                        } else if ("EVENT".equals(entityType) && entityId != null) {
+                            activityClickListener.onEventClick(entityId, projectId);
+                        } else if ("PROJECT".equals(entityType) && entityId != null) {
+                            activityClickListener.onProjectClick(entityId);
+                        }
                     }
                 });
                 itemView.setClickable(true);
@@ -161,6 +189,9 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             String entityType = log.getEntityType();
             String entityName = log.getEntityName();
             
+            // Get projectName from metadata for better context
+            String projectName = getMetadataValue(log.getMetadata(), "projectName");
+            
             // Null safety for entityName
             if (entityName == null) {
                 entityName = "";
@@ -169,11 +200,19 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
             switch (action) {
                 case "CREATED":
                     if ("TASK".equals(entityType)) {
-                        return userName + " created task \"" + entityName + "\"";
+                        String taskMsg = userName + " created task \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            taskMsg += " in project \"" + projectName + "\"";
+                        }
+                        return taskMsg;
                     } else if ("PROJECT".equals(entityType)) {
                         return userName + " created project \"" + entityName + "\"";
                     } else if ("EVENT".equals(entityType)) {
-                        return userName + " created event \"" + entityName + "\"";
+                        String eventMsg = userName + " created event \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            eventMsg += " in project \"" + projectName + "\"";
+                        }
+                        return eventMsg;
                     } else if ("BOARD".equals(entityType)) {
                         return userName + " created board \"" + entityName + "\"";
                     }
@@ -183,16 +222,16 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                     if ("MEMBERSHIP".equals(entityType)) {
                         // ✅ NEW FORMAT: entityName is now the PROJECT name
                         // memberName is in metadata
-                        String projectName = entityName;
+                        String membershipProjectName = entityName;
                         String memberName = getMetadataValue(log.getMetadata(), "memberName");
                         String invitationType = getMetadataValue(log.getMetadata(), "type");
                         
                         // ⚠️ BACKWARD COMPATIBILITY: Old data had memberName in entityName
-                        // If projectName looks like a person name or entityName == memberName, 
+                        // If membershipProjectName looks like a person name or entityName == memberName, 
                         // it's probably old data where entityName was memberName
                         boolean isOldFormat = false;
-                        if (memberName != null && projectName != null && 
-                            (projectName.equals(memberName) || projectName.contains(memberName))) {
+                        if (memberName != null && membershipProjectName != null && 
+                            (membershipProjectName.equals(memberName) || membershipProjectName.contains(memberName))) {
                             // Old format detected - entityName was member name
                             isOldFormat = true;
                             // Try to get project name from newValue (old structure)
@@ -207,25 +246,25 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                                 // Ignore
                             }
                             if (oldProjectName != null && !oldProjectName.isEmpty()) {
-                                projectName = oldProjectName;
+                                membershipProjectName = oldProjectName;
                             }
                         }
                         
                         if ("INVITATION_ACCEPTED".equals(invitationType)) {
                             // Someone accepted invitation - they joined the project
                             if (isSelf) {
-                                return "You joined project \"" + projectName + "\"";
+                                return "You joined project \"" + membershipProjectName + "\"";
                             } else {
                                 // The person who joined is the userName (not memberName)
-                                return userName + " joined project \"" + projectName + "\"";
+                                return userName + " joined project \"" + membershipProjectName + "\"";
                             }
                         } else {
                             // Someone invited a new member
                             String invitee = memberName != null ? memberName : "a member";
                             if (isSelf) {
-                                return "You invited " + invitee + " to project \"" + projectName + "\"";
+                                return "You invited " + invitee + " to project \"" + membershipProjectName + "\"";
                             } else {
-                                return userName + " invited " + invitee + " to project \"" + projectName + "\"";
+                                return userName + " invited " + invitee + " to project \"" + membershipProjectName + "\"";
                             }
                         }
                     }
@@ -256,12 +295,22 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 
                 case "UPDATED":
                     if ("TASK".equals(entityType)) {
-                        return userName + " updated task \"" + entityName + "\"";
+                        String updateMsg = userName + " updated task \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            updateMsg += " in project \"" + projectName + "\"";
+                        }
+                        return updateMsg;
                     } else if ("PROJECT".equals(entityType)) {
                         return userName + " updated project \"" + entityName + "\"";
+                    } else if ("EVENT".equals(entityType)) {
+                        String updateEventMsg = userName + " updated event \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            updateEventMsg += " in project \"" + projectName + "\"";
+                        }
+                        return updateEventMsg;
                     } else if ("MEMBERSHIP".equals(entityType)) {
                         // ✅ Role change: entityName is PROJECT name, memberName in metadata
-                        String projectName = entityName;
+                        String roleProjectName = entityName;
                         String memberName = getMetadataValue(log.getMetadata(), "memberName");
                         String oldRole = getMetadataValue(log.getMetadata(), "oldRole");
                         String newRole = getMetadataValue(log.getMetadata(), "newRole");
@@ -277,7 +326,7 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                             // For now, check if it's self by comparing names
                             if (isSelf && userName.equals(memberName)) {
                                 // User's own role was changed by someone else
-                                return userName + " changed your role" + roleChange + " in project \"" + projectName + "\"";
+                                return userName + " changed your role" + roleChange + " in project \"" + roleProjectName + "\"";
                             }
                         }
                         
@@ -285,9 +334,9 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                         
                         if (isSelf) {
                             // User changed someone's role
-                            return "You changed " + memberInfo + "'s role" + roleChange + " in project \"" + projectName + "\"";
+                            return "You changed " + memberInfo + "'s role" + roleChange + " in project \"" + roleProjectName + "\"";
                         } else {
-                            return userName + " changed " + memberInfo + "'s role" + roleChange + " in project \"" + projectName + "\"";
+                            return userName + " changed " + memberInfo + "'s role" + roleChange + " in project \"" + roleProjectName + "\"";
                         }
                     }
                     return userName + " updated " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");
@@ -295,13 +344,25 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 case "DELETED":
                     if ("PROJECT".equals(entityType)) {
                         return userName + " deleted project \"" + entityName + "\"";
+                    } else if ("EVENT".equals(entityType)) {
+                        String deleteEventMsg = userName + " deleted event \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            deleteEventMsg += " in project \"" + projectName + "\"";
+                        }
+                        return deleteEventMsg;
+                    } else if ("TASK".equals(entityType)) {
+                        String deleteTaskMsg = userName + " deleted task \"" + entityName + "\"";
+                        if (projectName != null && !projectName.isEmpty()) {
+                            deleteTaskMsg += " in project \"" + projectName + "\"";
+                        }
+                        return deleteTaskMsg;
                     }
                     return userName + " deleted " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");
                 
                 case "REMOVED":
                     if ("MEMBERSHIP".equals(entityType)) {
                         // ✅ Member removed/left: entityName is PROJECT name, memberName in metadata
-                        String projectName = entityName;
+                        String removedProjectName = entityName;
                         String memberName = getMetadataValue(log.getMetadata(), "memberName");
                         String memberId = getMetadataValue(log.getMetadata(), "memberId");
                         
@@ -310,18 +371,18 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                         
                         if (isSelf && selfLeft) {
                             // Current user left the project themselves
-                            return "You left project \"" + projectName + "\"";
+                            return "You left project \"" + removedProjectName + "\"";
                         } else if (isSelf) {
                             // Current user removed someone else
                             String removedMember = memberName != null ? memberName : "a member";
-                            return "You removed " + removedMember + " from project \"" + projectName + "\"";
+                            return "You removed " + removedMember + " from project \"" + removedProjectName + "\"";
                         } else if (selfLeft) {
                             // Someone else left the project
-                            return userName + " left project \"" + projectName + "\"";
+                            return userName + " left project \"" + removedProjectName + "\"";
                         } else {
                             // Someone removed another member
                             String removedMember = memberName != null ? memberName : "a member";
-                            return userName + " removed " + removedMember + " from project \"" + projectName + "\"";
+                            return userName + " removed " + removedMember + " from project \"" + removedProjectName + "\"";
                         }
                     }
                     return userName + " removed " + entityType.toLowerCase() + (!entityName.isEmpty() ? " \"" + entityName + "\"" : "");

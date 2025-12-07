@@ -117,6 +117,37 @@ public class ActivityFragment extends Fragment {
         // Setup activity feed RecyclerView
         rvActivityFeed.setLayoutManager(new LinearLayoutManager(getContext()));
         activityAdapter = new ActivityLogAdapter(getContext());
+        
+        // Set click listeners for navigation
+        activityAdapter.setOnActivityClickListener(new ActivityLogAdapter.OnActivityClickListener() {
+            @Override
+            public void onTaskClick(String taskId, String projectId) {
+                Log.d(TAG, "Navigating to task: " + taskId + " in project: " + projectId);
+                // TODO: Navigate to task detail
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Opening task...", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onEventClick(String eventId, String projectId) {
+                Log.d(TAG, "Navigating to event: " + eventId + " in project: " + projectId);
+                // TODO: Navigate to event detail
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Opening event...", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onProjectClick(String projectId) {
+                Log.d(TAG, "Navigating to project: " + projectId);
+                // TODO: Navigate to project detail
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Opening project...", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        
         rvActivityFeed.setAdapter(activityAdapter);
         
         // Setup swipe refresh
