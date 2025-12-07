@@ -43,15 +43,15 @@ public class ActivityLogMapper {
             }
         }
 
-        // Extract invitedBy from metadata for ADDED MEMBERSHIP action (invitation accepted)
-        String invitedBy = null;
+        // Extract inviter name from metadata for ADDED MEMBERSHIP action (invitation accepted)
+        String inviterName = null;
         if ("ADDED".equals(dto.getAction()) && "MEMBERSHIP".equals(dto.getEntityType()) && dto.getMetadata() != null) {
             try {
                 if (dto.getMetadata() instanceof java.util.Map) {
                     java.util.Map<String, Object> metadataMap = (java.util.Map<String, Object>) dto.getMetadata();
-                    Object invitedByObj = metadataMap.get("invitedBy");
-                    if (invitedByObj != null) {
-                        invitedBy = invitedByObj.toString();
+                    Object inviterNameObj = metadataMap.get("inviterName");
+                    if (inviterNameObj != null) {
+                        inviterName = inviterNameObj.toString();
                     }
                 }
             } catch (Exception e) {
@@ -87,6 +87,7 @@ public class ActivityLogMapper {
         activityLog.setBoardId(dto.getBoardId());
         activityLog.setTaskId(dto.getTaskId());
         activityLog.setProjectName(projectName);
+        activityLog.setInviterName(inviterName);
         
         return activityLog;
     }

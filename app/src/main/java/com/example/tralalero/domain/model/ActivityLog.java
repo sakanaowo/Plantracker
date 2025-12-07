@@ -30,6 +30,7 @@ public class ActivityLog {
 
     // For ADDED MEMBERSHIP action - the person who invited (when invitation accepted)
     private String invitedBy;
+    private String inviterName;
 
     public ActivityLog(String id, String userId, String action, String entityType, 
                       String entityName, String createdAt, String userName, String userAvatar) {
@@ -125,6 +126,10 @@ public class ActivityLog {
         return invitedBy;
     }
 
+    public String getInviterName() {
+        return inviterName;
+    }
+
     // Setters for JSON parsing
     public void setEntityId(String entityId) {
         this.entityId = entityId;
@@ -150,6 +155,10 @@ public class ActivityLog {
         this.projectName = projectName;
     }
 
+    public void setInviterName(String inviterName) {
+        this.inviterName = inviterName;
+    }
+
     public String getProjectName() {
         return projectName;
     }
@@ -159,7 +168,13 @@ public class ActivityLog {
      * E.g. "John Doe created event Meeting in project MyProject"
      */
     public String getFormattedMessage() {
-        StringBuilder message = new StringBuilder(userName);
+        // For MEMBERSHIP ADDED (invitation), use inviter name instead of invited person name
+        String actorName = userName;
+        if ("ADDED".equals(action) && "MEMBERSHIP".equals(entityType) && inviterName != null) {
+            actorName = inviterName;
+        }
+        
+        StringBuilder message = new StringBuilder(actorName);
         message.append(" ").append(formatAction(action, entityType));
         
         if (entityName != null && !entityName.isEmpty()) {
