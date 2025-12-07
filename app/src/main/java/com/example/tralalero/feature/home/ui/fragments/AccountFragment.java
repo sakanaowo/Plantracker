@@ -82,6 +82,11 @@ public class AccountFragment extends Fragment {
     private GoogleAuthApiService googleAuthApiService;
     private TextView tvGoogleCalendarStatus;
     private LinearLayout layoutGoogleCalendar;
+    
+    // Notifications
+    private com.google.android.material.switchmaterial.SwitchMaterial switchNotifications;
+    private TextView tvNotificationStatus;
+    private String currentDeviceId;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -108,9 +113,12 @@ public class AccountFragment extends Fragment {
         TextView tvEmail = view.findViewById(R.id.tvEmail);
         tvAvatarLetter = view.findViewById(R.id.tvAvatarLetter);
         imgAvatar = view.findViewById(R.id.imgAvatar);
-        btnAccountOptions = view.findViewById(R.id.btnAccountOptions);
         tvGoogleCalendarStatus = view.findViewById(R.id.tvGoogleCalendarStatus);
         layoutGoogleCalendar = view.findViewById(R.id.layoutGoogleCalendar);
+        
+        // User card click to view account
+        androidx.cardview.widget.CardView cardUserInfo = view.findViewById(R.id.cardUserInfo);
+        cardUserInfo.setOnClickListener(v -> openEditProfileActivity());
 
         if (firebaseUser != null) {
             String email = firebaseUser.getEmail();
@@ -130,17 +138,11 @@ public class AccountFragment extends Fragment {
         }
 
         FrameLayout avatarContainer = view.findViewById(R.id.avatarContainer);
-        avatarContainer.setOnClickListener(v -> showImagePickerBottomSheet());
-        
-        if (btnAccountOptions != null) {
-            Log.d(TAG, "Setting up click listener for btnAccountOptions");
-            btnAccountOptions.setOnClickListener(v -> {
-                Log.d(TAG, "btnAccountOptions CLICKED!");
-                showAccountOptionsMenu(v);
-            });
-        } else {
-            Log.e(TAG, "btnAccountOptions is NULL!");
-        }
+        avatarContainer.setOnClickListener(v -> {
+            showImagePickerBottomSheet();
+            // Stop propagation to prevent card click
+            v.setClickable(true);
+        });
 
         LinearLayout layoutSettings = view.findViewById(R.id.layoutSettings);
         layoutSettings.setOnClickListener(v -> {
@@ -148,20 +150,11 @@ public class AccountFragment extends Fragment {
             startActivity(intent);
         });
         
-        // Workspace button
-        LinearLayout layoutWorkspaces = view.findViewById(R.id.layoutWorkspaces);
-        layoutWorkspaces.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), WorkspaceListActivity.class);
-            startActivity(intent);
-        });
-
-        LinearLayout layoutOfflineBoards = view.findViewById(R.id.layoutOfflineBoards);
-        layoutOfflineBoards.setOnClickListener(v -> {
-            // TODO: Implement offline boards
-        });
-        
         // Setup Google Calendar integration
         setupGoogleCalendar();
+        
+        // Setup notification settings
+        setupNotificationSettings();
     }
 
     @Override
@@ -228,6 +221,173 @@ public class AccountFragment extends Fragment {
     private void setupGoogleCalendar() {
         checkGoogleCalendarStatus();
         layoutGoogleCalendar.setOnClickListener(v -> showGoogleCalendarDialog());
+    }
+    
+    private void setupNotificationSettings() {
+        switchNotifications = getView().findViewById(R.id.switchNotifications);
+        tvNotificationStatus = getView().findViewById(R.id.tvNotificationStatus);
+        
+        // Load current device status from backend
+        checkDeviceRegistrationStatus();
+        
+        switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!buttonView.isPressed()) return; // Ignore programmatic changes
+            
+            if (isChecked) {
+                registerDevice();
+            } else {
+                unregisterDevice();
+            }
+        });
+    }
+    
+    private void checkDeviceRegistrationStatus() {
+        com.example.tralalero.data.remote.api.FcmApiService fcmApi = 
+            ApiClient.get(App.authManager).create(com.example.tralalero.data.remote.api.FcmApiService.class);
+        
+        fcmApi.getDevices().enqueue(new retrofit2.Callback<java.util.List<com.example.tralalero.data.remote.dto.fcm.DeviceResponse>>() {
+            @Override
+            public void onResponse(retrofit2.Call<java.util.List<com.example.tralalero.data.remote.dto.fcm.DeviceResponse>> call, 
+                                 retrofit2.Response<java.util.List<com.example.tralalero.data.remote.dto.fcm.DeviceResponse>> response) {
+                if (!isAdded()) return;
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    java.util.List<com.example.tralalero.data.remote.dto.fcm.DeviceResponse> devices = response.body();
+                    
+                    // Check if current device is registered
+                    String currentToken = com.example.tralalero.util.FCMHelper.getSavedToken(requireContext());
+                    boolean isRegistered = false;
+                    
+                    for (com.example.tralalero.data.remote.dto.fcm.DeviceResponse device : devices) {
+                        if (device.getFcmToken().equals(currentToken) && device.isActive()) {
+                            currentDeviceId = device.getId();
+                            isRegistered = true;
+                            break;
+                        }
+                    }
+                    
+                    if (switchNotifications != null) {
+                        switchNotifications.setChecked(isRegistered);
+                        updateNotificationStatusText(isRegistered);
+                    }
+                } else {
+                    Log.e(TAG, "Failed to get devices: " + response.code());
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<java.util.List<com.example.tralalero.data.remote.dto.fcm.DeviceResponse>> call, Throwable t) {
+                Log.e(TAG, "Network error getting devices", t);
+            }
+        });
+    }
+    
+    private void registerDevice() {
+        String fcmToken = com.example.tralalero.util.FCMHelper.getSavedToken(requireContext());
+        
+        if (fcmToken == null || fcmToken.isEmpty()) {
+            Toast.makeText(requireContext(), "FCM token not available", Toast.LENGTH_SHORT).show();
+            if (switchNotifications != null) {
+                switchNotifications.setChecked(false);
+            }
+            return;
+        }
+        
+        // Create device registration request
+        String deviceModel = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+        String appVersion = com.example.tralalero.BuildConfig.VERSION_NAME;
+        String locale = java.util.Locale.getDefault().toString();
+        String timezone = java.util.TimeZone.getDefault().getID();
+        
+        com.example.tralalero.data.remote.dto.fcm.RegisterDeviceRequest request = 
+            new com.example.tralalero.data.remote.dto.fcm.RegisterDeviceRequest(
+                fcmToken, "ANDROID", deviceModel, appVersion, locale, timezone
+            );
+        
+        com.example.tralalero.data.remote.api.FcmApiService fcmApi = 
+            ApiClient.get(App.authManager).create(com.example.tralalero.data.remote.api.FcmApiService.class);
+        
+        fcmApi.registerDevice(request).enqueue(new retrofit2.Callback<com.example.tralalero.data.remote.dto.fcm.DeviceResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<com.example.tralalero.data.remote.dto.fcm.DeviceResponse> call, 
+                                 retrofit2.Response<com.example.tralalero.data.remote.dto.fcm.DeviceResponse> response) {
+                if (!isAdded()) return;
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    currentDeviceId = response.body().getId();
+                    Log.d(TAG, "✓ Device registered successfully: " + currentDeviceId);
+                    updateNotificationStatusText(true);
+                    Toast.makeText(requireContext(), "✓ Notifications enabled", Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to register device: " + response.code());
+                    if (switchNotifications != null) {
+                        switchNotifications.setChecked(false);
+                    }
+                    Toast.makeText(requireContext(), "Failed to enable notifications", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<com.example.tralalero.data.remote.dto.fcm.DeviceResponse> call, Throwable t) {
+                if (!isAdded()) return;
+                
+                Log.e(TAG, "Network error registering device", t);
+                if (switchNotifications != null) {
+                    switchNotifications.setChecked(false);
+                }
+                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void unregisterDevice() {
+        if (currentDeviceId == null || currentDeviceId.isEmpty()) {
+            // No device ID, just update UI
+            updateNotificationStatusText(false);
+            Toast.makeText(requireContext(), "✓ Notifications disabled", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Call DELETE /api/users/devices/{deviceId}
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        authApi.unregisterDevice(currentDeviceId).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {
+                if (!isAdded()) return;
+                
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "✓ Device unregistered successfully");
+                    currentDeviceId = null;
+                    updateNotificationStatusText(false);
+                    Toast.makeText(requireContext(), "✓ Notifications disabled", Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to unregister device: " + response.code());
+                    // Revert switch on failure
+                    if (switchNotifications != null) {
+                        switchNotifications.setChecked(true);
+                    }
+                    Toast.makeText(requireContext(), "Failed to disable notifications", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(retrofit2.Call<Void> call, Throwable t) {
+                if (!isAdded()) return;
+                
+                Log.e(TAG, "Network error unregistering device", t);
+                // Revert switch on failure
+                if (switchNotifications != null) {
+                    switchNotifications.setChecked(true);
+                }
+                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void updateNotificationStatusText(boolean enabled) {
+        if (tvNotificationStatus != null) {
+            tvNotificationStatus.setText(enabled ? "Enabled" : "Disabled");
+        }
     }
     
     private void checkGoogleCalendarStatus() {

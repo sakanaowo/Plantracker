@@ -18,9 +18,9 @@ import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.Url;
-import retrofit2.http.PUT;
 
 public interface AuthApi {
     @POST("users/local/signin")
@@ -40,6 +40,9 @@ public interface AuthApi {
 
     @DELETE("users/me")
     Call<Void> deleteAccount();
+    
+    @DELETE("users/devices/{deviceId}")
+    Call<Void> unregisterDevice(@Path("deviceId") String deviceId);
     
     // ========== Storage APIs ==========
     
