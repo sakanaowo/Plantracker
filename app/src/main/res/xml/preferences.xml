@@ -14,6 +14,8 @@
 
     <PreferenceCategory android:title="Account" android:key="category_account">
 
+        <Preference android:key="logout" android:title="Logout" android:summary="Sign out from your account" android:icon="@android:drawable/ic_lock_power_off" />
+
         <Preference android:key="delete_account" android:title="Delete Account" android:summary="permanently delete account" />
 
     </PreferenceCategory>

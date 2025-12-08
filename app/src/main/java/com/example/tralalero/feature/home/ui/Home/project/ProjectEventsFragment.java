@@ -629,7 +629,7 @@ public class ProjectEventsFragment extends Fragment {
             .setTitle("Cancel Event")
             .setMessage("Are you sure you want to cancel this event?")
             .setPositiveButton("Cancel Event", (dialog, which) -> {
-                viewModel.deleteEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
+                viewModel.cancelEvent(event.getId()).observe(getViewLifecycleOwner(), result -> {
                     if (result.isSuccess()) {
                         Toast.makeText(getContext(), "✅ Event cancelled", Toast.LENGTH_SHORT).show();
                         loadEvents();

@@ -12,10 +12,10 @@ import retrofit2.http.*;
 public interface EventApiService {
 
 
-    @GET("events")
+    @GET("events/projects/{projectId}")
     Call<List<EventDTO>> getEventsByProject(
-        @Query("projectId") String projectId,
-        @Query("filter") String filter  // UPCOMING, PAST, RECURRING
+        @Path("projectId") String projectId,
+        @Query("status") String status  // ACTIVE, CANCELLED, ALL
     );
 
 

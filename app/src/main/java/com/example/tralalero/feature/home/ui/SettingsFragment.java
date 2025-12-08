@@ -19,6 +19,9 @@ import com.example.tralalero.domain.model.AuthUrlResponse;
 import com.example.tralalero.domain.model.GoogleCalendarStatusResponse;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.network.ApiClient;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import retrofit2.Call;
@@ -43,6 +46,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             languagePref.setOnPreferenceChangeListener((preference, newValue) -> {
                 String languageCode = (String) newValue;
                 changeLanguage(languageCode);
+                return true;
+            });
+        }
+        
+        Preference logoutPref = findPreference("logout");
+        if (logoutPref != null) {
+            logoutPref.setOnPreferenceClickListener(preference -> {
+                showLogoutDialog();
                 return true;
             });
         }
@@ -230,6 +241,84 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 requireContext().getResources().getDisplayMetrics());
         requireActivity().recreate();
     }
+    private void showLogoutDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to logout?")
+                .setPositiveButton("Logout", (dialog, which) -> performLogout())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    private void performLogout() {
+        Toast.makeText(requireContext(), "Logging out...", Toast.LENGTH_SHORT).show();
+        
+        Log.d(TAG, "=== LOGOUT START ===");
+        
+        // Step 1: Sign out from Firebase
+        FirebaseAuth.getInstance().signOut();
+        Log.d(TAG, "Logout: Firebase signed out");
+        
+        // Step 2: Sign out from Google Sign In (để có thể chọn tài khoản khác khi đăng nhập lại)
+        try {
+            String clientId = getString(R.string.client_id);
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(clientId)
+                    .requestEmail()
+                    .build();
+            
+            GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
+            Log.d(TAG, "Logout: GoogleSignInClient created, calling signOut()...");
+            
+            // Revoke Google access để force chọn account lại
+            googleSignInClient.revokeAccess().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Log.d(TAG, "Logout: ✅ Google access revoked successfully");
+                } else {
+                    Log.e(TAG, "Logout: ⚠️ Google revoke failed", task.getException());
+                }
+                
+                // Step 3: Clear all local data
+                clearLocalDataAndRedirect();
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Exception during Google sign-out", e);
+            // Even if Google sign-out fails, clear local data
+            clearLocalDataAndRedirect();
+        }
+    }
+    
+    private void clearLocalDataAndRedirect() {
+        // Clear TokenManager
+        tokenManager.clearAll();
+        Log.d(TAG, "Logout: Cleared TokenManager");
+        
+        // Clear AuthManager cache
+        if (App.authManager != null) {
+            App.authManager.clearCache();
+            Log.d(TAG, "Logout: Cleared AuthManager cache");
+        }
+        
+        // Clear calendar sync cache
+        if (getContext() != null) {
+            getContext().getSharedPreferences("calendar_sync_prefs", 0)
+                    .edit()
+                    .clear()
+                    .apply();
+            Log.d(TAG, "Logout: Cleared calendar sync cache");
+        }
+        
+        Log.d(TAG, "=== LOGOUT COMPLETE ===");
+        Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+        
+        // Redirect to login screen
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+    
     private void showDeleteAccountDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Account")

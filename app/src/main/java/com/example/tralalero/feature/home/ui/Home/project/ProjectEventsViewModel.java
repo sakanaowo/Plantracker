@@ -38,7 +38,7 @@ public class ProjectEventsViewModel extends ViewModel {
     private final MutableLiveData<String> error = new MutableLiveData<>();
     
     public enum EventFilter {
-        UPCOMING, PAST, RECURRING, ALL
+        ACTIVE, CANCELLED, ALL
     }
     
     public ProjectEventsViewModel() {
@@ -47,13 +47,16 @@ public class ProjectEventsViewModel extends ViewModel {
     
     /**
      * Load project events with filter
+     * @param projectId Project ID
+     * @param filter Event filter: ACTIVE, CANCELLED, or ALL (default shows ACTIVE + CANCELLED)
      */
     public LiveData<Result<List<ProjectEvent>>> loadProjectEvents(String projectId, EventFilter filter) {
         loadingLiveData.setValue(true);
         
-        String filterStr = filter != null ? filter.name() : EventFilter.ALL.name();
+        // If filter is null, don't pass status param (backend default shows ACTIVE + CANCELLED)
+        String statusParam = filter != null ? filter.name() : null;
         
-        eventApiService.getEventsByProject(projectId, filterStr).enqueue(new Callback<List<EventDTO>>() {
+        eventApiService.getEventsByProject(projectId, statusParam).enqueue(new Callback<List<EventDTO>>() {
             @Override
             public void onResponse(Call<List<EventDTO>> call, Response<List<EventDTO>> response) {
                 loadingLiveData.setValue(false);
@@ -187,28 +190,49 @@ public class ProjectEventsViewModel extends ViewModel {
     }
     
     /**
-     * Delete event
+     * Cancel event (soft delete)
      */
-    public LiveData<Result<Void>> deleteEvent(String eventId) {
+    public LiveData<Result<Void>> cancelEvent(String eventId) {
         MutableLiveData<Result<Void>> resultLiveData = new MutableLiveData<>();
         loadingLiveData.setValue(true);
         
-        eventApiService.deleteEvent(eventId).enqueue(new Callback<Void>() {
+        // Get event first to find projectId
+        eventApiService.getEventById(eventId).enqueue(new Callback<EventDTO>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                loadingLiveData.setValue(false);
-                
-                if (response.isSuccessful()) {
-                    resultLiveData.setValue(Result.success(null));
+            public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String projectId = response.body().getProjectId();
+                    
+                    eventApiService.cancelEvent(projectId, eventId, 
+                        new EventApiService.CancelEventRequest("Cancelled by user")
+                    ).enqueue(new Callback<EventDTO>() {
+                        @Override
+                        public void onResponse(Call<EventDTO> call, Response<EventDTO> response) {
+                            loadingLiveData.setValue(false);
+                            
+                            if (response.isSuccessful()) {
+                                resultLiveData.setValue(Result.success(null));
+                            } else {
+                                resultLiveData.setValue(Result.error("Failed to cancel event"));
+                            }
+                        }
+                        
+                        @Override
+                        public void onFailure(Call<EventDTO> call, Throwable t) {
+                            loadingLiveData.setValue(false);
+                            resultLiveData.setValue(Result.error("Connection error: " + t.getMessage()));
+                        }
+                    });
                 } else {
-                    resultLiveData.setValue(Result.error("Không thể xóa sự kiện"));
+                    loadingLiveData.setValue(false);
+                    resultLiveData.setValue(Result.error("Event not found"));
                 }
             }
             
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
+            public void onFailure(Call<EventDTO> call, Throwable t) {
                 loadingLiveData.setValue(false);
-                resultLiveData.setValue(Result.error("Lỗi kết nối: " + t.getMessage()));
+                resultLiveData.setValue(Result.error("Connection error: " + t.getMessage()));
             }
         });
         
