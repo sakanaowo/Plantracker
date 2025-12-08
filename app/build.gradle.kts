@@ -22,15 +22,15 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"http://192.168.1.15:3000/api/\""
-//                        "\"https://plantracker-backend-1.onrender.com/api/\""
+//                "\"http://192.168.1.15:3000/api/\""
+                "\"https://plantracker-backend-1.onrender.com/api/\""
             )
             // Use local WebSocket for development
             buildConfigField(
                 "String",
                 "WS_URL",
-                "\"ws://192.168.1.15:3000/notifications\""
-//                        "\"wss://plantracker-backend-1.onrender.com/api/\"",
+//                "\"ws://192.168.1.15:3000/notifications\""
+                "\"wss://plantracker-backend-1.onrender.com/api/\"",
 
                 )
         }
@@ -92,7 +92,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
-    
+
     // Socket.IO client for real-time notifications
     implementation("io.socket:socket.io-client:2.1.0")
 
