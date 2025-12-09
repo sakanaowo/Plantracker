@@ -79,6 +79,17 @@ public interface EventApiService {
     @DELETE("events/projects/{id}")
     Call<Void> deleteProjectEvent(@Path("id") String eventId);
     
+    /**
+     * Suggest meeting time slots based on participants' availability
+     * @param projectId Project ID
+     * @param request Contains date range, duration, and participant IDs
+     */
+    @POST("events/projects/{projectId}/suggest-times")
+    Call<com.example.tralalero.data.dto.event.SuggestEventTimeResponse> suggestEventTimes(
+        @Path("projectId") String projectId,
+        @Body com.example.tralalero.data.dto.event.SuggestEventTimeRequest request
+    );
+    
     // ==================== CANCEL/RESTORE EVENT ====================
     
     /**

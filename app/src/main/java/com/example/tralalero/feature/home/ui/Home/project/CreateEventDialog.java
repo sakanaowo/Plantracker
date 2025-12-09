@@ -446,4 +446,5 @@ public class CreateEventDialog extends DialogFragment {
             default: return "NONE";
         }
     }
+    
 }

@@ -12,9 +12,12 @@
 
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/events_and_meetings" android:textSize="18sp" android:textStyle="bold" android:textColor="#212121"/>
 
+                <!-- Smart Schedule Button -->
+                <ImageButton android:id="@+id/btnSmartSchedule" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginEnd="4dp" android:src="@drawable/ic_auto_awesome" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/smart_schedule" android:tint="#FF6F00"/>
+
                 <ImageButton android:id="@+id/btnCreateEvent" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/add_ic" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/create_event"/>
 
-                <ImageButton android:id="@+id/btnSearchEvents" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="8dp" android:src="@drawable/ic_search" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/search"/>
+                <ImageButton android:id="@+id/btnSearchEvents" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="4dp" android:src="@drawable/ic_search" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/search"/>
             </LinearLayout>
 
             <!-- Search Field (Initially Hidden) -->

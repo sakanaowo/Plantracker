@@ -115,4 +115,30 @@
     <string name="date">Date</string>
     <string name="add_google_meet_link">Add Google Meet link</string>
     <string name="description_optional">Description (optional)</string>
+
+    <!-- Smart Schedule Feature -->
+    <string name="smart_schedule">Smart Schedule</string>
+    <string name="smart_schedule_meeting">Smart Schedule Meeting</string>
+    <string name="smart_schedule_description">AI will analyze everyone\'s calendar and suggest the best times</string>
+    <string name="search_within_date_range">Search within date range</string>
+    <string name="select_date">Select date</string>
+    <string name="from_date">From Date</string>
+    <string name="to_date">To Date</string>
+    <string name="meeting_duration">Meeting Duration</string>
+    <string name="minutes">minutes</string>
+    <string name="participants_required">Participants (required for scheduling)</string>
+    <string name="select_attendees">Select Attendees</string>
+    <string name="analyzing_calendars">Analyzing calendars…</string>
+    <string name="find_best_time_slots">Find Best Time Slots</string>
+    <string name="best_time_slots">Best Time Slots</string>
+    <string name="participants_info_placeholder">3/5 participants available</string>
+    <string name="no_slots">No slots</string>
+    <string name="no_available_slots">No available time slots found</string>
+    <string name="try_adjusting_parameters">Try adjusting the date range or duration</string>
+    <string name="select">Select</string>
+    <string name="score_excellent">Excellent</string>
+    <string name="score_good">Good</string>
+    <string name="score_fair">Fair</string>
+    <string name="score_poor">Poor</string>
 </resources>
+
