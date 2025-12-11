@@ -171,13 +171,6 @@ public class DependencyProvider {
         return workspaceRepositoryWithCache;
     }
     
-    // TODO: Person 2 - Add more cached repositories
-    // public synchronized ProjectRepositoryImplWithCache getProjectRepositoryWithCache() { ... }
-    // public synchronized BoardRepositoryImplWithCache getBoardRepositoryWithCache() { ... }
-    // public synchronized WorkspaceRepositoryImplWithCache getWorkspaceRepositoryWithCache() { ... }
-    
-    // ==================== Cache Management ====================
-    
     /**
      * Clear all caches - called on logout or app termination
      */

@@ -12,8 +12,8 @@
     <string name="client_id">710677395196-0f5krq4gdk0hht5ahn2lsk3c1pr0oa25.apps.googleusercontent.com</string>
     <string name="change_language_title">Ngôn ngữ</string>
 
-    <!-- Account Screen -->
-    <string name="account_title">Tài khoản</string>
+    <!-- Settings Screen -->
+    <string name="account_title">Cài đặt</string>
     <string name="workspaces_title">Không gian làm việc</string>
     <string name="general_title">Chung</string>
     <string name="offline_boards" tools:ignore="ExtraTranslation">Bảng ngoại tuyến</string>
@@ -25,5 +25,70 @@
     <string name="boards">Bảng</string>
     <string name="inbox">Hộp thư</string>
     <string name="activity">Hoạt động</string>
-    <string name="account">Tài khoản</string>
+    <string name="account">Cài đặt</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">Sự kiện &amp; Cuộc họp</string>
+    <string name="upcoming">Sắp tới</string>
+    <string name="past">Đã qua</string>
+    <string name="recurring">Lặp lại</string>
+    <string name="no_events">Không có sự kiện</string>
+    <string name="no_events_yet">Chưa có sự kiện nào</string>
+    <string name="create_first_event">Tạo sự kiện đầu tiên</string>
+    <string name="create_event">Tạo sự kiện</string>
+    <string name="filter">Lọc</string>
+    <string name="search">Tìm kiếm</string>
+    <string name="time">Thời gian</string>
+    <string name="attendees">Người tham gia</string>
+    <string name="menu">Menu</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">Sao chép liên kết</string>
+    <string name="join">Tham gia</string>
+    <string name="details">Chi tiết</string>
+    <string name="edit_event">Chỉnh sửa sự kiện</string>
+    <string name="cancel_event">Hủy sự kiện</string>
+    <string name="send_reminder">Gửi nhắc nhở</string>
+
+    <!-- Create Event Dialog -->
+    <string name="event_title">Tiêu đề sự kiện</string>
+    <string name="event_date">Ngày sự kiện</string>
+    <string name="event_time">Giờ sự kiện</string>
+    <string name="duration">Thời lượng (phút)</string>
+    <string name="event_description">Mô tả</string>
+    <string name="event_type">Loại sự kiện</string>
+    <string name="meeting">Cuộc họp</string>
+    <string name="milestone">Cột mốc</string>
+    <string name="other">Khác</string>
+    <string name="add_attendees">Mời người tham gia</string>
+    <string name="create_google_meet">Tạo Google Meet</string>
+    <string name="recurrence">Lặp lại</string>
+    <string name="cancel">Hủy</string>
+    <string name="create">Tạo</string>
+
+    <!-- Calendar Integration -->
+    <string name="sync_with_google_calendar">Đồng bộ với Google Calendar</string>
+    <string name="view_in_calendar">Xem trong Lịch</string>
+    <string name="calendar_reminder_settings">Cài đặt Nhắc nhở Lịch</string>
+
+    <!-- Meeting Scheduler -->
+    <string name="select_team_members">Chọn Thành viên Nhóm</string>
+    <string name="choose_members_availability">Chọn thành viên để kiểm tra tình trạng</string>
+    <string name="search_members">Tìm kiếm thành viên</string>
+    <string name="zero_members_selected">0 thành viên được chọn</string>
+    <string name="next">Tiếp theo</string>
+    <string name="find_meeting_time">Tìm Thời gian Họp</string>
+    <string name="duration_minutes">Thời lượng (phút)</string>
+    <string name="date_range">Khoảng Thời gian</string>
+    <string name="start_date">Ngày Bắt đầu</string>
+    <string name="end_date">Ngày Kết thúc</string>
+    <string name="find_available_times">Tìm Thời gian Rảnh</string>
+    <string name="suggested_times">Thời gian Đề xuất</string>
+    <string name="no_available_times">Không tìm thấy thời gian rảnh</string>
+    <string name="close">Đóng</string>
+
+    <!-- Quick Event -->
+    <string name="quick_event">Sự kiện Nhanh</string>
+    <string name="date">Ngày</string>
+    <string name="add_google_meet_link">Thêm liên kết Google Meet</string>
+    <string name="description_optional">Mô tả (tùy chọn)</string>
 </resources>

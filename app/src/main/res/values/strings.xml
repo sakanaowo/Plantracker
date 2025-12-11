@@ -36,8 +36,8 @@
         <item>@string/language_vietnamese_code</item>
     </string-array>
 
-    <!-- Account Screen -->
-    <string name="account_title">Account</string>
+    <!-- Settings Screen -->
+    <string name="account_title">Settings</string>
     <string name="workspaces_title">Workspaces</string>
     <string name="general_title">General</string>
     <string name="notification_settings" translatable="false">Notification settings</string>
@@ -49,5 +49,96 @@
     <string name="boards">Boards</string>
     <string name="inbox">Inbox</string>
     <string name="activity">Activity</string>
-    <string name="account">Account</string>
+    <string name="account">Settings</string>
+
+    <!-- Events Tab -->
+    <string name="events_and_meetings">Events &amp; Meetings</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="past">Past</string>
+    <string name="recurring">Recurring</string>
+    <string name="no_events">No events</string>
+    <string name="no_events_yet">No events yet</string>
+    <string name="create_first_event">Create first event</string>
+    <string name="create_event">Create event</string>
+    <string name="filter">Filter</string>
+    <string name="search">Search</string>
+    <string name="time">Time</string>
+    <string name="attendees">Attendees</string>
+    <string name="menu">Menu</string>
+    <string name="google_meet">Google Meet</string>
+    <string name="copy_link">Copy link</string>
+    <string name="join">Join</string>
+    <string name="details">Details</string>
+    <string name="edit_event">Edit event</string>
+    <string name="cancel_event">Cancel event</string>
+    <string name="send_reminder">Send reminder</string>
+
+    <!-- Create Event Dialog -->
+    <string name="event_title">Event title</string>
+    <string name="event_date">Event date</string>
+    <string name="event_time">Event time</string>
+    <string name="duration">Duration (minutes)</string>
+    <string name="event_description">Description</string>
+    <string name="event_type">Event type</string>
+    <string name="meeting">Meeting</string>
+    <string name="milestone">Milestone</string>
+    <string name="other">Other</string>
+    <string name="add_attendees">Invite attendees</string>
+    <string name="create_google_meet">Create Google Meet</string>
+    <string name="recurrence">Recurrence</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
+
+    <!-- Calendar Integration -->
+    <string name="sync_with_google_calendar">Sync with Google Calendar</string>
+    <string name="view_in_calendar">View in Calendar</string>
+    <string name="calendar_reminder_settings">Calendar Reminder Settings</string>
+
+    <!-- Meeting Scheduler -->
+    <string name="select_team_members">Select Team Members</string>
+    <string name="choose_members_availability">Choose members to check their availability</string>
+    <string name="search_members">Search members</string>
+    <string name="zero_members_selected">0 members selected</string>
+    <string name="next">Next</string>
+    <string name="find_meeting_time">Find Meeting Time</string>
+    <string name="duration_minutes">Duration (minutes)</string>
+    <string name="date_range">Date Range</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="find_available_times">Find Available Times</string>
+    <string name="suggested_times">Suggested Times</string>
+    <string name="no_available_times">No available times found</string>
+    <string name="close">Close</string>
+
+    <!-- Quick Event -->
+    <string name="quick_event">Quick Event</string>
+    <string name="date">Date</string>
+    <string name="add_google_meet_link">Add Google Meet link</string>
+    <string name="description_optional">Description (optional)</string>
+
+    <!-- Smart Schedule Feature -->
+    <string name="smart_schedule">Smart Schedule</string>
+    <string name="smart_schedule_meeting">Smart Schedule Meeting</string>
+    <string name="smart_schedule_description">AI will analyze everyone\'s calendar and suggest the best times</string>
+    <string name="search_within_date_range">Search within date range</string>
+    <string name="select_date">Select date</string>
+    <string name="from_date">From Date</string>
+    <string name="to_date">To Date</string>
+    <string name="meeting_duration">Meeting Duration</string>
+    <string name="minutes">minutes</string>
+    <string name="participants_required">Participants (required for scheduling)</string>
+    <string name="select_attendees">Select Attendees</string>
+    <string name="analyzing_calendars">Analyzing calendars…</string>
+    <string name="find_best_time_slots">Find Best Time Slots</string>
+    <string name="best_time_slots">Best Time Slots</string>
+    <string name="participants_info_placeholder">3/5 participants available</string>
+    <string name="no_slots">No slots</string>
+    <string name="no_available_slots">No available time slots found</string>
+    <string name="try_adjusting_parameters">Try adjusting the date range or duration</string>
+    <string name="select">Select</string>
+    <string name="score_excellent">Excellent</string>
+    <string name="score_good">Good</string>
+    <string name="score_fair">Fair</string>
+    <string name="score_poor">Poor</string>
 </resources>
+

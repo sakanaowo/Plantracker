@@ -9,6 +9,7 @@ import com.example.tralalero.domain.usecase.task.AddChecklistUseCase;
 import com.example.tralalero.domain.usecase.task.AddCommentUseCase;
 import com.example.tralalero.domain.usecase.task.AssignTaskUseCase;
 import com.example.tralalero.domain.usecase.task.CreateTaskUseCase;
+import com.example.tralalero.domain.usecase.task.CreateQuickTaskUseCase;
 import com.example.tralalero.domain.usecase.task.DeleteTaskUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskAttachmentsUseCase;
 import com.example.tralalero.domain.usecase.task.GetTaskByIdUseCase;
@@ -19,11 +20,17 @@ import com.example.tralalero.domain.usecase.task.MoveTaskToBoardUseCase;
 import com.example.tralalero.domain.usecase.task.UnassignTaskUseCase;
 import com.example.tralalero.domain.usecase.task.UpdateTaskPositionUseCase;
 import com.example.tralalero.domain.usecase.task.UpdateTaskUseCase;
+import com.example.tralalero.domain.usecase.task.UpdateCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteCommentUseCase;
+import com.example.tralalero.domain.usecase.task.DeleteAttachmentUseCase;
+import com.example.tralalero.domain.usecase.task.GetAttachmentViewUrlUseCase;
+import com.example.tralalero.domain.repository.ITaskRepository;
 
 public class TaskViewModelFactory implements ViewModelProvider.Factory {
     private final GetTaskByIdUseCase getTaskByIdUseCase;
     private final GetTasksByBoardUseCase getTasksByBoardUseCase;
     private final CreateTaskUseCase createTaskUseCase;
+    private final CreateQuickTaskUseCase createQuickTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
     private final DeleteTaskUseCase deleteTaskUseCase;
     private final AssignTaskUseCase assignTaskUseCase;
@@ -36,11 +43,17 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
     private final GetTaskAttachmentsUseCase getTaskAttachmentsUseCase;
     private final AddChecklistUseCase addChecklistUseCase;
     private final GetTaskChecklistsUseCase getTaskChecklistsUseCase;
+    private final UpdateCommentUseCase updateCommentUseCase;
+    private final DeleteCommentUseCase deleteCommentUseCase;
+    private final DeleteAttachmentUseCase deleteAttachmentUseCase;
+    private final GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase;
+    private final ITaskRepository repository; // For checklist item operations
 
     public TaskViewModelFactory(
             GetTaskByIdUseCase getTaskByIdUseCase,
             GetTasksByBoardUseCase getTasksByBoardUseCase,
             CreateTaskUseCase createTaskUseCase,
+            CreateQuickTaskUseCase createQuickTaskUseCase,
             UpdateTaskUseCase updateTaskUseCase,
             DeleteTaskUseCase deleteTaskUseCase,
             AssignTaskUseCase assignTaskUseCase,
@@ -52,12 +65,17 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
             AddAttachmentUseCase addAttachmentUseCase,
             GetTaskAttachmentsUseCase getTaskAttachmentsUseCase,
             AddChecklistUseCase addChecklistUseCase,
-            GetTaskChecklistsUseCase getTaskChecklistsUseCase
+            GetTaskChecklistsUseCase getTaskChecklistsUseCase,
+            UpdateCommentUseCase updateCommentUseCase,
+            DeleteCommentUseCase deleteCommentUseCase,
+            DeleteAttachmentUseCase deleteAttachmentUseCase,
+            GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase,
+            ITaskRepository repository
     ) {
-        // Gán tất cả 15 UseCases
         this.getTaskByIdUseCase = getTaskByIdUseCase;
         this.getTasksByBoardUseCase = getTasksByBoardUseCase;
         this.createTaskUseCase = createTaskUseCase;
+        this.createQuickTaskUseCase = createQuickTaskUseCase;
         this.updateTaskUseCase = updateTaskUseCase;
         this.deleteTaskUseCase = deleteTaskUseCase;
         this.assignTaskUseCase = assignTaskUseCase;
@@ -70,6 +88,11 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
         this.getTaskAttachmentsUseCase = getTaskAttachmentsUseCase;
         this.addChecklistUseCase = addChecklistUseCase;
         this.getTaskChecklistsUseCase = getTaskChecklistsUseCase;
+        this.updateCommentUseCase = updateCommentUseCase;
+        this.deleteCommentUseCase = deleteCommentUseCase;
+        this.deleteAttachmentUseCase = deleteAttachmentUseCase;
+        this.getAttachmentViewUrlUseCase = getAttachmentViewUrlUseCase;
+        this.repository = repository;
     }
 
     @NonNull
@@ -80,6 +103,7 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
                     getTaskByIdUseCase,
                     getTasksByBoardUseCase,
                     createTaskUseCase,
+                    createQuickTaskUseCase,
                     updateTaskUseCase,
                     deleteTaskUseCase,
                     assignTaskUseCase,
@@ -91,7 +115,12 @@ public class TaskViewModelFactory implements ViewModelProvider.Factory {
                     addAttachmentUseCase,
                     getTaskAttachmentsUseCase,
                     addChecklistUseCase,
-                    getTaskChecklistsUseCase
+                    getTaskChecklistsUseCase,
+                    updateCommentUseCase,
+                    deleteCommentUseCase,
+                    deleteAttachmentUseCase,
+                    getAttachmentViewUrlUseCase,
+                    repository
             );
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());

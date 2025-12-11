@@ -13,14 +13,24 @@ public class ProjectMapper {
             return null;
         }
         
-        return new Project(
+        // Extract workspace name if available
+        String workspaceName = null;
+        if (dto.getWorkspaces() != null) {
+            workspaceName = dto.getWorkspaces().getName();
+        }
+        
+        Project project = new Project(
             dto.getId(),
             dto.getWorkspaceId(),
             dto.getName(),
             dto.getDescription(),
             dto.getKey(),
-            dto.getBoardType()
+            dto.getBoardType(),
+            dto.getType(),  // Add type field
+            workspaceName
         );
+        
+        return project;
     }
     
     public static ProjectDTO toDto(Project project) {
@@ -35,6 +45,7 @@ public class ProjectMapper {
         dto.setDescription(project.getDescription());
         dto.setKey(project.getKey());
         dto.setBoardType(project.getBoardType());
+        dto.setType(project.getType());  // Add type field
         
         return dto;
     }

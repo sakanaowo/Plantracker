@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:background="@android:color/white">
+
+    <!-- Dialog Title -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calendar Sync Settings" android:textSize="20sp" android:textStyle="bold" android:textColor="#333333" android:layout_marginBottom="8dp"/>
+
+    <!-- Task Title -->
+    <TextView android:id="@+id/tvTaskTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Task Name" android:textSize="14sp" android:textColor="#666666" android:layout_marginBottom="24dp"/>
+
+    <!-- Sync Toggle Section -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sync to Google Calendar" android:textSize="16sp" android:textStyle="bold" android:textColor="#333333"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add this task deadline to your calendar" android:textSize="12sp" android:textColor="#999999" android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchCalendarSync" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="false"/>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="16dp"/>
+
+    <!-- Reminder Time Section -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reminder Time" android:textSize="16sp" android:textStyle="bold" android:textColor="#333333" android:layout_marginBottom="12dp"/>
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Get notified before the task is due" android:textSize="12sp" android:textColor="#999999" android:layout_marginBottom="12dp"/>
+
+    <RadioGroup android:id="@+id/rgReminderTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+
+        <RadioButton android:id="@+id/rb15Minutes" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="15 minutes before" android:textSize="14sp" android:paddingVertical="8dp"/>
+
+        <RadioButton android:id="@+id/rb30Minutes" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="30 minutes before" android:textSize="14sp" android:paddingVertical="8dp" android:checked="true"/>
+
+        <RadioButton android:id="@+id/rb60Minutes" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="1 hour before" android:textSize="14sp" android:paddingVertical="8dp"/>
+    </RadioGroup>
+
+    <!-- Last Synced Info -->
+    <TextView android:id="@+id/tvLastSynced" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Last synced: Never" android:textSize="12sp" android:textColor="#999999" android:layout_marginTop="16dp" android:layout_marginBottom="24dp" android:gravity="center"/>
+
+    <!-- Action Buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cancel" android:textColor="#666666" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_marginEnd="8dp"/>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSave" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Save" android:backgroundTint="#2196F3"/>
+    </LinearLayout>
+
+</LinearLayout>

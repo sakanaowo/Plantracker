@@ -1,149 +1,127 @@
 package com.example.tralalero;
 
+import android.app.Dialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
+import android.view.Window;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.preference.PreferenceManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.GoogleAuthApiService;
+import com.example.tralalero.domain.model.AuthUrlResponse;
 import com.example.tralalero.feature.auth.ui.login.ContinueWithGoogle;
 import com.example.tralalero.feature.auth.ui.login.LoginActivity;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.calendar.CalendarSyncManager;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
+import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.presentation.viewmodel.AuthViewModel;
+import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-/**
- * MainActivity - Splash/Welcome screen with auth check
- *
- * Phase 6 Fix:
- * - Check Firebase auth state properly
- * - Validate token before navigating to Home
- * - Auto-refresh expired tokens
- * - Proper error handling
- */
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    
+    private AuthViewModel authViewModel;
+    private GoogleAuthApiService googleAuthApiService;
+    private CalendarSyncManager calendarSyncManager;
+    private boolean isFirstLogin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isDarkMode = prefs.getBoolean("theme", false);
-
-        // Áp dụng theme
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
-
         super.onCreate(savedInstanceState);
+        
+        // Set loading layout để tránh màn hình trắng khi hiện dialog
+        setContentView(R.layout.activity_loading);
+        
+        // Initialize managers
+        calendarSyncManager = CalendarSyncManager.getInstance(this);
+        googleAuthApiService = ApiClient.get(App.authManager).create(GoogleAuthApiService.class);
+        
+        // Check if this is a first login (from intent extra)
+        isFirstLogin = getIntent().getBooleanExtra("is_first_login", false);
+        
+        Log.d(TAG, "onCreate: isFirstLogin=" + isFirstLogin);
+        
+        // Setup ViewModel
+        setupViewModel();
+        
+        // Observe auth state for auto-redirect
+        observeViewModel();
+        
+        // AuthViewModel constructor auto-checks session via checkStoredSession()
+        // Observer will handle navigation based on isLoggedIn state
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Check authentication state when the activity becomes visible
-        checkAuthenticationState();
+        // DO NOTHING - LiveData auto-updates via ViewModel
     }
 
-    /**
-     * Check authentication state with proper token validation
-     * Phase 6 Fix: Enhanced auth checking
-     */
-    private void checkAuthenticationState() {
-        Log.d(TAG, "=== Checking Authentication State ===");
-
-        // Check Firebase Auth
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (firebaseUser != null) {
-            Log.d(TAG, "Firebase user found: " + firebaseUser.getEmail());
-
-            // Validate token and navigate
-            validateTokenAndNavigate(firebaseUser);
-        } else {
-            Log.d(TAG, "No Firebase user, showing login screen");
-            showLoginScreen();
-        }
+    private void setupViewModel() {
+        authViewModel = new ViewModelProvider(
+            this,
+            ViewModelFactoryProvider.provideAuthViewModelFactory()
+        ).get(AuthViewModel.class);
     }
 
-    /**
-     * Validate Firebase token before navigating to Home
-     */
-    private void validateTokenAndNavigate(FirebaseUser firebaseUser) {
-        // Get fresh token to validate
-        firebaseUser.getIdToken(true) // Force refresh
-                .addOnSuccessListener(result -> {
-                    String token = result.getToken();
-                    if (token != null && !token.isEmpty()) {
-                        Log.d(TAG, "✅ Valid token obtained, navigating to Home");
-                        Log.d(TAG, "Token length: " + token.length());
-
-                        // Save token to TokenManager
-                        if (App.tokenManager != null) {
-                            App.tokenManager.saveAuthData(
-                                    token,
-                                    firebaseUser.getUid(),
-                                    firebaseUser.getEmail(),
-                                    firebaseUser.getDisplayName()
-                            );
-                            Log.d(TAG, "Token saved to TokenManager");
-                        }
-
-                        // Navigate to Home
-                        navigateToHome();
-                    } else {
-                        Log.e(TAG, "❌ Token is null or empty");
-                        showLoginScreen();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ Failed to get token: " + e.getMessage(), e);
-
-                    // Token validation failed, sign out and show login
-                    FirebaseAuth.getInstance().signOut();
-                    if (App.authManager != null) {
-                        App.authManager.clearCache();
-                    }
-                    if (App.tokenManager != null) {
-                        App.tokenManager.clearAuthData();
-                    }
-
-                    Toast.makeText(this,
-                            "Session expired. Please login again.",
-                            Toast.LENGTH_LONG).show();
-
+    private void observeViewModel() {
+        // Observe auth state for auto-navigation
+        authViewModel.getAuthState().observe(this, state -> {
+            Log.d(TAG, "AuthState changed: " + state);
+            
+            switch (state) {
+                case LOGIN_SUCCESS:
+                case SIGNUP_SUCCESS:
+                    // User is logged in - navigate to Home
+                    navigateToHome();
+                    break;
+                case IDLE:
+                case LOGGED_OUT:
+                case LOGIN_ERROR:
+                case SIGNUP_ERROR:
+                    // User is not logged in - show login screen
                     showLoginScreen();
-                });
+                    break;
+                case LOGGING_IN:
+                case SIGNING_UP:
+                    // Do nothing during login/signup process
+                    break;
+            }
+        });
     }
 
-    /**
-     * Navigate to Home screen
-     */
     private void navigateToHome() {
-        Log.d(TAG, "Navigating to HomeActivity");
-        Intent intent = new Intent(this, HomeActivity.class);
+        Log.d(TAG, "Navigating to MainContainerActivity");
+        
+        // Điều hướng về trang chủ ngay lập tức
+        Intent intent = new Intent(this, MainContainerActivity.class);
+        intent.putExtra("check_calendar_sync", true); // Flag để MainContainerActivity kiểm tra
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
 
-    /**
-     * Show login screen
-     */
+
     private void showLoginScreen() {
         Log.d(TAG, "Showing login screen");
 
@@ -155,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Navigate to Login
         Button btnSignin = findViewById(R.id.btn_signin);
         if (btnSignin != null) {
             btnSignin.setOnClickListener(v -> {
@@ -163,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Navigate to Sign Up
         Button btnSignup = findViewById(R.id.btn_signup);
         if (btnSignup != null) {
             btnSignup.setOnClickListener(v -> {
@@ -171,7 +147,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Navigate to Continue With Google
         Button continueWithGoogle = findViewById(R.id.btn_google);
         if (continueWithGoogle != null) {
             continueWithGoogle.setOnClickListener(v -> {
@@ -180,4 +155,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+    
+
 }

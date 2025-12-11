@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trello-style Label Chip: Compact, rounded, colored -->
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/chipLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:clickable="false" android:focusable="false" app:chipMinHeight="20dp" app:chipStartPadding="6dp" app:chipEndPadding="6dp" android:textSize="10sp" android:textStyle="bold" app:chipCornerRadius="3dp" app:chipBackgroundColor="@android:color/holo_blue_light" />

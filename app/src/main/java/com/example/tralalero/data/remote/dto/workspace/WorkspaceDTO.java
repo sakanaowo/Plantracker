@@ -15,6 +15,9 @@ public class WorkspaceDTO {
     @SerializedName("ownerId")  
     private String ownerId;
 
+    @SerializedName("is_owner")  
+    private boolean isOwner;
+
     @SerializedName("createdAt")  
     private String createdAt;
 
@@ -51,6 +54,14 @@ public class WorkspaceDTO {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public boolean isOwner() {
+        return isOwner;
+    }
+
+    public void setOwner(boolean owner) {
+        isOwner = owner;
     }
 
     public String getCreatedAt() {

@@ -53,6 +53,8 @@ public interface ITaskRepository {
 
     void deleteAttachment(String attachmentId, RepositoryCallback<Void> callback);
 
+    void getAttachmentViewUrl(String attachmentId, RepositoryCallback<String> callback);
+
     void getComments(String taskId, RepositoryCallback<List<TaskComment>> callback);
 
     void addComment(String taskId, TaskComment comment, RepositoryCallback<TaskComment> callback);
@@ -69,9 +71,23 @@ public interface ITaskRepository {
 
     void deleteChecklist(String checklistId, RepositoryCallback<Void> callback);
 
+    // Checklist Item operations
+    void addChecklistItem(String checklistId, com.example.tralalero.domain.model.ChecklistItem item, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void updateChecklistItemContent(String itemId, String content, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void toggleChecklistItem(String itemId, RepositoryCallback<com.example.tralalero.domain.model.ChecklistItem> callback);
+
+    void deleteChecklistItem(String itemId, RepositoryCallback<Void> callback);
+
     void addLabel(String taskId, String labelId, RepositoryCallback<Void> callback);
 
     void removeLabel(String taskId, String labelId, RepositoryCallback<Void> callback);
+    
+    /**
+     * Clear all cached tasks - forces fresh fetch from API on next load
+     */
+    void clearCache();
 
     interface RepositoryCallback<T> {
         void onSuccess(T result);

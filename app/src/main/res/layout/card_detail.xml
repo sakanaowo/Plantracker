@@ -1,500 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/white">
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#FFFFFF" android:fillViewport="true">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#FFFFFF">
 
-        <!-- Top bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingBottom="8dp">
+        <!-- Top Bar with Back and Actions -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:background="#FFFFFF">
 
-            <ImageView
-                android:id="@+id/ivClose"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_close"
-                android:padding="4dp"
-                android:contentDescription="Close" />
+            <ImageView android:id="@+id/ivClose" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_arrow_back" android:padding="8dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Back" app:tint="#212121"/>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
 
-                <!-- Task Title - Bold -->
-                <EditText
-                    android:id="@+id/etTaskTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Task Title"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black"
-                    android:background="@android:color/transparent"
-                    android:hint="Enter task title"
-                    android:inputType="text"
-                    android:maxLines="2" />
+            <ImageView android:id="@+id/ivMore" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_more" android:padding="8dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="More" app:tint="#212121"/>
+        </LinearLayout>
 
-                <!-- Board Name - Gray text below -->
-                <TextView
-                    android:id="@+id/tvBoardName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="In Board Name"
-                    android:textSize="14sp"
-                    android:textColor="#888888" />
+        <!-- Content Container -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp" android:background="#FFFFFF">
+
+            <!-- Project Badge -->
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/rounded_badge" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_marginBottom="12dp">
+
+                <!--                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_project" app:tint="#B29DD7"/>-->
+
+                <TextView android:id="@+id/tvProjectBadge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="12sp" android:textColor="#1565C0" android:textStyle="bold" android:layout_marginStart="6dp"/>
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Removed old RadioButton completely -->
-        <!-- Removed Status block -->
+            <!-- Task Title with Quick Assign -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
 
-        <!-- Quick Actions -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Quick Actions"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:paddingBottom="8dp"/>
+                <EditText android:id="@+id/etTaskTitle" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Task Title" android:textSize="20sp" android:textStyle="bold" android:textColor="#212121" android:background="@android:color/transparent" android:hint="Enter task title" android:textColorHint="#999999" android:inputType="textCapSentences|textMultiLine" android:maxLines="3"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            android:layout_marginTop="8dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnQuickAssign" android:layout_width="40dp" android:layout_height="40dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" app:icon="@drawable/acc_icon" app:iconPadding="0dp" app:iconGravity="textStart" app:iconSize="20dp" app:iconTint="#4CAF50" app:cornerRadius="20dp" app:backgroundTint="#1B5E20" android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnMembers"
-                style="@style/SquareOutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1"
-                android:text="Assign Task"
-                app:icon="@drawable/acc_icon" />
+            <!-- Board Status -->
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnBoardStatus" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="wrap_content" android:layout_height="36dp" android:text="In Progress" android:textSize="13sp" android:textColor="#2196F3" app:strokeColor="#2196F3" app:cornerRadius="6dp" app:icon="@drawable/ic_dropdown" app:iconGravity="end" app:iconTint="#2196F3" app:iconSize="18dp" android:layout_marginBottom="16dp" android:paddingStart="12dp" android:paddingEnd="8dp"/>
 
-            <View
-                android:layout_width="8dp"
-                android:layout_height="match_parent" />
+            <!-- Description Section -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Description" android:textSize="14sp" android:textColor="#666666" android:layout_marginBottom="8dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAddAttachment"
-                style="@style/SquareOutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1"
-                android:text="Add Attachment"
-                app:icon="@drawable/pin_svg" />
-        </LinearLayout>
+            <EditText android:id="@+id/etDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="Add a description..." android:textColorHint="#999999" android:padding="0dp" android:minHeight="80dp" android:gravity="top" android:inputType="textMultiLine|textCapSentences" android:maxLines="10" android:textSize="14sp" android:textColor="#212121" android:layout_marginBottom="16dp"/>
 
-        <!-- Second row of Quick Actions -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            android:layout_marginTop="8dp">
+            <!-- Attachments Dropdown -->
+            <LinearLayout android:id="@+id/layoutAttachments" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/rounded_section_light" android:padding="12dp" android:layout_marginBottom="8dp" android:clickable="true" android:focusable="true">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAddComment"
-                style="@style/SquareOutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1"
-                android:text="Add Comment"
-                app:icon="@drawable/ib_icon" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Attachments" android:textSize="14sp" android:textColor="#212121"/>
 
-            <View
-                android:layout_width="8dp"
-                android:layout_height="match_parent" />
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDeleteTask"
-                style="@style/SquareOutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1"
-                android:text="Delete Task"
-                android:textColor="#F44336"
-                app:iconTint="#F44336"
-                app:icon="@drawable/trash_icon" />
-        </LinearLayout>
+                <TextView android:id="@+id/tvAttachmentCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="12sp" android:textColor="#666666" android:layout_marginEnd="8dp" android:visibility="gone"/>
 
+                <ImageView android:id="@+id/ivAddAttachment" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/add_ic" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Add attachment" app:tint="#4CAF50" android:layout_marginEnd="8dp"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_vertical">
+                <ImageView android:id="@+id/ivAttachmentDropdown" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_dropdown" app:tint="#666666"/>
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Description"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:minWidth="100dp"
-                android:layout_margin="8dp"/>
+            <!-- Attachments List (Initially Hidden) -->
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvAttachments" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:nestedScrollingEnabled="false" android:visibility="gone" android:layout_marginBottom="8dp" android:maxHeight="200dp"/>
 
-            <EditText
-                android:id="@+id/etDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@android:drawable/edit_text"
-                android:hint="Enter description"
-                android:padding="8dp"
-                android:minHeight="48dp" />
-        </LinearLayout>
+            <TextView android:id="@+id/tvNoAttachments" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No attachments yet" android:textSize="13sp" android:textColor="#666666" android:paddingTop="8dp" android:paddingBottom="8dp" android:gravity="center" android:visibility="gone"/>
 
-        <!-- Date pickers -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="12dp">
+            <!-- Details Dropdown -->
+            <LinearLayout android:id="@+id/layoutDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/rounded_section_light" android:padding="12dp" android:layout_marginBottom="8dp" android:clickable="true" android:focusable="true">
 
-            <!-- Start Date Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Details" android:textSize="14sp" android:textColor="#212121"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/clock_ic"
-                        app:tint="#4CAF50" />
+                <ImageView android:id="@+id/ivDetailsDropdown" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_dropdown" app:tint="#666666" android:rotation="180"/>
+            </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="12dp">
+            <!-- Details Content (Expanded by default) -->
+            <LinearLayout android:id="@+id/layoutDetailsContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/rounded_section_light" android:padding="16dp" android:layout_marginBottom="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Start Date"
-                            android:textSize="12sp"
-                            android:textColor="#888888" />
+                <!-- Assignees (Multiple) -->
+                <LinearLayout android:id="@+id/layoutAssignee" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="12dp" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
 
-                        <EditText
-                            android:id="@+id/etDateStart"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@android:color/transparent"
-                            android:hint="Select start date"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
-                            android:focusable="false"
-                            android:clickable="true"
-                            android:inputType="none" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+
+                        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Assignees" android:textSize="12sp" android:textColor="#999999"/>
+
+                        <ImageView android:id="@+id/ivAddAssignee" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/add_ic" app:tint="#4CAF50" android:contentDescription="Add assignee"/>
+                    </LinearLayout>
+
+                    <!-- RecyclerView for multiple assignees -->
+                    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvAssignees" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal" android:nestedScrollingEnabled="false" android:visibility="gone"/>
+
+                    <TextView android:id="@+id/tvNoAssignees" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No assignees yet" android:textSize="14sp" android:textColor="#666666" android:layout_marginTop="8dp"/>
+                </LinearLayout>
+
+                <!-- Priority -->
+                <LinearLayout android:id="@+id/layoutPriority" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="12dp" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Priority" android:textSize="12sp" android:textColor="#999999" android:layout_marginBottom="6dp"/>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+
+                        <View android:id="@+id/viewPriorityIndicator" android:layout_width="3dp" android:layout_height="20dp" android:background="#FF9800"/>
+
+                        <TextView android:id="@+id/tvPriority" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Medium" android:textSize="14sp" android:textColor="#212121" android:layout_marginStart="10dp"/>
                     </LinearLayout>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Due Date Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="8dp">
+                <!-- Labels -->
+                <LinearLayout android:id="@+id/layoutLabels" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="12dp" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Labels" android:textSize="12sp" android:textColor="#999999" android:layout_marginBottom="6dp"/>
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/square_ic"
-                        app:tint="#FF5722" />
+                    <HorizontalScrollView android:id="@+id/scrollViewLabels" android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:visibility="gone">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="12dp">
+                        <LinearLayout android:id="@+id/layoutSelectedLabels" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal"/>
+                    </HorizontalScrollView>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Due Date"
-                            android:textSize="12sp"
-                            android:textColor="#888888" />
+                    <TextView android:id="@+id/tvNoLabels" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="None" android:textSize="14sp" android:textColor="#666666"/>
+                </LinearLayout>
 
-                        <EditText
-                            android:id="@+id/etDueDate"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@android:color/transparent"
-                            android:hint="Select due date"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
-                            android:focusable="false"
-                            android:clickable="true"
-                            android:inputType="none" />
+                <!-- Dates Row -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp" android:weightSum="2">
+
+                    <!-- Start Date -->
+                    <LinearLayout android:id="@+id/layoutStartDate" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginEnd="8dp" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Start Date" android:textSize="12sp" android:textColor="#999999" android:layout_marginBottom="6dp"/>
+
+                        <EditText android:id="@+id/etStartDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="Select date" android:textColorHint="#999999" android:textSize="14sp" android:textColor="#212121" android:focusable="false" android:clickable="true" android:inputType="none" android:padding="0dp"/>
+                    </LinearLayout>
+
+                    <!-- Due Date -->
+                    <LinearLayout android:id="@+id/layoutDueDate" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Due Date" android:textSize="12sp" android:textColor="#999999" android:layout_marginBottom="6dp"/>
+
+                        <EditText android:id="@+id/etDueDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="Select date" android:textColorHint="#999999" android:textSize="14sp" android:textColor="#212121" android:focusable="false" android:clickable="true" android:inputType="none" android:padding="0dp"/>
                     </LinearLayout>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Timer Card -->
-<!--            <com.google.android.material.card.MaterialCardView-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:cardElevation="2dp"-->
-<!--                app:cardCornerRadius="8dp">-->
+                <!-- Calendar Sync -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
 
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:gravity="center_vertical"-->
-<!--                    android:padding="12dp">-->
+                    <ImageView android:id="@+id/ivCalendarIcon" android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_google_calendar" app:tint="#4CAF50"/>
 
-<!--                    <ImageView-->
-<!--                        android:layout_width="24dp"-->
-<!--                        android:layout_height="24dp"-->
-<!--                        android:src="@drawable/clock_ic"-->
-<!--                        android:tint="#2196F3" />-->
+                    <TextView android:id="@+id/tvCalendarSyncStatus" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Sync with Google Calendar" android:textSize="13sp" android:textColor="#999999" android:layout_marginStart="10dp"/>
 
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:orientation="vertical"-->
-<!--                        android:layout_marginStart="12dp">-->
+                    <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchCalendarSync" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="false" android:enabled="false" app:thumbTint="@android:color/white" app:trackTint="#666666"/>
+                </LinearLayout>
 
-<!--                        <TextView-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="Timer"-->
-<!--                            android:textSize="12sp"-->
-<!--                            android:textColor="#888888" />-->
+                <!-- Calendar Details (Hidden) -->
+                <LinearLayout android:id="@+id/layoutCalendarDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone">
 
-<!--                        <TextView-->
-<!--                            android:id="@+id/tvTimer"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="00:00:00"-->
-<!--                            android:textSize="16sp"-->
-<!--                            android:textColor="@android:color/black" />-->
-<!--                    </LinearLayout>-->
+                    <TextView android:id="@+id/tvCalendarEventInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#666666" android:text="📅 Event will be created when saved"/>
 
-<!--                    <ImageButton-->
-<!--                        android:id="@+id/btnPlay"-->
-<!--                        android:layout_width="40dp"-->
-<!--                        android:layout_height="40dp"-->
-<!--                        android:background="?attr/selectableItemBackgroundBorderless"-->
-<!--                        android:src="@drawable/ic_play"-->
-<!--                        android:scaleType="fitCenter"-->
-<!--                        android:contentDescription="Play/Pause timer" />-->
-<!--                </LinearLayout>-->
-<!--            </com.google.android.material.card.MaterialCardView>-->
-        </LinearLayout>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnViewInCalendar" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginTop="8dp" android:text="View in Calendar" android:textSize="12sp" android:textColor="#4CAF50" style="@style/Widget.MaterialComponents.Button.TextButton" app:icon="@drawable/ic_open_in_new" app:iconTint="#4CAF50" app:iconSize="16dp" android:visibility="gone" android:minWidth="0dp"/>
 
-        <!-- Members Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Members"
-                android:gravity="center_vertical"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:textColor="@android:color/black"
-                android:drawableStart="@drawable/acc_icon"
-                android:drawablePadding="8dp"
-                android:layout_marginBottom="8dp"/>
-
-            <!-- Members list will be populated dynamically -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvMembers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:visibility="gone"/>
-
-            <TextView
-                android:id="@+id/tvNoMembers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No members assigned"
-                android:textSize="12sp"
-                android:textColor="#888888"
-                android:padding="8dp"/>
-        </LinearLayout>
-
-        <!-- Todolist Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="16dp">
-
-            <TextView
-                android:id="@+id/tvTodolistHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Todolist"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
-
-            <!-- Todolist items - expandable -->
-            <LinearLayout
-                android:id="@+id/llTodolistContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No todolist items"
-                    android:textSize="12sp"
-                    android:textColor="#888888"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnCalendarSyncSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Reminder Settings" android:textSize="13sp" android:textColor="#4CAF50" style="@style/Widget.MaterialComponents.Button.TextButton" app:icon="@drawable/ic_sync" app:iconTint="#4CAF50" app:iconSize="18dp" app:cornerRadius="6dp"/>
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Attachment Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="8dp">
+            <!-- Save Button (Visible on changes) -->
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSaveChanges" android:layout_width="match_parent" android:layout_height="56dp" android:text="Save Changes" android:textSize="15sp" android:textColor="#FFFFFF" android:textStyle="bold" app:backgroundTint="#4CAF50" app:cornerRadius="8dp" android:layout_marginBottom="16dp" android:visibility="gone" app:icon="@drawable/ic_check" app:iconGravity="textStart" app:iconTint="#FFFFFF"/>
 
-            <TextView
-                android:id="@+id/tvAttachmentHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Attachment"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
+            <!-- Comments Section -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp">
 
-            <!-- Attachment items - expandable -->
-            <LinearLayout
-                android:id="@+id/llAttachmentContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
+                <!-- Comments Input -->
+                <LinearLayout android:id="@+id/layoutCommentInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/rounded_section_light" android:padding="8dp" android:gravity="center_vertical" android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No attachments"
-                    android:textSize="12sp"
-                    android:textColor="#888888"/>
+                    <EditText android:id="@+id/etNewComment" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Add a comment..." android:textColorHint="#999999" android:minLines="1" android:maxLines="4" android:background="@android:color/transparent" android:padding="8dp" android:textSize="14sp" android:textColor="#212121" android:inputType="textMultiLine|textCapSentences"/>
+
+                    <ImageButton android:id="@+id/btnSendComment" android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_send" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Send comment" android:scaleType="centerInside" android:padding="6dp" app:tint="#666666"/>
+                </LinearLayout>
+
+                <!-- Comments RecyclerView -->
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvComments" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:nestedScrollingEnabled="false" android:maxHeight="300dp"/>
+
+                <TextView android:id="@+id/tvNoComments" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No comments yet" android:textSize="13sp" android:textColor="#666666" android:paddingTop="8dp" android:paddingBottom="8dp" android:gravity="center"/>
             </LinearLayout>
+
         </LinearLayout>
 
-        <!-- Comments Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="8dp">
-
-            <TextView
-                android:id="@+id/tvCommentsHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Comments"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
-
-            <!-- Comments container - expandable, will be populated dynamically -->
-            <LinearLayout
-                android:id="@+id/llCommentsContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:background="#F8F8F8"
-                android:padding="8dp">
-
-                <!-- No comments placeholder -->
-                <TextView
-                    android:id="@+id/tvNoComments"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No comments yet"
-                    android:textSize="12sp"
-                    android:textColor="#888888"
-                    android:padding="8dp"
-                    android:gravity="center"/>
+        <!-- Bottom Buttons (Hidden - for compatibility) -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnMembers" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnDeleteTask" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnConfirm" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnLowPriority" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnMediumPriority" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnHighPriority" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvBoardName" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <ImageView android:id="@+id/ivAddChecklist" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvChecklist" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvNoChecklist" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <LinearLayout android:id="@+id/labelLayout" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvNoAttachments" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <LinearLayout android:id="@+id/layoutCardUploadProgress" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <TextView android:id="@+id/tvCardUploadProgress" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <ProgressBar android:id="@+id/progressBarCardUpload" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             </LinearLayout>
+            <TextView android:id="@+id/tvReporterInitials" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvReporterName" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>
 
-        <!-- Confirm Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnConfirm"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="16dp"
-            android:text="Add Card"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            app:cornerRadius="8dp"
-            app:backgroundTint="#4CAF50" />
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

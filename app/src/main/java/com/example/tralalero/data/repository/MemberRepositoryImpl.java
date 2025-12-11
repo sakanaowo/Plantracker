@@ -1,0 +1,168 @@
+package com.example.tralalero.data.repository;
+
+import android.app.Application;
+import android.content.Context;
+import android.util.Log;
+
+import com.example.tralalero.auth.remote.AuthManager;
+import com.example.tralalero.data.remote.api.MemberApiService;
+import com.example.tralalero.data.remote.dto.member.*;
+import com.example.tralalero.data.mapper.MemberMapper;
+import com.example.tralalero.domain.model.Member;
+import com.example.tralalero.domain.repository.IMemberRepository;
+import com.example.tralalero.network.ApiClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import java.util.List;
+
+public class MemberRepositoryImpl implements IMemberRepository {
+    
+    private static final String TAG = "MemberRepository";
+    private MemberApiService apiService;
+
+    public MemberRepositoryImpl(Context context) {
+        Application app = (Application) context.getApplicationContext();
+        AuthManager authManager = new AuthManager(app);
+        this.apiService = ApiClient.get(authManager).create(MemberApiService.class);
+    }
+
+    @Override
+    public void inviteMember(String projectId, String email, String role,
+                            IMemberRepository.RepositoryCallback<Member> callback) {
+        Log.d(TAG, "Inviting member: " + email + " with role: " + role);
+        
+        InviteMemberDTO dto = new InviteMemberDTO(email, role);
+        
+        apiService.inviteMember(projectId, dto).enqueue(new Callback<MemberDTO>() {
+            @Override
+            public void onResponse(Call<MemberDTO> call, Response<MemberDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Member invited successfully");
+                    Member member = MemberMapper.toDomain(response.body());
+                    callback.onSuccess(member);
+                } else {
+                    String error = "Failed to invite member: " + response.code();
+                    Log.e(TAG, error);
+                    callback.onError(error);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MemberDTO> call, Throwable t) {
+                Log.e(TAG, "Network error: " + t.getMessage());
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void getProjectMembers(String projectId,
+                                 IMemberRepository.RepositoryCallback<List<Member>> callback) {
+        Log.d(TAG, "Fetching members for projectId: " + projectId);
+        
+        apiService.getMembers(projectId).enqueue(
+            new Callback<List<MemberDTO>>() {
+                @Override
+                public void onResponse(Call<List<MemberDTO>> call,
+                                     Response<List<MemberDTO>> response) {
+                    Log.d(TAG, "Response code: " + response.code());
+                    Log.d(TAG, "Response body null? " + (response.body() == null));
+                    
+                    if (response.isSuccessful() && response.body() != null) {
+                        Log.d(TAG, "Raw response size: " + response.body().size());
+                        List<Member> members = MemberMapper.toDomainList(response.body());
+                        Log.d(TAG, "Mapped members: " + members.size());
+                        
+                        // Debug: print each member
+                        for (Member m : members) {
+                            Log.d(TAG, "  - Member ID: " + m.getId() + 
+                                      ", UserId: " + m.getUserId() + 
+                                      ", User: " + (m.getUser() != null ? m.getUser().getName() : "NULL"));
+                        }
+                        
+                        callback.onSuccess(members);
+                    } else {
+                        String error = "Failed to load members: " + response.code();
+                        Log.e(TAG, error);
+                        
+                        // Try to log error body
+                        try {
+                            if (response.errorBody() != null) {
+                                Log.e(TAG, "Error body: " + response.errorBody().string());
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not read error body", e);
+                        }
+                        
+                        callback.onError(error);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<MemberDTO>> call,
+                                    Throwable t) {
+                    Log.e(TAG, "Network error: " + t.getMessage());
+                    callback.onError(t.getMessage());
+                }
+            }
+        );
+    }
+
+    @Override
+    public void updateMemberRole(String projectId, String memberId, String role,
+                                IMemberRepository.RepositoryCallback<Member> callback) {
+        Log.d(TAG, "Updating member role: " + memberId + " to " + role);
+        
+        UpdateMemberRoleDTO dto = new UpdateMemberRoleDTO(role);
+        
+        apiService.updateMemberRole(projectId, memberId, dto).enqueue(new Callback<MemberDTO>() {
+            @Override
+            public void onResponse(Call<MemberDTO> call, Response<MemberDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Role updated successfully");
+                    Member member = MemberMapper.toDomain(response.body());
+                    callback.onSuccess(member);
+                } else {
+                    String error = "Failed to update role: " + response.code();
+                    Log.e(TAG, error);
+                    callback.onError(error);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MemberDTO> call, Throwable t) {
+                Log.e(TAG, "Network error: " + t.getMessage());
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void removeMember(String projectId, String memberId,
+                           IMemberRepository.RepositoryCallback<Void> callback) {
+        Log.d(TAG, "Removing member: " + memberId);
+        
+        apiService.removeMember(projectId, memberId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Member removed successfully");
+                    callback.onSuccess(null);
+                } else {
+                    String error = "Failed to remove member: " + response.code();
+                    Log.e(TAG, error);
+                    callback.onError(error);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Network error: " + t.getMessage());
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+}

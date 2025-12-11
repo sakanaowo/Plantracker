@@ -4,13 +4,15 @@
     <color name="white">#FFFFFFFF</color>
     <color name="link_normal">#1E88E5</color>
     <color name="link_pressed">#1565C0</color>
-    
+
     <!-- Primary colors -->
     <color name="primary">#6200EE</color>
     <color name="primary_dark">#3700B3</color>
+    <color name="primary_light">#BB86FC</color>
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
+    <color name="secondary">#03DAC5</color>
 
     <!-- Error color -->
     <color name="error">#D32F2F</color>
@@ -21,4 +23,29 @@
     <color name="on_surface">#000000</color>
     <color name="on_surface_variant">#666666</color>
     <color name="divider">#E0E0E0</color>
+    <color name="outline_variant">#E0E0E0</color>
+
+    <!-- Notification colors (DEV 2) -->
+    <color name="notification_snackbar_bg">#323232</color>
+    <color name="notification_action_color">#03DAC5</color>
+    <color name="notification_badge_bg">#FF3B30</color>
+    <color name="notification_badge_text">#FFFFFF</color>
+
+    <!-- Text colors (DEV 1) -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+
+    <!-- Role colors (DEV 1) -->
+    <color name="role_owner">#FF6B6B</color>
+    <color name="role_admin">#4ECDC4</color>
+    <color name="role_member">#45B7D1</color>
+    <color name="role_viewer">#95E1D3</color>
+
+    <!-- Priority colors -->
+    <color name="priority_low">#4CAF50</color>    <!-- green -->
+    <color name="priority_medium">#FF9800</color>    <!-- orange -->
+    <color name="priority_high">#F44336</color>    <!-- red -->
+
+    <!-- Drag & Drop colors -->
+    <color name="drag_target_highlight">#E3F2FD</color>    <!-- Light blue highlight -->
 </resources>

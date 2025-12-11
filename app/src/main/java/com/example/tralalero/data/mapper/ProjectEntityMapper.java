@@ -58,7 +58,8 @@ public class ProjectEntityMapper {
             entity.getName(),
             entity.getDescription(),
             entity.getKey(),
-            entity.getBoardType() != null ? entity.getBoardType() : "KANBAN"
+            entity.getBoardType() != null ? entity.getBoardType() : "KANBAN",
+            null  // Type not stored in entity cache
         );
     }
     

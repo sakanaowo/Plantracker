@@ -8,6 +8,8 @@ public class TaskComment {
     private final String userId;
     private final String body; 
     private final Date createdAt;
+    private final String userName;
+    private final String userAvatarUrl;
 
     public TaskComment(String id, String taskId, String userId, String body, Date createdAt) {
         this.id = id;
@@ -15,6 +17,19 @@ public class TaskComment {
         this.userId = userId;
         this.body = body;
         this.createdAt = createdAt;
+        this.userName = null;
+        this.userAvatarUrl = null;
+    }
+    
+    public TaskComment(String id, String taskId, String userId, String body, Date createdAt, 
+                      String userName, String userAvatarUrl) {
+        this.id = id;
+        this.taskId = taskId;
+        this.userId = userId;
+        this.body = body;
+        this.createdAt = createdAt;
+        this.userName = userName;
+        this.userAvatarUrl = userAvatarUrl;
     }
 
     public String getId() { return id; }
@@ -22,6 +37,8 @@ public class TaskComment {
     public String getUserId() { return userId; }
     public String getBody() { return body; }
     public Date getCreatedAt() { return createdAt; }
+    public String getUserName() { return userName; }
+    public String getUserAvatarUrl() { return userAvatarUrl; }
 
     public boolean isEmpty() {
         return body == null || body.trim().isEmpty();
@@ -41,6 +58,20 @@ public class TaskComment {
         if (isEmpty()) return "";
         if (body.length() <= maxLength) return body;
         return body.substring(0, maxLength) + "...";
+    }
+    
+    /**
+     * Get user initials for avatar fallback
+     * E.g. "John Doe" -> "JD"
+     * Similar to ActivityLog.getUserInitials()
+     */
+    public String getUserInitials() {
+        String displayName = userName != null && !userName.isEmpty() ? userName : "Unknown User";
+        String[] parts = displayName.trim().split("\\s+");
+        if (parts.length >= 2) {
+            return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+        }
+        return displayName.substring(0, Math.min(2, displayName.length())).toUpperCase();
     }
 
     @Override

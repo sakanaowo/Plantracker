@@ -1,11 +1,16 @@
 package com.example.tralalero.domain.model;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
-public class Task {
+public class Task implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final String id;
     private final String projectId;
     private final String boardId;
+    private final String boardName; // Board name from boards relation
     private final String title;
     private final String description;
     private final String issueKey; 
@@ -30,6 +35,18 @@ public class Task {
 
     private final Date createdAt;
     private final Date updatedAt;
+    
+    // Calendar Sync Fields
+    private final boolean calendarSyncEnabled;
+    private final List<Integer> calendarReminderMinutes;
+    private final String calendarEventId;
+    private final Date calendarSyncedAt;
+    
+    // Labels
+    private final List<Label> labels;
+    
+    // Assignees
+    private final List<AssigneeInfo> assignees;
 
     public Task(String id, String projectId, String boardId, String title, String description,
                 String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
@@ -37,9 +54,43 @@ public class Task {
                 String epicId, String parentTaskId, Date startAt, Date dueAt,
                 Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
                 Date createdAt, Date updatedAt) {
+        this(id, projectId, boardId, null, title, description, issueKey, type, status, priority,
+             position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
+             storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
+             false, null, null, null, null, null);
+    }
+    
+    // Constructor WITHOUT boardName (backward compatibility)
+    public Task(String id, String projectId, String boardId, String title, String description,
+                String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
+                double position, String assigneeId, String createdBy, String sprintId,
+                String epicId, String parentTaskId, Date startAt, Date dueAt,
+                Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
+                Date createdAt, Date updatedAt,
+                boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
+                String calendarEventId, Date calendarSyncedAt, List<Label> labels, 
+                List<AssigneeInfo> assignees) {
+        this(id, projectId, boardId, null, title, description, issueKey, type, status, priority,
+             position, assigneeId, createdBy, sprintId, epicId, parentTaskId, startAt, dueAt,
+             storyPoints, originalEstimateSec, remainingEstimateSec, createdAt, updatedAt,
+             calendarSyncEnabled, calendarReminderMinutes, calendarEventId, calendarSyncedAt, 
+             labels, assignees);
+    }
+    
+    // Constructor WITH boardName (full)
+    public Task(String id, String projectId, String boardId, String boardName, String title, String description,
+                String issueKey, TaskType type, TaskStatus status, TaskPriority priority,
+                double position, String assigneeId, String createdBy, String sprintId,
+                String epicId, String parentTaskId, Date startAt, Date dueAt,
+                Integer storyPoints, Integer originalEstimateSec, Integer remainingEstimateSec,
+                Date createdAt, Date updatedAt,
+                boolean calendarSyncEnabled, List<Integer> calendarReminderMinutes,
+                String calendarEventId, Date calendarSyncedAt, List<Label> labels, 
+                List<AssigneeInfo> assignees) {
         this.id = id;
         this.projectId = projectId;
         this.boardId = boardId;
+        this.boardName = boardName;
         this.title = title;
         this.description = description;
         this.issueKey = issueKey;
@@ -59,6 +110,12 @@ public class Task {
         this.remainingEstimateSec = remainingEstimateSec;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.calendarSyncEnabled = calendarSyncEnabled;
+        this.calendarReminderMinutes = calendarReminderMinutes;
+        this.calendarEventId = calendarEventId;
+        this.calendarSyncedAt = calendarSyncedAt;
+        this.labels = labels;
+        this.assignees = assignees;
     }
 
     public String getId() {
@@ -71,6 +128,10 @@ public class Task {
 
     public String getBoardId() {
         return boardId;
+    }
+    
+    public String getBoardName() {
+        return boardName;
     }
 
     public String getTitle() {
@@ -206,6 +267,43 @@ public class Task {
 
         int worked = originalEstimateSec - remainingEstimateSec;
         return (worked * 100) / originalEstimateSec;
+    }
+    
+    // Calendar Sync Getters
+    public boolean isCalendarSyncEnabled() {
+        return calendarSyncEnabled;
+    }
+    
+    public List<Integer> getCalendarReminderMinutes() {
+        return calendarReminderMinutes;
+    }
+    
+    public String getCalendarEventId() {
+        return calendarEventId;
+    }
+    
+    public Date getCalendarSyncedAt() {
+        return calendarSyncedAt;
+    }
+    
+    public boolean hasCalendarEvent() {
+        return calendarEventId != null && !calendarEventId.isEmpty();
+    }
+    
+    public List<Label> getLabels() {
+        return labels;
+    }
+    
+    public boolean hasLabels() {
+        return labels != null && !labels.isEmpty();
+    }
+    
+    public List<AssigneeInfo> getAssignees() {
+        return assignees;
+    }
+    
+    public boolean hasAssignees() {
+        return assignees != null && !assignees.isEmpty();
     }
 
     @Override

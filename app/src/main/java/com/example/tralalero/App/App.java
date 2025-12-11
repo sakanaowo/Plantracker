@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.preference.PreferenceManager;
 import androidx.work.Constraints;
 import androidx.work.ExistingWorkPolicy;
@@ -16,6 +17,8 @@ import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.core.DependencyProvider;
+import com.example.tralalero.service.AppLifecycleObserver;
+import com.example.tralalero.service.NotificationWebSocketManager;
 import com.example.tralalero.sync.StartupSyncWorker;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.FirebaseAppCheck;
@@ -28,6 +31,9 @@ public class App extends Application {
     public static AuthManager authManager;
     public static TokenManager tokenManager;
     public static DependencyProvider dependencyProvider;
+    
+    // WebSocket Manager for real-time notifications (DEV 1)
+    private NotificationWebSocketManager wsManager;
 
     @Override
     public void onCreate() {
@@ -35,18 +41,28 @@ public class App extends Application {
         
         instance = this;
 
-        FirebaseApp.initializeApp(this);
+        // Initialize Firebase first
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseApp.initializeApp(this);
+            Log.d(TAG, "Firebase initialized");
+        }
 
+        // Initialize AppCheck after Firebase is ready
         initializeAppCheck();
 
+        // Force light mode as default
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
         loadLanguagePreference();
-        loadDarkModePreference();
         
         authManager = new AuthManager(this);
         tokenManager = new TokenManager(this);
         
         dependencyProvider = DependencyProvider.getInstance(this, tokenManager);
         Log.d(TAG, "✓ DependencyProvider initialized with Database");
+        
+        // Initialize WebSocket Manager (DEV 1)
+        initializeWebSocket();
 
         OneTimeWorkRequest syncWork =
                 new OneTimeWorkRequest.Builder(StartupSyncWorker.class)
@@ -109,19 +125,45 @@ public class App extends Application {
         
         getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
     }
-    
-    private void loadDarkModePreference() {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isDarkMode = preferences.getBoolean("theme", false);
-        
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
-    }
 
     public static App getInstance() {
         return instance;
+    }
+    
+    /**
+     * Initialize WebSocket Manager and Lifecycle Observer
+     */
+    private void initializeWebSocket() {
+        // Create WebSocket Manager
+        wsManager = new NotificationWebSocketManager();
+        wsManager.initialize(this); // Initialize with context for SharedPreferences
+        Log.d(TAG, "✓ WebSocket Manager initialized");
+        
+        // Setup notification callback - show in-app notification using NotificationUIManager
+        wsManager.setOnNotificationReceivedListener(notification -> {
+            Log.d(TAG, "📬 Notification received via WebSocket: " + notification.getTitle());
+            // Show in-app notification using Snackbar (NotificationUIManager)
+            com.example.tralalero.ui.NotificationUIManager.handleInAppNotification(this, notification);
+            
+            // TODO: Update notification badge count
+            // TODO: Refresh notification list in ActivityFragment
+        });
+        
+        // Register lifecycle observer
+        AppLifecycleObserver lifecycleObserver = new AppLifecycleObserver(this, wsManager);
+        ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
+        Log.d(TAG, "✓ Lifecycle Observer registered");
+        
+        // Register Activity Tracker for in-app notifications (Snackbar)
+        registerActivityLifecycleCallbacks(new com.example.tralalero.util.ActivityTracker());
+        Log.d(TAG, "✓ Activity Tracker registered");
+    }
+    
+    /**
+     * Get WebSocket Manager instance
+     * Used by DEV 2 to access WebSocket functionality
+     */
+    public NotificationWebSocketManager getWebSocketManager() {
+        return wsManager;
     }
 }

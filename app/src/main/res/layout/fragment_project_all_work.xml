@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F3F0FF">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout" android:layout_width="match_parent" android:layout_height="match_parent">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+
+            <!-- Filter Chips -->
+            <HorizontalScrollView android:id="@+id/scrollViewFilters" android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingBottom="8dp">
+
+                <com.google.android.material.chip.ChipGroup android:id="@+id/chipGroupFilters" android:layout_width="wrap_content" android:layout_height="wrap_content" app:singleSelection="true" app:selectionRequired="true">
+
+                    <com.google.android.material.chip.Chip android:id="@+id/chipAll" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="All Tasks" android:checked="true"/>
+
+                    <com.google.android.material.chip.Chip android:id="@+id/chipMyTasks" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="My Tasks"/>
+
+                    <com.google.android.material.chip.Chip android:id="@+id/chipOverdue" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Overdue"/>
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- Tasks RecyclerView with Empty State -->
+            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerViewTasks" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="16dp" android:paddingTop="0dp" android:clipToPadding="false"/>
+
+                <TextView android:id="@+id/tvEmptyState" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="No tasks in this project yet\n\nCreate tasks in the Board view to get started" android:textSize="16sp" android:textColor="#666666" android:gravity="center" android:visibility="gone"/>
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+
+</FrameLayout>

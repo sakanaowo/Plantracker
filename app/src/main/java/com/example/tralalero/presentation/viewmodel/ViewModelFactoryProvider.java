@@ -4,6 +4,8 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.data.remote.api.BoardApiService;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.data.remote.api.WorkspaceApiService;
 import com.example.tralalero.data.repository.AuthRepositoryImpl;
 import com.example.tralalero.data.repository.BoardRepositoryImpl;
@@ -33,6 +35,7 @@ import com.example.tralalero.domain.usecase.project.GetProjectByIdUseCase;
 import com.example.tralalero.domain.usecase.project.SwitchBoardTypeUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectUseCase;
+import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
 import com.example.tralalero.domain.usecase.workspace.CreateWorkspaceUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceBoardsUseCase;
 import com.example.tralalero.domain.usecase.workspace.GetWorkspaceByIdUseCase;
@@ -40,30 +43,15 @@ import com.example.tralalero.domain.usecase.workspace.GetWorkspaceProjectsUseCas
 import com.example.tralalero.domain.usecase.workspace.GetWorkspacesUseCase;
 import com.example.tralalero.network.ApiClient;
 
-/**
- * Helper class to provide ViewModelFactories with dependencies injection.
- * Reduces boilerplate code when setting up ViewModels in Activities/Fragments.
- * 
- * Usage example:
- * <pre>
- * workspaceViewModel = new ViewModelProvider(this, 
- *     ViewModelFactoryProvider.provideWorkspaceViewModelFactory()
- * ).get(WorkspaceViewModel.class);
- * </pre>
- *
- * @author Người 2 - Phase 5
- * @date 14/10/2025
- */
 public class ViewModelFactoryProvider {
-    
+
     private static WorkspaceApiService workspaceApi;
     private static BoardApiService boardApi;
     private static ProjectApiService projectApi;
     private static TaskApiService taskApi;
-    
-    /**
-     * Initialize API services (lazy initialization)
-     */
+    private static CommentApiService commentApi;
+    private static AttachmentApiService attachmentApi;
+
     private static void initApis() {
         if (workspaceApi == null) {
             workspaceApi = ApiClient.get(App.authManager).create(WorkspaceApiService.class);
@@ -77,16 +65,15 @@ public class ViewModelFactoryProvider {
         if (taskApi == null) {
             taskApi = ApiClient.get(App.authManager).create(TaskApiService.class);
         }
+        if (commentApi == null) {
+            commentApi = ApiClient.get(App.authManager).create(CommentApiService.class);
+        }
+        if (attachmentApi == null) {
+            attachmentApi = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        }
     }
-    
-    /**
-     * Provide AuthViewModelFactory with all dependencies
-     *
-     * @return AuthViewModelFactory instance ready to use
-     */
+
     public static AuthViewModelFactory provideAuthViewModelFactory() {
-        // AuthRepository không cần API service vì dùng Firebase
-        // Sử dụng App.getInstance() để lấy context
         IAuthRepository repository = new AuthRepositoryImpl(App.getInstance());
 
         return new AuthViewModelFactory(
@@ -98,59 +85,49 @@ public class ViewModelFactoryProvider {
         );
     }
 
-    /**
-     * Provide WorkspaceViewModelFactory with all dependencies
-     * 
-     * @return WorkspaceViewModelFactory instance ready to use
-     */
     public static WorkspaceViewModelFactory provideWorkspaceViewModelFactory() {
         initApis();
-        
-        IWorkspaceRepository repository = new WorkspaceRepositoryImpl(workspaceApi);
-        
+
+        IWorkspaceRepository workspaceRepository = new WorkspaceRepositoryImpl(workspaceApi);
+        IProjectRepository projectRepository = new ProjectRepositoryImpl(projectApi);
+
         return new WorkspaceViewModelFactory(
-            new GetWorkspacesUseCase(repository),
-            new GetWorkspaceByIdUseCase(repository),
-            new CreateWorkspaceUseCase(repository),
-            new GetWorkspaceProjectsUseCase(repository),
-            new GetWorkspaceBoardsUseCase(repository)
+            new GetWorkspacesUseCase(workspaceRepository),
+            new GetWorkspaceByIdUseCase(workspaceRepository),
+            new CreateWorkspaceUseCase(workspaceRepository),
+            new GetWorkspaceProjectsUseCase(workspaceRepository),
+            new GetWorkspaceBoardsUseCase(workspaceRepository),
+            new CreateProjectUseCase(projectRepository),
+            new DeleteProjectUseCase(projectRepository)
         );
     }
-    
-    /**
-     * Provide ProjectViewModelFactory with all dependencies
-     *
-     * @return ProjectViewModelFactory instance ready to use
-     */
+
     public static ProjectViewModelFactory provideProjectViewModelFactory() {
         initApis();
-        
-        IProjectRepository repository = new ProjectRepositoryImpl(projectApi);
-        
+
+        IProjectRepository projectRepository = new ProjectRepositoryImpl(projectApi);
+        IBoardRepository boardRepository = new BoardRepositoryImpl(boardApi);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi, commentApi, attachmentApi);
+
         return new ProjectViewModelFactory(
-            new GetProjectByIdUseCase(repository),
-            new CreateProjectUseCase(repository),
-            new UpdateProjectUseCase(repository),
-            new DeleteProjectUseCase(repository),
-            new SwitchBoardTypeUseCase(repository),
-            new UpdateProjectKeyUseCase(repository)
+            new GetProjectByIdUseCase(projectRepository),
+            new CreateProjectUseCase(projectRepository),
+            new UpdateProjectUseCase(projectRepository),
+            new DeleteProjectUseCase(projectRepository),
+            new SwitchBoardTypeUseCase(projectRepository),
+            new UpdateProjectKeyUseCase(projectRepository),
+            new GetBoardsByProjectUseCase(boardRepository),
+            new GetTasksByBoardUseCase(taskRepository)
         );
     }
-    
-    /**
-     * Provide BoardViewModelFactory with all dependencies
-     *
-     * @return BoardViewModelFactory instance ready to use
-     */
+
     public static BoardViewModelFactory provideBoardViewModelFactory() {
         initApis();
-        
-        // BoardRepository needs BoardApiService
         IBoardRepository boardRepository = new BoardRepositoryImpl(boardApi);
-        
-        // GetBoardTasksUseCase needs TaskRepository
-        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi);
-        
+        CommentApiService commentApi = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApi = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository taskRepository = new TaskRepositoryImpl(taskApi, commentApi, attachmentApi);
+
         return new BoardViewModelFactory(
             new GetBoardByIdUseCase(boardRepository),
             new GetBoardsByProjectUseCase(boardRepository),
@@ -158,7 +135,7 @@ public class ViewModelFactoryProvider {
             new UpdateBoardUseCase(boardRepository),
             new DeleteBoardUseCase(boardRepository),
             new ReorderBoardsUseCase(boardRepository),
-            new GetBoardTasksUseCase(taskRepository) // Uses TaskRepository, not BoardRepository!
+            new GetBoardTasksUseCase(taskRepository) 
         );
     }
 }

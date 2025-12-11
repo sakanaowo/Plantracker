@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/cardSuggestion" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" app:cardElevation="2dp" app:cardCornerRadius="12dp" app:strokeWidth="0dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+
+        <!-- Date/Time + Score Label -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+
+            <!-- Date & Time -->
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+                <TextView android:id="@+id/tvDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Wednesday, Dec 10, 2025" android:textSize="15sp" android:textStyle="bold" android:textColor="#212121"/>
+
+                <TextView android:id="@+id/tvTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="09:00 am - 09:30 am" android:textSize="14sp" android:textColor="#4CAF50" android:layout_marginTop="2dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginVertical="8dp"/>
+
+        <!-- Availability Info -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+
+            <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_people" android:tint="#757575" android:layout_marginEnd="6dp"/>
+
+            <TextView android:id="@+id/tvAvailability" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="2 available, 1 busy" android:textSize="13sp" android:textColor="#757575"/>
+        </LinearLayout>
+
+        <!-- Busy Participants (Always show if any) -->
+        <TextView android:id="@+id/tvBusyParticipants" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Busy: 1 participant(s)" android:textSize="12sp" android:textColor="#F44336" android:layout_marginBottom="12dp" android:visibility="visible" android:clickable="true" android:focusable="true"/>
+
+        <!-- Select Button (Full Width) -->
+        <Button android:id="@+id/btnSelectSlot" android:layout_width="match_parent" android:layout_height="44dp" android:text="SELECT" android:textSize="14sp" android:backgroundTint="#4CAF50" style="@style/Widget.MaterialComponents.Button"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

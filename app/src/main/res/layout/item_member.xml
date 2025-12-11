@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp">
+
+    <!-- Member Avatar Circle -->
+    <com.google.android.material.card.MaterialCardView android:layout_width="40dp" android:layout_height="40dp" app:cardBackgroundColor="#DFE1E6" app:cardCornerRadius="20dp" app:cardElevation="0dp">
+
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+
+            <!-- Avatar Image (shown if URL available) -->
+            <ImageView android:id="@+id/ivMemberAvatar" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+
+            <!-- Initials (shown if no avatar URL) -->
+            <TextView android:id="@+id/tvMemberAvatar" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="BA" android:textSize="14sp" android:textColor="#172B4D" android:fontFamily="sans-serif-medium"/>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Admin Badge (small crown/star icon) -->
+    <ImageView android:id="@+id/ivAdminBadge" android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="bottom|end" android:src="@android:drawable/star_on" android:background="@android:color/white" android:padding="2dp" android:visibility="gone" app:tint="#FFA500"/>
+</FrameLayout>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#FFFFFF" android:padding="20dp">
+
+    <!-- Header -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="20dp">
+
+        <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_auto_awesome" android:layout_marginEnd="12dp"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/smart_schedule_meeting" android:textSize="20sp" android:textStyle="bold" android:textColor="#212121"/>
+
+        <ImageButton android:id="@+id/btnClose" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_close_clear_cancel" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/close"/>
+    </LinearLayout>
+
+    <!-- Description -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/smart_schedule_description" android:textSize="14sp" android:textColor="#757575" android:layout_marginBottom="20dp"/>
+
+    <!-- Event Title -->
+    <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:hint="@string/event_title" app:boxBackgroundMode="outline">
+
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etMeetingTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:maxLines="1"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Date Range -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/search_within_date_range" android:textSize="14sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="8dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilFromDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="@string/from_date" app:boxBackgroundMode="outline" app:startIconDrawable="@drawable/ic_event" app:startIconContentDescription="@string/select_date">
+
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etFromDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:focusable="false" android:clickable="true" android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilToDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="@string/to_date" app:boxBackgroundMode="outline" app:startIconDrawable="@drawable/ic_event" app:startIconContentDescription="@string/select_date">
+
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etToDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:focusable="false" android:clickable="true" android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <!-- Duration -->
+    <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:hint="@string/meeting_duration" app:boxBackgroundMode="outline" app:suffixText="@string/minutes">
+
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDuration" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="30" android:maxLines="1"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Attendees Section -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/participants_required" android:textSize="14sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="8dp"/>
+
+    <Button android:id="@+id/btnSelectAttendees" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginBottom="12dp" android:text="@string/select_attendees" app:icon="@drawable/ic_people" android:backgroundTint="#E0E0E0" android:textColor="#212121" style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+    <com.google.android.material.chip.ChipGroup android:id="@+id/chipGroupAttendees" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" app:singleLine="false"/>
+
+    <!-- Loading State -->
+    <LinearLayout android:id="@+id/layoutLoading" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:padding="16dp" android:visibility="gone">
+
+        <ProgressBar android:layout_width="24dp" android:layout_height="24dp" android:layout_marginEnd="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/analyzing_calendars" android:textSize="14sp" android:textColor="#757575"/>
+    </LinearLayout>
+
+    <!-- Find Slots Button -->
+    <Button android:id="@+id/btnFindSlots" android:layout_width="match_parent" android:layout_height="52dp" android:text="@string/find_best_time_slots" app:icon="@drawable/ic_auto_awesome" android:backgroundTint="#FF6F00" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>

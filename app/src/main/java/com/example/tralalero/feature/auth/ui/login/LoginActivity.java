@@ -20,10 +20,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
+import com.example.tralalero.MainActivity;
 import com.example.tralalero.R;
 import com.example.tralalero.feature.auth.ui.signup.SignupActivity;
 import com.example.tralalero.feature.auth.ui.forgot.ForgotPasswordActivity;
-import com.example.tralalero.feature.home.ui.Home.HomeActivity;
+import com.example.tralalero.feature.home.ui.MainContainerActivity;
 import com.example.tralalero.presentation.viewmodel.AuthViewModel;
 import com.example.tralalero.presentation.viewmodel.ViewModelFactoryProvider;
 import com.example.tralalero.auth.repository.FirebaseAuthRepository;
@@ -44,19 +45,13 @@ import com.google.firebase.auth.GoogleAuthProvider;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
 
-    private EditText etEmail;
-    private EditText etPassword;
-    private Button btnLogin;
     private MaterialButton btnGoogleSignIn;
-    private TextView textViewForgotPassword;
-    private TextView textViewSignUp;
+    private MaterialButton btnGoogleSignUp;
     private AuthViewModel authViewModel;
-
-    // Google Sign-In
     private GoogleSignInClient googleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private TokenManager tokenManager;
-    @SuppressLint("ClickableViewAccessibility")
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,70 +62,35 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        // Initialize TokenManager
+        
         tokenManager = new TokenManager(this);
-
-        // Setup Google Sign-In
+        
+        // Initialize views
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        btnGoogleSignUp = findViewById(R.id.btnGoogleSignUp);
+        
+        // Setup Google Sign In
         setupGoogleSignIn();
         setupGoogleSignInLauncher();
-
-        etEmail = findViewById(R.id.editTextEmail);
-        etPassword = findViewById(R.id.editTextPassword);
-        btnLogin = findViewById(R.id.buttonLogin);
-        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
-        textViewForgotPassword = findViewById(R.id.textViewForgotPassword);
-        textViewSignUp = findViewById(R.id.textViewSignUp);
         setupViewModel();
         observeViewModel();
         setupClickListeners();
-        final boolean[] isPasswordVisible = {false};
-        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
-        etPassword.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (event.getX() >= (etPassword.getWidth() - etPassword.getTotalPaddingRight())) {
-                    if (isPasswordVisible[0]) {
-                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eyeoff_svgrepo_com, 0);
-                        isPasswordVisible[0] = false;
-                    } else {
-                        etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-                        etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.eye, 0);
-                        isPasswordVisible[0] = true;
-                    }
-                    etPassword.setTypeface(Typeface.DEFAULT);
-                    etPassword.setSelection(etPassword.length());
-                    return true;
-                }
-            }
-            return false;
-        });
-        if (btnLogin != null) {
-            btnLogin.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    attemptLogin();
-                }
-            });
-        }
     }
+    
     private void setupClickListeners() {
+        // Both buttons use same Google Sign In flow
         if (btnGoogleSignIn != null) {
             btnGoogleSignIn.setOnClickListener(v -> {
-                Log.d(TAG, "Google Sign In clicked - starting sign-in flow");
+                Log.d(TAG, "Sign In with Google clicked");
                 signInWithGoogle();
             });
         }
-        if (textViewForgotPassword != null) {
-            textViewForgotPassword.setOnClickListener(v -> {
-                Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
-                startActivity(intent);
-            });
-        }
-        if (textViewSignUp != null) {
-            textViewSignUp.setOnClickListener(v -> {
-                Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
-                startActivity(intent);
+        
+        if (btnGoogleSignUp != null) {
+            btnGoogleSignUp.setOnClickListener(v -> {
+                Log.d(TAG, "Sign Up with Google clicked");
+                // Same flow as sign in - Google handles account creation
+                signInWithGoogle();
             });
         }
     }
@@ -140,15 +100,27 @@ public class LoginActivity extends AppCompatActivity {
         ).get(AuthViewModel.class);
     }
     private void observeViewModel() {
-        authViewModel.isLoading().observe(this, isLoading -> {
-            if (isLoading) {
-                btnLogin.setEnabled(false);
-                btnLogin.setText("Logging in...");
-            } else {
-                btnLogin.setEnabled(true);
-                btnLogin.setText("Login");
+        // Observe AuthState for auto-navigation
+        authViewModel.getAuthState().observe(this, state -> {
+            switch (state) {
+                case LOGIN_SUCCESS:
+                    // Auto-navigate to Home on successful login
+                    navigateToHome();
+                    break;
+                case LOGIN_ERROR:
+                    // Error is handled by error observer below
+                    break;
+                case LOGGING_IN:
+                    // Loading state is handled by loading observer below
+                    break;
+                case IDLE:
+                case LOGGED_OUT:
+                    // Do nothing
+                    break;
             }
         });
+
+        // Observe current user for display purposes
         authViewModel.getCurrentUser().observe(this, user -> {
             if (user != null) {
                 Log.d("LoginActivity", "Logged in user id=" + user.id
@@ -156,19 +128,31 @@ public class LoginActivity extends AppCompatActivity {
                         + ", firebaseUid=" + user.firebaseUid);
                 Toast.makeText(this, "Welcome back, " + user.name, Toast.LENGTH_SHORT).show();
                 getFirebaseToken();
-                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                intent.putExtra("user_name", user.getName());
-                intent.putExtra("user_email", user.getEmail());
-                startActivity(intent);
-                finish();
             }
         });
+
+        // Observe error state
         authViewModel.getError().observe(this, error -> {
-            if (error != null) {
+            if (error != null && !error.isEmpty()) {
                 Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
                 authViewModel.clearError();
             }
         });
+    }
+
+    private void navigateToHome() {
+        // Navigate through MainActivity to trigger calendar sync prompt
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("is_first_login", true); // Flag for calendar sync prompt
+        
+        com.example.tralalero.domain.model.User user = authViewModel.getCurrentUser().getValue();
+        if (user != null) {
+            intent.putExtra("user_name", user.getName());
+            intent.putExtra("user_email", user.getEmail());
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
     private void getFirebaseToken() {
         com.google.firebase.auth.FirebaseUser firebaseUser =
@@ -191,25 +175,10 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to get token: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
         } else {
-            Log.e("LoginActivity", "No Firebase user found after login!");
+            Log.e(TAG, "No Firebase user found after login!");
         }
     }
-    private void attemptLogin() {
-        String email = etEmail != null ? etEmail.getText().toString().trim() : "";
-        String password = etPassword != null ? etPassword.getText().toString() : "";
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        authViewModel.login(email, password);
-    }
-
-    // ========== Google Sign-In Methods ==========
-
+    
     private void setupGoogleSignIn() {
         String clientId = getString(R.string.client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -294,13 +263,20 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FirebaseAuthResponse response, String token) {
                 Log.d(TAG, "Backend authentication successful: " + response.message);
+                
+                // Save both Firebase UID and internal UUID
+                String internalUserId = response.getUser() != null ? response.getUser().getId() : null;
+                
                 tokenManager.saveAuthData(
                         token,
                         firebaseUser.getUid(),
                         firebaseUser.getEmail(),
-                        firebaseUser.getDisplayName()
+                        firebaseUser.getDisplayName(),
+                        internalUserId  // Internal UUID from backend
                 );
-                navigateToHome(firebaseUser);
+                
+                Log.d(TAG, "Saved internal user ID: " + internalUserId);
+                navigateToHomeWithUserData(firebaseUser.getDisplayName(), firebaseUser.getEmail());
             }
 
             @Override
@@ -312,10 +288,12 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void navigateToHome(FirebaseUser user) {
-        Intent intent = new Intent(this, HomeActivity.class);
-        intent.putExtra("user_name", user.getDisplayName());
-        intent.putExtra("user_email", user.getEmail());
+    private void navigateToHomeWithUserData(String userName, String userEmail) {
+        // Navigate through MainActivity to trigger calendar sync prompt
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("is_first_login", true); // Flag for calendar sync prompt
+        intent.putExtra("user_name", userName);
+        intent.putExtra("user_email", userEmail);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

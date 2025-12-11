@@ -316,6 +316,63 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
         }
     }
     
+    // ==================== LEAVE PROJECT ====================
+    
+    @Override
+    public void leaveProject(String projectId, RepositoryCallback<Void> callback) {
+        // Input validation
+        if (projectId == null || projectId.trim().isEmpty()) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("projectId cannot be null or empty"));
+            }
+            return;
+        }
+        
+        if (callback == null) {
+            Log.e(TAG, "leaveProject: callback is null");
+            return;
+        }
+        
+        try {
+            apiService.leaveProject(projectId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        // Delete from cache (user no longer has access)
+                        executorService.execute(() -> {
+                            try {
+                                projectDao.deleteProjectById(projectId);
+                                Log.d(TAG, "✓ Removed project from cache after leaving: " + projectId);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error removing from cache", e);
+                            }
+                        });
+                        
+                        // Callback on main thread
+                        mainHandler.post(() -> callback.onSuccess(null));
+                    } else {
+                        String errorMsg = "Failed to leave project";
+                        if (response.code() == 400) {
+                            errorMsg = "Cannot leave project (you may be the last owner)";
+                        } else if (response.code() == 404) {
+                            errorMsg = "You are not a member of this project";
+                        }
+                        String finalErrorMsg = errorMsg;
+                        mainHandler.post(() -> callback.onError(finalErrorMsg + ": " + response.code()));
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error leaving project", e);
+            mainHandler.post(() -> callback.onError("Error leaving project: " + e.getMessage()));
+        }
+    }
+    
     // ==================== UPDATE PROJECT KEY ====================
     
     @Override
@@ -445,6 +502,91 @@ public class ProjectRepositoryImplWithCache implements IProjectRepository {
             });
         } catch (Exception e) {
             Log.e(TAG, "Error updating board type", e);
+            mainHandler.post(() -> callback.onError("Error: " + e.getMessage()));
+        }
+    }
+    
+    // ==================== GET PROJECT SUMMARY ====================
+    
+    @Override
+    public void getProjectSummary(String projectId, RepositoryCallback<com.example.tralalero.data.dto.project.ProjectSummaryResponse> callback) {
+        // Input validation
+        if (projectId == null || projectId.trim().isEmpty()) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("projectId cannot be null or empty"));
+            }
+            return;
+        }
+        
+        if (callback == null) {
+            Log.e(TAG, "getProjectSummary: callback is null");
+            return;
+        }
+        
+        try {
+            apiService.getProjectSummary(projectId).enqueue(new Callback<com.example.tralalero.data.dto.project.ProjectSummaryResponse>() {
+                @Override
+                public void onResponse(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, 
+                                     Response<com.example.tralalero.data.dto.project.ProjectSummaryResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        mainHandler.post(() -> callback.onSuccess(response.body()));
+                    } else {
+                        mainHandler.post(() -> callback.onError("Failed to get project summary: " + response.code()));
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting project summary", e);
+            mainHandler.post(() -> callback.onError("Error: " + e.getMessage()));
+        }
+    }
+    
+    // ==================== GET ALL USER PROJECTS ====================
+    
+    @Override
+    public void getAllUserProjects(RepositoryCallback<List<Project>> callback) {
+        if (callback == null) {
+            Log.e(TAG, "getAllUserProjects: callback is null");
+            return;
+        }
+        
+        // This cached repository doesn't support getAllUserProjects yet
+        // Delegate to API-only implementation
+        try {
+            apiService.getAllUserProjects().enqueue(new Callback<List<ProjectDTO>>() {
+                @Override
+                public void onResponse(Call<List<ProjectDTO>> call, Response<List<ProjectDTO>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        try {
+                            List<Project> projects = new ArrayList<>();
+                            for (ProjectDTO dto : response.body()) {
+                                projects.add(ProjectMapper.toDomain(dto));
+                            }
+                            mainHandler.post(() -> callback.onSuccess(projects));
+                            
+                            // TODO: Cache all projects if needed
+                            Log.d(TAG, "✓ Loaded " + projects.size() + " user projects from API");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error processing projects", e);
+                            mainHandler.post(() -> callback.onError("Error processing projects: " + e.getMessage()));
+                        }
+                    } else {
+                        mainHandler.post(() -> callback.onError("Failed to get user projects: " + response.code()));
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<List<ProjectDTO>> call, Throwable t) {
+                    mainHandler.post(() -> callback.onError("Network error: " + t.getMessage()));
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting all user projects", e);
             mainHandler.post(() -> callback.onError("Error: " + e.getMessage()));
         }
     }

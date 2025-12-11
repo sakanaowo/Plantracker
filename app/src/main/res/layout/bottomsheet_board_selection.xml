@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp" android:background="@android:color/white">
+
+    <!-- Header -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Move to Board" android:textSize="18sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="16dp"/>
+
+    <!-- TO_DO Option -->
+    <LinearLayout android:id="@+id/layoutToDo" android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="16dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+
+        <View android:layout_width="4dp" android:layout_height="24dp" android:background="#9E9E9E" android:layout_marginEnd="12dp"/>
+
+        <TextView android:id="@+id/tvToDo" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="To Do" android:textSize="16sp" android:textColor="#212121"/>
+    </LinearLayout>
+
+    <!-- IN_PROGRESS Option -->
+    <LinearLayout android:id="@+id/layoutInProgress" android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="16dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true" android:layout_marginTop="4dp">
+
+        <View android:layout_width="4dp" android:layout_height="24dp" android:background="#2196F3" android:layout_marginEnd="12dp"/>
+
+        <TextView android:id="@+id/tvInProgress" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="In Progress" android:textSize="16sp" android:textColor="#212121"/>
+    </LinearLayout>
+
+    <!-- DONE Option -->
+    <LinearLayout android:id="@+id/layoutDone" android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="16dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true" android:layout_marginTop="4dp">
+
+        <View android:layout_width="4dp" android:layout_height="24dp" android:background="#4CAF50" android:layout_marginEnd="12dp"/>
+
+        <TextView android:id="@+id/tvDone" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Done" android:textSize="16sp" android:textColor="#212121"/>
+    </LinearLayout>
+
+</LinearLayout>

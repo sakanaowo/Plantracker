@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F6F6F6">
+
+    <!-- Toolbar with Search Button -->
+    <com.google.android.material.card.MaterialCardView android:id="@+id/cardToolbar" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" app:cardElevation="2dp">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+
+            <!-- Title Bar with Action Buttons -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:gravity="center_vertical">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/events_and_meetings" android:textSize="18sp" android:textStyle="bold" android:textColor="#212121"/>
+
+                <!-- Smart Schedule Button -->
+                <ImageButton android:id="@+id/btnSmartSchedule" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginEnd="4dp" android:src="@drawable/ic_auto_awesome" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/smart_schedule" android:tint="#FF6F00"/>
+
+                <ImageButton android:id="@+id/btnCreateEvent" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/add_ic" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/create_event"/>
+
+                <ImageButton android:id="@+id/btnSearchEvents" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="4dp" android:src="@drawable/ic_search" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/search"/>
+            </LinearLayout>
+
+            <!-- Search Field (Initially Hidden) -->
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/layoutSearchEvents" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_marginEnd="12dp" android:layout_marginBottom="12dp" android:visibility="gone" android:hint="Tìm kiếm event..." app:startIconDrawable="@drawable/ic_search" app:endIconMode="clear_text" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etSearchEvents" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:maxLines="1"/>
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Tabs (HIDDEN - no longer needed) -->
+    <com.google.android.material.tabs.TabLayout android:id="@+id/tabLayoutEvents" android:layout_width="match_parent" android:layout_height="0dp" app:layout_constraintTop_toBottomOf="@id/cardToolbar" app:tabMode="fixed" app:tabGravity="fill" app:tabIndicatorColor="#4CAF50" android:visibility="gone">
+
+        <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/upcoming"/>
+
+        <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/past"/>
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- RecyclerView with Pull-to-Refresh -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout" android:layout_width="match_parent" android:layout_height="0dp" app:layout_constraintTop_toBottomOf="@id/cardToolbar" app:layout_constraintBottom_toBottomOf="parent">
+
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvEvents" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp" android:clipToPadding="false"/>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Empty state -->
+    <LinearLayout android:id="@+id/layoutEmptyState" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:visibility="gone" app:layout_constraintTop_toTopOf="@id/swipeRefreshLayout" app:layout_constraintBottom_toBottomOf="@id/swipeRefreshLayout" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView android:layout_width="120dp" android:layout_height="120dp" android:src="@drawable/ic_event" android:alpha="0.3" android:contentDescription="@string/no_events"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="@string/no_events_yet" android:textSize="16sp" android:textColor="#757575"/>
+
+        <Button android:id="@+id/btnCreateFirstEvent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="@string/create_first_event" android:backgroundTint="#4CAF50"/>
+    </LinearLayout>
+
+    <!-- Loading -->
+    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

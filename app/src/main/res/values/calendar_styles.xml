@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom style for MaterialDatePicker to highlight event dates -->
+    <style name="MaterialCalendarTheme" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <!-- Customize calendar appearance -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        
+        <!-- Selected date -->
+        <item name="colorSurface">@android:color/white</item>
+        
+        <!-- Day text color -->
+        <item name="android:textColorPrimary">@android:color/black</item>
+    </style>
+    
+    <!-- Drawable for marking dates with events (dot indicator) -->
+    <color name="event_date_indicator">#FF5722</color>
+</resources>

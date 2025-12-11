@@ -20,32 +20,16 @@ import com.example.tralalero.domain.model.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 
-/**
- * BottomSheet for creating and editing tasks
- * Phase 6 - Person 3 Implementation
- *
- * Features:
- * - Create new task
- * - Edit existing task
- * - Delete task
- * - Set priority (Low, Medium, High)
- *
- * @author Person 3 - Phase 6
- */
 public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
 
     private static final String ARG_TASK = "task";
     private static final String ARG_BOARD_ID = "board_id";
     private static final String ARG_PROJECT_ID = "project_id";
     private static final String ARG_IS_EDIT_MODE = "is_edit_mode";
-
-    // Data
     private Task task;
     private String boardId;
     private String projectId;
     private boolean isEditMode;
-
-    // Store original task data for edit mode
     private String originalTaskId;
     private String originalAssigneeId;
     private String originalCreatedBy;
@@ -53,8 +37,6 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
     private double originalPosition;
     private String originalCreatedAt;
     private String originalUpdatedAt;
-
-    // UI Components
     private TextView tvTitle;
     private ImageView ivClose;
     private TextInputEditText etTaskTitle;
@@ -66,22 +48,14 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
     private Button btnDelete;
     private Button btnCancel;
     private Button btnSave;
-
-    // Callback
     private OnTaskActionListener listener;
 
-    /**
-     * Interface for task actions
-     */
     public interface OnTaskActionListener {
         void onTaskCreated(Task task);
         void onTaskUpdated(Task task);
         void onTaskDeleted(String taskId);
     }
 
-    /**
-     * Create instance for NEW task
-     */
     public static TaskCreateEditBottomSheet newInstanceForCreate(String boardId, String projectId) {
         TaskCreateEditBottomSheet fragment = new TaskCreateEditBottomSheet();
         Bundle args = new Bundle();
@@ -92,17 +66,12 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
         return fragment;
     }
 
-    /**
-     * Create instance for EDIT task
-     */
     public static TaskCreateEditBottomSheet newInstanceForEdit(Task task, String boardId, String projectId) {
         TaskCreateEditBottomSheet fragment = new TaskCreateEditBottomSheet();
         Bundle args = new Bundle();
         args.putString(ARG_BOARD_ID, boardId);
         args.putString(ARG_PROJECT_ID, projectId);
         args.putBoolean(ARG_IS_EDIT_MODE, true);
-
-        // Put task data - PRESERVE ALL FIELDS
         args.putString("task_id", task.getId());
         args.putString("task_title", task.getTitle());
         args.putString("task_description", task.getDescription());
@@ -129,21 +98,13 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        // Get arguments
         if (getArguments() != null) {
             boardId = getArguments().getString(ARG_BOARD_ID);
             projectId = getArguments().getString(ARG_PROJECT_ID);
             isEditMode = getArguments().getBoolean(ARG_IS_EDIT_MODE, false);
         }
-
-        // Initialize views
         initViews(view);
-
-        // Setup UI based on mode
         setupUI();
-
-        // Setup listeners
         setupListeners();
     }
 
@@ -163,12 +124,9 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
 
     private void setupUI() {
         if (isEditMode) {
-            // Edit mode
             tvTitle.setText("Edit Task");
             btnDelete.setVisibility(View.VISIBLE);
             btnSave.setText("Update");
-
-            // Load task data from arguments
             if (getArguments() != null) {
                 etTaskTitle.setText(getArguments().getString("task_title", ""));
                 etDescription.setText(getArguments().getString("task_description", ""));
@@ -187,7 +145,6 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         } else {
-            // Create mode
             tvTitle.setText("Create New Task");
             btnDelete.setVisibility(View.GONE);
             btnSave.setText("Create");
@@ -196,21 +153,13 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void setupListeners() {
-        // Close button
         ivClose.setOnClickListener(v -> dismiss());
-
-        // Cancel button
         btnCancel.setOnClickListener(v -> dismiss());
-
-        // Save button
         btnSave.setOnClickListener(v -> saveTask());
-
-        // Delete button
         btnDelete.setOnClickListener(v -> deleteTask());
     }
 
     private void saveTask() {
-        // Validate input
         String title = etTaskTitle.getText().toString().trim();
         if (TextUtils.isEmpty(title)) {
             Toast.makeText(getContext(), "Please enter task title", Toast.LENGTH_SHORT).show();
@@ -219,8 +168,6 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
         }
 
         String description = etDescription.getText().toString().trim();
-
-        // Get selected priority
         Task.TaskPriority priority = Task.TaskPriority.MEDIUM;
         int selectedId = rgPriority.getCheckedRadioButtonId();
         if (selectedId == R.id.rbLow) {
@@ -230,15 +177,12 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
         }
 
         if (isEditMode) {
-            // Update existing task - PRESERVE ALL ORIGINAL DATA
             if (getArguments() != null) {
                 String taskId = getArguments().getString("task_id");
                 String status = getArguments().getString("task_status", "TO_DO");
                 double position = getArguments().getDouble("task_position", 0);
                 String assigneeId = getArguments().getString("task_assignee_id");
                 String createdBy = getArguments().getString("task_created_by");
-
-                // Create updated task with preserved data
                 Task updatedTask = new Task(
                     taskId,
                     projectId,
@@ -261,7 +205,13 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                     null, // originalEstimateSec - not editable here
                     null, // remainingEstimateSec - not editable here
                     null, // createdAt - backend handles
-                    null  // updatedAt - backend handles
+                    null, // updatedAt - backend handles
+                    false, // calendarSyncEnabled - not editable here
+                    null, // calendarReminderMinutes - not editable here
+                    null, // calendarEventId - not editable here
+                    null, // calendarSyncedAt - not editable here
+                    null, // labels - not editable here
+                    null  // assignees - not editable here
                 );
 
                 if (listener != null) {
@@ -269,7 +219,6 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         } else {
-            // Create new task
             Task newTask = new Task(
                 "", // id (will be generated by backend)
                 projectId,
@@ -292,7 +241,13 @@ public class TaskCreateEditBottomSheet extends BottomSheetDialogFragment {
                 null, // originalEstimateSec
                 null, // remainingEstimateSec
                 null, // createdAt (backend will set)
-                null  // updatedAt (backend will set)
+                null, // updatedAt (backend will set)
+                false, // calendarSyncEnabled
+                null, // calendarReminderMinutes
+                null, // calendarEventId
+                null, // calendarSyncedAt
+                null, // labels
+                null  // assignees
             );
 
             if (listener != null) {

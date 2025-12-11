@@ -36,7 +36,10 @@ public class TaskDTO {
 
     // Assignment
     @SerializedName(value = "assigneeId", alternate = {"assignee_id"})
-    private String assigneeId;
+    private String assigneeId;  // Legacy field - kept for backward compatibility
+
+    @SerializedName(value = "assigneeIds", alternate = {"assignee_ids"})
+    private java.util.List<String> assigneeIds;  // New field - matches backend CreateTaskDto
 
     @SerializedName(value = "createdBy", alternate = {"created_by"})
     private String createdBy;
@@ -76,6 +79,119 @@ public class TaskDTO {
 
     @SerializedName(value = "deletedAt", alternate = {"deleted_at"})
     private String deletedAt;
+
+    // Calendar Sync fields
+    @SerializedName(value = "calendarEventId", alternate = {"calendar_event_id"})
+    private String calendarEventId;
+
+    @SerializedName(value = "calendarReminderEnabled", alternate = {"calendar_reminder_enabled"})
+    private Boolean calendarReminderEnabled;
+
+    @SerializedName(value = "calendarReminderTime", alternate = {"calendar_reminder_time"})
+    private Integer calendarReminderTime;
+
+    @SerializedName(value = "lastSyncedAt", alternate = {"last_synced_at"})
+    private String lastSyncedAt;
+    
+    // Labels - nested object from backend
+    @SerializedName(value = "taskLabels", alternate = {"task_labels"})
+    private java.util.List<TaskLabelDTO> taskLabels;
+    
+    // Assignees - nested object from backend
+    @SerializedName(value = "taskAssignees", alternate = {"task_assignees"})
+    private java.util.List<TaskAssigneeDTO> taskAssignees;
+    
+    // Board - nested object from backend
+    @SerializedName("boards")
+    private BoardDTO boards;
+    
+    // Nested DTO for task_labels relation
+    public static class TaskLabelDTO {
+        @SerializedName("labels")
+        private LabelDTO labels;
+        
+        public LabelDTO getLabels() {
+            return labels;
+        }
+        
+        public void setLabels(LabelDTO labels) {
+            this.labels = labels;
+        }
+    }
+    
+    // Nested DTO for label info
+    public static class LabelDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        @SerializedName("color")
+        private String color;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getColor() { return color; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+        public void setColor(String color) { this.color = color; }
+    }
+    
+    // Nested DTO for task_assignees relation
+    public static class TaskAssigneeDTO {
+        @SerializedName("users")
+        private UserDTO users;
+        
+        public UserDTO getUsers() {
+            return users;
+        }
+        
+        public void setUsers(UserDTO users) {
+            this.users = users;
+        }
+    }
+    
+    // Nested DTO for user info
+    public static class UserDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        @SerializedName("email")
+        private String email;
+        
+        @SerializedName(value = "avatarUrl", alternate = {"avatar_url"})
+        private String avatarUrl;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+        public String getAvatarUrl() { return avatarUrl; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+        public void setEmail(String email) { this.email = email; }
+        public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    }
+    
+    // Nested DTO for board info
+    public static class BoardDTO {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        public String getId() { return id; }
+        public String getName() { return name; }
+        
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+    }
 
     public String getId() {
         return id;
@@ -163,6 +279,14 @@ public class TaskDTO {
 
     public void setAssigneeId(String assigneeId) {
         this.assigneeId = assigneeId;
+    }
+
+    public java.util.List<String> getAssigneeIds() {
+        return assigneeIds;
+    }
+
+    public void setAssigneeIds(java.util.List<String> assigneeIds) {
+        this.assigneeIds = assigneeIds;
     }
 
     public String getCreatedBy() {
@@ -259,5 +383,61 @@ public class TaskDTO {
 
     public void setDeletedAt(String deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public String getCalendarEventId() {
+        return calendarEventId;
+    }
+
+    public void setCalendarEventId(String calendarEventId) {
+        this.calendarEventId = calendarEventId;
+    }
+
+    public Boolean getCalendarReminderEnabled() {
+        return calendarReminderEnabled;
+    }
+
+    public void setCalendarReminderEnabled(Boolean calendarReminderEnabled) {
+        this.calendarReminderEnabled = calendarReminderEnabled;
+    }
+
+    public Integer getCalendarReminderTime() {
+        return calendarReminderTime;
+    }
+
+    public void setCalendarReminderTime(Integer calendarReminderTime) {
+        this.calendarReminderTime = calendarReminderTime;
+    }
+
+    public String getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(String lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
+    }
+    
+    public java.util.List<TaskLabelDTO> getTaskLabels() {
+        return taskLabels;
+    }
+    
+    public void setTaskLabels(java.util.List<TaskLabelDTO> taskLabels) {
+        this.taskLabels = taskLabels;
+    }
+    
+    public java.util.List<TaskAssigneeDTO> getTaskAssignees() {
+        return taskAssignees;
+    }
+    
+    public void setTaskAssignees(java.util.List<TaskAssigneeDTO> taskAssignees) {
+        this.taskAssignees = taskAssignees;
+    }
+    
+    public BoardDTO getBoards() {
+        return boards;
+    }
+    
+    public void setBoards(BoardDTO boards) {
+        this.boards = boards;
     }
 }

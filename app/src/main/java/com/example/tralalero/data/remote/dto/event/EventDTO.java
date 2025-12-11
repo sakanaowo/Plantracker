@@ -6,32 +6,48 @@ public class EventDTO {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("project_id")
+    @SerializedName("projectId")  // ✅ Changed from project_id to projectId for backend DTO
     private String projectId;
 
     @SerializedName("title")
     private String title;
 
 
-    @SerializedName("start_at")
+    @SerializedName("startAt")  // ✅ Changed from start_at to startAt
     private String startAt;
 
-    @SerializedName("end_at")
+    @SerializedName("endAt")  // ✅ Changed from end_at to endAt
     private String endAt;
 
     @SerializedName("location")
     private String location;
 
-    @SerializedName("meet_link")
+    @SerializedName("meetLink")  // ✅ Changed from meet_link to meetLink
     private String meetLink;
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  // ✅ Changed from created_at to createdAt
     private String createdAt;
 
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")  // ✅ Changed from updated_at to updatedAt
     private String updatedAt;
-    @SerializedName("created_by")
+    
+    @SerializedName("createdBy")  // ✅ Changed from created_by to createdBy
     private String createdBy;
+    
+    @SerializedName("status")
+    private String status; // ACTIVE, CANCELLED, COMPLETED
+    
+    @SerializedName("cancelledAt")
+    private String cancelledAt;
+    
+    @SerializedName("cancelledBy")
+    private String cancelledBy;
+    
+    @SerializedName("cancellationReason")
+    private String cancellationReason;
+    
+    @SerializedName("participants")
+    private java.util.List<ParticipantDTO> participants;
 
     public String getId() {
         return id;
@@ -111,5 +127,83 @@ public class EventDTO {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public String getCancelledAt() {
+        return cancelledAt;
+    }
+    
+    public void setCancelledAt(String cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+    
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+    
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
+    }
+    
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+    
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+    
+    public java.util.List<ParticipantDTO> getParticipants() {
+        return participants;
+    }
+    
+    public void setParticipants(java.util.List<ParticipantDTO> participants) {
+        this.participants = participants;
+    }
+    
+    /**
+     * Nested DTO for participant data
+     */
+    public static class ParticipantDTO {
+        @SerializedName("userId")
+        private String userId;
+        
+        @SerializedName("email")
+        private String email;
+        
+        @SerializedName("status")
+        private String status;
+        
+        public String getUserId() {
+            return userId;
+        }
+        
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+        
+        public String getEmail() {
+            return email;
+        }
+        
+        public void setEmail(String email) {
+            this.email = email;
+        }
+        
+        public String getStatus() {
+            return status;
+        }
+        
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 }

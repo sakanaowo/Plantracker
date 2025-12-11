@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/scrollViewAccount" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:fillViewport="true" android:background="@color/background">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:paddingBottom="80dp">
+
+        <!-- Title -->
+        <TextView android:id="@+id/tvTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingBottom="16dp" android:text="@string/account_title" android:textColor="@color/on_surface" android:textSize="28sp" android:textStyle="bold" />
+
+        <!-- User Card -->
+        <androidx.cardview.widget.CardView android:id="@+id/cardUserInfo" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="24dp" android:foreground="?attr/selectableItemBackground" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@color/surface" app:cardCornerRadius="12dp" app:cardElevation="2dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+
+                <!-- Avatar Circle -->
+                <FrameLayout android:id="@+id/avatarContainer" android:layout_width="64dp" android:layout_height="64dp" android:clickable="false" android:focusable="false">
+
+                    <View android:id="@+id/avatarCircle" android:layout_width="64dp" android:layout_height="64dp" android:background="@drawable/bg_avatar_circle" />
+
+                    <TextView android:id="@+id/tvAvatarLetter" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="U" android:textColor="@color/white" android:textSize="32sp" android:textStyle="bold" />
+
+                    <ImageView android:id="@+id/imgAvatar" android:layout_width="64dp" android:layout_height="64dp" android:scaleType="centerCrop" android:visibility="gone" android:contentDescription="Profile Avatar" />
+                </FrameLayout>
+
+                <!-- User Info -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:clickable="false" android:focusable="false" android:orientation="vertical">
+
+                    <TextView android:id="@+id/tvName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Username" android:textColor="@color/on_surface" android:textSize="18sp" android:textStyle="bold" />
+
+                    <TextView android:id="@+id/tvEmail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="example@gmail.com" android:textColor="@color/on_surface_variant" android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- Chevron Icon -->
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_chevron_right" app:tint="@color/on_surface_variant" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Integrations Section Title -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="8dp" android:paddingBottom="8dp" android:text="Integrations" android:textColor="@color/on_surface" android:textSize="16sp" android:textStyle="bold" />
+
+        <!-- Integrations Card -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="24dp" app:cardBackgroundColor="@color/surface" app:cardCornerRadius="12dp" app:cardElevation="2dp">
+
+            <LinearLayout android:id="@+id/layoutGoogleCalendar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_google_calendar" />
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Google Calendar" android:textColor="@color/on_surface" android:textSize="16sp" android:textStyle="bold" />
+
+                    <TextView android:id="@+id/tvGoogleCalendarStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Not connected - Tap to connect" android:textColor="@color/on_surface_variant" android:textSize="14sp" />
+                </LinearLayout>
+
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_chevron_right" app:tint="@color/on_surface_variant" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- General Section Title -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="8dp" android:paddingBottom="8dp" android:text="@string/general_title" android:textColor="@color/on_surface" android:textSize="16sp" android:textStyle="bold" />
+
+        <!-- General Options Card -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface" app:cardCornerRadius="12dp" app:cardElevation="2dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:divider="@android:drawable/divider_horizontal_bright" android:orientation="vertical" android:showDividers="middle">
+
+                <!-- Notification settings -->
+                <LinearLayout android:id="@+id/layoutNotificationSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/selectableItemBackground" android:clickable="false" android:focusable="false" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_notification" app:tint="@color/on_surface_variant" />
+
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Push Notifications" android:textColor="@color/on_surface" android:textSize="16sp" android:textStyle="bold" />
+
+                        <TextView android:id="@+id/tvNotificationStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Enabled" android:textColor="@color/on_surface_variant" android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchNotifications" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="56dp" android:background="@color/divider" />
+
+                <!-- Settings -->
+                <LinearLayout android:id="@+id/layoutSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/setting_icon" app:tint="@color/on_surface_variant" />
+
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:text="@string/settings" android:textColor="@color/on_surface" android:textSize="16sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView>

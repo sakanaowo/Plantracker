@@ -12,36 +12,31 @@ import com.example.tralalero.domain.usecase.auth.LoginUseCase;
 import com.example.tralalero.domain.usecase.auth.LogoutUseCase;
 import com.example.tralalero.domain.usecase.auth.SignupUseCase;
 
-/**
- * ViewModel quản lý authentication state và operations.
- * Xử lý login, logout, và theo dõi trạng thái đăng nhập của user.
- */
 public class AuthViewModel extends ViewModel {
-    
-    // ========== Dependencies ==========
+
+    // AuthState enum for tracking authentication flow
+    public enum AuthState {
+        IDLE,           // Initial state
+        LOGGING_IN,     // Login in progress
+        LOGIN_SUCCESS,  // Login successful
+        LOGIN_ERROR,    // Login failed
+        SIGNING_UP,     // Signup in progress
+        SIGNUP_SUCCESS, // Signup successful
+        SIGNUP_ERROR,   // Signup failed
+        LOGGED_OUT      // User logged out
+    }
+
     private final LoginUseCase loginUseCase;
     private final SignupUseCase signupUseCase;
     private final LogoutUseCase logoutUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final IsLoggedInUseCase isLoggedInUseCase;
-    
-    // ========== LiveData (UI State) ==========
     private final MutableLiveData<User> currentUserLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoggedInLiveData = new MutableLiveData<>();
+    private final MutableLiveData<AuthState> authStateLiveData = new MutableLiveData<>(AuthState.IDLE);
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
-    
-    // ========== Constructor ==========
-    /**
-     * Constructor inject các UseCase dependencies.
-     * Tự động check login status khi khởi tạo.
-     * 
-     * @param loginUseCase UseCase xử lý đăng nhập
-     * @param signupUseCase UseCase xử lý đăng ký
-     * @param logoutUseCase UseCase xử lý đăng xuất
-     * @param getCurrentUserUseCase UseCase lấy thông tin user hiện tại
-     * @param isLoggedInUseCase UseCase kiểm tra trạng thái đăng nhập
-     */
+
     public AuthViewModel(
             LoginUseCase loginUseCase,
             SignupUseCase signupUseCase,
@@ -54,79 +49,56 @@ public class AuthViewModel extends ViewModel {
         this.logoutUseCase = logoutUseCase;
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.isLoggedInUseCase = isLoggedInUseCase;
-        
-        // Check login status on initialization
-        checkLoginStatus();
+
+        // Auto-restore session on ViewModel creation
+        checkStoredSession();
     }
-    
-    // ========== Getters (Public API) ==========
-    
-    /**
-     * @return LiveData chứa thông tin user hiện tại (null nếu chưa login)
-     */
+
     public LiveData<User> getCurrentUser() {
         return currentUserLiveData;
     }
-    
-    /**
-     * @return LiveData trạng thái đăng nhập (true/false)
-     */
+
     public LiveData<Boolean> isLoggedIn() {
         return isLoggedInLiveData;
     }
-    
-    /**
-     * @return LiveData trạng thái loading
-     */
+
+    public LiveData<AuthState> getAuthState() {
+        return authStateLiveData;
+    }
+
     public LiveData<Boolean> isLoading() {
         return loadingLiveData;
     }
-    
-    /**
-     * @return LiveData chứa error message (null nếu không có lỗi)
-     */
+
     public LiveData<String> getError() {
         return errorLiveData;
     }
-    
-    // ========== Public Methods ==========
-    
-    /**
-     * Đăng nhập với email và password.
-     * Set loading state và handle success/error callbacks.
-     * 
-     * @param email Email của user
-     * @param password Password của user
-     */
+
     public void login(String email, String password) {
+        authStateLiveData.setValue(AuthState.LOGGING_IN);
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-        
+
         loginUseCase.execute(email, password, new LoginUseCase.Callback<IAuthRepository.AuthResult>() {
             @Override
             public void onSuccess(IAuthRepository.AuthResult result) {
                 loadingLiveData.setValue(false);
                 currentUserLiveData.setValue(result.getUser());
                 isLoggedInLiveData.setValue(true);
+                authStateLiveData.setValue(AuthState.LOGIN_SUCCESS);
             }
 
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                authStateLiveData.setValue(AuthState.LOGIN_ERROR);
             }
         });
     }
 
-    /**
-     * Đăng ký tài khoản mới với email, password và tên.
-     * Set loading state và handle success/error callbacks.
-     *
-     * @param email Email của user
-     * @param password Password của user
-     * @param name Tên hiển thị của user
-     */
     public void signup(String email, String password, String name) {
+        authStateLiveData.setValue(AuthState.SIGNING_UP);
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
 
@@ -136,6 +108,29 @@ public class AuthViewModel extends ViewModel {
                 loadingLiveData.setValue(false);
                 currentUserLiveData.setValue(result.getUser());
                 isLoggedInLiveData.setValue(true);
+                authStateLiveData.setValue(AuthState.SIGNUP_SUCCESS);
+            }
+
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+                authStateLiveData.setValue(AuthState.SIGNUP_ERROR);
+            }
+        });
+    }
+
+    public void logout() {
+        loadingLiveData.setValue(true);
+        errorLiveData.setValue(null);
+
+        logoutUseCase.execute(new LogoutUseCase.Callback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                loadingLiveData.setValue(false);
+                currentUserLiveData.setValue(null);
+                isLoggedInLiveData.setValue(false);
+                authStateLiveData.setValue(AuthState.LOGGED_OUT);
             }
 
             @Override
@@ -145,80 +140,47 @@ public class AuthViewModel extends ViewModel {
             }
         });
     }
-    
-    /**
-     * Đăng xuất user hiện tại.
-     * Clear user data và update login state.
-     */
-    public void logout() {
-        loadingLiveData.setValue(true);
-        errorLiveData.setValue(null);
-        
-        logoutUseCase.execute(new LogoutUseCase.Callback<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                loadingLiveData.setValue(false);
-                currentUserLiveData.setValue(null);
-                isLoggedInLiveData.setValue(false);
-            }
-            
-            @Override
-            public void onError(String error) {
-                loadingLiveData.setValue(false);
-                errorLiveData.setValue(error);
-            }
-        });
-    }
-    
-    /**
-     * Load thông tin user hiện tại từ server/cache.
-     * Dùng khi cần refresh user data.
-     */
+
     public void loadCurrentUser() {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
-        
+
         getCurrentUserUseCase.execute(new GetCurrentUserUseCase.Callback<User>() {
             @Override
             public void onSuccess(User result) {
                 loadingLiveData.setValue(false);
                 currentUserLiveData.setValue(result);
+                authStateLiveData.setValue(AuthState.LOGIN_SUCCESS);
             }
-            
+
             @Override
             public void onError(String error) {
                 loadingLiveData.setValue(false);
                 errorLiveData.setValue(error);
+                authStateLiveData.setValue(AuthState.LOGGED_OUT);
+                isLoggedInLiveData.setValue(false);
             }
         });
     }
-    
-    /**
-     * Check xem user có đang đăng nhập hay không.
-     * Update isLoggedInLiveData và load user data nếu đã login.
-     */
-    private void checkLoginStatus() {
+
+    private void checkStoredSession() {
         boolean loggedIn = isLoggedInUseCase.execute();
         isLoggedInLiveData.setValue(loggedIn);
-        
-        // Nếu đã login, load user data
         if (loggedIn) {
-            loadCurrentUser();
+            // ✅ FIX: Don't set LOGIN_SUCCESS until user data is loaded
+            authStateLiveData.setValue(AuthState.LOGGING_IN);
+            loadCurrentUser(); // Will set LOGIN_SUCCESS on success, LOGGED_OUT on error
+        } else {
+            authStateLiveData.setValue(AuthState.IDLE);
         }
     }
-    
-    /**
-     * Clear error message.
-     * Dùng sau khi UI đã hiển thị error.
-     */
+
     public void clearError() {
         errorLiveData.setValue(null);
+        authStateLiveData.setValue(AuthState.IDLE);
     }
-    
-    // ========== Lifecycle ==========
     @Override
     protected void onCleared() {
         super.onCleared();
-        // Cleanup nếu cần (hiện tại không cần vì không có background tasks)
     }
 }

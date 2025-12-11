@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.ItemTouchHelper;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -25,50 +24,65 @@ import static android.app.Activity.RESULT_OK;
 import com.example.tralalero.R;
 import com.example.tralalero.adapter.TaskAdapter;
 import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.model.Label;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
+import com.example.tralalero.presentation.viewmodel.LabelViewModel;
+import com.example.tralalero.presentation.viewmodel.LabelViewModelFactory;
+import com.example.tralalero.data.repository.LabelRepositoryImpl;
+import com.example.tralalero.domain.repository.ILabelRepository;
+import com.example.tralalero.data.remote.api.LabelApiService;
+import com.example.tralalero.domain.usecase.label.*;
+import com.google.android.material.button.MaterialButton;
+import android.widget.ImageButton;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
 import com.example.tralalero.data.repository.TaskRepositoryImpl;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.App.App;
 import com.example.tralalero.domain.usecase.task.*;
+import com.example.tralalero.presentation.viewmodel.BoardViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.mapper.TaskMapper;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
-/**
- * Fragment displaying tasks for a specific board (TO DO, IN PROGRESS, DONE)
- * Phase 5: Using TaskViewModel with domain models only
- *
- * @author Phase 5 - Consolidated
- * @date 15/10/2025
- */
 public class ListProject extends Fragment {
     private static final String TAG = "ListProject";
     private static final String ARG_TYPE = "type";
     private static final String ARG_PROJECT_ID = "project_id";
     private static final String ARG_BOARD_ID = "board_id";
-    
-    // Request code for CardDetailActivity
     private static final int REQUEST_CODE_CREATE_TASK = 1001;
     private static final int REQUEST_CODE_EDIT_TASK = 1002;
 
     private String type;
     private String projectId;
     private String boardId;
-
-    // ViewModel
     private TaskViewModel taskViewModel;
-
-    // UI Components
+    private TaskApiService taskApiService;
+    private LabelViewModel labelViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView emptyView;
     private TaskAdapter taskAdapter;
     private FloatingActionButton fabAddTask;
-    private ItemTouchHelper itemTouchHelper; // ✅ For drag & drop
+    
+    // Filter related
+    private MaterialButton btnFilterLabel;
+    private TextView tvFilterStatus;
+    private ImageButton btnClearFilter;
+    private List<Task> allTasks = new ArrayList<>();
+    private String selectedLabelId = null;
+    private String selectedLabelName = null;
 
     public static ListProject newInstance(String type, String projectId, String boardId) {
         ListProject fragment = new ListProject();
@@ -86,28 +100,21 @@ public class ListProject extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_list_frm, container, false);
-
-        // Get arguments
         if (getArguments() != null) {
             type = getArguments().getString(ARG_TYPE);
             projectId = getArguments().getString(ARG_PROJECT_ID);
             boardId = getArguments().getString(ARG_BOARD_ID);
         }
-        
-        Log.d(TAG, "onCreateView - Type: " + type + ", BoardId: " + boardId);
 
-        // Setup
+        Log.d(TAG, "onCreateView - Type: " + type + ", BoardId: " + boardId);
         initViews(view);
         setupViewModel();
         setupRecyclerView();
         observeViewModel();
-        
-        // Load tasks if boardId is available
         if (boardId != null && !boardId.isEmpty()) {
             loadTasksForBoard();
         } else {
             Log.w(TAG, "BoardId not available yet, waiting for boards to load...");
-            // Show loading state while waiting for boardId
             if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
@@ -122,39 +129,45 @@ public class ListProject extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-
-        // Check if boardId has been updated since fragment creation
         if (boardId == null || boardId.isEmpty()) {
-            // Try to get boardId from adapter
             if (getActivity() != null) {
-                // Fragment will be notified when boards are loaded via observeViewModel
                 Log.d(TAG, "onResume - Still waiting for boardId");
             }
         }
     }
 
-    
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
         fabAddTask = view.findViewById(R.id.fabAddTask);
-
-        // Setup FAB click listener
+        // Filter UI elements not present in layout - commented out
+        // btnFilterLabel = view.findViewById(R.id.btnFilterLabel);
+        // tvFilterStatus = view.findViewById(R.id.tvFilterStatus);
+        // btnClearFilter = view.findViewById(R.id.btnClearFilter);
+        
         if (fabAddTask != null) {
             fabAddTask.setOnClickListener(v -> showCreateTaskDialog());
         }
-    }
-    
-    private void setupViewModel() {
-        // Create repository
-        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
-        ITaskRepository repository = new TaskRepositoryImpl(apiService);
         
-        // Create UseCases
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setOnClickListener(v -> showLabelFilterDialog());
+        }
+        
+        if (btnClearFilter != null) {
+            btnClearFilter.setOnClickListener(v -> clearFilter());
+        }
+    }
+
+    private void setupViewModel() {
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository repository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
         GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(repository);
         GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(repository);
         CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(repository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(repository);
         UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(repository);
         DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(repository);
         AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(repository);
@@ -167,12 +180,15 @@ public class ListProject extends Fragment {
         GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(repository);
         AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(repository);
         GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(repository);
-        
-        // Create Factory
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(repository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(repository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(repository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(repository);
         TaskViewModelFactory factory = new TaskViewModelFactory(
             getTaskByIdUseCase,
             getTasksByBoardUseCase,
             createTaskUseCase,
+            createQuickTaskUseCase,
             updateTaskUseCase,
             deleteTaskUseCase,
             assignTaskUseCase,
@@ -184,150 +200,126 @@ public class ListProject extends Fragment {
             addAttachmentUseCase,
             getTaskAttachmentsUseCase,
             addChecklistUseCase,
-            getTaskChecklistsUseCase
+            getTaskChecklistsUseCase,
+            updateCommentUseCase,
+            deleteCommentUseCase,
+            deleteAttachmentUseCase,
+            getAttachmentViewUrlUseCase,
+            repository
         );
-        
-        // Create ViewModel - shared across Activity
         taskViewModel = new ViewModelProvider(requireActivity(), factory).get(TaskViewModel.class);
         Log.d(TAG, "TaskViewModel initialized");
     }
-    
+
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         
-        // Initialize adapter with click listener
-        taskAdapter = new TaskAdapter(new ArrayList<>());
+        // Create adapter with board ID
+        taskAdapter = new com.example.tralalero.adapter.TaskAdapter(new ArrayList<>(), boardId);
+        
+        // Set click listener
         taskAdapter.setOnTaskClickListener(task -> {
             showTaskDetailBottomSheet(task);
             Log.d(TAG, "Task clicked: " + task.getId());
         });
         
-        // ✅ Setup drag & drop listener
-        taskAdapter.setOnTaskDragListener((fromPosition, toPosition) -> {
-            Log.d(TAG, "Task moved from " + fromPosition + " to " + toPosition);
-            // TODO: Update task position in backend
-            Task movedTask = taskAdapter.getTaskAt(toPosition);
-            if (movedTask != null) {
-                // Calculate new position value
-                double newPosition = toPosition * 1000.0;
-                taskViewModel.updateTaskPosition(movedTask.getId(), newPosition);
+        // Set move listener
+        taskAdapter.setOnTaskMoveListener(new com.example.tralalero.adapter.TaskAdapter.OnTaskMoveListener() {
+            @Override
+            public void onMoveLeft(Task task, int position) {
+                Log.d(TAG, "onMoveLeft called for task: " + task.getTitle());
             }
+
+            @Override
+            public void onMoveRight(Task task, int position) {
+                Log.d(TAG, "onMoveRight called for task: " + task.getTitle());
+            }
+        });
+        
+        // Set status change listener for checkbox
+        taskAdapter.setOnTaskStatusChangeListener((task, isDone) -> {
+            Log.d(TAG, "Checkbox clicked from old adapter for task: " + task.getId());
+            // Call the new unified logic
+            handleCheckboxClick(task, type);
         });
 
         recyclerView.setAdapter(taskAdapter);
-
-        // ✅ Setup ItemTouchHelper for drag & drop
-        setupDragAndDrop();
     }
 
-    /**
-     * ✅ Setup drag and drop functionality
-     */
-    private void setupDragAndDrop() {
-        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
-                ItemTouchHelper.UP | ItemTouchHelper.DOWN, // Drag directions
-                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT // Swipe directions
-        ) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView,
-                                  @NonNull RecyclerView.ViewHolder viewHolder,
-                                  @NonNull RecyclerView.ViewHolder target) {
-                int fromPosition = viewHolder.getAdapterPosition();
-                int toPosition = target.getAdapterPosition();
+    private void moveTaskToPosition(int fromPosition, int toPosition) {
+        Task movedTask = taskAdapter.getTaskAt(fromPosition);
+        if (movedTask == null) {
+            Log.e(TAG, "❌ Cannot move: task at position " + fromPosition + " is null");
+            return;
+        }
+        double newPosition = calculateNewPositionForMove(fromPosition, toPosition);
 
-                // Move item in adapter
-                taskAdapter.moveItem(fromPosition, toPosition);
-                return true;
-            }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                // Optional: Handle swipe to delete
-                int position = viewHolder.getAdapterPosition();
-                Task task = taskAdapter.getTaskAt(position);
-
-                if (direction == ItemTouchHelper.LEFT || direction == ItemTouchHelper.RIGHT) {
-                    // Show confirmation dialog before delete
-                    showDeleteConfirmation(task);
-                }
-            }
-
-            @Override
-            public boolean isLongPressDragEnabled() {
-                return true; // Enable long press to drag
-            }
-
-            @Override
-            public boolean isItemViewSwipeEnabled() {
-                return false; // Disable swipe to delete for now (can enable later)
-            }
-        };
-
-        itemTouchHelper = new ItemTouchHelper(callback);
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+        Log.d(TAG, "Moving task '" + movedTask.getTitle() + "' from " + fromPosition + " to " + toPosition + 
+                   ", new position value: " + newPosition);
+        taskAdapter.moveItem(fromPosition, toPosition);
+        taskViewModel.updateTaskPosition(movedTask.getId(), newPosition);
     }
 
-    /**
-     * Show confirmation dialog before deleting task
-     */
-    private void showDeleteConfirmation(Task task) {
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Delete Task")
-                .setMessage("Are you sure you want to delete \"" + task.getTitle() + "\"?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    Log.d(TAG, "Deleting task: " + task.getId());
-                    taskViewModel.deleteTask(task.getId());
-                    Toast.makeText(getContext(), "Task deleted", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    // Refresh list to restore the item
-                    taskAdapter.notifyDataSetChanged();
-                })
-                .setOnCancelListener(dialog -> {
-                    // Refresh list to restore the item
-                    taskAdapter.notifyDataSetChanged();
-                })
-                .show();
+    private double calculateNewPositionForMove(int fromPos, int toPos) {
+        int taskCount = taskAdapter.getItemCount();
+
+        if (taskCount <= 1) {
+            return 1000.0;
+        }
+        if (toPos == 0) {
+            Task firstTask = taskAdapter.getTaskAt(0);
+            if (firstTask != null) {
+                return firstTask.getPosition() / 2.0;
+            }
+            return 500.0;
+        }
+        if (toPos >= taskCount - 1) {
+            Task lastTask = taskAdapter.getTaskAt(taskCount - 1);
+            if (lastTask != null) {
+                return lastTask.getPosition() + 1024.0;
+            }
+            return toPos * 1000.0;
+        }
+        if (fromPos < toPos) {
+            Task prevTask = taskAdapter.getTaskAt(toPos);
+            Task nextTask = taskAdapter.getTaskAt(toPos + 1);
+            if (prevTask != null && nextTask != null) {
+                return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+            }
+        } else {
+            Task prevTask = taskAdapter.getTaskAt(toPos - 1);
+            Task nextTask = taskAdapter.getTaskAt(toPos);
+            if (prevTask != null && nextTask != null) {
+                return (prevTask.getPosition() + nextTask.getPosition()) / 2.0;
+            }
+        }
+
+        return toPos * 1000.0;
     }
 
     private void observeViewModel() {
-        // ✅ FIX: Observe tasks for THIS specific board only
-        // Wait until boardId is available
         if (boardId != null && !boardId.isEmpty()) {
             taskViewModel.getTasksForBoard(boardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
-                    // ✅ TaskAdapter already uses domain.model.Task - no conversion needed!
-                    taskAdapter.updateTasks(tasks);
+                    allTasks.clear();
+                    allTasks.addAll(tasks);
+                    applyFilter();
                     Log.d(TAG, "Loaded " + tasks.size() + " tasks for board: " + boardId);
-
-                    // Show/hide views
-                    recyclerView.setVisibility(View.VISIBLE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.GONE);
-                    }
                 } else {
-                    // No tasks - show empty view
-                    recyclerView.setVisibility(View.GONE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.VISIBLE);
-                        emptyView.setText(getEmptyMessage());
-                    }
+                    allTasks.clear();
+                    applyFilter();
                     Log.d(TAG, "No tasks found for board: " + boardId);
                 }
             });
         } else {
             Log.w(TAG, "Cannot observe tasks yet - boardId is null");
         }
-
-        // Observe loading state
         taskViewModel.isLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (progressBar != null) {
                 progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             }
             Log.d(TAG, "Loading state for " + type + ": " + isLoading);
         });
-        
-        // Observe errors
         taskViewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
@@ -336,29 +328,23 @@ public class ListProject extends Fragment {
             }
         });
     }
-    
-    // ===== HELPER METHODS =====
-
     private void loadTasksForBoard() {
         if (boardId == null || boardId.isEmpty()) {
             Log.e(TAG, "Cannot load tasks: boardId is null");
             return;
         }
-        
+
         Log.d(TAG, "Loading tasks for board: " + boardId);
         taskViewModel.loadTasksByBoard(boardId);
     }
 
     private void showTaskDetailBottomSheet(Task task) {
-        // Open CardDetailActivity for editing
         Intent intent = new Intent(getContext(), CardDetailActivity.class);
         intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, boardId);
         intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
         intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, type); // Pass board name
-        
-        // Pass task details
         intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
@@ -366,14 +352,10 @@ public class ListProject extends Fragment {
         intent.putExtra(CardDetailActivity.EXTRA_TASK_POSITION, task.getPosition());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_ASSIGNEE_ID, task.getAssigneeId());
         intent.putExtra(CardDetailActivity.EXTRA_TASK_CREATED_BY, task.getCreatedBy());
-        
+
         startActivityForResult(intent, REQUEST_CODE_EDIT_TASK);
     }
 
-    /**
-     * Show CardDetailActivity to create new task
-     * Modified to use Activity instead of BottomSheet
-     */
     private void showCreateTaskDialog() {
         if (boardId == null || boardId.isEmpty()) {
             Toast.makeText(getContext(), "Board not ready yet, please wait...", Toast.LENGTH_SHORT).show();
@@ -386,14 +368,12 @@ public class ListProject extends Fragment {
         }
 
         Log.d(TAG, "Opening CardDetailActivity for creating task in board: " + boardId);
-
-        // Open CardDetailActivity for creating new task
         Intent intent = new Intent(getContext(), CardDetailActivity.class);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, boardId);
         intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, projectId);
         intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, false);
         intent.putExtra(CardDetailActivity.EXTRA_BOARD_NAME, type); // Pass board name
-        
+
         startActivityForResult(intent, REQUEST_CODE_CREATE_TASK);
     }
 
@@ -401,28 +381,21 @@ public class ListProject extends Fragment {
         return "No tasks in " + type;
     }
 
-    /**
-     * Handle result from CardDetailActivity
-     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        
+
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_CODE_CREATE_TASK) {
                 Log.d(TAG, "Task created, reloading tasks...");
-                // Reload tasks after creation
                 if (boardId != null && !boardId.isEmpty()) {
-                    // Small delay to ensure backend has processed the request
                     new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                         loadTasksForBoard();
                     }, 500);
                 }
             } else if (requestCode == REQUEST_CODE_EDIT_TASK) {
                 Log.d(TAG, "Task updated/deleted, reloading tasks...");
-                // Reload tasks after update or delete
                 if (boardId != null && !boardId.isEmpty()) {
-                    // Small delay to ensure backend has processed the request
                     new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                         loadTasksForBoard();
                     }, 500);
@@ -431,49 +404,259 @@ public class ListProject extends Fragment {
         }
     }
 
-    /**
-     * Update boardId and reload tasks
-     * Called when boards are loaded after fragment creation
-     */
     public void updateBoardIdAndReload(String newBoardId) {
         if (newBoardId != null && !newBoardId.isEmpty() && !newBoardId.equals(this.boardId)) {
             Log.d(TAG, "Updating boardId from " + this.boardId + " to " + newBoardId);
             this.boardId = newBoardId;
-
-            // Update arguments for configuration changes
+            
+            // Clear filter when switching boards
+            clearFilter();
+            
             if (getArguments() != null) {
                 getArguments().putString(ARG_BOARD_ID, newBoardId);
             }
-
-            // ✅ FIX: Re-observe with new boardId
             taskViewModel.getTasksForBoard(newBoardId).observe(getViewLifecycleOwner(), tasks -> {
                 if (tasks != null && !tasks.isEmpty()) {
-                    taskAdapter.updateTasks(tasks);
+                    allTasks.clear();
+                    allTasks.addAll(tasks);
+                    applyFilter();
                     Log.d(TAG, "Loaded " + tasks.size() + " tasks for updated board: " + newBoardId);
-                    recyclerView.setVisibility(View.VISIBLE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.GONE);
-                    }
                 } else {
-                    recyclerView.setVisibility(View.GONE);
-                    if (emptyView != null) {
-                        emptyView.setVisibility(View.VISIBLE);
-                        emptyView.setText(getEmptyMessage());
-                    }
+                    allTasks.clear();
+                    applyFilter();
                     Log.d(TAG, "No tasks found for updated board: " + newBoardId);
                 }
             });
-
-            // Reload tasks with new boardId
             loadTasksForBoard();
         }
     }
 
-    /**
-     * Get current boardId
-     */
     public String getBoardId() {
         return boardId;
+    }
+    
+    /**
+     * Handle checkbox click logic:
+     * Simply toggle task status between TO_DO and DONE (same as All Work)
+     * No moving tasks between boards
+     */
+    private void handleCheckboxClick(Task task, String currentBoardType) {
+        Log.d(TAG, "Checkbox clicked for task: " + task.getTitle() + " in board: " + currentBoardType);
+        
+        // Toggle task status: TO_DO ↔ DONE
+        Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+            ? Task.TaskStatus.TO_DO 
+            : Task.TaskStatus.DONE;
+        
+        Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
+        
+        updateTaskStatus(task, newStatus);
+    }
+    
+    /**
+     * Update task status via API (same as All Work logic)
+     */
+    private void updateTaskStatus(Task task, Task.TaskStatus newStatus) {
+        // Create update payload with ONLY the field we want to change
+        Map<String, Object> updatePayload = new HashMap<>();
+        updatePayload.put("status", newStatus.name());
+        
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Reload the board to refresh the task list
+                    if (boardId != null && !boardId.isEmpty()) {
+                        Log.d(TAG, "Reloading board: " + boardId);
+                        taskViewModel.loadTasksByBoard(boardId);
+                    }
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    Toast.makeText(getContext(), "Failed to update task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    // ==================== FILTER METHODS ====================
+    
+    private void setupLabelViewModel() {
+        if (projectId == null) return;
+        
+        LabelApiService apiService = ApiClient.get(App.authManager).create(LabelApiService.class);
+        ILabelRepository repository = new LabelRepositoryImpl(apiService);
+        
+        GetLabelsByWorkspaceUseCase getLabelsByWorkspaceUseCase = new GetLabelsByWorkspaceUseCase(repository);
+        GetLabelsByProjectUseCase getLabelsByProjectUseCase = new GetLabelsByProjectUseCase(repository);
+        GetLabelByIdUseCase getLabelByIdUseCase = new GetLabelByIdUseCase(repository);
+        CreateLabelUseCase createLabelUseCase = new CreateLabelUseCase(repository);
+        CreateLabelInProjectUseCase createLabelInProjectUseCase = new CreateLabelInProjectUseCase(repository);
+        UpdateLabelUseCase updateLabelUseCase = new UpdateLabelUseCase(repository);
+        DeleteLabelUseCase deleteLabelUseCase = new DeleteLabelUseCase(repository);
+        GetTaskLabelsUseCase getTaskLabelsUseCase = new GetTaskLabelsUseCase(repository);
+        AssignLabelToTaskUseCase assignLabelToTaskUseCase = new AssignLabelToTaskUseCase(repository);
+        RemoveLabelFromTaskUseCase removeLabelFromTaskUseCase = new RemoveLabelFromTaskUseCase(repository);
+        
+        LabelViewModelFactory factory = new LabelViewModelFactory(
+                getLabelsByWorkspaceUseCase,
+                getLabelsByProjectUseCase,
+                getLabelByIdUseCase,
+                createLabelUseCase,
+                createLabelInProjectUseCase,
+                updateLabelUseCase,
+                deleteLabelUseCase,
+                getTaskLabelsUseCase,
+                assignLabelToTaskUseCase,
+                removeLabelFromTaskUseCase
+        );
+        
+        labelViewModel = new ViewModelProvider(this, factory).get(LabelViewModel.class);
+    }
+    
+    private void showLabelFilterDialog() {
+        if (projectId == null) {
+            Toast.makeText(getContext(), "Project ID not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (labelViewModel == null) {
+            setupLabelViewModel();
+        }
+        
+        // Load labels and show dialog
+        labelViewModel.loadLabelsByProject(projectId);
+        
+        labelViewModel.getLabels().observe(getViewLifecycleOwner(), labels -> {
+            if (labels != null && !labels.isEmpty()) {
+                showLabelSelectionDialog(labels);
+            } else {
+                Toast.makeText(getContext(), "No labels found in this project", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void showLabelSelectionDialog(List<Label> labels) {
+        if (getContext() == null) return;
+        
+        String[] labelNames = new String[labels.size() + 1];
+        labelNames[0] = "All tasks (No filter)";
+        for (int i = 0; i < labels.size(); i++) {
+            labelNames[i + 1] = labels.get(i).getName();
+        }
+        
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+        builder.setTitle("Filter by Label");
+        builder.setItems(labelNames, (dialog, which) -> {
+            if (which == 0) {
+                // Clear filter
+                clearFilter();
+            } else {
+                // Apply label filter
+                Label selectedLabel = labels.get(which - 1);
+                applyLabelFilter(selectedLabel.getId(), selectedLabel.getName());
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+    
+    private void applyLabelFilter(String labelId, String labelName) {
+        this.selectedLabelId = labelId;
+        this.selectedLabelName = labelName;
+        
+        Log.d(TAG, "Applying filter for label: " + labelName + " (ID: " + labelId + ")");
+        
+        // Update filter status UI
+        if (tvFilterStatus != null) {
+            tvFilterStatus.setVisibility(View.VISIBLE);
+            tvFilterStatus.setText("Filtered by: " + labelName);
+        }
+        if (btnClearFilter != null) {
+            btnClearFilter.setVisibility(View.VISIBLE);
+        }
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setText("Change Filter");
+        }
+        
+        applyFilter();
+    }
+    
+    private void clearFilter() {
+        this.selectedLabelId = null;
+        this.selectedLabelName = null;
+        
+        Log.d(TAG, "Clearing filter");
+        
+        // Update UI
+        if (tvFilterStatus != null) {
+            tvFilterStatus.setVisibility(View.GONE);
+        }
+        if (btnClearFilter != null) {
+            btnClearFilter.setVisibility(View.GONE);
+        }
+        if (btnFilterLabel != null) {
+            btnFilterLabel.setText("Filter by Label");
+        }
+        
+        applyFilter();
+    }
+    
+    private void applyFilter() {
+        List<Task> filteredTasks;
+        
+        if (selectedLabelId == null) {
+            // No filter - show all tasks
+            filteredTasks = new ArrayList<>(allTasks);
+        } else {
+            // Filter by label
+            filteredTasks = new ArrayList<>();
+            for (Task task : allTasks) {
+                if (task.getLabels() != null) {
+                    for (Label label : task.getLabels()) {
+                        if (label.getId().equals(selectedLabelId)) {
+                            filteredTasks.add(task);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update adapter
+        taskAdapter.updateTasks(filteredTasks);
+        
+        // Update UI visibility
+        if (filteredTasks.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            if (emptyView != null) {
+                emptyView.setVisibility(View.VISIBLE);
+                if (selectedLabelId != null) {
+                    emptyView.setText("No tasks with label: " + selectedLabelName);
+                } else {
+                    emptyView.setText(getEmptyMessage());
+                }
+            }
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            if (emptyView != null) {
+                emptyView.setVisibility(View.GONE);
+            }
+        }
+        
+        Log.d(TAG, "Applied filter - showing " + filteredTasks.size() + " of " + allTasks.size() + " tasks");
     }
 }
 

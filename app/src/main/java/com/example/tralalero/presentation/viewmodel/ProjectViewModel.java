@@ -4,61 +4,53 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.tralalero.domain.model.Board;
 import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.project.GetProjectByIdUseCase;
 import com.example.tralalero.domain.usecase.project.CreateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.DeleteProjectUseCase;
 import com.example.tralalero.domain.usecase.project.SwitchBoardTypeUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
+import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
 
-/**
- * ViewModel for managing Project-related UI state and business logic
- *
- * Features:
- * - CRUD operations for projects
- * - Switch board type (Kanban/Scrum)
- * - Update project key
- *
- * @author Người 2
- * @date 14/10/2025
- */
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class ProjectViewModel extends ViewModel {
-
-    // ========== Dependencies (UseCases) ==========
     private final GetProjectByIdUseCase getProjectByIdUseCase;
     private final CreateProjectUseCase createProjectUseCase;
     private final UpdateProjectUseCase updateProjectUseCase;
     private final DeleteProjectUseCase deleteProjectUseCase;
     private final SwitchBoardTypeUseCase switchBoardTypeUseCase;
     private final UpdateProjectKeyUseCase updateProjectKeyUseCase;
-
-    // ========== LiveData (UI State) ==========
+    private final GetBoardsByProjectUseCase getBoardsByProjectUseCase;
+    private final GetTasksByBoardUseCase getTasksByBoardUseCase;
+    
     private final MutableLiveData<Project> selectedProjectLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Board>> boardsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Map<String, List<Task>>> tasksPerBoardLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> selectedProjectIdLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> projectDeletedLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> projectCreatedLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> projectUpdatedLiveData = new MutableLiveData<>(false);
 
-    // ========== Constructor ==========
-    /**
-     * Constructor with dependency injection
-     *
-     * @param getProjectByIdUseCase UseCase to get project by ID
-     * @param createProjectUseCase UseCase to create new project
-     * @param updateProjectUseCase UseCase to update project
-     * @param deleteProjectUseCase UseCase to delete project
-     * @param switchBoardTypeUseCase UseCase to switch board type
-     * @param updateProjectKeyUseCase UseCase to update project key
-     */
     public ProjectViewModel(
             GetProjectByIdUseCase getProjectByIdUseCase,
             CreateProjectUseCase createProjectUseCase,
             UpdateProjectUseCase updateProjectUseCase,
             DeleteProjectUseCase deleteProjectUseCase,
             SwitchBoardTypeUseCase switchBoardTypeUseCase,
-            UpdateProjectKeyUseCase updateProjectKeyUseCase
+            UpdateProjectKeyUseCase updateProjectKeyUseCase,
+            GetBoardsByProjectUseCase getBoardsByProjectUseCase,
+            GetTasksByBoardUseCase getTasksByBoardUseCase
     ) {
         this.getProjectByIdUseCase = getProjectByIdUseCase;
         this.createProjectUseCase = createProjectUseCase;
@@ -66,64 +58,114 @@ public class ProjectViewModel extends ViewModel {
         this.deleteProjectUseCase = deleteProjectUseCase;
         this.switchBoardTypeUseCase = switchBoardTypeUseCase;
         this.updateProjectKeyUseCase = updateProjectKeyUseCase;
+        this.getBoardsByProjectUseCase = getBoardsByProjectUseCase;
+        this.getTasksByBoardUseCase = getTasksByBoardUseCase;
     }
 
-    // ========== Getters (Public API) ==========
-
-    /**
-     * Get the currently selected project
-     * @return LiveData containing the selected project
-     */
     public LiveData<Project> getSelectedProject() {
         return selectedProjectLiveData;
     }
 
-    /**
-     * Get loading state
-     * @return LiveData containing loading state
-     */
+    public LiveData<List<Board>> getBoards() {
+        return boardsLiveData;
+    }
+
+    public LiveData<Map<String, List<Task>>> getTasksPerBoard() {
+        return tasksPerBoardLiveData;
+    }
+
     public LiveData<Boolean> isLoading() {
         return loadingLiveData;
     }
 
-    /**
-     * Get error message
-     * @return LiveData containing error message
-     */
     public LiveData<String> getError() {
         return errorLiveData;
     }
 
-    /**
-     * Get project deleted state
-     * @return LiveData indicating if project was deleted
-     */
     public LiveData<Boolean> isProjectDeleted() {
         return projectDeletedLiveData;
     }
 
-    /**
-     * Get project created state
-     * @return LiveData indicating if project was created
-     */
     public LiveData<Boolean> isProjectCreated() {
         return projectCreatedLiveData;
     }
 
-    /**
-     * Get project updated state
-     * @return LiveData indicating if project was updated
-     */
     public LiveData<Boolean> isProjectUpdated() {
         return projectUpdatedLiveData;
     }
 
-    // ========== Public Methods ==========
+    // ✅ Select project - auto-loads boards and tasks
+    public void selectProject(String projectId) {
+        if (projectId == null) return;
+        
+        selectedProjectIdLiveData.setValue(projectId);
+        
+        // Load project details
+        loadProjectById(projectId);
+        
+        // Auto-load boards for this project
+        loadBoardsForProject(projectId);
+    }
+    
+    public void loadBoardsForProject(String projectId) {
+        loadingLiveData.setValue(true);
+        
+        getBoardsByProjectUseCase.execute(projectId, new GetBoardsByProjectUseCase.Callback<List<Board>>() {
+            @Override
+            public void onSuccess(List<Board> boards) {
+                boardsLiveData.setValue(boards);
+                
+                // Auto-load tasks for all boards
+                if (boards != null && !boards.isEmpty()) {
+                    loadTasksForAllBoards(boards);
+                } else {
+                    loadingLiveData.setValue(false);
+                    tasksPerBoardLiveData.setValue(new HashMap<>());
+                }
+            }
 
-    /**
-     * Load a project by its ID
-     * @param projectId The ID of the project to load
-     */
+            @Override
+            public void onError(String error) {
+                loadingLiveData.setValue(false);
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+    
+    private void loadTasksForAllBoards(List<Board> boards) {
+        Map<String, List<Task>> tasksMap = new HashMap<>();
+        AtomicInteger pendingRequests = new AtomicInteger(boards.size());
+        
+        for (Board board : boards) {
+            getTasksByBoardUseCase.execute(board.getId(), new GetTasksByBoardUseCase.Callback<List<Task>>() {
+                @Override
+                public void onSuccess(List<Task> tasks) {
+                    synchronized (tasksMap) {
+                        tasksMap.put(board.getId(), tasks != null ? tasks : new ArrayList<>());
+                    }
+                    
+                    if (pendingRequests.decrementAndGet() == 0) {
+                        // All tasks loaded
+                        loadingLiveData.setValue(false);
+                        tasksPerBoardLiveData.setValue(new HashMap<>(tasksMap));
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    synchronized (tasksMap) {
+                        tasksMap.put(board.getId(), new ArrayList<>());
+                    }
+                    
+                    if (pendingRequests.decrementAndGet() == 0) {
+                        loadingLiveData.setValue(false);
+                        tasksPerBoardLiveData.setValue(new HashMap<>(tasksMap));
+                    }
+                }
+            });
+        }
+    }
+
     public void loadProjectById(String projectId) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -143,11 +185,6 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Create a new project
-     * @param workspaceId The workspace ID to create project in
-     * @param project The project object to create
-     */
     public void createProject(String workspaceId, Project project) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -170,11 +207,6 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Update an existing project
-     * @param projectId The ID of the project to update
-     * @param project The updated project object
-     */
     public void updateProject(String projectId, Project project) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -197,10 +229,6 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Delete a project
-     * @param projectId The ID of the project to delete
-     */
     public void deleteProject(String projectId) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -223,11 +251,6 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Switch the board type of a project (Kanban/Scrum)
-     * @param projectId The ID of the project
-     * @param newBoardType The new board type ("KANBAN" or "SCRUM")
-     */
     public void switchBoardType(String projectId, String newBoardType) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -247,11 +270,6 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Update the project key (e.g., PROJ-123)
-     * @param projectId The ID of the project
-     * @param newKey The new project key
-     */
     public void updateProjectKey(String projectId, String newKey) {
         loadingLiveData.setValue(true);
         errorLiveData.setValue(null);
@@ -271,26 +289,238 @@ public class ProjectViewModel extends ViewModel {
         });
     }
 
-    /**
-     * Clear any error message
-     */
     public void clearError() {
         errorLiveData.setValue(null);
     }
 
-    /**
-     * Reset all success flags
-     */
     public void resetFlags() {
         projectCreatedLiveData.setValue(false);
         projectUpdatedLiveData.setValue(false);
         projectDeletedLiveData.setValue(false);
     }
+    
+    // ✅ Refresh specific board tasks after external changes (e.g. task move, create, delete)
+    public void refreshBoardTasks(String boardId) {
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) {
+            currentMap = new HashMap<>();
+        }
+        
+        final Map<String, List<Task>> updatedMap = new HashMap<>(currentMap);
+        
+        getTasksByBoardUseCase.execute(boardId, new GetTasksByBoardUseCase.Callback<List<Task>>() {
+            @Override
+            public void onSuccess(List<Task> tasks) {
+                updatedMap.put(boardId, tasks != null ? tasks : new ArrayList<>());
+                tasksPerBoardLiveData.setValue(updatedMap);
+            }
 
-    // ========== Lifecycle ==========
+            @Override
+            public void onError(String error) {
+                errorLiveData.setValue(error);
+            }
+        });
+    }
+    
+    /**
+     * ✅ NEW: Optimistic move task between boards (for drag & drop)
+     * Updates UI immediately, then syncs with backend
+     */
+    public void moveTaskOptimistically(Task task, String targetBoardId, double newPosition) {
+        if (task == null || targetBoardId == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = task.getBoardId();
+        if (sourceBoardId == null || sourceBoardId.equals(targetBoardId)) return;
+        
+        // ✅ Clone the map to trigger LiveData update
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks != null) {
+            sourceTasks.removeIf(t -> t.getId().equals(task.getId()));
+        }
+        
+        // ✅ Add to target board with new position
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks == null) {
+            targetTasks = new ArrayList<>();
+            updatedMap.put(targetBoardId, targetTasks);
+        }
+        
+        // Create moved task with new boardId and position
+        Task movedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            targetBoardId, // ✅ New board
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            task.getStatus(),
+            task.getPriority(),
+            newPosition, // ✅ New position
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels(),  // preserve labels
+            task.getAssignees()  // preserve assignees
+        );
+        
+        targetTasks.add(movedTask);
+        
+        // ✅ Update LiveData immediately
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
+    /**
+     * ✅ NEW: Rollback optimistic move if API fails
+     */
+    public void rollbackTaskMove(Task originalTask, String targetBoardId) {
+        if (originalTask == null || targetBoardId == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = originalTask.getBoardId();
+        if (sourceBoardId == null) return;
+        
+        // ✅ Clone the map
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from target board (where we optimistically added it)
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks != null) {
+            targetTasks.removeIf(t -> t.getId().equals(originalTask.getId()));
+        }
+        
+        // ✅ Restore to source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks == null) {
+            sourceTasks = new ArrayList<>();
+            updatedMap.put(sourceBoardId, sourceTasks);
+        }
+        sourceTasks.add(originalTask);
+        
+        // ✅ Update LiveData
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
+    /**
+     * ✅ NEW: Move task to board with status update (for checkbox workflow)
+     * Updates both boardId and status in one optimistic update
+     */
+    public void moveTaskWithStatusUpdate(Task task, String targetBoardId, Task.TaskStatus newStatus, double newPosition) {
+        if (task == null || targetBoardId == null || newStatus == null) return;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return;
+        
+        String sourceBoardId = task.getBoardId();
+        if (sourceBoardId == null || sourceBoardId.equals(targetBoardId)) return;
+        
+        // ✅ Clone the map to trigger LiveData update
+        Map<String, List<Task>> updatedMap = new HashMap<>();
+        for (Map.Entry<String, List<Task>> entry : currentMap.entrySet()) {
+            updatedMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        
+        // ✅ Remove from source board
+        List<Task> sourceTasks = updatedMap.get(sourceBoardId);
+        if (sourceTasks != null) {
+            sourceTasks.removeIf(t -> t.getId().equals(task.getId()));
+        }
+        
+        // ✅ Add to target board with new boardId, status, and position
+        List<Task> targetTasks = updatedMap.get(targetBoardId);
+        if (targetTasks == null) {
+            targetTasks = new ArrayList<>();
+            updatedMap.put(targetBoardId, targetTasks);
+        }
+        
+        // Create moved task with updated boardId AND status
+        Task movedTask = new Task(
+            task.getId(),
+            task.getProjectId(),
+            targetBoardId, // ✅ New board
+            task.getTitle(),
+            task.getDescription(),
+            task.getIssueKey(),
+            task.getType(),
+            newStatus, // ✅ New status
+            task.getPriority(),
+            newPosition, // ✅ New position
+            task.getAssigneeId(),
+            task.getCreatedBy(),
+            task.getSprintId(),
+            task.getEpicId(),
+            task.getParentTaskId(),
+            task.getStartAt(),
+            task.getDueAt(),
+            task.getStoryPoints(),
+            task.getOriginalEstimateSec(),
+            task.getRemainingEstimateSec(),
+            task.getCreatedAt(),
+            task.getUpdatedAt(),
+            task.isCalendarSyncEnabled(),
+            task.getCalendarReminderMinutes(),
+            task.getCalendarEventId(),
+            task.getCalendarSyncedAt(),
+            task.getLabels(),  // preserve labels
+            task.getAssignees()  // preserve assignees
+        );
+        
+        targetTasks.add(movedTask);
+        
+        // ✅ Update LiveData immediately
+        tasksPerBoardLiveData.setValue(updatedMap);
+    }
+    
+    /**
+     * ✅ Helper: Find task in current tasksPerBoard map
+     */
+    public Task findTaskById(String taskId) {
+        if (taskId == null) return null;
+        
+        Map<String, List<Task>> currentMap = tasksPerBoardLiveData.getValue();
+        if (currentMap == null) return null;
+        
+        for (List<Task> tasks : currentMap.values()) {
+            if (tasks != null) {
+                for (Task task : tasks) {
+                    if (task.getId().equals(taskId)) {
+                        return task;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
     @Override
     protected void onCleared() {
         super.onCleared();
-        // Cleanup if needed (e.g., cancel ongoing operations)
     }
 }

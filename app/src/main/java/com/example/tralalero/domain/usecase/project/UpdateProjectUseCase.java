@@ -59,7 +59,8 @@ public class UpdateProjectUseCase {
                 name.trim(),
                 project.getDescription() != null ? project.getDescription().trim() : null,
                 key != null && !key.trim().isEmpty() ? key.trim().toUpperCase() : project.getKey(),
-                project.getBoardType() != null ? project.getBoardType().toUpperCase() : null
+                project.getBoardType() != null ? project.getBoardType().toUpperCase() : null,
+                project.getType()  // Preserve existing type
         );
 
         repository.updateProject(projectId, processedProject,

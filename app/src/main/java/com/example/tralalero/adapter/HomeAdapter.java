@@ -17,9 +17,12 @@ import com.example.tralalero.domain.model.Workspace;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder> {
+public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<Workspace> workspaceList;
+    private static final int TYPE_HEADER = 0;
+    private static final int TYPE_WORKSPACE = 1;
+
+    private List<Object> items = new ArrayList<>();  // Mixed list of headers and workspaces
     private Context context;
     private OnWorkspaceClickListener listener;
 
@@ -29,7 +32,6 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder
 
     public HomeAdapter(Context context) {
         this.context = context;
-        this.workspaceList = new ArrayList<>();
     }
 
     public void setOnWorkspaceClickListener(OnWorkspaceClickListener listener) {
@@ -37,48 +39,115 @@ public class HomeAdapter extends RecyclerView.Adapter<HomeAdapter.HomeViewHolder
     }
 
     public void setWorkspaceList(List<Workspace> workspaceList) {
-        this.workspaceList = workspaceList != null ? workspaceList : new ArrayList<>();
+        items.clear();
+
+        if (workspaceList == null || workspaceList.isEmpty()) {
+            notifyDataSetChanged();
+            return;
+        }
+
+        // Separate workspaces into owned and shared
+        List<Workspace> ownedWorkspaces = new ArrayList<>();
+        List<Workspace> sharedWorkspaces = new ArrayList<>();
+
+        for (Workspace workspace : workspaceList) {
+            if (workspace.isOwner()) {
+                ownedWorkspaces.add(workspace);
+            } else {
+                sharedWorkspaces.add(workspace);
+            }
+        }
+
+        // Add "Your Workspaces" section
+        if (!ownedWorkspaces.isEmpty()) {
+            items.add("YOUR WORKSPACE");
+            items.addAll(ownedWorkspaces);
+        }
+
+        // Add "Shared Workspaces" section
+        if (!sharedWorkspaces.isEmpty()) {
+            items.add("SHARED WORKSPACE");
+            items.addAll(sharedWorkspaces);
+        }
+
         notifyDataSetChanged();
     }
 
     public void addWorkspace(Workspace workspace) {
         if (workspace != null) {
-            workspaceList.add(workspace);
-            notifyItemInserted(workspaceList.size() - 1);
+            // Recreate the list with the new workspace
+            List<Workspace> currentWorkspaces = new ArrayList<>();
+            for (Object item : items) {
+                if (item instanceof Workspace) {
+                    currentWorkspaces.add((Workspace) item);
+                }
+            }
+            currentWorkspaces.add(workspace);
+            setWorkspaceList(currentWorkspaces);
         }
     }
 
     public void removeWorkspace(int position) {
-        if (position >= 0 && position < workspaceList.size()) {
-            workspaceList.remove(position);
+        if (position >= 0 && position < items.size() && items.get(position) instanceof Workspace) {
+            items.remove(position);
             notifyItemRemoved(position);
         }
     }
 
     public void updateWorkspace(List<Workspace> workspace) {
-        this.workspaceList.clear();
-        this.workspaceList.addAll(workspace);
-        notifyDataSetChanged();
+        setWorkspaceList(workspace);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return items.get(position) instanceof String ? TYPE_HEADER : TYPE_WORKSPACE;
     }
 
     @NonNull
     @Override
-    public HomeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.workspace_item, parent, false);
-        return new HomeViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == TYPE_HEADER) {
+            View view = LayoutInflater.from(context)
+                    .inflate(R.layout.item_section_header, parent, false);
+            return new HeaderViewHolder(view);
+        } else {
+            View view = LayoutInflater.from(context)
+                    .inflate(R.layout.workspace_item, parent, false);
+            return new HomeViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull HomeViewHolder holder, int position) {
-        Workspace workspace = workspaceList.get(position);
-        holder.bind(workspace);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof HeaderViewHolder) {
+            String title = (String) items.get(position);
+            ((HeaderViewHolder) holder).bind(title);
+        } else if (holder instanceof HomeViewHolder) {
+            Workspace workspace = (Workspace) items.get(position);
+            ((HomeViewHolder) holder).bind(workspace);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return workspaceList.size();
+        return items.size();
     }
 
+    // Header ViewHolder
+    static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        private final TextView sectionTitle;
+
+        HeaderViewHolder(@NonNull View itemView) {
+            super(itemView);
+            sectionTitle = itemView.findViewById(R.id.sectionTitle);
+        }
+
+        void bind(String title) {
+            sectionTitle.setText(title);
+        }
+    }
+
+    // Workspace ViewHolder
     public class HomeViewHolder extends RecyclerView.ViewHolder {
         private ImageView workspaceIcon;
         private TextView workspaceName;

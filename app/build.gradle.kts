@@ -12,20 +12,38 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://plantracker-backend.onrender.com/api/\"")
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"http://10.170.77.128:3000/api/\""
+//                "\"https://plantracker-backend-1.onrender.com/api/\""
+            )
+            // Use local WebSocket for development
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"ws://10.170.77.128:3000/notifications\""
+//                "\"wss://plantracker-backend-1.onrender.com/api/\"",
+
+                )
         }
         release {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"https://plantracker-backend.onrender.com/api/\""
+                "\"https://plantracker-backend-1.onrender.com/api/\""
+            )
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"wss://plantracker-backend-1.onrender.com/notifications\""
             )
             isMinifyEnabled = false
             proguardFiles(
@@ -54,8 +72,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck")
     implementation("com.google.firebase:firebase-appcheck-debug")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-    // TEMPORARILY DISABLED - FCM
-    // implementation("com.google.firebase:firebase-messaging")
+    // FCM - Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-messaging")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
@@ -64,11 +82,29 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.room:room-runtime:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
+    implementation(libs.firebase.messaging)
     annotationProcessor("androidx.room:room-compiler:2.7.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-runtime-android:2.9.4")
 
+    // WebSocket & Lifecycle for DEV 1
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
+
+    // Socket.IO client for real-time notifications
+    implementation("io.socket:socket.io-client:2.1.0")
+
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    // MPAndroidChart for donut chart in Project Summary
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // Chrome Custom Tabs for OAuth flow
+    implementation("androidx.browser:browser:1.8.0")
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.appcompat)

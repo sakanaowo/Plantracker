@@ -14,10 +14,14 @@ import java.util.TimeZone;
 public class TaskCommentMapper {
     
     private static final SimpleDateFormat ISO_DATE_FORMAT;
+    private static final SimpleDateFormat ISO_DATE_FORMAT_WITH_MILLIS;
     
     static {
         ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         ISO_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        
+        ISO_DATE_FORMAT_WITH_MILLIS = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        ISO_DATE_FORMAT_WITH_MILLIS.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
     
     public static TaskComment toDomain(TaskCommentDTO dto) {
@@ -27,13 +31,36 @@ public class TaskCommentMapper {
         
         Date createdAt = parseDate(dto.getCreatedAt());
         
-        return new TaskComment(
+        // Extract user info from users field
+        String userName = null;
+        String userAvatarUrl = null;
+        
+        // Add debug logging
+        android.util.Log.d("TaskCommentMapper", "=== Mapping DTO to Domain ===");
+        android.util.Log.d("TaskCommentMapper", "DTO userId: " + dto.getUserId());
+        android.util.Log.d("TaskCommentMapper", "DTO users field: " + dto.getUsers());
+        
+        if (dto.getUsers() != null) {
+            userName = dto.getUsers().getName();
+            userAvatarUrl = dto.getUsers().getAvatarUrl();
+            android.util.Log.d("TaskCommentMapper", "Extracted userName: " + userName);
+            android.util.Log.d("TaskCommentMapper", "Extracted userAvatarUrl: " + userAvatarUrl);
+        } else {
+            android.util.Log.d("TaskCommentMapper", "DTO users field is null");
+        }
+        
+        TaskComment comment = new TaskComment(
             dto.getId(),
             dto.getTaskId(),
             dto.getUserId(),
             dto.getBody(),
-            createdAt
+            createdAt,
+            userName,
+            userAvatarUrl
         );
+        
+        android.util.Log.d("TaskCommentMapper", "Created TaskComment with userName: " + comment.getUserName());
+        return comment;
     }
     
     public static TaskCommentDTO toDto(TaskComment comment) {
@@ -77,18 +104,39 @@ public class TaskCommentMapper {
     
     private static Date parseDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
+            android.util.Log.w("TaskCommentMapper", "Empty date string");
             return null;
         }
         
+        android.util.Log.d("TaskCommentMapper", "Parsing date: " + dateString);
+        
+        // Try format with milliseconds first (yyyy-MM-dd'T'HH:mm:ss.SSS'Z')
         try {
-            return ISO_DATE_FORMAT.parse(dateString);
+            Date date = ISO_DATE_FORMAT_WITH_MILLIS.parse(dateString);
+            android.util.Log.d("TaskCommentMapper", "✅ Parsed with milliseconds format");
+            return date;
         } catch (ParseException e) {
-            try {
-                SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-                return altFormat.parse(dateString);
-            } catch (ParseException ex) {
-                return null;
-            }
+            android.util.Log.d("TaskCommentMapper", "Failed with millis format, trying without");
+        }
+        
+        // Try format without milliseconds (yyyy-MM-dd'T'HH:mm:ss'Z')
+        try {
+            Date date = ISO_DATE_FORMAT.parse(dateString);
+            android.util.Log.d("TaskCommentMapper", "✅ Parsed without milliseconds format");
+            return date;
+        } catch (ParseException e) {
+            android.util.Log.d("TaskCommentMapper", "Failed without millis format, trying alt format");
+        }
+        
+        // Try alternative format (yyyy-MM-dd HH:mm:ss)
+        try {
+            SimpleDateFormat altFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            Date date = altFormat.parse(dateString);
+            android.util.Log.d("TaskCommentMapper", "✅ Parsed with alt format");
+            return date;
+        } catch (ParseException ex) {
+            android.util.Log.e("TaskCommentMapper", "❌ Failed to parse date: " + dateString);
+            return null;
         }
     }
     

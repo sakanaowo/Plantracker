@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F5F5F5">
+
+    <!-- Month/Year Header with Navigation -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:background="@android:color/white" android:elevation="2dp" android:gravity="center_vertical">
+
+        <ImageButton android:id="@+id/btnPrevMonth" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_chevron_left" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Previous month"/>
+
+        <TextView android:id="@+id/tvMonthYear" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="December 2025" android:textSize="18sp" android:textStyle="bold" android:textColor="@android:color/black" android:gravity="center"/>
+
+        <ImageButton android:id="@+id/btnNextMonth" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_chevron_right" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Next month"/>
+    </LinearLayout>
+
+    <!-- Weekday Headers (Mon - Sun) -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp" android:background="@android:color/white" android:weightSum="7">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Mon" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Tue" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Wed" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Thu" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Fri" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Sat" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Sun" android:textSize="12sp" android:textColor="#666666" android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- Calendar Grid (7 columns) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCalendarGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:paddingBottom="8dp" />
+
+    <!-- Selected Date Label -->
+    <TextView android:id="@+id/tvSelectedDate" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="12dp" android:text="05/12/2025" android:textSize="16sp" android:textStyle="bold" android:textColor="@android:color/black" android:background="@android:color/white" android:layout_marginTop="8dp" android:visibility="gone"/>
+
+    <!-- Task/Event List for Selected Date -->
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTasksEvents" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp" android:visibility="gone"/>
+
+    <!-- Empty State -->
+    <TextView android:id="@+id/tvEmptyState" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:text="No tasks or events on this date" android:textSize="14sp" android:textColor="#999999" android:gravity="center" android:visibility="gone"/>
+
+    <!-- Loading -->
+    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+</LinearLayout>

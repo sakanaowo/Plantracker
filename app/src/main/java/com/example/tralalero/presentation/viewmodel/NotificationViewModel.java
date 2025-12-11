@@ -54,8 +54,6 @@ public class NotificationViewModel extends ViewModel {
         loadNotifications();
         loadUnreadCount();
     }
-
-    //    getter
     public LiveData<List<Notification>> getNotifications() {
         return notificationsLiveData;
     }
@@ -142,7 +140,6 @@ public class NotificationViewModel extends ViewModel {
 
             @Override
             public void onError(String error) {
-                // Silent
             }
         });
     }
@@ -175,7 +172,6 @@ public class NotificationViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
-                // Reload notifications and count
                 loadNotifications();
                 loadUnreadCount();
             }
@@ -196,7 +192,6 @@ public class NotificationViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 loadingLiveData.setValue(false);
-                // Reload notifications and count
                 loadNotifications();
                 loadUnreadCount();
             }

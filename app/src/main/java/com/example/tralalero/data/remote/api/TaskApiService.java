@@ -5,10 +5,18 @@ import com.example.tralalero.data.remote.dto.task.TaskCommentDTO;
 import com.example.tralalero.data.remote.dto.task.AttachmentDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListDTO;
 import com.example.tralalero.data.remote.dto.task.CheckListItemDTO;
+import com.example.tralalero.data.remote.dto.task.TaskAssigneeDTO;
+import com.example.tralalero.data.remote.dto.ChecklistDTO;
+import com.example.tralalero.data.remote.dto.ChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistDTO;
+import com.example.tralalero.data.remote.dto.CreateChecklistItemDTO;
+import com.example.tralalero.data.remote.dto.UpdateChecklistItemDTO;
+import com.example.tralalero.data.dto.TaskStatisticsDTO;
 
 import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.http.*;
 import retrofit2.http.*;
 
 public interface TaskApiService {
@@ -35,6 +43,35 @@ public interface TaskApiService {
     Call<List<TaskDTO>> getQuickTasks();
 
     /**
+     * Get all tasks assigned to current user in a specific project
+     * 
+     * @param projectId Project ID to filter tasks
+     * @return List of assigned tasks
+     */
+    @GET("tasks/my-assigned")
+    Call<List<TaskDTO>> getMyAssignedTasksInProject(@Query("projectId") String projectId);
+
+    /**
+     * Get ALL tasks in a project (complete project overview)
+     * For "All Work" tab - shows all tasks regardless of assignment
+     * 
+     * @param projectId Project ID
+     * @return List of all tasks in project
+     */
+    @GET("tasks/project/{projectId}/all")
+    Call<List<TaskDTO>> getAllTasksInProject(@Path("projectId") String projectId);
+
+    /**
+     * Get statistics for All Work view
+     * Returns counts by status (TODO, IN_PROGRESS, DONE), overdue, and total
+     * 
+     * @param projectId Project ID
+     * @return Statistics for all tasks
+     */
+    @GET("tasks/project/{projectId}/statistics")
+    Call<TaskStatisticsDTO> getAllWorkStatistics(@Path("projectId") String projectId);
+
+    /**
      * Create a quick task - automatically assigns to default project/board
      * Backend will find user's personal workspace, default project, and "To Do" board
      * 
@@ -48,7 +85,21 @@ public interface TaskApiService {
     @PATCH("tasks/{id}")
     Call<TaskDTO> updateTask(
         @Path("id") String taskId,
-        @Body TaskDTO task
+        @Body Object taskUpdate  // Accept Object to allow Map or TaskDTO
+    );
+
+    /**
+     * Move task to another board
+     * Backend: POST /api/tasks/:id/move
+     * 
+     * @param taskId Task ID to move
+     * @param moveData Map with "toBoardId", optional "beforeId", "afterId"
+     * @return Updated task
+     */
+    @POST("tasks/{id}/move")
+    Call<TaskDTO> moveTaskToBoard(
+        @Path("id") String taskId,
+        @Body java.util.Map<String, Object> moveData
     );
 
  
@@ -79,20 +130,140 @@ public interface TaskApiService {
 
 
     @GET("tasks/{id}/checklists")
-    Call<List<CheckListDTO>> getTaskChecklists(@Path("id") String taskId);
+    Call<List<ChecklistDTO>> getTaskChecklists(@Path("id") String taskId);
 
- 
+    /**
+     * Create a new checklist for a task
+     * POST /tasks/:taskId/checklists
+     */
     @POST("tasks/{id}/checklists")
-    Call<CheckListDTO> addTaskChecklist(
+    Call<ChecklistDTO> addTaskChecklist(
         @Path("id") String taskId,
-        @Body CheckListDTO checklist
+        @Body CreateChecklistDTO checklist
     );
 
+    /**
+     * Create a new checklist item
+     * POST /checklists/:id/items
+     */
+    @POST("checklists/{id}/items")
+    Call<ChecklistItemDTO> createChecklistItem(
+        @Path("id") String checklistId,
+        @Body CreateChecklistItemDTO itemDto
+    );
 
-    @PATCH("checklists/{checklistId}/items/{itemId}")
-    Call<CheckListItemDTO> updateChecklistItem(
-        @Path("checklistId") String checklistId,
-        @Path("itemId") String itemId,
-        @Body CheckListItemDTO item
+    /**
+     * Update checklist item content
+     * PATCH /checklist-items/:id
+     */
+    @PATCH("checklist-items/{id}")
+    Call<ChecklistItemDTO> updateChecklistItem(
+        @Path("id") String itemId,
+        @Body UpdateChecklistItemDTO itemDto
+    );
+
+    /**
+     * Toggle checklist item done/undone
+     * PATCH /checklist-items/:id/toggle
+     */
+    @PATCH("checklist-items/{id}/toggle")
+    Call<ChecklistItemDTO> toggleChecklistItem(
+        @Path("id") String itemId
+    );
+
+    /**
+     * Delete a checklist item
+     * DELETE /checklist-items/:id
+     */
+    @DELETE("checklist-items/{id}")
+    Call<Void> deleteChecklistItem(
+        @Path("id") String itemId
+    );
+
+    // ==================== ASSIGNEES ====================
+
+    /**
+     * Get all assignees for a task
+     * GET /tasks/:taskId/assignees
+     */
+    @GET("tasks/{taskId}/assignees")
+    Call<List<TaskAssigneeDTO>> getTaskAssignees(@Path("taskId") String taskId);
+
+    /**
+     * Assign multiple users to a task
+     * POST /tasks/:taskId/assignees
+     * Body: { "userIds": ["userId1", "userId2"] }
+     */
+    @POST("tasks/{taskId}/assignees")
+    Call<Void> assignUsers(
+        @Path("taskId") String taskId,
+        @Body java.util.Map<String, List<String>> body
+    );
+
+    /**
+     * Unassign a specific user from a task
+     * DELETE /tasks/:taskId/assignees/:userId
+     */
+    @DELETE("tasks/{taskId}/assignees/{userId}")
+    Call<Void> unassignUser(
+        @Path("taskId") String taskId,
+        @Path("userId") String userId
+    );
+
+    /**
+     * Unassign all users from a task
+     * DELETE /tasks/:taskId/assignees
+     */
+    @DELETE("tasks/{taskId}/assignees")
+    Call<Void> unassignAll(@Path("taskId") String taskId);
+    
+    /**
+     * Get task statistics for a project
+     * GET /tasks/statistics/project/{projectId}
+     * Returns counts for done, updated (last 7 days), created (last 7 days), due (next 7 days)
+     */
+    @GET("tasks/statistics/project/{projectId}")
+    Call<TaskStatisticsDTO> getProjectStatistics(@Path("projectId") String projectId);
+    
+    // ==================== CALENDAR SYNC ====================
+    
+    /**
+     * Update task with calendar sync settings
+     * PUT /tasks/:taskId/calendar-sync
+     * 
+     * @param taskId Task ID
+     * @param request TaskCalendarSyncRequest with calendar sync settings
+     * @return Updated task with calendar_event_id and last_synced_at
+     */
+    @PUT("tasks/{taskId}/calendar-sync")
+    Call<TaskDTO> updateCalendarSync(
+        @Path("taskId") String taskId,
+        @Body com.example.tralalero.data.remote.dto.task.TaskCalendarSyncRequest request
+    );
+    
+    /**
+     * Remove task calendar sync (delete event from Google Calendar)
+     * DELETE /tasks/{taskId}/calendar-sync
+     * 
+     * @param taskId Task ID
+     * @return Updated task with calendar sync disabled
+     */
+    @DELETE("tasks/{taskId}/calendar-sync")
+    Call<TaskDTO> unsyncCalendar(
+        @Path("taskId") String taskId
+    );
+    
+    /**
+     * Get tasks with calendar sync enabled for date range
+     * GET /tasks/calendar?startDate=2025-11-10&endDate=2025-11-17
+     * 
+     * @param startDate Start date (ISO format)
+     * @param endDate End date (ISO format)
+     * @return List of tasks with deadlines in range
+     */
+    @GET("tasks/calendar")
+    Call<List<TaskDTO>> getCalendarTasks(
+        @Query("startDate") String startDate,
+        @Query("endDate") String endDate
     );
 }

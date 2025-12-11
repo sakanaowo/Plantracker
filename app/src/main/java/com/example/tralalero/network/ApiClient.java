@@ -52,15 +52,14 @@ public class ApiClient {
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS);
+                .connectTimeout(60, TimeUnit.SECONDS)  // Increased for Render cold start
+                .readTimeout(60, TimeUnit.SECONDS)     // Increased for slow responses
+                .writeTimeout(60, TimeUnit.SECONDS)    // Increased for upload operations
+                .retryOnConnectionFailure(true);        // Auto retry on connection failure
 
         if (authManager != null) {
-            // Add Firebase Interceptor to automatically add token to requests
             clientBuilder.addInterceptor(new FirebaseInterceptor(authManager));
 
-            // Add Firebase Authenticator to handle token refresh on 401/404 errors
             clientBuilder.authenticator(new FirebaseAuthenticator(authManager));
         }
 
@@ -68,10 +67,10 @@ public class ApiClient {
                 .addInterceptor(logging)
                 .build();
 
-        // ✅ FIXED: Create Gson with proper configuration
+        // ✅ FIXED: Create Gson with proper configuration for nested objects
         Gson gson = new GsonBuilder()
-                .setLenient() // Allow lenient parsing
-                // .serializeNulls() // ❌ REMOVED: Don't send null fields to backend
+                .setLenient()
+                .serializeNulls()  // ✅ Include null fields in JSON
                 .create();
 
         return new Retrofit.Builder()

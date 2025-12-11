@@ -1,0 +1,373 @@
+package com.example.tralalero.feature.home.ui.Home.project;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.tralalero.R;
+import com.example.tralalero.App.App;
+import com.example.tralalero.data.remote.api.ProjectApiService;
+import com.example.tralalero.data.remote.dto.calendar.CalendarDataResponse;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.remote.dto.event.EventDTO;
+import com.example.tralalero.network.ApiClient;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+/**
+ * New Calendar Fragment with custom grid layout
+ * - Month/Year header with navigation
+ * - 7-column grid (Mon-Sun) with day states
+ * - Event indicators (dots) for days with tasks/events
+ * - Task/Event list below calendar for selected date
+ */
+public class ProjectCalendarFragment extends Fragment {
+    private static final String TAG = "ProjectCalendarFragment";
+    
+    private String projectId;
+    private Calendar currentCalendar;
+    private Calendar selectedCalendar;
+    
+    // Header views
+    private TextView tvMonthYear;
+    private ImageButton btnPrevMonth;
+    private ImageButton btnNextMonth;
+    
+    // Calendar grid
+    private RecyclerView rvCalendarGrid;
+    private CalendarGridAdapter calendarGridAdapter;
+    
+    // Task/Event list for selected date
+    private TextView tvSelectedDate;
+    private RecyclerView rvTasksEvents;
+    private TextView tvEmptyState;
+    private ProgressBar progressBar;
+    
+    private SimpleDateFormat monthYearFormat;
+    private SimpleDateFormat dateFormat;
+    private SimpleDateFormat apiMonthFormat;
+    
+    // API
+    private ProjectApiService projectApiService;
+    
+    // Data cache
+    private List<TaskDTO> allTasks;
+    private List<EventDTO> allEvents;
+    private Set<String> datesWithItems;
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            projectId = getArguments().getString("project_id");
+        }
+        
+        currentCalendar = Calendar.getInstance();
+        selectedCalendar = null; // No date selected by default
+        
+        if (getArguments() != null) {
+            projectId = getArguments().getString("project_id");
+        }
+        
+        currentCalendar = Calendar.getInstance();
+        selectedCalendar = null; // No date selected by default
+        
+        monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
+        dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        apiMonthFormat = new SimpleDateFormat("yyyy-MM", Locale.getDefault());
+        
+        projectApiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
+        
+        allTasks = new ArrayList<>();
+        allEvents = new ArrayList<>();
+        datesWithItems = new HashSet<>();
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                           @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_project_calendar, container, false);
+        
+        initViews(view);
+        setupCalendarGrid();
+        setupTaskEventList();
+        setupListeners();
+        
+        // Load initial data for current month
+        loadMonthData(currentCalendar);
+        
+        return view;
+    }
+    
+    private void initViews(View view) {
+        // Header
+        tvMonthYear = view.findViewById(R.id.tvMonthYear);
+        btnPrevMonth = view.findViewById(R.id.btnPrevMonth);
+        btnNextMonth = view.findViewById(R.id.btnNextMonth);
+        
+        // Calendar grid
+        rvCalendarGrid = view.findViewById(R.id.rvCalendarGrid);
+        
+        // Task/Event list
+        tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
+        rvTasksEvents = view.findViewById(R.id.rvTasksEvents);
+        tvEmptyState = view.findViewById(R.id.tvEmptyState);
+        progressBar = view.findViewById(R.id.progressBar);
+        
+        updateMonthYearHeader();
+    }
+    
+    private void setupCalendarGrid() {
+        // 7 columns for days of week
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 7);
+        rvCalendarGrid.setLayoutManager(layoutManager);
+        
+        calendarGridAdapter = new CalendarGridAdapter(new ArrayList<>(), new CalendarGridAdapter.OnDayClickListener() {
+            @Override
+            public void onDayClick(CalendarDay day) {
+                if (!day.isOutsideMonth()) {
+                    selectedCalendar = (Calendar) currentCalendar.clone();
+                    selectedCalendar.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
+                    
+                    // Update adapter with new selection
+                    calendarGridAdapter.setSelectedDate(selectedCalendar);
+                    
+                    // Load tasks/events for selected date
+                    loadTasksForDate(selectedCalendar);
+                }
+            }
+        });
+        rvCalendarGrid.setAdapter(calendarGridAdapter);
+        
+        // Generate days for current month
+        generateCalendarDays();
+    }
+    
+    private void setupTaskEventList() {
+        rvTasksEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // TODO: Create adapter for tasks and events
+        
+        // Hide by default
+        tvSelectedDate.setVisibility(View.GONE);
+        rvTasksEvents.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(View.GONE);
+    }
+    
+    private void setupListeners() {
+        btnPrevMonth.setOnClickListener(v -> {
+            currentCalendar.add(Calendar.MONTH, -1);
+            updateMonthYearHeader();
+            generateCalendarDays();
+            loadMonthData(currentCalendar);
+            clearSelection();
+        });
+        
+        btnNextMonth.setOnClickListener(v -> {
+            currentCalendar.add(Calendar.MONTH, 1);
+            updateMonthYearHeader();
+            generateCalendarDays();
+            loadMonthData(currentCalendar);
+            clearSelection();
+        });
+    }
+    
+    private void updateMonthYearHeader() {
+        tvMonthYear.setText(monthYearFormat.format(currentCalendar.getTime()));
+    }
+    
+    private void generateCalendarDays() {
+        List<CalendarDay> days = new ArrayList<>();
+        
+        Calendar cal = (Calendar) currentCalendar.clone();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        
+        int monthStartDay = cal.get(Calendar.DAY_OF_WEEK); // 1=Sunday, 2=Monday...
+        int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+        
+        // Adjust to Monday start (1=Monday, 7=Sunday)
+        int firstDayOfWeek = monthStartDay == Calendar.SUNDAY ? 7 : monthStartDay - 1;
+        
+        // Add days from previous month
+        Calendar prevMonth = (Calendar) cal.clone();
+        prevMonth.add(Calendar.MONTH, -1);
+        int daysInPrevMonth = prevMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+        
+        for (int i = firstDayOfWeek - 1; i > 0; i--) {
+            days.add(new CalendarDay(daysInPrevMonth - i + 1, false, false, false));
+        }
+        
+        // Add days of current month
+        Calendar today = Calendar.getInstance();
+    private void loadMonthData(Calendar calendar) {
+        String month = apiMonthFormat.format(calendar.getTime());
+        Log.d(TAG, "Loading data for month: " + month);
+        
+        progressBar.setVisibility(View.VISIBLE);
+        
+        projectApiService.getCalendarData(projectId, month).enqueue(new Callback<CalendarDataResponse>() {
+            @Override
+            public void onResponse(Call<CalendarDataResponse> call, Response<CalendarDataResponse> response) {
+                progressBar.setVisibility(View.GONE);
+    private void loadTasksForDate(Calendar date) {
+        String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date.getTime());
+        Log.d(TAG, "Loading tasks for date: " + dateStr);
+        
+        // Filter tasks for this date
+        List<TaskDTO> tasksForDate = new ArrayList<>();
+        for (TaskDTO task : allTasks) {
+            if (task.getDueAt() != null && task.getDueAt().startsWith(dateStr)) {
+                tasksForDate.add(task);
+            }
+        }
+        
+        // Filter events for this date
+        List<EventDTO> eventsForDate = new ArrayList<>();
+        for (EventDTO event : allEvents) {
+            if (event.getStartAt() != null && event.getStartAt().startsWith(dateStr)) {
+                eventsForDate.add(event);
+            }
+        }
+        
+        Log.d(TAG, "Found " + tasksForDate.size() + " tasks, " + eventsForDate.size() + " events");
+        
+        tvSelectedDate.setText(dateFormat.format(date.getTime()));
+        tvSelectedDate.setVisibility(View.VISIBLE);
+        
+        if (tasksForDate.isEmpty() && eventsForDate.isEmpty()) {
+            rvTasksEvents.setVisibility(View.GONE);
+            tvEmptyState.setVisibility(View.VISIBLE);
+            tvEmptyState.setText("No tasks or events on this date");
+        } else {
+            tvEmptyState.setVisibility(View.GONE);
+            rvTasksEvents.setVisibility(View.VISIBLE);
+            // TODO: Update adapter with tasksForDate and eventsForDate
+        }
+    }                   datesWithItems.addAll(data.getDatesWithItems());
+                    }
+                    
+                    Log.d(TAG, "✅ Loaded " + allTasks.size() + " tasks, " + allEvents.size() + " events");
+                    Log.d(TAG, "✅ Dates with items: " + datesWithItems.size());
+                    
+                    // Update calendar grid with event indicators
+                    updateCalendarWithEventIndicators();
+                } else {
+                    Log.e(TAG, "Failed to load calendar data: " + response.code());
+                    Toast.makeText(getContext(), "Failed to load calendar data", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<CalendarDataResponse> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Log.e(TAG, "Error loading calendar data", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void updateCalendarWithEventIndicators() {
+        // Update existing calendar days with event indicators
+        List<CalendarDay> days = calendarGridAdapter.getDays();
+        if (days == null || days.isEmpty()) {
+            return;
+        }
+        
+        Calendar cal = (Calendar) currentCalendar.clone();
+        
+        for (CalendarDay day : days) {
+            if (day.isCurrentMonth()) {
+                // Build date string for this day
+                cal.set(Calendar.DAY_OF_MONTH, day.getDayOfMonth());
+                String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.getTime());
+                
+                // Check if this date has tasks/events
+                boolean hasEvents = datesWithItems.contains(dateStr);
+                day.setHasEvents(hasEvents);
+            }
+        }
+        
+        calendarGridAdapter.notifyDataSetChanged();
+    }   int remainingDays = 42 - days.size();
+        for (int i = 1; i <= remainingDays; i++) {
+            days.add(new CalendarDay(i, false, false, false));
+        }
+        
+        calendarGridAdapter.updateDays(days);
+    }
+    
+    private void loadMonthData(Calendar calendar) {
+        // TODO: Call API to get tasks/events for this month
+        // GET /api/projects/{projectId}/calendar?month=2025-12
+        Log.d(TAG, "Loading data for month: " + monthYearFormat.format(calendar.getTime()));
+        progressBar.setVisibility(View.VISIBLE);
+        
+        // Mock: After API call, update adapter with event indicators
+        // calendarGridAdapter.setEventDays(eventDays);
+    }
+    
+    private void loadTasksForDate(Calendar date) {
+        // TODO: Filter tasks/events for selected date and show in list
+        Log.d(TAG, "Loading tasks for date: " + dateFormat.format(date.getTime()));
+        
+        tvSelectedDate.setText(dateFormat.format(date.getTime()));
+        tvSelectedDate.setVisibility(View.VISIBLE);
+        rvTasksEvents.setVisibility(View.VISIBLE);
+        tvEmptyState.setVisibility(View.VISIBLE);
+        tvEmptyState.setText("No tasks or events on this date");
+    }
+    
+    private void clearSelection() {
+        selectedCalendar = null;
+        calendarGridAdapter.setSelectedDate(null);
+        tvSelectedDate.setVisibility(View.GONE);
+        rvTasksEvents.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(View.GONE);
+    }
+    
+    /**
+     * Model class for calendar day
+     */
+    public static class CalendarDay {
+        private final int dayOfMonth;
+        private final boolean isCurrentMonth;
+        private final boolean isToday;
+        private boolean hasEvents;
+        
+        public CalendarDay(int dayOfMonth, boolean isCurrentMonth, boolean isToday, boolean hasEvents) {
+            this.dayOfMonth = dayOfMonth;
+            this.isCurrentMonth = isCurrentMonth;
+            this.isToday = isToday;
+            this.hasEvents = hasEvents;
+        }
+        
+        public int getDayOfMonth() { return dayOfMonth; }
+        public boolean isCurrentMonth() { return isCurrentMonth; }
+        public boolean isOutsideMonth() { return !isCurrentMonth; }
+        public boolean isToday() { return isToday; }
+        public boolean hasEvents() { return hasEvents; }
+        public void setHasEvents(boolean hasEvents) { this.hasEvents = hasEvents; }
+    }
+}

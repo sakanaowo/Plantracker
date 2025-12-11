@@ -22,7 +22,7 @@ public interface NotificationApiService {
     Call<NotificationDTO> getNotificationById(@Path("id") String notificationId);
 
 
-    @GET("notifications/unread/count")
+    @GET("notifications/count")
     Call<Integer> getUnreadCount();
 
 

@@ -1,28 +1,29 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-        <ListPreference
-            android:key="language"
-            android:title="Language"
-            android:summary="Change app language"
-            android:entries="@array/lang_names"
-            android:entryValues="@array/lang_values"
-            android:defaultValue="en" />
+    <PreferenceCategory android:title="General" android:key="category_general">
 
-        <SwitchPreferenceCompat
-            android:key="theme"
-            android:title="Dark Mode"
-            android:summary="Change theme into dark"
-            android:defaultValue="false" />
+        <ListPreference android:key="language" android:title="Language" android:summary="Change app language" android:entries="@array/lang_names" android:entryValues="@array/lang_values" android:defaultValue="en" />
 
-        <Preference
-            android:key="delete_account"
-            android:title="Delete Account"
-            android:summary="permanently delete account" />
+    </PreferenceCategory>
 
-        <Preference
-            android:key="about"
-            android:title="About Trallero"
-            android:summary="Thông tin về ứng dụng" />
+    <PreferenceCategory android:title="Integrations" android:key="category_integrations">
 
+        <Preference android:key="google_calendar_sync" android:title="Google Calendar" android:summary="Not connected" android:icon="@drawable/ic_google_calendar" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Account" android:key="category_account">
+
+        <Preference android:key="logout" android:title="Logout" android:summary="Sign out from your account" android:icon="@android:drawable/ic_lock_power_off" />
+
+        <Preference android:key="delete_account" android:title="Delete Account" android:summary="permanently delete account" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About" android:key="category_about">
+
+        <Preference android:key="about" android:title="About Trallero" android:summary="Thông tin về ứng dụng" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

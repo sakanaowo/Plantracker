@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@android:color/white" android:padding="0dp">
+
+    <!-- Header -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="20dp" android:background="#F5F5F5">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Member Details" android:textSize="20sp" android:textStyle="bold" android:textColor="#212121"/>
+
+        <ImageButton android:id="@+id/btnClose" android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_close" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Close" app:tint="#666666"/>
+    </LinearLayout>
+
+    <!-- Member Avatar and Basic Info -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal" android:padding="24dp" android:background="@android:color/white">
+
+        <!-- Avatar with border -->
+        <androidx.cardview.widget.CardView android:layout_width="120dp" android:layout_height="120dp" app:cardCornerRadius="60dp" app:cardElevation="4dp">
+
+            <ImageView android:id="@+id/ivMemberAvatar" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/ic_person" android:scaleType="centerCrop" android:contentDescription="Member avatar"/>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Member Name -->
+        <TextView android:id="@+id/tvMemberName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="John Doe" android:textSize="24sp" android:textStyle="bold" android:textColor="#212121" android:gravity="center" tools:text="John Doe"/>
+
+        <!-- Member Email -->
+        <TextView android:id="@+id/tvMemberEmail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="john@example.com" android:textSize="15sp" android:textColor="#666666" android:gravity="center" tools:text="john@example.com"/>
+
+        <!-- Role Chip -->
+        <com.google.android.material.chip.Chip android:id="@+id/chipRole" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="MEMBER" android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" app:chipBackgroundColor="@color/role_member" app:chipCornerRadius="16dp" android:paddingStart="16dp" android:paddingEnd="16dp" tools:text="MEMBER"/>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginStart="20dp" android:layout_marginEnd="20dp"/>
+
+    <!-- Member Information Section -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Information" android:textSize="16sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="16dp"/>
+
+        <!-- Member ID -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_label" app:tint="#666666"/>
+
+            <TextView android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Job Title" android:textSize="14sp" android:textColor="#888888"/>
+
+            <TextView android:id="@+id/tvMemberId" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Software Engineer" android:textSize="14sp" android:textColor="#212121" android:ellipsize="end" android:maxLines="1" tools:text="Software Engineer"/>
+        </LinearLayout>
+
+        <!-- Joined Date -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/clock_ic" app:tint="#666666"/>
+
+            <TextView android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Joined" android:textSize="14sp" android:textColor="#888888"/>
+
+            <TextView android:id="@+id/tvJoinedDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Jan 15, 2024" android:textSize="14sp" android:textColor="#212121" tools:text="Jan 15, 2024"/>
+        </LinearLayout>
+
+        <!-- User ID -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/acc_icon" app:tint="#666666"/>
+
+            <TextView android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Phone" android:textSize="14sp" android:textColor="#888888"/>
+
+            <TextView android:id="@+id/tvUserId" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="+84 123 456 789" android:textSize="14sp" android:textColor="#212121" android:ellipsize="end" android:maxLines="1" tools:text="+84 123 456 789"/>
+        </LinearLayout>
+
+        <!-- Bio -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="start">
+
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_description" app:tint="#666666"/>
+
+            <TextView android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Bio" android:textSize="14sp" android:textColor="#888888"/>
+
+            <TextView android:id="@+id/tvMemberBio" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Passionate developer" android:textSize="14sp" android:textColor="#212121" android:maxLines="3" android:ellipsize="end" tools:text="Passionate developer"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginStart="20dp" android:layout_marginEnd="20dp"/>
+
+    <!-- Action Buttons -->
+    <LinearLayout android:id="@+id/layoutActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Actions" android:textSize="16sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="16dp"/>
+
+        <!-- Change Role Button -->
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnChangeRole" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="56dp" android:text="Change Role" android:textSize="15sp" android:textColor="#2196F3" app:icon="@drawable/ic_swap" app:iconTint="#2196F3" app:strokeColor="#2196F3" app:cornerRadius="8dp" android:layout_marginBottom="12dp"/>
+
+        <!-- Remove Member Button -->
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnRemoveMember" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="56dp" android:text="Remove Member" android:textSize="15sp" android:textColor="#F44336" app:icon="@drawable/trash_icon" app:iconTint="#F44336" app:strokeColor="#FFCDD2" app:cornerRadius="8dp"/>
+    </LinearLayout>
+
+    <!-- Bottom padding for safe area -->
+    <View android:layout_width="match_parent" android:layout_height="20dp"/>
+
+</LinearLayout>

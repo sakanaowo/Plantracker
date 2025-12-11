@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="12dp" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+
+    <!-- Avatar -->
+    <com.google.android.material.card.MaterialCardView android:layout_width="40dp" android:layout_height="40dp" app:cardBackgroundColor="#DFE1E6" app:cardCornerRadius="20dp" app:cardElevation="0dp">
+
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+
+            <ImageView android:id="@+id/ivMemberAvatar" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone" />
+
+            <TextView android:id="@+id/tvMemberInitials" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="BA" android:textSize="14sp" android:textColor="#172B4D" android:fontFamily="sans-serif-medium" />
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Member Info -->
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+
+        <TextView android:id="@+id/tvMemberName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Member Name" android:textSize="16sp" android:textColor="@color/black" android:textStyle="bold" />
+
+        <TextView android:id="@+id/tvMemberEmail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="member@email.com" android:textSize="14sp" android:textColor="#888888" android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Role Badge -->
+    <TextView android:id="@+id/tvMemberRole" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADMIN" android:textSize="12sp" android:textColor="#4CAF50" android:background="@drawable/bg_header4" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_marginStart="8dp" />
+
+    <!-- Multi-select Checkbox -->
+    <CheckBox android:id="@+id/cbMemberSelected" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:clickable="false" android:focusable="false" />
+
+</LinearLayout>

@@ -44,97 +44,11 @@ public class ListProjectViewModel extends ViewModel {
         Log.d(TAG, "loadTasks is temporarily disabled for testing.");
         tasks.postValue(new ArrayList<>());
         isLoading.postValue(false);
-        // The original logic is commented out below
-        /*
-        isLoading.setValue(true);
-        error.setValue(null);
 
-        Log.d(TAG, "Starting loadTasks for projectId: " + projectId + ", status: " + status);
-
-        // Bước 1: Load danh sách boards của project
-        workspaceApiService.getBoards(projectId).enqueue(new Callback<List<Board>>() {
-            @Override
-            public void onResponse(Call<List<Board>> call, Response<List<Board>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Board> boards = response.body();
-                    Log.d(TAG, "Boards loaded successfully: " + boards.size() + " boards");
-
-                    // Bước 2: Tìm board theo status mapping
-                    String targetBoardName = mapStatusToBoardName(status);
-                    Board targetBoard = findBoardByName(boards, targetBoardName);
-
-                    if (targetBoard != null) {
-                        Log.d(TAG, "Found target board: " + targetBoard.getName() + " (ID: " + targetBoard.getId() + ")");
-                        // Bước 3: Load tasks từ board đó
-                        loadTasksFromBoard(targetBoard.getId(), status);
-                    } else {
-                        Log.e(TAG, "Board not found for status: " + status + " (looking for board name: " + targetBoardName + ")");
-                        // Nếu không tìm thấy board, thử dùng board đầu tiên hoặc trả về danh sách rỗng
-                        if (!boards.isEmpty()) {
-                            Log.d(TAG, "Using first board as fallback: " + boards.get(0).getName());
-                            loadTasksFromBoard(boards.get(0).getId(), status);
-                        } else {
-                            isLoading.setValue(false);
-                            tasks.setValue(new ArrayList<>());
-                            Log.d(TAG, "No boards found, returning empty task list");
-                        }
-                    }
-                } else {
-                    isLoading.setValue(false);
-                    String errorMsg = "Failed to load boards: " + response.code();
-                    error.setValue(errorMsg);
-                    Log.e(TAG, errorMsg);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Board>> call, Throwable t) {
-                isLoading.setValue(false);
-                String errorMsg = "Error loading boards: " + t.getMessage();
-                error.setValue(errorMsg);
-                Log.e(TAG, errorMsg, t);
-            }
-        });
-        */
     }
 
-    /**
-     * Load tasks từ một board cụ thể và filter theo status
-     */
     private void loadTasksFromBoard(String boardId, String status) {
-        // This method is disabled as it's called by the disabled loadTasks method.
-        /*
-        Log.d(TAG, "Loading tasks from boardId: " + boardId + " with status filter: " + status);
 
-        taskApiService.getTasksByBoard(boardId).enqueue(new Callback<List<Task>>() {
-            @Override
-            public void onResponse(Call<List<Task>> call, Response<List<Task>> response) {
-                isLoading.setValue(false);
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Task> allTasks = response.body();
-                    Log.d(TAG, "Raw tasks loaded from board: " + allTasks.size() + " tasks");
-
-                    // Filter tasks theo status (client-side filtering)
-                    List<Task> filteredTasks = filterTasksByStatus(allTasks, status);
-                    Log.d(TAG, "Filtered tasks for status " + status + ": " + filteredTasks.size() + " tasks");
-
-                    tasks.setValue(filteredTasks);
-                } else {
-                    String errorMsg = "Failed to load tasks from board: " + response.code();
-                    error.setValue(errorMsg);
-                    Log.e(TAG, errorMsg + " for boardId: " + boardId);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Task>> call, Throwable t) {
-                isLoading.setValue(false);
-                String errorMsg = "Error loading tasks from board: " + t.getMessage();
-                error.setValue(errorMsg);
-                Log.e(TAG, errorMsg + " for boardId: " + boardId, t);
-            }
-        });
-        */
     }
     private String mapStatusToBoardName(String status) {
         switch (status) {

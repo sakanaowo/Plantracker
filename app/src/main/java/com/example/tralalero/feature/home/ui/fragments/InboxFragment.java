@@ -1,0 +1,295 @@
+package com.example.tralalero.feature.home.ui.fragments;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.example.tralalero.App.App;
+import com.example.tralalero.R;
+import com.example.tralalero.data.remote.api.AttachmentApiService;
+import com.example.tralalero.data.remote.api.CommentApiService;
+import com.example.tralalero.data.remote.api.TaskApiService;
+import com.example.tralalero.data.remote.dto.task.TaskDTO;
+import com.example.tralalero.data.mapper.TaskMapper;
+import com.example.tralalero.data.repository.TaskRepositoryImpl;
+import com.example.tralalero.data.repository.TaskRepositoryImplWithCache;
+import com.example.tralalero.domain.model.Task;
+import com.example.tralalero.domain.repository.ITaskRepository;
+import com.example.tralalero.domain.usecase.task.*;
+import com.example.tralalero.feature.home.ui.Home.project.TaskAdapter;
+import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
+import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.presentation.viewmodel.TaskViewModel;
+import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
+import com.google.android.material.textfield.TextInputEditText;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import java.util.ArrayList;
+
+public class InboxFragment extends Fragment {
+    private static final String TAG = "InboxFragment";
+    private TaskViewModel taskViewModel;
+    private RecyclerView recyclerView;
+    private TaskAdapter taskAdapter;
+    private TaskApiService taskApiService;
+    private RelativeLayout notiLayout;
+    private LinearLayout inboxQuickAccess;
+    private TextInputEditText inboxAddCard;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private View loadingView;
+    private View emptyView;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_inbox, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        setupViewModel();
+        initViews(view);
+        setupRecyclerView();
+        setupSwipeRefresh();
+        setupNotificationCard();
+        setupQuickAddTask();
+        observeViewModel();
+        
+        taskViewModel.loadInboxTasks("", false);
+    }
+    private void setupViewModel() {
+        TaskRepositoryImplWithCache repositoryWithCache = 
+            App.dependencyProvider.getTaskRepositoryWithCache();
+        TaskApiService apiService = ApiClient.get(App.authManager).create(TaskApiService.class);
+        this.taskApiService = apiService; // Store for direct API calls
+        CommentApiService commentApiService = ApiClient.get(App.authManager).create(CommentApiService.class);
+        AttachmentApiService attachmentApiService = ApiClient.get(App.authManager).create(AttachmentApiService.class);
+        ITaskRepository apiRepository = new TaskRepositoryImpl(apiService, commentApiService, attachmentApiService);
+
+        GetTaskByIdUseCase getTaskByIdUseCase = new GetTaskByIdUseCase(apiRepository);
+        GetTasksByBoardUseCase getTasksByBoardUseCase = new GetTasksByBoardUseCase(apiRepository);
+        CreateTaskUseCase createTaskUseCase = new CreateTaskUseCase(apiRepository);
+        CreateQuickTaskUseCase createQuickTaskUseCase = new CreateQuickTaskUseCase(apiRepository);
+        UpdateTaskUseCase updateTaskUseCase = new UpdateTaskUseCase(apiRepository);
+        DeleteTaskUseCase deleteTaskUseCase = new DeleteTaskUseCase(apiRepository);
+        AssignTaskUseCase assignTaskUseCase = new AssignTaskUseCase(apiRepository);
+        UnassignTaskUseCase unassignTaskUseCase = new UnassignTaskUseCase(apiRepository);
+        MoveTaskToBoardUseCase moveTaskToBoardUseCase = new MoveTaskToBoardUseCase(apiRepository);
+        UpdateTaskPositionUseCase updateTaskPositionUseCase = new UpdateTaskPositionUseCase(apiRepository);
+        AddCommentUseCase addCommentUseCase = new AddCommentUseCase(apiRepository);
+        GetTaskCommentsUseCase getTaskCommentsUseCase = new GetTaskCommentsUseCase(apiRepository);
+        AddAttachmentUseCase addAttachmentUseCase = new AddAttachmentUseCase(apiRepository);
+        GetTaskAttachmentsUseCase getTaskAttachmentsUseCase = new GetTaskAttachmentsUseCase(apiRepository);
+        AddChecklistUseCase addChecklistUseCase = new AddChecklistUseCase(apiRepository);
+        GetTaskChecklistsUseCase getTaskChecklistsUseCase = new GetTaskChecklistsUseCase(apiRepository);
+        UpdateCommentUseCase updateCommentUseCase = new UpdateCommentUseCase(apiRepository);
+        DeleteCommentUseCase deleteCommentUseCase = new DeleteCommentUseCase(apiRepository);
+        DeleteAttachmentUseCase deleteAttachmentUseCase = new DeleteAttachmentUseCase(apiRepository);
+        GetAttachmentViewUrlUseCase getAttachmentViewUrlUseCase = new GetAttachmentViewUrlUseCase(apiRepository);
+
+        TaskViewModelFactory factory = new TaskViewModelFactory(
+            getTaskByIdUseCase, getTasksByBoardUseCase, createTaskUseCase, createQuickTaskUseCase,
+            updateTaskUseCase, deleteTaskUseCase, assignTaskUseCase, unassignTaskUseCase,
+            moveTaskToBoardUseCase, updateTaskPositionUseCase, addCommentUseCase,
+            getTaskCommentsUseCase, addAttachmentUseCase, getTaskAttachmentsUseCase,
+            addChecklistUseCase, getTaskChecklistsUseCase, updateCommentUseCase,
+            deleteCommentUseCase, deleteAttachmentUseCase, getAttachmentViewUrlUseCase,
+            apiRepository
+        );
+        taskViewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
+        Log.d(TAG, "TaskViewModel initialized with cache-enabled repository");
+    }
+    
+    private void initViews(View view) {
+        recyclerView = view.findViewById(R.id.recyclerViewInbox);
+        notiLayout = view.findViewById(R.id.notificationLayout);
+        inboxQuickAccess = view.findViewById(R.id.inboxQuickAccess);
+        inboxAddCard = view.findViewById(R.id.inboxAddCard);
+        loadingView = view.findViewById(R.id.loadingView);
+        emptyView = view.findViewById(R.id.emptyView);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+    }
+    
+    private void setupRecyclerView() {
+        taskAdapter = new TaskAdapter(new TaskAdapter.OnTaskClickListener() {
+            @Override
+            public void onTaskClick(Task task) {
+                // Navigate to CardDetailActivity
+                openTaskDetail(task);
+            }
+            
+            @Override
+            public void onTaskCheckboxClick(Task task, String currentBoardType) {
+                // Toggle task status: TO_DO ↔ DONE (same as All Work)
+                Log.d(TAG, "Checkbox clicked for task: " + task.getId());
+                
+                Task.TaskStatus newStatus = task.getStatus() == Task.TaskStatus.DONE 
+                    ? Task.TaskStatus.TO_DO 
+                    : Task.TaskStatus.DONE;
+                
+                Log.d(TAG, "Updating task status from " + task.getStatus() + " to " + newStatus);
+                updateTaskStatus(task, newStatus);
+            }
+        });
+        // Set board type as "Inbox" for checkbox logic
+        taskAdapter.setCurrentBoardType("Inbox");
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(taskAdapter);
+    }
+    
+    private void setupNotificationCard() {
+        ImageButton btnCloseNotification = getView().findViewById(R.id.btnClosePjrDetail);
+        if (btnCloseNotification != null) {
+            btnCloseNotification.setOnClickListener(v -> notiLayout.setVisibility(View.GONE));
+        }
+    }
+    
+    private void setupQuickAddTask() {
+        inboxAddCard.setOnClickListener(v -> inboxQuickAccess.setVisibility(View.VISIBLE));
+        
+        Button btnCancel = getView().findViewById(R.id.btnCancel);
+        btnCancel.setOnClickListener(v -> {
+            inboxQuickAccess.setVisibility(View.GONE);
+            inboxAddCard.setText("");
+        });
+        
+        Button btnAdd = getView().findViewById(R.id.btnAdd);
+        btnAdd.setOnClickListener(v -> {
+            String taskTitle = inboxAddCard.getText().toString().trim();
+            if (!taskTitle.isEmpty()) {
+                createTask(taskTitle);
+                inboxQuickAccess.setVisibility(View.GONE);
+                inboxAddCard.setText("");
+            } else {
+                Toast.makeText(getContext(), "Vui lòng nhập tên task!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private void observeViewModel() {
+        taskViewModel.getInboxTasks().observe(getViewLifecycleOwner(), tasks -> {
+            if (tasks != null && !tasks.isEmpty()) {
+                taskAdapter.setTasks(tasks);
+                showContent();
+            } else {
+                taskAdapter.setTasks(new ArrayList<>());
+                showEmpty();
+            }
+        });
+        
+        taskViewModel.getError().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void setupSwipeRefresh() {
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.colorPrimary,
+                R.color.colorAccent
+            );
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                Log.d(TAG, "Pull-to-refresh - clearing cache and reloading");
+                taskViewModel.loadInboxTasks("", true);
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    swipeRefreshLayout.setRefreshing(false);
+                }, 500);
+            });
+        }
+    }
+    
+    private void showLoading() {
+        if (swipeRefreshLayout != null) swipeRefreshLayout.setVisibility(View.GONE);
+        if (emptyView != null) emptyView.setVisibility(View.GONE);
+        if (loadingView != null) loadingView.setVisibility(View.VISIBLE);
+    }
+    
+    private void showContent() {
+        if (loadingView != null) loadingView.setVisibility(View.GONE);
+        if (emptyView != null) emptyView.setVisibility(View.GONE);
+        if (swipeRefreshLayout != null) swipeRefreshLayout.setVisibility(View.VISIBLE);
+    }
+    
+    private void showEmpty() {
+        if (loadingView != null) loadingView.setVisibility(View.GONE);
+        if (swipeRefreshLayout != null) swipeRefreshLayout.setVisibility(View.GONE);
+        if (emptyView != null) emptyView.setVisibility(View.VISIBLE);
+    }
+
+    private void createTask(String title) {
+        taskViewModel.createQuickTask(title, "");
+        Toast.makeText(getContext(), "Creating task...", Toast.LENGTH_SHORT).show();
+    }
+
+    private void openTaskDetail(Task task) {
+        Intent intent = new Intent(getContext(), CardDetailActivity.class);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, task.getBoardId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, task.getProjectId());
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_STATUS, task.getStatus() != null ? task.getStatus().name() : "TO_DO");
+        startActivity(intent);
+    }
+    
+    /**
+     * Update task status via API (same as All Work logic)
+     */
+    private void updateTaskStatus(Task task, Task.TaskStatus newStatus) {
+        // Create update payload with ONLY the field we want to change
+        java.util.Map<String, Object> updatePayload = new java.util.HashMap<>();
+        updatePayload.put("status", newStatus.name());
+        
+        taskApiService.updateTask(task.getId(), updatePayload).enqueue(new Callback<TaskDTO>() {
+            @Override
+            public void onResponse(Call<TaskDTO> call, Response<TaskDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Task status updated successfully");
+                    
+                    // Reload inbox tasks to refresh the list
+                    taskViewModel.loadInboxTasks("", true);
+                    
+                    String message = newStatus == Task.TaskStatus.DONE 
+                        ? "✅ Task completed!" 
+                        : "Task reopened";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "Failed to update task status: " + response.code());
+                    Toast.makeText(getContext(), "Failed to update task", Toast.LENGTH_SHORT).show();
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<TaskDTO> call, Throwable t) {
+                Log.e(TAG, "Error updating task status", t);
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+}

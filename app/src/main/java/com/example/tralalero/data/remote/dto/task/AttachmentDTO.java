@@ -9,15 +9,18 @@ public class AttachmentDTO {
     @SerializedName("url")
     public String url;
 
-    @SerializedName("mime_type")
+    @SerializedName("fileName")  // ✅ Backend uses camelCase
+    public String fileName;
+
+    @SerializedName("mimeType")  // ✅ Backend uses camelCase
     public String mimeType; 
 
     @SerializedName("size")
     public Integer size; 
 
-    @SerializedName("uploaded_by")
+    @SerializedName("uploadedBy")  // ✅ Backend uses camelCase
     public String uploadedBy; 
 
-    @SerializedName("created_at")
+    @SerializedName("createdAt")  // ✅ Backend uses camelCase
     public String createdAt;
 }

@@ -1,9 +1,13 @@
 package com.example.tralalero.data.repository;
 
+import android.content.Context;
+
+import com.example.tralalero.App.App;
 import com.example.tralalero.data.mapper.ProjectMapper;
 import com.example.tralalero.data.remote.api.ProjectApiService;
 import com.example.tralalero.data.remote.dto.project.ProjectDTO;
 import com.example.tralalero.domain.model.Project;
+import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.domain.repository.IProjectRepository;
 
 import retrofit2.Call;
@@ -15,6 +19,11 @@ public class ProjectRepositoryImpl implements IProjectRepository {
 
     public ProjectRepositoryImpl(ProjectApiService apiService) {
         this.apiService = apiService;
+    }
+    
+    public ProjectRepositoryImpl(Context context) {
+        // ✅ FIX: Use authenticated ApiClient with FirebaseInterceptor
+        this.apiService = ApiClient.get(App.authManager).create(ProjectApiService.class);
     }
 
     @Override
@@ -97,6 +106,31 @@ public class ProjectRepositoryImpl implements IProjectRepository {
             }
         });
     }
+    
+    @Override
+    public void leaveProject(String projectId, RepositoryCallback<Void> callback) {
+        apiService.leaveProject(projectId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    String errorMsg = "Failed to leave project";
+                    if (response.code() == 400) {
+                        errorMsg = "Cannot leave project (you may be the last owner)";
+                    } else if (response.code() == 404) {
+                        errorMsg = "You are not a member of this project";
+                    }
+                    callback.onError(errorMsg + ": " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
 
     @Override
     public void updateProjectKey(String projectId, String newKey, RepositoryCallback<Project> callback) {
@@ -140,5 +174,53 @@ public class ProjectRepositoryImpl implements IProjectRepository {
                 callback.onError("Network error: " + t.getMessage());
             }
         });
+    }
+    
+    @Override
+    public void getProjectSummary(String projectId, RepositoryCallback<com.example.tralalero.data.dto.project.ProjectSummaryResponse> callback) {
+        apiService.getProjectSummary(projectId).enqueue(new Callback<com.example.tralalero.data.dto.project.ProjectSummaryResponse>() {
+            @Override
+            public void onResponse(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, 
+                                 Response<com.example.tralalero.data.dto.project.ProjectSummaryResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Failed to get project summary: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<com.example.tralalero.data.dto.project.ProjectSummaryResponse> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+    
+    @Override
+    public void getAllUserProjects(RepositoryCallback<java.util.List<Project>> callback) {
+        apiService.getAllUserProjects().enqueue(new Callback<java.util.List<ProjectDTO>>() {
+            @Override
+            public void onResponse(Call<java.util.List<ProjectDTO>> call, Response<java.util.List<ProjectDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    java.util.List<Project> projects = new java.util.ArrayList<>();
+                    for (ProjectDTO dto : response.body()) {
+                        projects.add(ProjectMapper.toDomain(dto));
+                    }
+                    callback.onSuccess(projects);
+                } else {
+                    callback.onError("Failed to get user projects: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<java.util.List<ProjectDTO>> call, Throwable t) {
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+    
+    @Override
+    public void clearCache() {
+        // No cache in this implementation, do nothing
     }
 }

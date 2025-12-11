@@ -5,17 +5,32 @@ public class Project {
     private final String workspaceId;
     private final String name;
     private final String description;
-    private final String key; 
-    private final String boardType; 
+    private final String key;
+    private final String boardType;
+    private final String type;  // PERSONAL or TEAM
+    private String workspaceName; // Name of the workspace (for display)
 
     public Project(String id, String workspaceId, String name, String description,
-                   String key, String boardType) {
+                   String key, String boardType, String type) {
         this.id = id;
         this.workspaceId = workspaceId;
         this.name = name;
         this.description = description;
         this.key = key;
         this.boardType = boardType;
+        this.type = type;
+    }
+    
+    public Project(String id, String workspaceId, String name, String description,
+                   String key, String boardType, String type, String workspaceName) {
+        this.id = id;
+        this.workspaceId = workspaceId;
+        this.name = name;
+        this.description = description;
+        this.key = key;
+        this.boardType = boardType;
+        this.type = type;
+        this.workspaceName = workspaceName;
     }
 
     public String getId() {
@@ -40,6 +55,26 @@ public class Project {
 
     public String getBoardType() {
         return boardType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public boolean isTeamProject() {
+        return "TEAM".equalsIgnoreCase(type);
+    }
+
+    public boolean isPersonalProject() {
+        return "PERSONAL".equalsIgnoreCase(type);
+    }
+    
+    public String getWorkspaceName() {
+        return workspaceName;
+    }
+    
+    public void setWorkspaceName(String workspaceName) {
+        this.workspaceName = workspaceName;
     }
 
     public boolean isKanban() {

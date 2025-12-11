@@ -32,7 +32,7 @@ import retrofit2.Response;
  */
 public class WorkspaceRepositoryImplWithCache {
     private static final String TAG = "WorkspaceRepoCache";
-    private static final long CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    private static final long CACHE_TTL_MS = 10 * 60 * 1000; // 5 minutes
     private static final String CACHE_KEY = "workspaces";
 
     private final WorkspaceApiService apiService;
@@ -186,7 +186,7 @@ public class WorkspaceRepositoryImplWithCache {
         executorService.execute(() -> {
             try {
                 workspaceDao.deleteAll();
-                cacheMetadataDao.deleteMetadata(CACHE_KEY); // ← FIXED: delete() → deleteMetadata()
+                cacheMetadataDao.deleteMetadata(CACHE_KEY);
                 Log.d(TAG, "✓ Workspace cache cleared");
             } catch (Exception e) {
                 Log.e(TAG, "Error clearing workspace cache", e);

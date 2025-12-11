@@ -30,7 +30,8 @@ public class WorkspaceMapper {
                 dto.getId(),
                 dto.getName(),
                 dto.getType(),
-                dto.getOwnerId()
+                dto.getOwnerId(),
+                dto.isOwner()  // NEW: Pass isOwner flag
         );
     }
 

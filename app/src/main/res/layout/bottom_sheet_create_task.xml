@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:background="@drawable/bottom_sheet_background">
+
+    <!-- Drag Handle -->
+    <View android:layout_width="40dp" android:layout_height="4dp" android:layout_gravity="center_horizontal" android:layout_marginBottom="16dp" android:background="#DADCE0" android:alpha="0.6"/>
+
+    <!-- Title -->
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Create Task" android:textSize="20sp" android:textStyle="bold" android:textColor="#172B4D" android:layout_marginBottom="20dp"/>
+
+    <!-- Task Title Input -->
+    <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Task title" app:boxStrokeColor="#0079BF" app:hintTextColor="#5E6C84" app:boxCornerRadiusTopStart="4dp" app:boxCornerRadiusTopEnd="4dp" app:boxCornerRadiusBottomStart="4dp" app:boxCornerRadiusBottomEnd="4dp" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etTaskTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapSentences" android:maxLines="3" android:textSize="14sp" android:textColor="#172B4D"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Buttons -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="20dp" android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="48dp" android:text="CANCEL" android:textColor="#5E6C84" android:layout_marginEnd="8dp" android:minWidth="88dp" android:paddingStart="16dp" android:paddingEnd="16dp" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnCreate" android:layout_width="wrap_content" android:layout_height="48dp" android:text="CREATE" android:textColor="@android:color/white" android:minWidth="88dp" android:paddingStart="16dp" android:paddingEnd="16dp" app:backgroundTint="#0079BF" app:cornerRadius="4dp"/>
+    </LinearLayout>
+</LinearLayout>

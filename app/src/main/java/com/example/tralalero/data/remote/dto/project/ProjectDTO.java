@@ -25,11 +25,38 @@ public class ProjectDTO {
     @SerializedName(value = "boardType", alternate = {"board_type"})
     private String boardType;
 
+    @SerializedName("type")
+    private String type;  // PERSONAL or TEAM
+    
+    @SerializedName("currentUserRole")
+    private String currentUserRole;  // OWNER, ADMIN, MEMBER (from backend)
+
     @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAt;
 
     @SerializedName(value = "updatedAt", alternate = {"updated_at"})
     private String updatedAt;
+    
+    // Nested workspace object for workspaceName
+    @SerializedName("workspaces")
+    private WorkspaceInfo workspaces;
+    
+    // Inner class for workspace info
+    public static class WorkspaceInfo {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        public String getId() {
+            return id;
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
 
     public String getId() {
         return id;
@@ -87,6 +114,22 @@ public class ProjectDTO {
         this.boardType = boardType;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+    
+    public String getCurrentUserRole() {
+        return currentUserRole;
+    }
+    
+    public void setCurrentUserRole(String currentUserRole) {
+        this.currentUserRole = currentUserRole;
+    }
+
     public String getCreatedAt() {
         return createdAt;
     }
@@ -101,5 +144,13 @@ public class ProjectDTO {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public WorkspaceInfo getWorkspaces() {
+        return workspaces;
+    }
+    
+    public void setWorkspaces(WorkspaceInfo workspaces) {
+        this.workspaces = workspaces;
     }
 }

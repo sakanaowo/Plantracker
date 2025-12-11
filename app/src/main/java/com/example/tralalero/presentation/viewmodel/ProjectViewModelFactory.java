@@ -4,20 +4,15 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.tralalero.domain.usecase.board.GetBoardsByProjectUseCase;
 import com.example.tralalero.domain.usecase.project.GetProjectByIdUseCase;
 import com.example.tralalero.domain.usecase.project.CreateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectUseCase;
 import com.example.tralalero.domain.usecase.project.DeleteProjectUseCase;
 import com.example.tralalero.domain.usecase.project.SwitchBoardTypeUseCase;
 import com.example.tralalero.domain.usecase.project.UpdateProjectKeyUseCase;
+import com.example.tralalero.domain.usecase.task.GetTasksByBoardUseCase;
 
-/**
- * Factory for creating ProjectViewModel instances
- * Required by Android Architecture Components to inject dependencies
- *
- * @author Người 2
- * @date 14/10/2025
- */
 public class ProjectViewModelFactory implements ViewModelProvider.Factory {
 
     private final GetProjectByIdUseCase getProjectByIdUseCase;
@@ -26,17 +21,18 @@ public class ProjectViewModelFactory implements ViewModelProvider.Factory {
     private final DeleteProjectUseCase deleteProjectUseCase;
     private final SwitchBoardTypeUseCase switchBoardTypeUseCase;
     private final UpdateProjectKeyUseCase updateProjectKeyUseCase;
+    private final GetBoardsByProjectUseCase getBoardsByProjectUseCase;
+    private final GetTasksByBoardUseCase getTasksByBoardUseCase;
 
-    /**
-     * Constructor with all required UseCases
-     */
     public ProjectViewModelFactory(
             GetProjectByIdUseCase getProjectByIdUseCase,
             CreateProjectUseCase createProjectUseCase,
             UpdateProjectUseCase updateProjectUseCase,
             DeleteProjectUseCase deleteProjectUseCase,
             SwitchBoardTypeUseCase switchBoardTypeUseCase,
-            UpdateProjectKeyUseCase updateProjectKeyUseCase
+            UpdateProjectKeyUseCase updateProjectKeyUseCase,
+            GetBoardsByProjectUseCase getBoardsByProjectUseCase,
+            GetTasksByBoardUseCase getTasksByBoardUseCase
     ) {
         this.getProjectByIdUseCase = getProjectByIdUseCase;
         this.createProjectUseCase = createProjectUseCase;
@@ -44,6 +40,8 @@ public class ProjectViewModelFactory implements ViewModelProvider.Factory {
         this.deleteProjectUseCase = deleteProjectUseCase;
         this.switchBoardTypeUseCase = switchBoardTypeUseCase;
         this.updateProjectKeyUseCase = updateProjectKeyUseCase;
+        this.getBoardsByProjectUseCase = getBoardsByProjectUseCase;
+        this.getTasksByBoardUseCase = getTasksByBoardUseCase;
     }
 
     @NonNull
@@ -56,7 +54,9 @@ public class ProjectViewModelFactory implements ViewModelProvider.Factory {
                     updateProjectUseCase,
                     deleteProjectUseCase,
                     switchBoardTypeUseCase,
-                    updateProjectKeyUseCase
+                    updateProjectKeyUseCase,
+                    getBoardsByProjectUseCase,
+                    getTasksByBoardUseCase
             );
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());

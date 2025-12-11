@@ -28,16 +28,14 @@ public class ActivityTimer extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.card_detail);
-//        tvTimer = findViewById(R.id.tvTimer);
-//        btnPlay = findViewById(R.id.btnPlay);
-        etDateStart = findViewById(R.id.etDateStart);
+        // etDateStart = findViewById(R.id.etDateStart); // Removed - start date UI deleted
         etDueDate = findViewById(R.id.etDueDate);
         ivClose = findViewById(R.id.ivClose);
         setDateFieldsEnabled(true);
         updateTimerText();
-        etDateStart.setOnFocusChangeListener((v, hasFocus) -> {
-            btnPlay.setEnabled(false);
-        });
+        // etDateStart.setOnFocusChangeListener((v, hasFocus) -> {
+        //     btnPlay.setEnabled(false);
+        // });
         etDueDate.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 btnPlay.setEnabled(false);
@@ -57,7 +55,7 @@ public class ActivityTimer extends AppCompatActivity {
         ivClose.setOnClickListener(v -> finish());
     }
     private void setDateFieldsEnabled(boolean enabled) {
-        etDateStart.setEnabled(enabled);
+        // etDateStart.setEnabled(enabled); // Removed - start date UI deleted
         etDueDate.setEnabled(enabled);
     }
     private void startTimer() {
@@ -69,9 +67,7 @@ public class ActivityTimer extends AppCompatActivity {
             Date now = new Date(startMillis);
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
             String formattedDateTime = sdf.format(now);
-            if (etDateStart != null) {
-                etDateStart.setText(formattedDateTime);
-            }
+            // Start time now tracked internally, UI removed
             check_start_Date = false;
         }
         runnable = new Runnable() {

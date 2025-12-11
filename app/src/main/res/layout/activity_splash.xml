@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/white">
+
+    <!-- App Logo/Icon -->
+    <ImageView android:id="@+id/app_logo" android:layout_width="300dp" android:layout_height="300dp" android:src="@drawable/time_management_pana" android:contentDescription="@string/app_name" android:scaleType="fitCenter" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintVertical_bias="0.4" />
+
+    <!-- App Name -->
+    <TextView android:id="@+id/app_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Plantracker" android:textSize="32sp" android:textStyle="bold" android:textColor="@color/black" android:fontFamily="sans-serif-medium" app:layout_constraintTop_toBottomOf="@id/app_logo" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Loading Indicator -->
+    <ProgressBar android:id="@+id/loading_indicator" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:indeterminateTint="@color/primary" app:layout_constraintTop_toBottomOf="@id/app_name" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Loading Text -->
+    <TextView android:id="@+id/loading_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="Loading..." android:textSize="14sp" android:textColor="@color/black" app:layout_constraintTop_toBottomOf="@id/loading_indicator" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

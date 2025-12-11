@@ -62,7 +62,8 @@ public class CreateProjectUseCase {
                 name.trim(),
                 project.getDescription() != null ? project.getDescription().trim() : null,
                 trimmedKey,
-                boardType.toUpperCase()
+                boardType.toUpperCase(),
+                null  // Type will be set by server (default PERSONAL)
         );
 
         repository.createProject(workspaceId, processedProject,
