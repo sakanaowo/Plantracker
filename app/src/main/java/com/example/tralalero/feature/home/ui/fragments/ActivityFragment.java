@@ -17,9 +17,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.example.tralalero.BuildConfig;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthManager;
 import com.example.tralalero.data.mapper.ActivityLogMapper;
+import com.example.tralalero.data.network.WebSocketManager;
 import com.example.tralalero.data.remote.api.ActivityLogApiService;
 import com.example.tralalero.data.remote.api.EventApiService;
 import com.example.tralalero.data.remote.dto.activity.ActivityLogDTO;
@@ -32,8 +34,11 @@ import com.example.tralalero.feature.home.ui.adapter.ActivityLogAdapter;
 import com.example.tralalero.feature.home.ui.adapter.EventReminderAdapter;
 import com.example.tralalero.feature.invitations.InvitationsAdapter;
 import com.example.tralalero.network.ApiClient;
+import com.example.tralalero.utils.ActivityBadgeManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +47,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class ActivityFragment extends Fragment {
+public class ActivityFragment extends Fragment implements WebSocketManager.ActivityLogListener {
     private static final String TAG = "ActivityFragment";
     
     // Invitations section
@@ -64,6 +69,8 @@ public class ActivityFragment extends Fragment {
     private ActivityLogApiService activityLogApiService;
     private EventApiService eventApiService;
     private String currentUserId;
+    private WebSocketManager webSocketManager;
+    private ActivityBadgeManager badgeManager;
 
     @Nullable
     @Override
@@ -156,14 +163,117 @@ public class ActivityFragment extends Fragment {
         activityLogApiService = ApiClient.get(authManager).create(ActivityLogApiService.class);
         eventApiService = ApiClient.get(authManager).create(EventApiService.class);
         invitationRepository = new InvitationRepositoryImpl(requireContext());
+        badgeManager = new ActivityBadgeManager(requireContext());
 
         // Get current user and load data
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser != null) {
             currentUserId = firebaseUser.getUid();
+            
+            // Initialize WebSocket for real-time updates
+            webSocketManager = WebSocketManager.getInstance();
+            webSocketManager.addActivityLogListener(this);
+            
+            // Connect WebSocket if not already connected
+            if (!webSocketManager.isConnected()) {
+                firebaseUser.getIdToken(true).addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        String idToken = task.getResult().getToken();
+                        String wsUrl = BuildConfig.WS_URL.replace("/api/", "");
+                        Log.d(TAG, "Connecting WebSocket to: " + wsUrl);
+                        webSocketManager.connect(wsUrl, idToken);
+                    } else {
+                        Log.e(TAG, "Failed to get Firebase token for WebSocket");
+                    }
+                });
+            }
+            
             loadAllData();
         } else {
             Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Clear badge when user views activity feed
+        if (badgeManager != null) {
+            badgeManager.markAllAsRead();
+        }
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (webSocketManager != null) {
+            webSocketManager.removeActivityLogListener(this);
+        }
+        if (badgeManager != null) {
+            badgeManager.release();
+        }
+    }
+    
+    @Override
+    public void onActivityLogReceived(JSONObject log) {
+        // Handle new activity log from WebSocket on main thread
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                try {
+                    // Convert JSON to ActivityLog directly
+                    ActivityLog newLog = new ActivityLog();
+                    newLog.setId(log.optString("id"));
+                    newLog.setUserId(log.optString("user_id"));
+                    newLog.setAction(log.optString("action"));
+                    newLog.setEntityType(log.optString("entity_type"));
+                    newLog.setEntityId(log.optString("entity_id"));
+                    newLog.setEntityName(log.optString("entity_name"));
+                    newLog.setProjectId(log.optString("project_id"));
+                    newLog.setTimestamp(log.optString("created_at"));
+                    
+                    // Parse user info
+                    if (log.has("users") && !log.isNull("users")) {
+                        JSONObject users = log.getJSONObject("users");
+                        newLog.setUserName(users.optString("name"));
+                        newLog.setUserAvatar(users.optString("avatarUrl"));
+                    }
+                    
+                    // Parse project info
+                    if (log.has("projects") && !log.isNull("projects")) {
+                        JSONObject projects = log.getJSONObject("projects");
+                        newLog.setProjectName(projects.optString("name"));
+                    }
+                    
+                    // Parse metadata
+                    if (log.has("metadata") && !log.isNull("metadata")) {
+                        JSONObject metadata = log.getJSONObject("metadata");
+                        newLog.setMetadata(metadata.toString());
+                    }
+                    
+                    // Add to top of list
+                    activityAdapter.addActivityLog(newLog);
+                    
+                    // Show UI if was empty
+                    if (tvEmptyActivity.getVisibility() == View.VISIBLE) {
+                        tvEmptyActivity.setVisibility(View.GONE);
+                        rvActivityFeed.setVisibility(View.VISIBLE);
+                    }
+                    
+                    // Scroll to top
+                    rvActivityFeed.smoothScrollToPosition(0);
+                    
+                    // Play notification sound and show badge if fragment not visible
+                    if (!isResumed() && badgeManager != null) {
+                        badgeManager.playNotificationSound();
+                        badgeManager.incrementUnreadCount();
+                        Log.d(TAG, "🔔 Notification sound + badge triggered");
+                    }
+                    
+                    Log.d(TAG, "✅ Real-time activity log added: " + newLog.getEntityName());
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing real-time activity log", e);
+                }
+            });
         }
     }
     
@@ -422,33 +532,34 @@ public class ActivityFragment extends Fragment {
     }
     
     /**
-     * Navigate to task detail in ProjectActivity
+     * Navigate directly to task detail
      */
     private void navigateToTask(String taskId, String projectId) {
         if (getContext() == null) return;
         
-        Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.ProjectActivity.class);
-        intent.putExtra("PROJECT_ID", projectId);
-        intent.putExtra("HIGHLIGHT_TASK_ID", taskId); // ProjectActivity will highlight this task
-        intent.putExtra("TAB_INDEX", 0); // Tab 0 = Board view (where tasks are)
+        // Open CardDetailActivity directly
+        Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity.class);
+        intent.putExtra(com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity.EXTRA_TASK_ID, taskId);
+        intent.putExtra(com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity.EXTRA_PROJECT_ID, projectId);
+        intent.putExtra(com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
         startActivity(intent);
         
-        Log.d(TAG, "Navigated to task: " + taskId + " in project: " + projectId);
+        Log.d(TAG, "Navigated to task detail: " + taskId + " in project: " + projectId);
     }
     
     /**
-     * Navigate to event detail in ProjectActivity (Calendar tab)
+     * Navigate to event in ProjectActivity Event tab
      */
     private void navigateToEvent(String eventId, String projectId) {
         if (getContext() == null) return;
         
+        // Open ProjectActivity with Event tab (index 4)
         Intent intent = new Intent(getContext(), com.example.tralalero.feature.home.ui.Home.ProjectActivity.class);
         intent.putExtra("PROJECT_ID", projectId);
-        intent.putExtra("HIGHLIGHT_EVENT_ID", eventId); // ProjectActivity will highlight this event
-        intent.putExtra("TAB_INDEX", 2); // Tab 2 = Calendar view (where events are)
+        intent.putExtra("TAB_INDEX", 4); // Tab 4 = Event view
         startActivity(intent);
         
-        Log.d(TAG, "Navigated to event: " + eventId + " in project: " + projectId);
+        Log.d(TAG, "Navigated to Event tab for event: " + eventId + " in project: " + projectId);
     }
     
     /**

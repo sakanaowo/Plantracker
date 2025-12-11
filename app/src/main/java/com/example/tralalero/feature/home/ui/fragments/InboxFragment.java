@@ -1,5 +1,6 @@
 package com.example.tralalero.feature.home.ui.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +35,7 @@ import com.example.tralalero.domain.model.Task;
 import com.example.tralalero.domain.repository.ITaskRepository;
 import com.example.tralalero.domain.usecase.task.*;
 import com.example.tralalero.feature.home.ui.Home.project.TaskAdapter;
-import com.example.tralalero.feature.home.ui.Home.project.TaskDetailBottomSheet;
+import com.example.tralalero.feature.home.ui.Home.project.CardDetailActivity;
 import com.example.tralalero.network.ApiClient;
 import com.example.tralalero.presentation.viewmodel.TaskViewModel;
 import com.example.tralalero.presentation.viewmodel.TaskViewModelFactory;
@@ -135,13 +136,8 @@ public class InboxFragment extends Fragment {
         taskAdapter = new TaskAdapter(new TaskAdapter.OnTaskClickListener() {
             @Override
             public void onTaskClick(Task task) {
-                // TODO: Navigate to new TaskDetailActivity instead of using bottom sheet
-                // TaskDetailBottomSheet is deprecated - no longer supports editing
-                Toast.makeText(getContext(), "Task: " + task.getTitle(), Toast.LENGTH_SHORT).show();
-                
-                /* DEPRECATED: Remove TaskDetailBottomSheet usage
-                showTaskDetailBottomSheet(task);
-                */
+                // Navigate to CardDetailActivity
+                openTaskDetail(task);
             }
             
             @Override
@@ -249,47 +245,18 @@ public class InboxFragment extends Fragment {
         Toast.makeText(getContext(), "Creating task...", Toast.LENGTH_SHORT).show();
     }
 
-    /* DEPRECATED: TaskDetailBottomSheet no longer supports editing - use new TaskDetailActivity instead
-    private void showTaskDetailBottomSheet(Task task) {
-        TaskDetailBottomSheet bottomSheet = TaskDetailBottomSheet.newInstance(task);
-        bottomSheet.setOnActionClickListener(new TaskDetailBottomSheet.OnActionClickListener() {
-            @Override
-            public void onAssignTask(Task task) {
-                // Handle assign
-            }
-            @Override
-            public void onMoveTask(Task task) {
-                // Handle move
-            }
-            @Override
-            public void onAddComment(Task task) {
-                // Handle comment
-            }
-            @Override
-            public void onDeleteTask(Task task) {
-                taskViewModel.deleteTask(task.getId());
-            }
-            @Override
-            public void onUpdateDueDate(Task task, java.util.Date dueDate) {
-                // Handle due date
-            }
-            @Override
-            public void onUpdateTask(Task task, String newTitle, String newDescription) {
-                Task updatedTask = new Task(
-                    task.getId(), task.getProjectId(), task.getBoardId(),
-                    newTitle, newDescription, task.getIssueKey(), task.getType(),
-                    task.getStatus(), task.getPriority(), task.getPosition(),
-                    task.getAssigneeId(), task.getCreatedBy(), task.getSprintId(),
-                    task.getEpicId(), task.getParentTaskId(), task.getStartAt(),
-                    task.getDueAt(), task.getStoryPoints(), task.getOriginalEstimateSec(),
-                    task.getRemainingEstimateSec(), task.getCreatedAt(), task.getUpdatedAt()
-                );
-                taskViewModel.updateTask(task.getId(), updatedTask);
-            }
-        });
-        bottomSheet.show(getChildFragmentManager(), "TaskDetailBottomSheet");
+    private void openTaskDetail(Task task) {
+        Intent intent = new Intent(getContext(), CardDetailActivity.class);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_ID, task.getId());
+        intent.putExtra(CardDetailActivity.EXTRA_BOARD_ID, task.getBoardId());
+        intent.putExtra(CardDetailActivity.EXTRA_PROJECT_ID, task.getProjectId());
+        intent.putExtra(CardDetailActivity.EXTRA_IS_EDIT_MODE, true);
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_TITLE, task.getTitle());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_DESCRIPTION, task.getDescription());
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_PRIORITY, task.getPriority() != null ? task.getPriority().name() : "MEDIUM");
+        intent.putExtra(CardDetailActivity.EXTRA_TASK_STATUS, task.getStatus() != null ? task.getStatus().name() : "TO_DO");
+        startActivity(intent);
     }
-    */
     
     /**
      * Update task status via API (same as All Work logic)

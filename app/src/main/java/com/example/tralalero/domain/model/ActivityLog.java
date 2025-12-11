@@ -32,6 +32,10 @@ public class ActivityLog {
     private String invitedBy;
     private String inviterName;
 
+    // Default constructor for WebSocket parsing
+    public ActivityLog() {
+    }
+    
     public ActivityLog(String id, String userId, String action, String entityType, 
                       String entityName, String createdAt, String userName, String userAvatar) {
         this.id = id;
@@ -131,6 +135,42 @@ public class ActivityLog {
     }
 
     // Setters for JSON parsing
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+    
+    public void setAction(String action) {
+        this.action = action;
+    }
+    
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
+    }
+    
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
+    }
+    
+    public void setTimestamp(String createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+    
+    public void setUserAvatar(String userAvatar) {
+        this.userAvatar = userAvatar;
+    }
+    
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+    
     public void setEntityId(String entityId) {
         this.entityId = entityId;
     }
@@ -167,109 +207,6 @@ public class ActivityLog {
      * Format activity log message for display
      * E.g. "John Doe created event Meeting in project MyProject"
      */
-    public String getFormattedMessage() {
-        // For MEMBERSHIP ADDED (invitation), use inviter name instead of invited person name
-        String actorName = userName;
-        if ("ADDED".equals(action) && "MEMBERSHIP".equals(entityType) && inviterName != null) {
-            actorName = inviterName;
-        }
-        
-        StringBuilder message = new StringBuilder(actorName);
-        message.append(" ").append(formatAction(action, entityType));
-        
-        if (entityName != null && !entityName.isEmpty()) {
-            message.append(" ").append(entityName);
-        }
-        
-        if (projectName != null && !projectName.isEmpty()) {
-            message.append(" in project ").append(projectName);
-        }
-        
-        return message.toString();
-    }
-
-    private String formatAction(String action, String entityType) {
-        if (action == null) {
-            return "performed an action";
-        }
-        
-        switch (action) {
-            case "CREATED":
-                return "created " + formatEntityType(entityType);
-            case "UPDATED":
-                return "updated " + formatEntityType(entityType);
-            case "DELETED":
-                return "deleted " + formatEntityType(entityType);
-            case "ADDED":
-                // Special handling for MEMBERSHIP invitations
-                if ("MEMBERSHIP".equals(entityType)) {
-                    return "invited you to join";
-                }
-                return "added " + formatEntityType(entityType);
-            case "COMMENTED":
-                return "commented on";
-            case "ASSIGNED":
-                return "assigned";
-            case "UNASSIGNED":
-                return "unassigned";
-            case "MOVED":
-                return "moved";
-            case "CHECKED":
-                return "checked";
-            case "UNCHECKED":
-                return "unchecked";
-            case "ADDED_MEMBER":
-                return "added member to";
-            case "REMOVED_MEMBER":
-                return "removed member from";
-            case "COMPLETED":
-                return "completed";
-            case "REOPENED":
-                return "reopened";
-            default:
-                return action.toLowerCase();
-        }
-    }
-
-    private String formatEntityType(String entityType) {
-        if (entityType == null) {
-            return "item";
-        }
-        
-        switch (entityType) {
-            case "TASK":
-                return "task";
-            case "CHECKLIST_ITEM":
-                return "checklist item";
-            case "COMMENT":
-                return "comment";
-            case "PROJECT":
-                return "project";
-            case "BOARD":
-                return "board";
-            case "LABEL":
-                return "label";
-            case "ATTACHMENT":
-                return "attachment";
-            case "MEMBERSHIP":
-                return ""; // Empty string for "invited you to join [project name]"
-            case "EVENT":
-                return "event";
-            default:
-                return entityType.toLowerCase();
-        }
-    }
-
-    /**
-     * Format timestamp for display
-     * E.g. "Oct 2 at 10:52 AM"
-     */
-    public String getFormattedTime() {
-        // TODO: Implement proper date formatting
-        // For now, return the ISO string
-        return createdAt;
-    }
-
     /**
      * Get user initials for avatar
      * E.g. "John Doe" -> "JD"

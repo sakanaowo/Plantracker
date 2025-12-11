@@ -295,11 +295,19 @@ public class ProjectActivity extends AppCompatActivity implements
             public void onTabReselected(TabLayout.Tab tab) {}
         });
         
-        // Check if we should open calendar tab (from notification)
+        // Check if we should open specific tab (from activity feed or notification)
+        int tabIndex = getIntent().getIntExtra("TAB_INDEX", -1);
         boolean shouldOpenCalendar = getIntent().getBooleanExtra("_SWITCH_TO_CALENDAR", false);
         
-        if (shouldOpenCalendar) {
-            // Open Calendar tab (index 3)
+        if (tabIndex >= 0) {
+            // Open specific tab from intent
+            TabLayout.Tab tab = tabLayout.getTabAt(tabIndex);
+            if (tab != null) {
+                tab.select();
+                Log.d(TAG, "📍 Auto-selected tab index: " + tabIndex);
+            }
+        } else if (shouldOpenCalendar) {
+            // Open Calendar tab (index 3) from notification
             TabLayout.Tab calendarTab = tabLayout.getTabAt(3);
             if (calendarTab != null) {
                 calendarTab.select();

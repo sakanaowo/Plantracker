@@ -71,6 +71,14 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
         this.activityLogs.addAll(newLogs);
         notifyItemRangeInserted(startPosition, newLogs.size());
     }
+    
+    /**
+     * Add single activity log at the top of the list (for real-time updates)
+     */
+    public void addActivityLog(ActivityLog log) {
+        this.activityLogs.add(0, log);
+        notifyItemInserted(0);
+    }
 
     @NonNull
     @Override
@@ -156,8 +164,8 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 itemView.setFocusable(false);
             }
             
-            // Set activity message using domain model's formatted message
-            String message = log.getFormattedMessage();
+            // Set activity message using formatActivityMessage method
+            String message = formatActivityMessage(log);
             tvActivityMessage.setText(message);
 
             // Set time
@@ -299,7 +307,7 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                             if (isSelf) {
                                 return "You assigned task \"" + entityName + "\"";
                             }
-                            return userName + " assigned task \"" + entityName + "\"";
+                            return userName + " assigned task \"" + entityName + "\" from "+ projectName;
                         }
                     }
                     return userName + " assigned " + entityName;
@@ -373,7 +381,7 @@ public class ActivityLogAdapter extends RecyclerView.Adapter<ActivityLogAdapter.
                 case "REMOVED":
                     if ("MEMBERSHIP".equals(entityType)) {
                         // ✅ Member removed/left: entityName is PROJECT name, memberName in metadata
-                        String removedProjectName = entityName;
+                        String removedProjectName = entityName != null && !entityName.isEmpty() ? entityName : "a project";
                         String memberName = getMetadataValue(log.getMetadata(), "memberName");
                         String memberId = getMetadataValue(log.getMetadata(), "memberId");
                         
