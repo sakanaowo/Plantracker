@@ -11,6 +11,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -98,6 +99,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private TaskCalendarSyncViewModel calendarSyncViewModel;
     private com.example.tralalero.presentation.viewmodel.LabelViewModel labelViewModel;
     private ImageView ivClose;
+    private ImageView ivMore;
     private EditText etTaskTitle; // Changed from RadioButton to EditText
     private TextView tvBoardName; // NEW: Display board name
     private TextView tvProjectBadge;
@@ -309,6 +311,27 @@ public class CardDetailActivity extends AppCompatActivity {
     }
     
     /**
+     * Check if current user can DELETE this task
+     * Rules: ONLY Task creator OR project OWNER/ADMIN can delete
+     */
+    private boolean canUserDeleteTask() {
+        if (currentUserId == null) return false;
+        
+        // Task creator can always delete
+        if (currentUserId.equals(taskCreatorId)) {
+            return true;
+        }
+        
+        // OWNER or ADMIN can delete any task
+        if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole)) {
+            return true;
+        }
+        
+        // MEMBER and assignees CANNOT delete (even if assigned)
+        return false;
+    }
+
+    /**
      * Update UI based on task permissions
      */
     private void updateTaskPermissionUI() {
@@ -368,6 +391,7 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void initViews() {
         ivClose = findViewById(R.id.ivClose);
+        ivMore = findViewById(R.id.ivMore);
         etTaskTitle = findViewById(R.id.etTaskTitle); // Changed from rbTaskTitle
         tvBoardName = findViewById(R.id.tvBoardName); // NEW
         tvProjectBadge = findViewById(R.id.tvProjectBadge);
@@ -1009,6 +1033,11 @@ public class CardDetailActivity extends AppCompatActivity {
         ivClose.setOnClickListener(v -> {
             finish();
         });
+        
+        ivMore.setOnClickListener(v -> {
+            showMoreOptionsMenu();
+        });
+        
         btnMembers.setOnClickListener(v -> {
             checkRoleAndAssign();
         });
@@ -1297,6 +1326,25 @@ public class CardDetailActivity extends AppCompatActivity {
         // ✅ Hide save button - UI will reload via observer when update succeeds
         hasUnsavedChanges = false;
         btnSaveChanges.setVisibility(View.GONE);
+    }
+
+    private void showMoreOptionsMenu() {
+        PopupMenu popup = new PopupMenu(this, ivMore);
+        popup.getMenuInflater().inflate(R.menu.task_more_options, popup.getMenu());
+        
+        // Check user permissions for delete option - ONLY task creator OR admin/owner
+        boolean canDelete = canUserDeleteTask();
+        popup.getMenu().findItem(R.id.menu_delete_task).setVisible(canDelete);
+        
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menu_delete_task) {
+                showDeleteConfirmation();
+                return true;
+            }
+            return false;
+        });
+        
+        popup.show();
     }
 
     private void showDeleteConfirmation() {
