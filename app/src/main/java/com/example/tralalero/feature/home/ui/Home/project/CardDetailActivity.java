@@ -186,6 +186,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private String currentUserRole; // OWNER, ADMIN, or MEMBER
     private String taskCreatorId;
     private List<String> taskAssigneeIds = new ArrayList<>();
+    private boolean hasShownPermissionToast = false; // Flag to prevent toast spam
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -257,7 +258,12 @@ public class CardDetailActivity extends AppCompatActivity {
      * Fetch current user's role in this project for permission checks
      */
     private void fetchCurrentUserRole() {
-        if (projectId == null || currentUserId == null) return;
+        if (projectId == null || currentUserId == null) {
+            android.util.Log.d("CardDetail", "⚠️ fetchCurrentUserRole - projectId or currentUserId is null");
+            return;
+        }
+        
+        android.util.Log.d("CardDetail", "🔍 Fetching user role for userId: " + currentUserId + " in project: " + projectId);
         
         ProjectApiService projectApi = ApiClient.get(App.authManager).create(ProjectApiService.class);
         projectApi.getProjectMembers(projectId).enqueue(new Callback<List<ProjectMemberDTO>>() {
@@ -265,15 +271,22 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onResponse(@NonNull Call<List<ProjectMemberDTO>> call, 
                                  @NonNull Response<List<ProjectMemberDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("CardDetail", "📋 Found " + response.body().size() + " project members");
                     for (ProjectMemberDTO member : response.body()) {
+                        android.util.Log.d("CardDetail", "  - Member: userId=" + member.getUserId() + ", role=" + member.getRole());
                         if (currentUserId.equals(member.getUserId())) {
                             currentUserRole = member.getRole();
-                            android.util.Log.d("CardDetail", "✅ User role: " + currentUserRole);
+                            android.util.Log.d("CardDetail", "✅ User role assigned: " + currentUserRole);
                             // Update UI permissions after role is loaded
                             updateTaskPermissionUI();
                             break;
                         }
                     }
+                    if (currentUserRole == null) {
+                        android.util.Log.e("CardDetail", "❌ Current user not found in project members!");
+                    }
+                } else {
+                    android.util.Log.e("CardDetail", "❌ Failed to fetch members - Response code: " + response.code());
                 }
             }
             
@@ -315,19 +328,31 @@ public class CardDetailActivity extends AppCompatActivity {
      * Rules: ONLY Task creator OR project OWNER/ADMIN can delete
      */
     private boolean canUserDeleteTask() {
-        if (currentUserId == null) return false;
+        android.util.Log.d("CardDetail", "🔍 DELETE PERMISSION CHECK:");
+        android.util.Log.d("CardDetail", "  - currentUserId: " + currentUserId);
+        android.util.Log.d("CardDetail", "  - taskCreatorId: " + taskCreatorId);
+        android.util.Log.d("CardDetail", "  - currentUserRole: " + currentUserRole);
+        
+        if (currentUserId == null) {
+            android.util.Log.d("CardDetail", "  ❌ currentUserId is null");
+            return false;
+        }
         
         // Task creator can always delete
-        if (currentUserId.equals(taskCreatorId)) {
+        if (taskCreatorId != null && currentUserId.equals(taskCreatorId)) {
+            android.util.Log.d("CardDetail", "  ✅ User is task creator - CAN DELETE");
             return true;
         }
         
         // OWNER or ADMIN can delete any task
-        if ("OWNER".equals(currentUserRole) || "ADMIN".equals(currentUserRole)) {
+        if (currentUserRole != null && 
+            ("OWNER".equalsIgnoreCase(currentUserRole) || "ADMIN".equalsIgnoreCase(currentUserRole))) {
+            android.util.Log.d("CardDetail", "  ✅ User is OWNER/ADMIN - CAN DELETE");
             return true;
         }
         
         // MEMBER and assignees CANNOT delete (even if assigned)
+        android.util.Log.d("CardDetail", "  ❌ User is not creator and not OWNER/ADMIN - CANNOT DELETE");
         return false;
     }
 
@@ -335,7 +360,14 @@ public class CardDetailActivity extends AppCompatActivity {
      * Update UI based on task permissions
      */
     private void updateTaskPermissionUI() {
+        android.util.Log.d("CardDetail", "🔧 updateTaskPermissionUI called");
+        android.util.Log.d("CardDetail", "  - currentUserId: " + currentUserId);
+        android.util.Log.d("CardDetail", "  - currentUserRole: " + currentUserRole);
+        android.util.Log.d("CardDetail", "  - taskCreatorId: " + taskCreatorId);
+        android.util.Log.d("CardDetail", "  - taskAssigneeIds: " + taskAssigneeIds);
+        
         boolean canModify = canUserModifyTask();
+        android.util.Log.d("CardDetail", "  - canModify result: " + canModify);
         
         if (btnDeleteTask != null) {
             if (canModify && isEditMode) {
@@ -355,8 +387,14 @@ public class CardDetailActivity extends AppCompatActivity {
             btnSaveChanges.setEnabled(false);
             btnSaveChanges.setAlpha(0.5f);
             
-            // Show message
-            Toast.makeText(this, "⚠️ Bạn không có quyền chỉnh sửa task này", Toast.LENGTH_SHORT).show();
+            // Show message ONLY ONCE
+            if (!hasShownPermissionToast) {
+                android.util.Log.d("CardDetail", "  ⚠️ Showing permission toast (first time)");
+                Toast.makeText(this, "⚠️ Bạn không có quyền chỉnh sửa task này", Toast.LENGTH_SHORT).show();
+                hasShownPermissionToast = true;
+            } else {
+                android.util.Log.d("CardDetail", "  ⚠️ Permission toast already shown, skipping");
+            }
         }
     }
 
@@ -980,7 +1018,7 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void loadTaskDetails() {
         if (taskId != null && !taskId.isEmpty()) {
-            android.util.Log.d(TAG, "Loading task details for taskId: " + taskId);
+            android.util.Log.d(TAG, "🔍 Loading task details for taskId: " + taskId);
             
             // Load task and extract creator/assignees for permission check
             taskViewModel.getSelectedTask().observe(this, task -> {
@@ -997,8 +1035,7 @@ public class CardDetailActivity extends AppCompatActivity {
                         }
                     }
                     
-                    android.util.Log.d("CardDetail", "✅ Task creator: " + taskCreatorId);
-                    android.util.Log.d("CardDetail", "✅ Task assignees: " + taskAssigneeIds);
+                    android.util.Log.d("CardDetail", "✅ Task loaded - creator: " + taskCreatorId + ", assignees: " + taskAssigneeIds);
                     
                     // Update permission UI
                     updateTaskPermissionUI();
@@ -1334,6 +1371,7 @@ public class CardDetailActivity extends AppCompatActivity {
         
         // Check user permissions for delete option - ONLY task creator OR admin/owner
         boolean canDelete = canUserDeleteTask();
+        android.util.Log.d("CardDetail", "🔍 showMoreOptionsMenu - canDelete: " + canDelete);
         popup.getMenu().findItem(R.id.menu_delete_task).setVisible(canDelete);
         
         popup.setOnMenuItemClickListener(item -> {

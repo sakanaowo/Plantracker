@@ -6,11 +6,11 @@ public class ProjectMemberDTO {
     @SerializedName("id")
     private String id;
     
-    @SerializedName("project_id")
-    private String projectId;
-    
-    @SerializedName("user_id")
+    @SerializedName(value = "userId", alternate = {"user_id"})
     private String userId;
+    
+    @SerializedName(value = "projectId", alternate = {"project_id"})
+    private String projectId;
     
     @SerializedName("role")
     private String role;
@@ -28,7 +28,7 @@ public class ProjectMemberDTO {
         @SerializedName("email")
         private String email;
         
-        @SerializedName("avatar_url")
+        @SerializedName(value = "avatarUrl", alternate = {"avatar_url"})
         private String avatarUrl;
         
         @SerializedName("firebaseUid")
