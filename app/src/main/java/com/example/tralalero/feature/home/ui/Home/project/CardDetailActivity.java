@@ -319,6 +319,13 @@ public class CardDetailActivity extends AppCompatActivity {
             return true;
         }
         
+        // If role hasn't loaded yet, allow modification (don't block prematurely)
+        // The permission will be re-checked once role is loaded
+        if (currentUserRole == null) {
+            android.util.Log.d("CardDetail", "  ⚠️ Role not loaded yet, allowing modification temporarily");
+            return true;
+        }
+        
         // MEMBER can only modify their own tasks or tasks they're assigned to
         return false;
     }
@@ -348,6 +355,12 @@ public class CardDetailActivity extends AppCompatActivity {
         if (currentUserRole != null && 
             ("OWNER".equalsIgnoreCase(currentUserRole) || "ADMIN".equalsIgnoreCase(currentUserRole))) {
             android.util.Log.d("CardDetail", "  ✅ User is OWNER/ADMIN - CAN DELETE");
+            return true;
+        }
+        
+        // If role hasn't loaded yet, allow deletion temporarily (will be re-checked)
+        if (currentUserRole == null) {
+            android.util.Log.d("CardDetail", "  ⚠️ Role not loaded yet, allowing deletion temporarily");
             return true;
         }
         
