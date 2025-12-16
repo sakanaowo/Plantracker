@@ -127,6 +127,21 @@ public class MembersFragment extends Fragment {
                         .map(MemberMapper::toDTO)
                         .collect(Collectors.toList());
                     currentMembers = dtoList; // Store for later use
+                    
+                    // ✅ Set current user info for permission checks
+                    FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (firebaseUser != null) {
+                        String currentUserId = firebaseUser.getUid();
+                        String currentUserRole = "MEMBER"; // Default
+                        for (MemberDTO m : dtoList) {
+                            if (m.getUser() != null && currentUserId.equals(m.getUser().getId())) {
+                                currentUserRole = m.getRole();
+                                break;
+                            }
+                        }
+                        adapter.setCurrentUser(currentUserId, currentUserRole);
+                    }
+                    
                     adapter.setMembers(dtoList);
                     updateEmptyState(data.isEmpty());
                 }

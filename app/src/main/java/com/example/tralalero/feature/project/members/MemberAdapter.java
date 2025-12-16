@@ -19,6 +19,8 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
     private List<MemberDTO> members = new ArrayList<>();
     private OnMemberActionListener listener;
     private OnMemberClickListener clickListener;
+    private String currentUserId;
+    private String currentUserRole;
 
     public interface OnMemberActionListener {
         void onChangeRole(MemberDTO member);
@@ -35,6 +37,12 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
     
     public void setOnMemberClickListener(OnMemberClickListener clickListener) {
         this.clickListener = clickListener;
+    }
+    
+    public void setCurrentUser(String userId, String role) {
+        this.currentUserId = userId;
+        this.currentUserRole = role;
+        notifyDataSetChanged();
     }
 
     public void setMembers(List<MemberDTO> members) {
@@ -87,6 +95,30 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
     private void showOptionsMenu(View anchor, MemberDTO member) {
         PopupMenu popup = new PopupMenu(anchor.getContext(), anchor);
         popup.getMenuInflater().inflate(R.menu.menu_member_options, popup.getMenu());
+        
+        // ✅ Check permissions before showing menu items
+        boolean isViewingSelf = member.getUser() != null && 
+            member.getUser().getId() != null && 
+            member.getUser().getId().equals(currentUserId);
+        
+        boolean isCurrentUserOwner = "OWNER".equalsIgnoreCase(currentUserRole);
+        boolean isCurrentUserAdmin = "ADMIN".equalsIgnoreCase(currentUserRole);
+        boolean hasPermission = isCurrentUserOwner || isCurrentUserAdmin;
+        
+        boolean isMemberOwner = "OWNER".equalsIgnoreCase(member.getRole());
+        
+        // ADMIN can remove MEMBER and other ADMIN (but NOT OWNER)
+        // OWNER can remove anyone except themselves
+        boolean canRemove = !isViewingSelf && hasPermission && !isMemberOwner;
+        boolean canChangeRole = hasPermission && !isMemberOwner;
+        
+        // Hide/show menu items based on permissions
+        if (popup.getMenu().findItem(R.id.action_remove) != null) {
+            popup.getMenu().findItem(R.id.action_remove).setVisible(canRemove);
+        }
+        if (popup.getMenu().findItem(R.id.action_change_role) != null) {
+            popup.getMenu().findItem(R.id.action_change_role).setVisible(canChangeRole);
+        }
         
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
