@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
+import android.view.MenuItem;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -503,23 +504,38 @@ public class ProjectEventsFragment extends Fragment {
         // ✅ Check if event is overdue or cancelled
         boolean isOverdueOrCancelled = isEventOverdueOrCancelled(event);
         
+        // Add debug logging
+        android.util.Log.d("ProjectEvents", "Event: " + event.getTitle() + 
+            ", canModify: " + canModify + 
+            ", isOverdueOrCancelled: " + isOverdueOrCancelled +
+            ", status: " + event.getStatus() +
+            ", endAt: " + event.getEndAt());
+        
+        // Get menu items
+        MenuItem editItem = popup.getMenu().findItem(R.id.action_edit);
+        MenuItem cancelItem = popup.getMenu().findItem(R.id.action_cancel);
+        MenuItem deleteItem = popup.getMenu().findItem(R.id.action_delete_permanent);
+        MenuItem reminderItem = popup.getMenu().findItem(R.id.action_send_reminder);
+        
         // Hide/disable menu items based on permission and status
         if (!canModify) {
-            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+            // No permission: hide all
+            editItem.setVisible(false);
+            cancelItem.setVisible(false);
+            deleteItem.setVisible(false);
+            reminderItem.setVisible(false);
         } else if (isOverdueOrCancelled) {
-            // Overdue/Cancelled: Only show delete permanently
-            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
-            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(false);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(true);
+            // Overdue/Cancelled: Only show hard delete
+            editItem.setVisible(false);
+            cancelItem.setVisible(false);
+            deleteItem.setVisible(true);
+            reminderItem.setVisible(false);
         } else {
             // Active events: Show edit, cancel, send reminder
-            popup.getMenu().findItem(R.id.action_edit).setVisible(true);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(true);
-            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(true);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+            editItem.setVisible(true);
+            cancelItem.setVisible(true);
+            deleteItem.setVisible(false);
+            reminderItem.setVisible(true);
         }
         
         popup.setOnMenuItemClickListener(item -> {
@@ -575,13 +591,15 @@ public class ProjectEventsFragment extends Fragment {
         
         // Check if overdue (end time has passed)
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+            // Backend returns format: 2025-12-16T16:00:00.000Z
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date endTime = sdf.parse(event.getEndAt());
             if (endTime != null && endTime.before(new Date())) {
                 return true;
             }
         } catch (Exception e) {
-            android.util.Log.e("ProjectEvents", "Error parsing date", e);
+            android.util.Log.e("ProjectEvents", "Error parsing date: " + event.getEndAt(), e);
         }
         
         return false;
