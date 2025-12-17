@@ -29,6 +29,7 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
     private List<Board> boards = new ArrayList<>();
     private OnBoardActionListener listener;
     private Map<String, TaskAdapter> taskAdapterMap = new HashMap<>(); // ✅ Store adapters by boardId
+    private Map<String, BoardViewHolder> viewHolderMap = new HashMap<>(); // ✅ Store ViewHolders for updating empty state
 
     public interface OnBoardActionListener {
         void onAddCardClick(Board board);
@@ -57,6 +58,12 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
         if (adapter != null) {
             adapter.updateTasks(tasks != null ? tasks : new ArrayList<>());
             Log.d(TAG, "✅ Updated " + (tasks != null ? tasks.size() : 0) + " tasks for board " + boardId);
+            
+            // ✅ Also update empty state if ViewHolder exists
+            BoardViewHolder viewHolder = viewHolderMap.get(boardId);
+            if (viewHolder != null) {
+                viewHolder.updateEmptyState(tasks == null || tasks.isEmpty());
+            }
         }
     }
 
@@ -101,6 +108,9 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
 
         void bind(Board board, OnBoardActionListener listener, BoardAdapter boardAdapter) {
             tvBoardTitle.setText(board.getName());
+            
+            // ✅ Store this ViewHolder for later updates
+            boardAdapter.viewHolderMap.put(board.getId(), this);
 
             if (listener != null) {
                 // ✅ Get tasks for this board
@@ -185,11 +195,12 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                 // ✅ REMOVED: ItemTouchHelper for within-board drag (replaced with cross-board drag)
                 // ✅ REMOVED: TaskAdapter.OnTaskMoveListener (arrow buttons removed)
                 
-                // ✅ NEW: Setup cross-board drag listener on RecyclerView
+                // ✅ NEW: Setup cross-board drag listener on entire board card
                 if (listener instanceof OnCrossBoardDragListener) {
                     com.example.tralalero.util.CrossBoardDragHelper.BoardDragListener dragDropListener = 
                         new CrossBoardDragHelper.BoardDragListener(
                             board.getId(),
+                            itemView, // The entire board card view
                             taskRecycler,
                             (task, sourceBoardId, targetBoardId, position) -> {
                                 Log.d(TAG, "Task dropped: taskId=" + task.getId() + 
@@ -200,7 +211,8 @@ public class BoardAdapter extends RecyclerView.Adapter<BoardAdapter.BoardViewHol
                                 );
                             }
                         );
-                    taskRecycler.setOnDragListener(dragDropListener);
+                    // Set drag listener on the entire board card (itemView)
+                    itemView.setOnDragListener(dragDropListener);
                 }
                 
                 // Setup checkbox status change listener

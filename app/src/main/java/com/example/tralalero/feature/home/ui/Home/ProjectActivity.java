@@ -551,12 +551,13 @@ public class ProjectActivity extends AppCompatActivity implements
                 Log.d(TAG, "📋 Loaded tasks for " + tasksMap.size() + " boards from ProjectViewModel");
                 
                 // ✅ Update each board's tasks in adapter
+                // Note: updateTasksForBoard() already calls notifyDataSetChanged() in TaskAdapter
                 for (Map.Entry<String, List<Task>> entry : tasksMap.entrySet()) {
                     boardAdapter.updateTasksForBoard(entry.getKey(), entry.getValue());
                 }
                 
-                // ✅ Also notify to rebind ViewHolders for visible boards
-                boardAdapter.notifyDataSetChanged();
+                // ✅ No need to call boardAdapter.notifyDataSetChanged() here
+                // as updateTasksForBoard() already updates each TaskAdapter
             }
         });
         

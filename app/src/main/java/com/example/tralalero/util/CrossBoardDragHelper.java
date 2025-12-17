@@ -43,19 +43,22 @@ public class CrossBoardDragHelper {
     }
     
     /**
-     * Drag listener for board RecyclerViews
+     * Drag listener for entire board cards (not just RecyclerView)
      */
     public static class BoardDragListener implements View.OnDragListener {
         private final String targetBoardId;
         private final OnTaskDroppedListener listener;
         private final RecyclerView recyclerView;
+        private final View boardCard; // The entire board card view
+        private android.graphics.drawable.Drawable originalBackground; // Store original background
         
         public interface OnTaskDroppedListener {
             void onTaskDropped(Task task, String sourceBoardId, String targetBoardId, int position);
         }
         
-        public BoardDragListener(String targetBoardId, RecyclerView recyclerView, OnTaskDroppedListener listener) {
+        public BoardDragListener(String targetBoardId, View boardCard, RecyclerView recyclerView, OnTaskDroppedListener listener) {
             this.targetBoardId = targetBoardId;
+            this.boardCard = boardCard;
             this.recyclerView = recyclerView;
             this.listener = listener;
         }
@@ -64,6 +67,8 @@ public class CrossBoardDragHelper {
         public boolean onDrag(View v, DragEvent event) {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
+                    // Save original background when drag starts
+                    originalBackground = v.getBackground();
                     // Check if we can accept this drag
                     return event.getClipDescription().hasMimeType(MIME_TYPE_TASK);
                     
@@ -73,8 +78,8 @@ public class CrossBoardDragHelper {
                     return true;
                     
                 case DragEvent.ACTION_DRAG_EXITED:
-                    // Remove highlight
-                    v.setBackground(null);
+                    // Restore original background
+                    v.setBackground(originalBackground);
                     return true;
                     
                 case DragEvent.ACTION_DRAG_LOCATION:
@@ -107,13 +112,13 @@ public class CrossBoardDragHelper {
                         listener.onTaskDropped(task, sourceBoardId, targetBoardId, position);
                     }
                     
-                    // Remove highlight
-                    v.setBackground(null);
+                    // Restore original background
+                    v.setBackground(originalBackground);
                     return true;
                     
                 case DragEvent.ACTION_DRAG_ENDED:
-                    // Clean up
-                    v.setBackground(null);
+                    // Restore original background on drag end
+                    v.setBackground(originalBackground);
                     return true;
                     
                 default:
@@ -124,7 +129,17 @@ public class CrossBoardDragHelper {
         private int calculateDropPosition(float x, float y) {
             if (recyclerView == null) return 0;
             
-            View childView = recyclerView.findChildViewUnder(x, y);
+            // Convert board card coordinates to RecyclerView coordinates
+            int[] boardLocation = new int[2];
+            int[] recyclerLocation = new int[2];
+            boardCard.getLocationOnScreen(boardLocation);
+            recyclerView.getLocationOnScreen(recyclerLocation);
+            
+            // Adjust x, y to be relative to RecyclerView
+            float recyclerX = x + (boardLocation[0] - recyclerLocation[0]);
+            float recyclerY = y + (boardLocation[1] - recyclerLocation[1]);
+            
+            View childView = recyclerView.findChildViewUnder(recyclerX, recyclerY);
             if (childView != null) {
                 return recyclerView.getChildAdapterPosition(childView);
             }
