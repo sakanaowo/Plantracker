@@ -66,11 +66,7 @@
         <com.google.android.material.chip.ChipGroup android:id="@+id/chipGroupAttendees" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" app:singleLine="false"/>
 
         <!-- ✅ REMOVED: Google Meet option - Always enabled by default -->
-
-        <!-- Recurrence -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recurrence" android:textSize="14sp" android:textStyle="bold" android:textColor="#212121" android:layout_marginBottom="8dp"/>
-
-        <Spinner android:id="@+id/spinnerRecurrence" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginBottom="24dp" android:background="@drawable/spinner_background" android:padding="12dp"/>
+        <!-- ✅ REMOVED: Recurrence - Always NONE by default -->
 
         <!-- Action Buttons -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">

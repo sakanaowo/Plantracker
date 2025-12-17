@@ -45,7 +45,7 @@ public class EditEventDialog extends DialogFragment {
     private RadioButton rbMeeting;
     private RadioButton rbMilestone;
     private ChipGroup chipGroupAttendees;
-    private Spinner spinnerRecurrence;
+    // ✅ REMOVED: spinnerRecurrence - Always NONE by default
     private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
@@ -93,7 +93,7 @@ public class EditEventDialog extends DialogFragment {
         initViews(view);
         setupDateTimePickers();
         setupAttendees(view);
-        setupRecurrence();
+        // ✅ REMOVED: setupRecurrence() - Always NONE by default
         setupButtons(view);
         
         // Pre-fill with existing event data
@@ -112,7 +112,7 @@ public class EditEventDialog extends DialogFragment {
         rbMeeting = view.findViewById(R.id.rbMeeting);
         rbMilestone = view.findViewById(R.id.rbMilestone);
         chipGroupAttendees = view.findViewById(R.id.chipGroupAttendees);
-        spinnerRecurrence = view.findViewById(R.id.spinnerRecurrence);
+        // ✅ REMOVED: spinnerRecurrence findViewById - Always NONE by default
         progressBarLoading = view.findViewById(R.id.progressBarLoading);
     }
     
@@ -148,12 +148,7 @@ public class EditEventDialog extends DialogFragment {
             rbMeeting.setChecked(true);
         }
         
-        // Set recurrence
-        String recurrence = existingEvent.getRecurrence();
-        if (recurrence != null) {
-            int position = getRecurrencePosition(recurrence);
-            spinnerRecurrence.setSelection(position);
-        }
+        // ✅ REMOVED: Set recurrence - Always NONE by default
         
         // Set attendees
         if (existingEvent.getAttendeeIds() != null) {
@@ -161,7 +156,8 @@ public class EditEventDialog extends DialogFragment {
         }
     }
     
-    private int getRecurrencePosition(String recurrence) {
+    // ✅ REMOVED: getRecurrencePosition() - Always NONE by default
+    private int getRecurrencePosition_REMOVED(String recurrence) {
         switch (recurrence) {
             case "DAILY": return 1;
             case "WEEKLY": return 2;
@@ -294,23 +290,7 @@ public class EditEventDialog extends DialogFragment {
         });
     }
     
-    private void setupRecurrence() {
-        String[] recurrenceOptions = {
-            "Không lặp lại",
-            "Hàng ngày",
-            "Hàng tuần",
-            "Hai tuần một lần",
-            "Hàng tháng"
-        };
-        
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-            getContext(),
-            android.R.layout.simple_spinner_item,
-            recurrenceOptions
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerRecurrence.setAdapter(adapter);
-    }
+    // ✅ REMOVED: setupRecurrence() - Always NONE by default
     
     private void setupButtons(View view) {
         View btnClose = view.findViewById(R.id.btnCloseDialog);

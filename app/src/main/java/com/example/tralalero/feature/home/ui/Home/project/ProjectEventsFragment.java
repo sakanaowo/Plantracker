@@ -512,7 +512,7 @@ public class ProjectEventsFragment extends Fragment {
             ", endAt: " + event.getEndAt());
         
         // Get menu items
-        MenuItem editItem = popup.getMenu().findItem(R.id.action_edit);
+        // ✅ REMOVED: editItem - Edit option disabled
         MenuItem cancelItem = popup.getMenu().findItem(R.id.action_cancel);
         MenuItem deleteItem = popup.getMenu().findItem(R.id.action_delete_permanent);
         MenuItem reminderItem = popup.getMenu().findItem(R.id.action_send_reminder);
@@ -520,19 +520,16 @@ public class ProjectEventsFragment extends Fragment {
         // Hide/disable menu items based on permission and status
         if (!canModify) {
             // No permission: hide all
-            editItem.setVisible(false);
             cancelItem.setVisible(false);
             deleteItem.setVisible(false);
             reminderItem.setVisible(false);
         } else if (isOverdueOrCancelled) {
             // Overdue/Cancelled: Only show hard delete
-            editItem.setVisible(false);
             cancelItem.setVisible(false);
             deleteItem.setVisible(true);
             reminderItem.setVisible(false);
         } else {
-            // Active events: Show edit, cancel, send reminder
-            editItem.setVisible(true);
+            // Active events: Show cancel, send reminder (edit removed)
             cancelItem.setVisible(true);
             deleteItem.setVisible(false);
             reminderItem.setVisible(true);
@@ -540,10 +537,8 @@ public class ProjectEventsFragment extends Fragment {
         
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.action_edit) {
-                editEvent(event);
-                return true;
-            } else if (itemId == R.id.action_cancel) {
+            // ✅ REMOVED: action_edit case - Edit option disabled
+            if (itemId == R.id.action_cancel) {
                 cancelEvent(event);
                 return true;
             } else if (itemId == R.id.action_delete_permanent) {
@@ -634,6 +629,8 @@ public class ProjectEventsFragment extends Fragment {
         });
     }
     
+    // ✅ REMOVED: Edit event functionality disabled
+    /*
     private void editEvent(ProjectEvent event) {
         EditEventDialog dialog = EditEventDialog.newInstance(event);
         dialog.setOnEventUpdatedListener(request -> {
@@ -650,6 +647,7 @@ public class ProjectEventsFragment extends Fragment {
         });
         dialog.show(getChildFragmentManager(), "edit_event");
     }
+    */
     
     private void cancelEvent(ProjectEvent event) {
         new AlertDialog.Builder(getContext())

@@ -22,17 +22,16 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-//                "\"http://10.170.77.128:3000/api/\""
+//                "\"http://192.168.1.12:3000/api/\""
                 "\"https://plantracker-backend-1.onrender.com/api/\""
             )
             // Use local WebSocket for development
             buildConfigField(
                 "String",
                 "WS_URL",
-//                "\"ws://10.170.77.128:3000/notifications\""
+//                "\"ws://192.168.1.12:3000/notifications\""
                 "\"wss://plantracker-backend-1.onrender.com/api/\"",
-
-                )
+            )
         }
         release {
             buildConfigField(

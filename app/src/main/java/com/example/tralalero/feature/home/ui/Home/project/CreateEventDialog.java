@@ -47,7 +47,7 @@ public class CreateEventDialog extends DialogFragment {
     private RadioButton rbMilestone;
     private ChipGroup chipGroupAttendees;
     // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
-    private Spinner spinnerRecurrence;
+    // ✅ REMOVED: spinnerRecurrence - Always NONE by default
     private android.widget.ProgressBar progressBarLoading;
     
     private String projectId;
@@ -101,7 +101,7 @@ public class CreateEventDialog extends DialogFragment {
         initViews(view);
         setupDateTimePickers();
         setupAttendees(view);
-        setupRecurrence();
+        // ✅ REMOVED: setupRecurrence() - Always NONE by default
         setupButtons(view);
         
         // ✅ Show chip for current user (auto-added)
@@ -121,7 +121,7 @@ public class CreateEventDialog extends DialogFragment {
         rbMilestone = view.findViewById(R.id.rbMilestone);
         chipGroupAttendees = view.findViewById(R.id.chipGroupAttendees);
         // ✅ REMOVED: switchCreateMeet and cardGoogleMeet - Always create Google Meet by default
-        spinnerRecurrence = view.findViewById(R.id.spinnerRecurrence);
+        // ✅ REMOVED: spinnerRecurrence findViewById - Always NONE by default
         progressBarLoading = view.findViewById(R.id.progressBarLoading);
         
         // ✅ SIMPLIFIED: No longer need meeting link and location fields
@@ -319,23 +319,7 @@ public class CreateEventDialog extends DialogFragment {
         selectedAttendeeIds.add(userId);
     }
     
-    private void setupRecurrence() {
-        String[] recurrenceOptions = {
-            "Không lặp lại",
-            "Hàng ngày",
-            "Hàng tuần",
-            "Hai tuần một lần",
-            "Hàng tháng"
-        };
-        
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-            getContext(),
-            android.R.layout.simple_spinner_item,
-            recurrenceOptions
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerRecurrence.setAdapter(adapter);
-    }
+    // ✅ REMOVED: setupRecurrence() - Always NONE by default
     
     private void setupButtons(View view) {
         View btnClose = view.findViewById(R.id.btnCloseDialog);
@@ -406,7 +390,7 @@ public class CreateEventDialog extends DialogFragment {
         event.setCreateGoogleMeet(true); // Always create Google Meet
         
         event.setAttendeeIds(selectedAttendeeIds);
-        event.setRecurrence(getSelectedRecurrence());
+        event.setRecurrence("NONE"); // ✅ Always NONE - no recurrence support
         event.setProjectId(projectId);
         
         // ✅ NEW: No need to set startAt/endAt - backend will calculate from date + time + duration
@@ -436,15 +420,5 @@ public class CreateEventDialog extends DialogFragment {
         }
     }
     
-    private String getSelectedRecurrence() {
-        int position = spinnerRecurrence.getSelectedItemPosition();
-        switch (position) {
-            case 1: return "DAILY";
-            case 2: return "WEEKLY";
-            case 3: return "BIWEEKLY";
-            case 4: return "MONTHLY";
-            default: return "NONE";
-        }
-    }
-    
+    // ✅ REMOVED: getSelectedRecurrence() - Always NONE by default
 }
