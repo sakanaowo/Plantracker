@@ -12,7 +12,7 @@ import com.example.tralalero.data.dto.event.CreateProjectEventRequest;
 import com.example.tralalero.data.remote.dto.event.EventDTO;
 import com.example.tralalero.data.repository.EventRepositoryImpl;
 import com.example.tralalero.domain.model.EventType;
-import com.example.tralalero.domain.model.RecurrenceType;
+// ✅ REMOVED: import RecurrenceType - Always NONE by default
 import com.example.tralalero.domain.repository.IEventRepository;
 import com.example.tralalero.util.DateUtils;
 
@@ -116,7 +116,7 @@ public class QuickEventViewModel extends AndroidViewModel {
         Calendar date,
         int durationMinutes,
         String type,
-        String recurrence,
+        // ✅ REMOVED: String recurrence parameter - Always NONE by default
         List<String> attendeeIds,
         boolean createGoogleMeet
     ) {
@@ -158,8 +158,8 @@ public class QuickEventViewModel extends AndroidViewModel {
         EventType eventType = EventType.fromString(type);
         request.setType(eventType.name());
         
-        RecurrenceType recurrenceType = RecurrenceType.fromString(recurrence);
-        request.setRecurrence(recurrenceType.name());
+        // ✅ Always NONE - no recurrence support
+        request.setRecurrence("NONE");
         
         request.setAttendeeIds(attendeeIds != null ? attendeeIds : new ArrayList<>());
         request.setCreateGoogleMeet(createGoogleMeet);

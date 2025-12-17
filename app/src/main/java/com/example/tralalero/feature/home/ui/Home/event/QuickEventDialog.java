@@ -237,7 +237,8 @@ public class QuickEventDialog extends DialogFragment {
         boolean createGoogleMeet = switchGoogleMeet.isChecked();
 
         // Call ViewModel with correct parameters:
-        // projectId, title, description, date(Calendar), duration, type, recurrence, attendeeIds, createGoogleMeet
+        // projectId, title, description, date(Calendar), duration, type, attendeeIds, createGoogleMeet
+        // ✅ REMOVED: recurrence parameter - Always NONE by default
         viewModel.createEvent(
             projectId,
             title,
@@ -245,7 +246,7 @@ public class QuickEventDialog extends DialogFragment {
             selectedCalendar,
             duration,
             eventType.name(),
-            "NONE", // recurrence
+            // recurrence removed - always NONE
             new java.util.ArrayList<>(), // attendeeIds (empty for now)
             createGoogleMeet
         );
