@@ -134,10 +134,6 @@ public class NotificationWebSocketManager {
         shouldBeConnected = true;
         isConnecting = true;
         
-        // DON'T disable FCM here! Only disable when CONNECTED successfully
-        // This prevents race condition where FCM is disabled during connection attempt
-        // but connection fails, leaving FCM disabled while user is actually offline
-        
         try {
             String wsUrl = BuildConfig.WS_URL;
             Log.d(TAG, "🔄 Connecting to: " + wsUrl);
@@ -171,10 +167,10 @@ public class NotificationWebSocketManager {
     public void disconnect() {
         shouldBeConnected = false;
         
-        // Re-enable FCM notifications when WebSocket disconnects
+        // Re-enable FCM notifications when disconnecting (app going to background)
         if (notifPrefs != null) {
             notifPrefs.edit().putBoolean("show_fcm_notifications", true).apply();
-            Log.d(TAG, "📊 Set show_fcm_notifications = true (WebSocket disconnecting)");
+            Log.d(TAG, "📊 WebSocket disconnecting → FCM ENABLED (background mode)");
         }
         
         if (socket != null) {
@@ -225,10 +221,10 @@ public class NotificationWebSocketManager {
                 isConnecting = false;
                 Log.d(TAG, "✅ Socket.IO CONNECTED");
                 
-                // Update SharedPreferences
+                // Disable FCM when WebSocket is active (foreground only)
                 if (notifPrefs != null) {
                     notifPrefs.edit().putBoolean("show_fcm_notifications", false).apply();
-                    Log.d(TAG, "📊 Set show_fcm_notifications = false (connected)");
+                    Log.d(TAG, "📊 WebSocket connected → FCM DISABLED (foreground mode)");
                 }
                 
                 if (connectionStateListener != null) {
@@ -242,10 +238,10 @@ public class NotificationWebSocketManager {
             public void call(Object... args) {
                 Log.d(TAG, "❌ Socket.IO DISCONNECTED");
                 
-                // Re-enable FCM
+                // Re-enable FCM when WebSocket disconnects (background mode)
                 if (notifPrefs != null) {
                     notifPrefs.edit().putBoolean("show_fcm_notifications", true).apply();
-                    Log.d(TAG, "📊 Set show_fcm_notifications = true (disconnected)");
+                    Log.d(TAG, "📊 WebSocket disconnected → FCM ENABLED (background mode)");
                 }
                 
                 if (connectionStateListener != null) {

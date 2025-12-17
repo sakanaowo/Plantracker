@@ -55,16 +55,27 @@ public class NotificationUIManager {
             return;
         }
         
-        // Create Snackbar message with icon
-        String icon = getNotificationIcon(notification.getType());
-        String message = icon + " " + notification.getTitle();
+        // Validate title (activity_log events may not have title)
+        String title = notification.getTitle();
+        if (title == null || title.trim().isEmpty()) {
+            Log.w(TAG, "⚠️ Notification has no title, skipping display");
+            return;
+        }
+        
+        // Remove emoji from title (user doesn't want emoji)
+        // Backend sends emoji like "📦 Task Moved" → extract "Task Moved"
+        String message = removeEmoji(title).trim();
+        if (message.isEmpty()) {
+            message = title; // Fallback to original if removal fails
+        }
         
         // Create and show Snackbar
         Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
         
-        // Customize appearance
-        snackbar.setBackgroundTint(ContextCompat.getColor(context, R.color.notification_snackbar_bg));
-        snackbar.setTextColor(ContextCompat.getColor(context, R.color.white));
+        // Customize appearance - use Material colors for better visibility
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundColor(ContextCompat.getColor(context, R.color.notification_snackbar_bg));
+        snackbar.setTextColor(ContextCompat.getColor(context, android.R.color.white));
         snackbar.setActionTextColor(ContextCompat.getColor(context, R.color.notification_action_color));
         
         // Add action button "XEM"
@@ -82,6 +93,20 @@ public class NotificationUIManager {
         snackbar.show();
         
         Log.d(TAG, "✅ Snackbar displayed successfully");
+    }
+    
+    /**
+     * Remove emoji from text
+     * Removes all emoji characters from the string
+     * 
+     * @param text Text containing emoji
+     * @return Text without emoji
+     */
+    private static String removeEmoji(String text) {
+        if (text == null) return "";
+        // Remove emoji using regex pattern
+        // This pattern matches most emoji characters
+        return text.replaceAll("[\\p{So}\\p{Sc}\\p{Sk}\\p{Sm}]", "").trim();
     }
     
     /**
