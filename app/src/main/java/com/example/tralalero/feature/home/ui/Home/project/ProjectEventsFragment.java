@@ -1,9 +1,11 @@
 package com.example.tralalero.feature.home.ui.Home.project;
 
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.view.MenuItem;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -77,6 +80,15 @@ public class ProjectEventsFragment extends Fragment {
     private ImageButton btnSearchEvents;
     private boolean isSearchVisible = false;
     
+    // Real-time updates
+    private BroadcastReceiver refreshEventsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            android.util.Log.d("ProjectEventsFragment", "📅 Received REFRESH_EVENTS broadcast - reloading events");
+            loadEvents();
+        }
+    };
+    
     public static ProjectEventsFragment newInstance(String projectId) {
         ProjectEventsFragment fragment = new ProjectEventsFragment();
         Bundle args = new Bundle();
@@ -113,6 +125,29 @@ public class ProjectEventsFragment extends Fragment {
         loadEvents();
         
         return view;
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        
+        // Register real-time update receiver
+        IntentFilter filter = new IntentFilter("com.example.tralalero.REFRESH_EVENTS");
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(refreshEventsReceiver, filter);
+        android.util.Log.d("ProjectEventsFragment", "✅ Registered REFRESH_EVENTS receiver");
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        
+        // Unregister real-time update receiver
+        try {
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(refreshEventsReceiver);
+            android.util.Log.d("ProjectEventsFragment", "✅ Unregistered REFRESH_EVENTS receiver");
+        } catch (Exception e) {
+            android.util.Log.e("ProjectEventsFragment", "Error unregistering receiver: " + e.getMessage());
+        }
     }
     
     private void initViews(View view) {

@@ -144,11 +144,6 @@ public class CardDetailActivity extends AppCompatActivity {
     private UserApiService userApiService;
     private TaskApiService taskApiService; // ✅ For calendar sync API calls
     
-    // Attachment Upload Progress UI
-    private LinearLayout layoutCardUploadProgress;
-    private TextView tvCardUploadProgress;
-    private android.widget.ProgressBar progressBarCardUpload;
-    
     // Calendar Sync UI
     private SwitchMaterial switchCalendarSync;
     private MaterialButton btnViewInCalendar;
@@ -482,11 +477,6 @@ public class CardDetailActivity extends AppCompatActivity {
         layoutCommentInput = findViewById(R.id.layoutCommentInput);
         etNewComment = findViewById(R.id.etNewComment);
         btnSendComment = findViewById(R.id.btnSendComment);
-        
-        // Attachment Upload Progress UI
-        layoutCardUploadProgress = findViewById(R.id.layoutCardUploadProgress);
-        tvCardUploadProgress = findViewById(R.id.tvCardUploadProgress);
-        progressBarCardUpload = findViewById(R.id.progressBarCardUpload);
         
         // Calendar Sync Views
         switchCalendarSync = findViewById(R.id.switchCalendarSync);
@@ -2717,11 +2707,15 @@ public class CardDetailActivity extends AppCompatActivity {
             return;
         }
         
+        // Get progress views
+        View layoutCardUploadProgress = findViewById(R.id.layoutCardUploadProgress);
+        TextView tvCardUploadProgress = findViewById(R.id.tvCardUploadProgress);
+        android.widget.ProgressBar progressBarCardUpload = findViewById(R.id.progressBarCardUpload);
+        
         // Show progress UI
         if (layoutCardUploadProgress != null) {
             layoutCardUploadProgress.setVisibility(View.VISIBLE);
             progressBarCardUpload.setProgress(0);
-            tvCardUploadProgress.setText("Preparing upload...");
         }
         
         attachmentUploader.uploadFile(taskId, uri, new AttachmentUploader.UploadCallback() {
