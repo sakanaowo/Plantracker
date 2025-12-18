@@ -1243,35 +1243,34 @@ public class CardDetailActivity extends AppCompatActivity {
         }
         
         Task newTask = new Task(
-                "",              // id (backend will generate)
-                projectId,       // projectId
-                boardId,         // boardId
-                title,           // title
-                description,     // description
-                null,            // issueKey
-                null,            // type
-                Task.TaskStatus.TO_DO, // Default status
-                currentPriority, // Use selected priority
-                0.0,             // position
-                null,            // assigneeId
-                null,            // createdBy (backend will set)
-                null,            // sprintId
-                null,            // epicId
-                null,            // parentTaskId
-                startAt,         // ✅ startAt (Date)
-                dueAt,           // ✅ dueAt (Date)
-                null,            // storyPoints
-                null,            // originalEstimateSec
-                null,            // remainingEstimateSec
-                null,            // createdAt
-                null,            // updatedAt
-                // Calendar sync fields
+                "",              
+                projectId,       
+                boardId,         
+                title,          
+                description,    
+                null,           
+                null,            
+                Task.TaskStatus.TO_DO, 
+                currentPriority, 
+                0.0,             
+                null,            
+                null,            
+                null,            
+                null,            
+                null,            
+                startAt,         
+                dueAt,           
+                null,            
+                null,            
+                null,            
+                null,            
+                null,            
                 isCalendarSyncEnabled,
-                null,            // calendar reminder minutes
-                null,            // calendarEventId (backend will generate)
-                null,            // calendarSyncedAt (backend will set)
-                null,            // labels
-                null             // assignees
+                null,            
+                null,            
+                null,            
+                null,            
+                null             
         );
         taskViewModel.createTask(newTask);
         Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show();
@@ -1319,34 +1318,33 @@ public class CardDetailActivity extends AppCompatActivity {
         // This prevents null fields from overwriting existing data
         Task updatedTask = new Task(
                 taskId,
-                currentTask.getProjectId(),      // ✅ Preserve
-                currentTask.getBoardId(),        // ✅ Preserve
-                title,                           // ✅ Changed
-                description,                     // ✅ Changed
-                currentTask.getIssueKey(),       // ✅ Preserve
-                currentTask.getType(),           // ✅ Preserve
-                currentTask.getStatus(),         // ✅ Preserve (status changed via drag-drop, not here)
-                currentPriority,                 // ✅ Changed
-                currentTask.getPosition(),       // ✅ Preserve
-                currentTask.getAssigneeId(),     // ✅ Preserve (assignee changed separately)
-                currentTask.getCreatedBy(),      // ✅ Preserve
-                currentTask.getSprintId(),       // ✅ Preserve
-                currentTask.getEpicId(),         // ✅ Preserve
-                currentTask.getParentTaskId(),   // ✅ Preserve
-                startAt,                         // ✅ Changed (null if not set)
-                dueAt,                           // ✅ Changed
-                currentTask.getStoryPoints(),    // ✅ Preserve
-                currentTask.getOriginalEstimateSec(),  // ✅ Preserve
-                currentTask.getRemainingEstimateSec(), // ✅ Preserve
-                currentTask.getCreatedAt(),      // ✅ Preserve
-                currentTask.getUpdatedAt(),      // ✅ Backend will update
-                // Calendar sync fields
+                currentTask.getProjectId(),      
+                currentTask.getBoardId(),        
+                title,                           
+                description,                     
+                currentTask.getIssueKey(),       
+                currentTask.getType(),           
+                currentTask.getStatus(),         
+                currentPriority,                 
+                currentTask.getPosition(),       
+                currentTask.getAssigneeId(),      
+                currentTask.getCreatedBy(),      
+                currentTask.getSprintId(),       
+                currentTask.getEpicId(),         
+                currentTask.getParentTaskId(),   
+                startAt,                          
+                dueAt,                           
+                currentTask.getStoryPoints(),    
+                currentTask.getOriginalEstimateSec(),  
+                currentTask.getRemainingEstimateSec(), 
+                currentTask.getCreatedAt(),      
+                currentTask.getUpdatedAt(),      
                 isCalendarSyncEnabled,
                 null,  // calendar reminder minutes - no longer used
-                currentTask.getCalendarEventId(),     // ✅ Preserve (backend will update)
-                currentTask.getCalendarSyncedAt(),    // ✅ Preserve (backend will update)
-                currentTask.getLabels(),              // ✅ Preserve
-                currentTask.getAssignees()            // ✅ Preserve
+                currentTask.getCalendarEventId(),     
+                currentTask.getCalendarSyncedAt(),    
+                currentTask.getLabels(),              
+                currentTask.getAssignees()            
         );
         
         taskViewModel.updateTask(taskId, updatedTask);

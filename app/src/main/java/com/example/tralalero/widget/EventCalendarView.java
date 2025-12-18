@@ -20,9 +20,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Custom calendar view that displays event and task markers on specific dates
- */
 public class EventCalendarView extends GridLayout {
     
     public interface OnDateSelectedListener {
@@ -57,63 +54,15 @@ public class EventCalendarView extends GridLayout {
         buildCalendar();
     }
     
-    /**
-     * Set dates that have events
-     */
     public void setEventDates(Set<Long> dates) {
         this.eventDates = dates != null ? dates : new HashSet<>();
         buildCalendar();
     }
     
-    /**
-     * Set dates that have tasks
-     */
     public void setTaskDates(Set<Long> dates) {
         this.taskDates = dates != null ? dates : new HashSet<>();
         buildCalendar();
     }
-    
-    /**
-     * Set listener for date selection
-     */
-    public void setOnDateSelectedListener(OnDateSelectedListener listener) {
-        this.dateSelectedListener = listener;
-    }
-    
-    /**
-     * Set both event and task dates
-     */
-    public void setEventAndTaskDates(Set<Long> eventDates, Set<Long> taskDates) {
-        this.eventDates = eventDates != null ? eventDates : new HashSet<>();
-        this.taskDates = taskDates != null ? taskDates : new HashSet<>();
-        android.util.Log.d("EventCalendarView", "setEventAndTaskDates called - Events: " + this.eventDates.size() + ", Tasks: " + this.taskDates.size());
-        if (!this.eventDates.isEmpty()) {
-            android.util.Log.d("EventCalendarView", "Event timestamps: " + this.eventDates);
-        }
-        buildCalendar();
-        android.util.Log.d("EventCalendarView", "Calendar rebuilt with markers");
-    }
-    
-    /**
-     * Change to a specific month
-     */
-    public void setMonth(int year, int month) {
-        currentMonth.set(Calendar.YEAR, year);
-        currentMonth.set(Calendar.MONTH, month);
-        buildCalendar();
-    }
-    
-    /**
-     * Get the currently displayed month name and year
-     */
-    public String getCurrentMonthYear() {
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
-        return sdf.format(currentMonth.getTime());
-    }
-    
-    /**
-     * Build the calendar grid
-     */
     private void buildCalendar() {
         removeAllViews();
         
