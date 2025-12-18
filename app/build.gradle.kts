@@ -30,7 +30,7 @@ android {
                 "String",
                 "WS_URL",
 //                "\"ws://192.168.1.12:3000/notifications\""
-                "\"wss://plantracker-backend-1.onrender.com/notifications/\"",
+                "\"wss://plantracker-backend-1.onrender.com/notifications\"",
             )
         }
         release {
