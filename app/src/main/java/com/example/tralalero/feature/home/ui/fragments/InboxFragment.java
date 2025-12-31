@@ -167,12 +167,39 @@ public class InboxFragment extends Fragment {
     }
     
     private void setupQuickAddTask() {
-        inboxAddCard.setOnClickListener(v -> inboxQuickAccess.setVisibility(View.VISIBLE));
+        inboxAddCard.setOnClickListener(v -> {
+            inboxQuickAccess.setVisibility(View.VISIBLE);
+            // Scroll to bottom to ensure input is visible above keyboard
+            inboxAddCard.post(() -> {
+                inboxAddCard.requestFocus();
+                recyclerView.post(() -> recyclerView.smoothScrollToPosition(
+                    taskAdapter.getItemCount() > 0 ? taskAdapter.getItemCount() - 1 : 0
+                ));
+            });
+        });
+        
+        inboxAddCard.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                // Ensure the input container is visible when focused
+                inboxAddCard.post(() -> {
+                    View rootView = getView();
+                    if (rootView != null) {
+                        rootView.post(() -> {
+                            int[] location = new int[2];
+                            inboxAddCard.getLocationOnScreen(location);
+                            // Scroll recyclerview to show input above keyboard
+                            recyclerView.smoothScrollBy(0, 200);
+                        });
+                    }
+                });
+            }
+        });
         
         Button btnCancel = getView().findViewById(R.id.btnCancel);
         btnCancel.setOnClickListener(v -> {
             inboxQuickAccess.setVisibility(View.GONE);
             inboxAddCard.setText("");
+            inboxAddCard.clearFocus();
         });
         
         Button btnAdd = getView().findViewById(R.id.btnAdd);
@@ -182,6 +209,7 @@ public class InboxFragment extends Fragment {
                 createTask(taskTitle);
                 inboxQuickAccess.setVisibility(View.GONE);
                 inboxAddCard.setText("");
+                inboxAddCard.clearFocus();
             } else {
                 Toast.makeText(getContext(), "Vui lòng nhập tên task!", Toast.LENGTH_SHORT).show();
             }

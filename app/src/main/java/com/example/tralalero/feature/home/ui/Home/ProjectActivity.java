@@ -1,6 +1,9 @@
 package com.example.tralalero.feature.home.ui.Home;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -94,6 +97,10 @@ public class ProjectActivity extends AppCompatActivity implements
     // ❌ OLD: private List<Board> boards = new ArrayList<>();
     // ❌ OLD: private final Map<String, List<Task>> tasksPerBoard = new HashMap<>();
     private ActivityResultLauncher<Intent> inboxActivityLauncher;
+    
+    // Broadcast receivers for real-time updates
+    private BroadcastReceiver taskUpdateReceiver;
+    private BroadcastReceiver eventUpdateReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +121,7 @@ public class ProjectActivity extends AppCompatActivity implements
         setupTabs();
         setupSwipeGesture();  // ✅ Add swipe gesture support
         observeViewModels();
+        setupBroadcastReceivers(); // 🔔 Setup real-time update listeners
         
         // ✅ MVVM: Load once via ProjectViewModel - auto-loads boards and tasks
         projectViewModel.selectProject(projectId);
@@ -122,6 +130,17 @@ public class ProjectActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Unregister broadcast receivers
+        if (taskUpdateReceiver != null) {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager
+                    .getInstance(this)
+                    .unregisterReceiver(taskUpdateReceiver);
+        }
+        if (eventUpdateReceiver != null) {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager
+                    .getInstance(this)
+                    .unregisterReceiver(eventUpdateReceiver);
+        }
     }
 
     @Override
@@ -320,6 +339,45 @@ public class ProjectActivity extends AppCompatActivity implements
                 boardTab.select();
             }
         }
+    }
+    
+    private void setupBroadcastReceivers() {
+        // Task updates receiver - simple refresh
+        taskUpdateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "📝 Received TASK_UPDATED broadcast - refreshing");
+                // Reload boards and tasks
+                if (projectId != null) {
+                    projectViewModel.loadBoardsForProject(projectId);
+                }
+            }
+        };
+        
+        // Event updates receiver - simple refresh
+        eventUpdateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "📅 Received EVENT_UPDATED broadcast - refreshing");
+                // Refresh event fragments if visible
+                androidx.fragment.app.Fragment eventsFragment = getSupportFragmentManager()
+                        .findFragmentByTag("events_fragment");
+                if (eventsFragment != null && eventsFragment.isVisible()) {
+                    // Event fragment will handle its own refresh
+                    Intent refreshIntent = new Intent("com.example.tralalero.REFRESH_EVENTS");
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager
+                            .getInstance(ProjectActivity.this)
+                            .sendBroadcast(refreshIntent);
+                }
+            }
+        };
+        
+        // Register receivers
+        androidx.localbroadcastmanager.content.LocalBroadcastManager lbm = 
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this);
+        lbm.registerReceiver(taskUpdateReceiver, new IntentFilter("com.example.tralalero.TASK_UPDATED"));
+        lbm.registerReceiver(eventUpdateReceiver, new IntentFilter("com.example.tralalero.EVENT_UPDATED"));
+        Log.d(TAG, "✅ Registered real-time update receivers");
     }
     
     private void setupSwipeGesture() {
@@ -551,12 +609,13 @@ public class ProjectActivity extends AppCompatActivity implements
                 Log.d(TAG, "📋 Loaded tasks for " + tasksMap.size() + " boards from ProjectViewModel");
                 
                 // ✅ Update each board's tasks in adapter
+                // Note: updateTasksForBoard() already calls notifyDataSetChanged() in TaskAdapter
                 for (Map.Entry<String, List<Task>> entry : tasksMap.entrySet()) {
                     boardAdapter.updateTasksForBoard(entry.getKey(), entry.getValue());
                 }
                 
-                // ✅ Also notify to rebind ViewHolders for visible boards
-                boardAdapter.notifyDataSetChanged();
+                // ✅ No need to call boardAdapter.notifyDataSetChanged() here
+                // as updateTasksForBoard() already updates each TaskAdapter
             }
         });
         

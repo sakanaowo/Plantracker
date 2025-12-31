@@ -11,6 +11,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -98,6 +99,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private TaskCalendarSyncViewModel calendarSyncViewModel;
     private com.example.tralalero.presentation.viewmodel.LabelViewModel labelViewModel;
     private ImageView ivClose;
+    private ImageView ivMore;
     private EditText etTaskTitle; // Changed from RadioButton to EditText
     private TextView tvBoardName; // NEW: Display board name
     private TextView tvProjectBadge;
@@ -184,6 +186,7 @@ public class CardDetailActivity extends AppCompatActivity {
     private String currentUserRole; // OWNER, ADMIN, or MEMBER
     private String taskCreatorId;
     private List<String> taskAssigneeIds = new ArrayList<>();
+    private boolean hasShownPermissionToast = false; // Flag to prevent toast spam
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -255,7 +258,12 @@ public class CardDetailActivity extends AppCompatActivity {
      * Fetch current user's role in this project for permission checks
      */
     private void fetchCurrentUserRole() {
-        if (projectId == null || currentUserId == null) return;
+        if (projectId == null || currentUserId == null) {
+            android.util.Log.d("CardDetail", "⚠️ fetchCurrentUserRole - projectId or currentUserId is null");
+            return;
+        }
+        
+        android.util.Log.d("CardDetail", "🔍 Fetching user role for userId: " + currentUserId + " in project: " + projectId);
         
         ProjectApiService projectApi = ApiClient.get(App.authManager).create(ProjectApiService.class);
         projectApi.getProjectMembers(projectId).enqueue(new Callback<List<ProjectMemberDTO>>() {
@@ -263,15 +271,22 @@ public class CardDetailActivity extends AppCompatActivity {
             public void onResponse(@NonNull Call<List<ProjectMemberDTO>> call, 
                                  @NonNull Response<List<ProjectMemberDTO>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    android.util.Log.d("CardDetail", "📋 Found " + response.body().size() + " project members");
                     for (ProjectMemberDTO member : response.body()) {
+                        android.util.Log.d("CardDetail", "  - Member: userId=" + member.getUserId() + ", role=" + member.getRole());
                         if (currentUserId.equals(member.getUserId())) {
                             currentUserRole = member.getRole();
-                            android.util.Log.d("CardDetail", "✅ User role: " + currentUserRole);
+                            android.util.Log.d("CardDetail", "✅ User role assigned: " + currentUserRole);
                             // Update UI permissions after role is loaded
                             updateTaskPermissionUI();
                             break;
                         }
                     }
+                    if (currentUserRole == null) {
+                        android.util.Log.e("CardDetail", "❌ Current user not found in project members!");
+                    }
+                } else {
+                    android.util.Log.e("CardDetail", "❌ Failed to fetch members - Response code: " + response.code());
                 }
             }
             
@@ -304,15 +319,68 @@ public class CardDetailActivity extends AppCompatActivity {
             return true;
         }
         
+        // If role hasn't loaded yet, allow modification (don't block prematurely)
+        // The permission will be re-checked once role is loaded
+        if (currentUserRole == null) {
+            android.util.Log.d("CardDetail", "  ⚠️ Role not loaded yet, allowing modification temporarily");
+            return true;
+        }
+        
         // MEMBER can only modify their own tasks or tasks they're assigned to
         return false;
     }
     
     /**
+     * Check if current user can DELETE this task
+     * Rules: ONLY Task creator OR project OWNER/ADMIN can delete
+     */
+    private boolean canUserDeleteTask() {
+        android.util.Log.d("CardDetail", "🔍 DELETE PERMISSION CHECK:");
+        android.util.Log.d("CardDetail", "  - currentUserId: " + currentUserId);
+        android.util.Log.d("CardDetail", "  - taskCreatorId: " + taskCreatorId);
+        android.util.Log.d("CardDetail", "  - currentUserRole: " + currentUserRole);
+        
+        if (currentUserId == null) {
+            android.util.Log.d("CardDetail", "  ❌ currentUserId is null");
+            return false;
+        }
+        
+        // Task creator can always delete
+        if (taskCreatorId != null && currentUserId.equals(taskCreatorId)) {
+            android.util.Log.d("CardDetail", "  ✅ User is task creator - CAN DELETE");
+            return true;
+        }
+        
+        // OWNER or ADMIN can delete any task
+        if (currentUserRole != null && 
+            ("OWNER".equalsIgnoreCase(currentUserRole) || "ADMIN".equalsIgnoreCase(currentUserRole))) {
+            android.util.Log.d("CardDetail", "  ✅ User is OWNER/ADMIN - CAN DELETE");
+            return true;
+        }
+        
+        // If role hasn't loaded yet, allow deletion temporarily (will be re-checked)
+        if (currentUserRole == null) {
+            android.util.Log.d("CardDetail", "  ⚠️ Role not loaded yet, allowing deletion temporarily");
+            return true;
+        }
+        
+        // MEMBER and assignees CANNOT delete (even if assigned)
+        android.util.Log.d("CardDetail", "  ❌ User is not creator and not OWNER/ADMIN - CANNOT DELETE");
+        return false;
+    }
+
+    /**
      * Update UI based on task permissions
      */
     private void updateTaskPermissionUI() {
+        android.util.Log.d("CardDetail", "🔧 updateTaskPermissionUI called");
+        android.util.Log.d("CardDetail", "  - currentUserId: " + currentUserId);
+        android.util.Log.d("CardDetail", "  - currentUserRole: " + currentUserRole);
+        android.util.Log.d("CardDetail", "  - taskCreatorId: " + taskCreatorId);
+        android.util.Log.d("CardDetail", "  - taskAssigneeIds: " + taskAssigneeIds);
+        
         boolean canModify = canUserModifyTask();
+        android.util.Log.d("CardDetail", "  - canModify result: " + canModify);
         
         if (btnDeleteTask != null) {
             if (canModify && isEditMode) {
@@ -332,8 +400,14 @@ public class CardDetailActivity extends AppCompatActivity {
             btnSaveChanges.setEnabled(false);
             btnSaveChanges.setAlpha(0.5f);
             
-            // Show message
-            Toast.makeText(this, "⚠️ Bạn không có quyền chỉnh sửa task này", Toast.LENGTH_SHORT).show();
+            // Show message ONLY ONCE
+            if (!hasShownPermissionToast) {
+                android.util.Log.d("CardDetail", "  ⚠️ Showing permission toast (first time)");
+                Toast.makeText(this, "⚠️ Bạn không có quyền chỉnh sửa task này", Toast.LENGTH_SHORT).show();
+                hasShownPermissionToast = true;
+            } else {
+                android.util.Log.d("CardDetail", "  ⚠️ Permission toast already shown, skipping");
+            }
         }
     }
 
@@ -368,6 +442,7 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void initViews() {
         ivClose = findViewById(R.id.ivClose);
+        ivMore = findViewById(R.id.ivMore);
         etTaskTitle = findViewById(R.id.etTaskTitle); // Changed from rbTaskTitle
         tvBoardName = findViewById(R.id.tvBoardName); // NEW
         tvProjectBadge = findViewById(R.id.tvProjectBadge);
@@ -956,7 +1031,7 @@ public class CardDetailActivity extends AppCompatActivity {
 
     private void loadTaskDetails() {
         if (taskId != null && !taskId.isEmpty()) {
-            android.util.Log.d(TAG, "Loading task details for taskId: " + taskId);
+            android.util.Log.d(TAG, "🔍 Loading task details for taskId: " + taskId);
             
             // Load task and extract creator/assignees for permission check
             taskViewModel.getSelectedTask().observe(this, task -> {
@@ -973,8 +1048,7 @@ public class CardDetailActivity extends AppCompatActivity {
                         }
                     }
                     
-                    android.util.Log.d("CardDetail", "✅ Task creator: " + taskCreatorId);
-                    android.util.Log.d("CardDetail", "✅ Task assignees: " + taskAssigneeIds);
+                    android.util.Log.d("CardDetail", "✅ Task loaded - creator: " + taskCreatorId + ", assignees: " + taskAssigneeIds);
                     
                     // Update permission UI
                     updateTaskPermissionUI();
@@ -1009,6 +1083,11 @@ public class CardDetailActivity extends AppCompatActivity {
         ivClose.setOnClickListener(v -> {
             finish();
         });
+        
+        ivMore.setOnClickListener(v -> {
+            showMoreOptionsMenu();
+        });
+        
         btnMembers.setOnClickListener(v -> {
             checkRoleAndAssign();
         });
@@ -1164,35 +1243,34 @@ public class CardDetailActivity extends AppCompatActivity {
         }
         
         Task newTask = new Task(
-                "",              // id (backend will generate)
-                projectId,       // projectId
-                boardId,         // boardId
-                title,           // title
-                description,     // description
-                null,            // issueKey
-                null,            // type
-                Task.TaskStatus.TO_DO, // Default status
-                currentPriority, // Use selected priority
-                0.0,             // position
-                null,            // assigneeId
-                null,            // createdBy (backend will set)
-                null,            // sprintId
-                null,            // epicId
-                null,            // parentTaskId
-                startAt,         // ✅ startAt (Date)
-                dueAt,           // ✅ dueAt (Date)
-                null,            // storyPoints
-                null,            // originalEstimateSec
-                null,            // remainingEstimateSec
-                null,            // createdAt
-                null,            // updatedAt
-                // Calendar sync fields
+                "",              
+                projectId,       
+                boardId,         
+                title,          
+                description,    
+                null,           
+                null,            
+                Task.TaskStatus.TO_DO, 
+                currentPriority, 
+                0.0,             
+                null,            
+                null,            
+                null,            
+                null,            
+                null,            
+                startAt,         
+                dueAt,           
+                null,            
+                null,            
+                null,            
+                null,            
+                null,            
                 isCalendarSyncEnabled,
-                null,            // calendar reminder minutes
-                null,            // calendarEventId (backend will generate)
-                null,            // calendarSyncedAt (backend will set)
-                null,            // labels
-                null             // assignees
+                null,            
+                null,            
+                null,            
+                null,            
+                null             
         );
         taskViewModel.createTask(newTask);
         Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show();
@@ -1240,34 +1318,33 @@ public class CardDetailActivity extends AppCompatActivity {
         // This prevents null fields from overwriting existing data
         Task updatedTask = new Task(
                 taskId,
-                currentTask.getProjectId(),      // ✅ Preserve
-                currentTask.getBoardId(),        // ✅ Preserve
-                title,                           // ✅ Changed
-                description,                     // ✅ Changed
-                currentTask.getIssueKey(),       // ✅ Preserve
-                currentTask.getType(),           // ✅ Preserve
-                currentTask.getStatus(),         // ✅ Preserve (status changed via drag-drop, not here)
-                currentPriority,                 // ✅ Changed
-                currentTask.getPosition(),       // ✅ Preserve
-                currentTask.getAssigneeId(),     // ✅ Preserve (assignee changed separately)
-                currentTask.getCreatedBy(),      // ✅ Preserve
-                currentTask.getSprintId(),       // ✅ Preserve
-                currentTask.getEpicId(),         // ✅ Preserve
-                currentTask.getParentTaskId(),   // ✅ Preserve
-                startAt,                         // ✅ Changed (null if not set)
-                dueAt,                           // ✅ Changed
-                currentTask.getStoryPoints(),    // ✅ Preserve
-                currentTask.getOriginalEstimateSec(),  // ✅ Preserve
-                currentTask.getRemainingEstimateSec(), // ✅ Preserve
-                currentTask.getCreatedAt(),      // ✅ Preserve
-                currentTask.getUpdatedAt(),      // ✅ Backend will update
-                // Calendar sync fields
+                currentTask.getProjectId(),      
+                currentTask.getBoardId(),        
+                title,                           
+                description,                     
+                currentTask.getIssueKey(),       
+                currentTask.getType(),           
+                currentTask.getStatus(),         
+                currentPriority,                 
+                currentTask.getPosition(),       
+                currentTask.getAssigneeId(),      
+                currentTask.getCreatedBy(),      
+                currentTask.getSprintId(),       
+                currentTask.getEpicId(),         
+                currentTask.getParentTaskId(),   
+                startAt,                          
+                dueAt,                           
+                currentTask.getStoryPoints(),    
+                currentTask.getOriginalEstimateSec(),  
+                currentTask.getRemainingEstimateSec(), 
+                currentTask.getCreatedAt(),      
+                currentTask.getUpdatedAt(),      
                 isCalendarSyncEnabled,
                 null,  // calendar reminder minutes - no longer used
-                currentTask.getCalendarEventId(),     // ✅ Preserve (backend will update)
-                currentTask.getCalendarSyncedAt(),    // ✅ Preserve (backend will update)
-                currentTask.getLabels(),              // ✅ Preserve
-                currentTask.getAssignees()            // ✅ Preserve
+                currentTask.getCalendarEventId(),     
+                currentTask.getCalendarSyncedAt(),    
+                currentTask.getLabels(),              
+                currentTask.getAssignees()            
         );
         
         taskViewModel.updateTask(taskId, updatedTask);
@@ -1297,6 +1374,26 @@ public class CardDetailActivity extends AppCompatActivity {
         // ✅ Hide save button - UI will reload via observer when update succeeds
         hasUnsavedChanges = false;
         btnSaveChanges.setVisibility(View.GONE);
+    }
+
+    private void showMoreOptionsMenu() {
+        PopupMenu popup = new PopupMenu(this, ivMore);
+        popup.getMenuInflater().inflate(R.menu.task_more_options, popup.getMenu());
+        
+        // Check user permissions for delete option - ONLY task creator OR admin/owner
+        boolean canDelete = canUserDeleteTask();
+        android.util.Log.d("CardDetail", "🔍 showMoreOptionsMenu - canDelete: " + canDelete);
+        popup.getMenu().findItem(R.id.menu_delete_task).setVisible(canDelete);
+        
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menu_delete_task) {
+                showDeleteConfirmation();
+                return true;
+            }
+            return false;
+        });
+        
+        popup.show();
     }
 
     private void showDeleteConfirmation() {

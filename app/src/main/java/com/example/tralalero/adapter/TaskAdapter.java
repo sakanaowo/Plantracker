@@ -94,7 +94,9 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     }
 
     public void updateTasks(List<Task> newTasks) {
-        this.taskList = newTasks;
+        // ✅ Create a new ArrayList to ensure adapter detects changes
+        this.taskList = newTasks != null ? new ArrayList<>(newTasks) : new ArrayList<>();
+        Log.d(TAG, "✅ TaskAdapter updated with " + this.taskList.size() + " tasks for board: " + boardId);
         notifyDataSetChanged();
     }
 

@@ -1,9 +1,11 @@
 package com.example.tralalero.feature.home.ui.Home.project;
 
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +24,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import android.view.MenuItem;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -76,6 +80,15 @@ public class ProjectEventsFragment extends Fragment {
     private ImageButton btnSearchEvents;
     private boolean isSearchVisible = false;
     
+    // Real-time updates
+    private BroadcastReceiver refreshEventsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            android.util.Log.d("ProjectEventsFragment", "📅 Received REFRESH_EVENTS broadcast - reloading events");
+            loadEvents();
+        }
+    };
+    
     public static ProjectEventsFragment newInstance(String projectId) {
         ProjectEventsFragment fragment = new ProjectEventsFragment();
         Bundle args = new Bundle();
@@ -112,6 +125,29 @@ public class ProjectEventsFragment extends Fragment {
         loadEvents();
         
         return view;
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        
+        // Register real-time update receiver
+        IntentFilter filter = new IntentFilter("com.example.tralalero.REFRESH_EVENTS");
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(refreshEventsReceiver, filter);
+        android.util.Log.d("ProjectEventsFragment", "✅ Registered REFRESH_EVENTS receiver");
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        
+        // Unregister real-time update receiver
+        try {
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(refreshEventsReceiver);
+            android.util.Log.d("ProjectEventsFragment", "✅ Unregistered REFRESH_EVENTS receiver");
+        } catch (Exception e) {
+            android.util.Log.e("ProjectEventsFragment", "Error unregistering receiver: " + e.getMessage());
+        }
     }
     
     private void initViews(View view) {
@@ -503,31 +539,41 @@ public class ProjectEventsFragment extends Fragment {
         // ✅ Check if event is overdue or cancelled
         boolean isOverdueOrCancelled = isEventOverdueOrCancelled(event);
         
+        // Add debug logging
+        android.util.Log.d("ProjectEvents", "Event: " + event.getTitle() + 
+            ", canModify: " + canModify + 
+            ", isOverdueOrCancelled: " + isOverdueOrCancelled +
+            ", status: " + event.getStatus() +
+            ", endAt: " + event.getEndAt());
+        
+        // Get menu items
+        // ✅ REMOVED: editItem - Edit option disabled
+        MenuItem cancelItem = popup.getMenu().findItem(R.id.action_cancel);
+        MenuItem deleteItem = popup.getMenu().findItem(R.id.action_delete_permanent);
+        MenuItem reminderItem = popup.getMenu().findItem(R.id.action_send_reminder);
+        
         // Hide/disable menu items based on permission and status
         if (!canModify) {
-            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+            // No permission: hide all
+            cancelItem.setVisible(false);
+            deleteItem.setVisible(false);
+            reminderItem.setVisible(false);
         } else if (isOverdueOrCancelled) {
-            // Overdue/Cancelled: Only show delete permanently
-            popup.getMenu().findItem(R.id.action_edit).setVisible(false);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(false);
-            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(false);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(true);
+            // Overdue/Cancelled: Only show hard delete
+            cancelItem.setVisible(false);
+            deleteItem.setVisible(true);
+            reminderItem.setVisible(false);
         } else {
-            // Active events: Show edit, cancel, send reminder
-            popup.getMenu().findItem(R.id.action_edit).setVisible(true);
-            popup.getMenu().findItem(R.id.action_cancel).setVisible(true);
-            popup.getMenu().findItem(R.id.action_send_reminder).setVisible(true);
-            popup.getMenu().findItem(R.id.action_delete_permanent).setVisible(false);
+            // Active events: Show cancel, send reminder (edit removed)
+            cancelItem.setVisible(true);
+            deleteItem.setVisible(false);
+            reminderItem.setVisible(true);
         }
         
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.action_edit) {
-                editEvent(event);
-                return true;
-            } else if (itemId == R.id.action_cancel) {
+            // ✅ REMOVED: action_edit case - Edit option disabled
+            if (itemId == R.id.action_cancel) {
                 cancelEvent(event);
                 return true;
             } else if (itemId == R.id.action_delete_permanent) {
@@ -575,13 +621,15 @@ public class ProjectEventsFragment extends Fragment {
         
         // Check if overdue (end time has passed)
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+            // Backend returns format: 2025-12-16T16:00:00.000Z
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date endTime = sdf.parse(event.getEndAt());
             if (endTime != null && endTime.before(new Date())) {
                 return true;
             }
         } catch (Exception e) {
-            android.util.Log.e("ProjectEvents", "Error parsing date", e);
+            android.util.Log.e("ProjectEvents", "Error parsing date: " + event.getEndAt(), e);
         }
         
         return false;
@@ -616,6 +664,8 @@ public class ProjectEventsFragment extends Fragment {
         });
     }
     
+    // ✅ REMOVED: Edit event functionality disabled
+    /*
     private void editEvent(ProjectEvent event) {
         EditEventDialog dialog = EditEventDialog.newInstance(event);
         dialog.setOnEventUpdatedListener(request -> {
@@ -632,6 +682,7 @@ public class ProjectEventsFragment extends Fragment {
         });
         dialog.show(getChildFragmentManager(), "edit_event");
     }
+    */
     
     private void cancelEvent(ProjectEvent event) {
         new AlertDialog.Builder(getContext())

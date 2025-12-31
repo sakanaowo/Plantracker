@@ -1,6 +1,9 @@
 package com.example.tralalero.feature.home.ui.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,6 +16,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -49,6 +53,15 @@ import retrofit2.Response;
 
 public class ActivityFragment extends Fragment implements WebSocketManager.ActivityLogListener {
     private static final String TAG = "ActivityFragment";
+    
+    // Broadcast receiver for real-time activity log updates
+    private BroadcastReceiver activityLogUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "📨 Received ACTIVITY_LOG_UPDATED broadcast - refreshing activity feed");
+            loadUserActivityFeed();
+        }
+    };
     
     // Invitations section
     private LinearLayout invitationsSection;
@@ -192,6 +205,11 @@ public class ActivityFragment extends Fragment implements WebSocketManager.Activ
         } else {
             Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
         }
+        
+        // Register broadcast receiver for real-time activity log updates
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(activityLogUpdateReceiver, new IntentFilter("ACTIVITY_LOG_UPDATED"));
+        Log.d(TAG, "✅ Registered ACTIVITY_LOG_UPDATED receiver");
     }
     
     @Override
@@ -211,6 +229,15 @@ public class ActivityFragment extends Fragment implements WebSocketManager.Activ
         }
         if (badgeManager != null) {
             badgeManager.release();
+        }
+        
+        // Unregister broadcast receiver
+        try {
+            LocalBroadcastManager.getInstance(requireContext())
+                .unregisterReceiver(activityLogUpdateReceiver);
+            Log.d(TAG, "✅ Unregistered ACTIVITY_LOG_UPDATED receiver");
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering receiver: " + e.getMessage());
         }
     }
     

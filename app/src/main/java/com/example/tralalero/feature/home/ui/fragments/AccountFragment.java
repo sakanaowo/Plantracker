@@ -36,8 +36,11 @@ import com.example.tralalero.App.App;
 import com.example.tralalero.R;
 import com.example.tralalero.auth.remote.AuthApi;
 import com.example.tralalero.auth.remote.dto.UpdateProfileRequest;
+import com.example.tralalero.auth.remote.dto.UploadUrlRequest;
+import com.example.tralalero.auth.remote.dto.UploadUrlResponse;
 import com.example.tralalero.auth.storage.TokenManager;
 import com.example.tralalero.core.DependencyProvider;
+import com.example.tralalero.core.SupabaseConfig;
 import com.example.tralalero.data.remote.api.GoogleAuthApiService;
 import com.example.tralalero.data.remote.dto.auth.UserDto;
 import com.example.tralalero.domain.model.AuthUrlResponse;
@@ -59,7 +62,11 @@ import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -619,47 +626,144 @@ public class AccountFragment extends Fragment {
         // Create progress dialog
         android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(requireContext());
         progressDialog.setTitle("Uploading Profile Picture");
-        progressDialog.setMessage("Please wait...");
+        progressDialog.setMessage("Preparing upload...");
         progressDialog.setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setMax(100);
         progressDialog.setCancelable(false);
         progressDialog.show();
+        progressDialog.setProgress(10);
         
-        Log.d(TAG, "Starting upload for user: " + firebaseUser.getUid());
+        Log.d(TAG, "Starting 2-step upload process for user: " + firebaseUser.getUid());
+        String fileName = getFileNameFromUri(imageUri);
+        Log.d(TAG, "File name: " + fileName);
         
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference profileImageRef = storageRef.child("profile_images/" + firebaseUser.getUid() + ".jpg");
-        Log.d(TAG, "Upload path: profile_images/" + firebaseUser.getUid() + ".jpg");
+        // Step 1: Request signed upload URL from backend
+        AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+        UploadUrlRequest request = new UploadUrlRequest(fileName);
         
-        profileImageRef.putFile(imageUri)
-            .addOnProgressListener(taskSnapshot -> {
-                double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                progressDialog.setProgress((int) progress);
-                Log.d(TAG, "Upload progress: " + (int) progress + "%");
-            })
-            .addOnSuccessListener(taskSnapshot -> {
-                Log.d(TAG, "Upload successful, getting download URL...");
-                progressDialog.setMessage("Processing...");
-                profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    Log.d(TAG, "Download URL obtained: " + uri.toString());
+        authApi.requestUploadUrl(request).enqueue(new retrofit2.Callback<UploadUrlResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<UploadUrlResponse> call, 
+                                 retrofit2.Response<UploadUrlResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UploadUrlResponse uploadData = response.body();
+                    Log.d(TAG, "✓ Step 1: Received signed URL");
+                    Log.d(TAG, "  Path: " + uploadData.path);
+                    Log.d(TAG, "  Signed URL: " + uploadData.signedUrl);
+                    progressDialog.setProgress(30);
+                    progressDialog.setMessage("Uploading...");
+                    uploadFileToSupabase(imageUri, uploadData.signedUrl, uploadData.path, progressDialog);
+                } else {
+                    Log.e(TAG, "Failed to get upload URL: " + response.code());
                     progressDialog.dismiss();
-                    Toast.makeText(requireContext(), "Upload successful!", Toast.LENGTH_SHORT).show();
-                    updateUserProfile(uri);
-                }).addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get download URL", e);
-                    progressDialog.dismiss();
-                    Toast.makeText(requireContext(), "Failed to get image URL: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-            })
-            .addOnFailureListener(e -> {
-                Log.e(TAG, "Failed to upload image. Error: " + e.getMessage(), e);
-                progressDialog.dismiss();
-                String errorMsg = "Upload failed: " + e.getMessage();
-                if (e.getMessage() != null && e.getMessage().contains("permission")) {
-                    errorMsg = "Permission denied. Please check Firebase Storage rules.";
+                    Toast.makeText(requireContext(), 
+                        "Failed to prepare upload", Toast.LENGTH_SHORT).show();
                 }
-                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
-            });
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<UploadUrlResponse> call, Throwable t) {
+                Log.e(TAG, "Network error requesting upload URL", t);
+                progressDialog.dismiss();
+                Toast.makeText(requireContext(), 
+                    "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = "avatar.jpg"; // default
+
+        try {
+            android.database.Cursor cursor = requireContext().getContentResolver()
+                .query(uri, null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (nameIndex != -1) {
+                    fileName = cursor.getString(nameIndex);
+                }
+                cursor.close();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting file name", e);
+        }
+        if (!fileName.contains(".")) {
+            fileName = fileName + ".jpg";
+        }
+
+        return fileName;
+    }
+    
+    private void uploadFileToSupabase(Uri imageUri, String signedUrl, String storagePath, 
+                                     android.app.ProgressDialog progressDialog) {
+        try {
+            InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                progressDialog.dismiss();
+                Toast.makeText(requireContext(), "Cannot read file", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            byte[] fileBytes = new byte[inputStream.available()];
+            inputStream.read(fileBytes);
+            inputStream.close();
+            
+            String mimeType = requireContext().getContentResolver().getType(imageUri);
+            if (mimeType == null) {
+                mimeType = "image/jpeg"; // default
+            }
+            Log.d(TAG, "MIME type: " + mimeType);
+            
+            RequestBody requestBody = RequestBody.create(
+                MediaType.parse(mimeType), 
+                fileBytes
+            );
+            
+            progressDialog.setProgress(50);
+            
+            AuthApi authApi = ApiClient.get(App.authManager).create(AuthApi.class);
+            authApi.uploadToSupabase(signedUrl, requestBody)
+                .enqueue(new retrofit2.Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<ResponseBody> call, 
+                                         retrofit2.Response<ResponseBody> response) {
+                        progressDialog.setProgress(90);
+                        
+                        if (response.isSuccessful()) {
+                            Log.d(TAG, "✓ Step 2: File uploaded to Supabase successfully");
+                            Log.d(TAG, "  Storage path: " + storagePath);
+                            String publicUrl = SupabaseConfig.getPublicUrl(storagePath);
+                            Log.d(TAG, "  Public URL: " + publicUrl);
+                            
+                            progressDialog.setProgress(100);
+                            progressDialog.setMessage("Processing...");
+                            
+                            // Update backend profile with new avatar URL
+                            updateUserProfile(Uri.parse(publicUrl));
+                            progressDialog.dismiss();
+                            Toast.makeText(requireContext(), 
+                                "Upload successful!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.e(TAG, "Failed to upload to Supabase: " + response.code());
+                            progressDialog.dismiss();
+                            Toast.makeText(requireContext(), 
+                                "Upload failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
+                        Log.e(TAG, "Network error uploading to Supabase", t);
+                        progressDialog.dismiss();
+                        Toast.makeText(requireContext(), 
+                            "Upload error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading file", e);
+            progressDialog.dismiss();
+            Toast.makeText(requireContext(), "Error reading file", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void updateUserProfile(Uri photoUri) {

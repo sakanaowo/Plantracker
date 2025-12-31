@@ -44,17 +44,17 @@ public interface AuthApi {
     @DELETE("users/devices/{deviceId}")
     Call<Void> unregisterDevice(@Path("deviceId") String deviceId);
     
-    // ========== Storage APIs ==========
+    // ========== Avatar Upload APIs ==========
     
     /**
-     * Step 1: Request signed upload URL from backend
-     * POST /api/storage/upload-url
+     * Step 1: Request signed upload URL from backend for user avatar
+     * POST /api/users/avatar/upload-url
      */
-    @POST("storage/upload-url")
+    @POST("users/avatar/upload-url")
     Call<UploadUrlResponse> requestUploadUrl(@Body UploadUrlRequest request);
     
     /**
-     * Step 2: Upload file directly to Supabase using signed URL
+     * Step 2: Upload avatar file directly to Supabase using signed URL
      * PUT {signedUrl}
      * Note: This is a dynamic URL call, not a fixed endpoint
      */
@@ -64,6 +64,7 @@ public interface AuthApi {
     /**
      * Get signed view URL for a file (public endpoint)
      * GET /api/storage/view-url?path={path}
+     * Note: This endpoint is deprecated, kept for backward compatibility
      */
     @GET("storage/view-url")
     Call<ViewUrlResponse> getViewUrl(@Query("path") String path);

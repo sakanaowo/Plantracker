@@ -183,8 +183,9 @@ public class ProjectMenuBottomSheet extends BottomSheetDialogFragment {
         
         Toast.makeText(getContext(), "Deleting project...", Toast.LENGTH_SHORT).show();
         
+        // ✅ FIX: Use authenticated ApiClient with FirebaseInterceptor
         com.example.tralalero.data.remote.api.ProjectApiService projectApi = 
-            com.example.tralalero.network.ApiClient.get().create(com.example.tralalero.data.remote.api.ProjectApiService.class);
+            com.example.tralalero.network.ApiClient.get(com.example.tralalero.App.App.authManager).create(com.example.tralalero.data.remote.api.ProjectApiService.class);
         
         projectApi.deleteProject(projectId).enqueue(new retrofit2.Callback<Void>() {
             @Override

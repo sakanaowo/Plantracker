@@ -215,7 +215,10 @@ public class MemberDetailsBottomSheet extends BottomSheetDialogFragment {
         boolean isMemberOwner = "OWNER".equalsIgnoreCase(memberRole);
         
         // Determine visibility for each button
-        boolean showRemoveButton = !isViewingSelf && isCurrentUserOwner && !isMemberOwner;
+        // ✅ UPDATED: ADMIN can now remove MEMBER and other ADMIN (but NOT OWNER)
+        // OWNER can remove anyone except themselves
+        // ADMIN can remove anyone except OWNER and themselves
+        boolean showRemoveButton = !isViewingSelf && hasPermission && !isMemberOwner;
         boolean showChangeRoleButton = hasPermission && !isMemberOwner;
         
         // Update Remove Member button visibility

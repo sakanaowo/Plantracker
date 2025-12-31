@@ -78,21 +78,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         Log.d(TAG, "📨 FCM message received from: " + remoteMessage.getFrom());
         
-        // Check if app is in foreground (WebSocket active)
+        // Check if FCM notifications are enabled (disabled when WebSocket is active)
         SharedPreferences prefs = getSharedPreferences("notification_prefs", MODE_PRIVATE);
         boolean showFCM = prefs.getBoolean("show_fcm_notifications", true);
         
-        Log.d(TAG, "📊 [FCM] App state check:");
-        Log.d(TAG, "   show_fcm_notifications: " + showFCM);
-        Log.d(TAG, "   Status: " + (showFCM ? "✅ SHOW (WebSocket inactive)" : "⚠️ SKIP (WebSocket active)"));
-        
         if (!showFCM) {
-            // App is foreground with WebSocket active - skip FCM to avoid duplicate
-            Log.d(TAG, "⏭️ [FCM] Skipping - WebSocket is handling notifications");
-            return; // SKIP FCM notification
+            Log.d(TAG, "⏭️ [FCM] Skipping notification - WebSocket is active (foreground)");
+            return;
         }
         
-        Log.d(TAG, "✅ [FCM] Processing notification (app background or WebSocket offline)");
+        Log.d(TAG, "✅ [FCM] Processing notification (background mode)");
 
         // Check if message contains data payload
         if (!remoteMessage.getData().isEmpty()) {

@@ -1,10 +1,13 @@
 package com.example.tralalero.service;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.tralalero.BuildConfig;
 import com.example.tralalero.auth.remote.AuthManager;
@@ -48,6 +51,7 @@ public class NotificationWebSocketManager {
     private final Handler mainHandler;
     private final Gson gson;
     private SharedPreferences notifPrefs;
+    private Context appContext;
     
     private Socket socket;
     private boolean isConnecting = false;
@@ -76,10 +80,9 @@ public class NotificationWebSocketManager {
     
     /**
      * Initialize with context (call this before connect)
-    /**
-     * Initialize with context (call this before connect)
      */
     public void initialize(Context context) {
+        this.appContext = context.getApplicationContext();
         this.notifPrefs = context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE);
     }
     
@@ -134,10 +137,6 @@ public class NotificationWebSocketManager {
         shouldBeConnected = true;
         isConnecting = true;
         
-        // DON'T disable FCM here! Only disable when CONNECTED successfully
-        // This prevents race condition where FCM is disabled during connection attempt
-        // but connection fails, leaving FCM disabled while user is actually offline
-        
         try {
             String wsUrl = BuildConfig.WS_URL;
             Log.d(TAG, "🔄 Connecting to: " + wsUrl);
@@ -171,10 +170,10 @@ public class NotificationWebSocketManager {
     public void disconnect() {
         shouldBeConnected = false;
         
-        // Re-enable FCM notifications when WebSocket disconnects
+        // Re-enable FCM notifications when disconnecting (app going to background)
         if (notifPrefs != null) {
             notifPrefs.edit().putBoolean("show_fcm_notifications", true).apply();
-            Log.d(TAG, "📊 Set show_fcm_notifications = true (WebSocket disconnecting)");
+            Log.d(TAG, "📊 WebSocket disconnecting → FCM ENABLED (background mode)");
         }
         
         if (socket != null) {
@@ -225,10 +224,10 @@ public class NotificationWebSocketManager {
                 isConnecting = false;
                 Log.d(TAG, "✅ Socket.IO CONNECTED");
                 
-                // Update SharedPreferences
+                // Disable FCM when WebSocket is active (foreground only)
                 if (notifPrefs != null) {
                     notifPrefs.edit().putBoolean("show_fcm_notifications", false).apply();
-                    Log.d(TAG, "📊 Set show_fcm_notifications = false (connected)");
+                    Log.d(TAG, "📊 WebSocket connected → FCM DISABLED (foreground mode)");
                 }
                 
                 if (connectionStateListener != null) {
@@ -242,10 +241,10 @@ public class NotificationWebSocketManager {
             public void call(Object... args) {
                 Log.d(TAG, "❌ Socket.IO DISCONNECTED");
                 
-                // Re-enable FCM
+                // Re-enable FCM when WebSocket disconnects (background mode)
                 if (notifPrefs != null) {
                     notifPrefs.edit().putBoolean("show_fcm_notifications", true).apply();
-                    Log.d(TAG, "📊 Set show_fcm_notifications = true (disconnected)");
+                    Log.d(TAG, "📊 WebSocket disconnected → FCM ENABLED (background mode)");
                 }
                 
                 if (connectionStateListener != null) {
@@ -316,6 +315,13 @@ public class NotificationWebSocketManager {
                         String json = args[0].toString();
                         Log.d(TAG, "📋 Received activity_log: " + json);
                         
+                        // Broadcast activity_log event for ActivityFragment to refresh
+                        if (appContext != null) {
+                            Intent intent = new Intent("ACTIVITY_LOG_UPDATED");
+                            LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);
+                            Log.d(TAG, "🔔 Broadcasted ACTIVITY_LOG_UPDATED");
+                        }
+                        
                         NotificationPayload notification = gson.fromJson(json, NotificationPayload.class);
                         
                         // Notify all listeners on main thread (same as notification)
@@ -348,6 +354,63 @@ public class NotificationWebSocketManager {
             public void call(Object... args) {
                 if (args.length > 0) {
                     Log.d(TAG, "Subscription confirmed: " + args[0].toString());
+                }
+            }
+        });
+        
+        // Workspace updates (simple: just trigger refresh)
+        socket.on("workspace_updated", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (args.length > 0) {
+                    Log.d(TAG, "🏢 Workspace updated: " + args[0].toString());
+                    // Broadcast to app: workspace list needs refresh
+                    if (appContext != null) {
+                        mainHandler.post(() -> {
+                            android.content.Intent intent = new android.content.Intent("com.example.tralalero.WORKSPACE_UPDATED");
+                            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(
+                                appContext
+                            ).sendBroadcast(intent);
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Task updates (simple: just trigger refresh)
+        socket.on("task_updated", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (args.length > 0) {
+                    Log.d(TAG, "📝 Task updated: " + args[0].toString());
+                    // Broadcast to app: task list needs refresh
+                    if (appContext != null) {
+                        mainHandler.post(() -> {
+                            android.content.Intent intent = new android.content.Intent("com.example.tralalero.TASK_UPDATED");
+                            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(
+                                appContext
+                            ).sendBroadcast(intent);
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Event updates (simple: just trigger refresh)
+        socket.on("event_updated", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (args.length > 0) {
+                    Log.d(TAG, "📅 Event updated: " + args[0].toString());
+                    // Broadcast to app: event list needs refresh
+                    if (appContext != null) {
+                        mainHandler.post(() -> {
+                            android.content.Intent intent = new android.content.Intent("com.example.tralalero.EVENT_UPDATED");
+                            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(
+                                appContext
+                            ).sendBroadcast(intent);
+                        });
+                    }
                 }
             }
         });

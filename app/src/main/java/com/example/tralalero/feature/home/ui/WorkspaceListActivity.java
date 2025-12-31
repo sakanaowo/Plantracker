@@ -71,7 +71,7 @@ public class WorkspaceListActivity extends AppCompatActivity {
         // Register broadcast receiver for workspace updates
         androidx.localbroadcastmanager.content.LocalBroadcastManager
                 .getInstance(this)
-                .registerReceiver(workspaceUpdateReceiver, new IntentFilter("WORKSPACE_UPDATED"));
+                .registerReceiver(workspaceUpdateReceiver, new IntentFilter("com.example.tralalero.WORKSPACE_UPDATED"));
     }
     
     private void setupViewModel() {

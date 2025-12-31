@@ -257,18 +257,18 @@ public class DeepLinkNavigator {
     /**
      * Open Inbox (Notification Center)
      * Fallback screen for unknown or system notifications
-     * Opens MainContainerActivity at Inbox tab (page 1)
+     * Opens MainContainerActivity at Activity tab (page 2)
      * 
      * @param context Context
      */
     private static void openInbox(Context context) {
-        Log.d(TAG, "📫 Opening Inbox");
+        Log.d(TAG, "📫 Opening Activity (Notifications)");
         
         Intent intent = new Intent(context, MainContainerActivity.class);
-        intent.putExtra("INITIAL_PAGE", 1); // Open at Inbox tab
+        intent.putExtra("INITIAL_PAGE", 2); // Open at Activity tab (Notifications)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
         
-        Log.d(TAG, "✅ Launched MainContainerActivity (Inbox tab)");
+        Log.d(TAG, "✅ Launched MainContainerActivity (Activity tab)");
     }
 }

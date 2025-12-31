@@ -58,6 +58,14 @@
             <!-- Attachments List (Initially Hidden) -->
             <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvAttachments" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:nestedScrollingEnabled="false" android:visibility="gone" android:layout_marginBottom="8dp" android:maxHeight="200dp"/>
 
+            <!-- Attachment Upload Progress (Initially Hidden) -->
+            <LinearLayout android:id="@+id/layoutCardUploadProgress" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="12dp" android:visibility="gone" android:background="@drawable/rounded_section_light" android:layout_marginBottom="8dp">
+
+                <ProgressBar android:id="@+id/progressBarCardUpload" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="100" android:progress="0" android:layout_marginEnd="12dp"/>
+
+                <TextView android:id="@+id/tvCardUploadProgress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Uploading..." android:textSize="12sp" android:textColor="#666666"/>
+            </LinearLayout>
+
             <TextView android:id="@+id/tvNoAttachments" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No attachments yet" android:textSize="13sp" android:textColor="#666666" android:paddingTop="8dp" android:paddingBottom="8dp" android:gravity="center" android:visibility="gone"/>
 
             <!-- Details Dropdown -->
@@ -192,10 +200,6 @@
             <TextView android:id="@+id/tvNoChecklist" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <LinearLayout android:id="@+id/labelLayout" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:id="@+id/tvNoAttachments" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <LinearLayout android:id="@+id/layoutCardUploadProgress" android:layout_width="wrap_content" android:layout_height="wrap_content">
-                <TextView android:id="@+id/tvCardUploadProgress" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                <ProgressBar android:id="@+id/progressBarCardUpload" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            </LinearLayout>
             <TextView android:id="@+id/tvReporterInitials" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:id="@+id/tvReporterName" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>

@@ -29,7 +29,7 @@
         <activity android:name=".MainActivity" android:exported="false" />
 
         <!-- NEW: Main Container Activity with ViewPager2 -->
-        <activity android:name=".feature.home.ui.MainContainerActivity" android:exported="false" />
+        <activity android:name=".feature.home.ui.MainContainerActivity" android:exported="false" android:windowSoftInputMode="adjustPan" />
 
         <activity android:name=".feature.auth.ui.signup.SignupActivity" android:exported="false" />
         <activity android:name=".feature.auth.ui.forgot.ForgotPasswordActivity" android:exported="false" />
